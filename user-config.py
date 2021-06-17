@@ -265,8 +265,10 @@ cosmetic_changes_disable = {}  # type: Dict[str, Tuple[str, ...]]
 # cosmetic_changes_deny_script += ['your_script_name_1', 'your_script_name_2']
 # Appending the script name also works:
 # cosmetic_changes_deny_script.append('your_script_name')
-cosmetic_changes_deny_script = ['category_redirect', 'cosmetic_changes',
-                                'newitem', 'touch']
+cosmetic_changes_deny_script = [
+    'category_redirect', 'cosmetic_changes', 'newitem', 'touch'
+]
+cosmetic_changes_deny_script += ['revertbot']
 
 # ############# REPLICATION BOT SETTINGS ################
 # You can add replicate_replace to your user-config.py.
