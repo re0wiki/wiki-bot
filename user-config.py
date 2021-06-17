@@ -90,10 +90,10 @@ user_families_paths = []  # type: List[str]
 
 # Should interwiki.py report warnings for missing links between foreign
 # languages?
-interwiki_backlink = True
+interwiki_backlink = False
 
 # Should interwiki.py display every new link it discovers?
-interwiki_shownew = True
+interwiki_shownew = False
 
 # Should interwiki.py output a graph PNG file on conflicts?
 # You need pydot for this:
