@@ -227,7 +227,6 @@ db_port = 3306
 # read timeout, or a single value for both in a tuple.
 socket_timeout = (6.05, 45)
 
-
 # ############# COSMETIC CHANGES SETTINGS ##############
 # The bot can make some additional changes to each page it edits, e.g. fix
 # whitespace or positioning of category links.
@@ -312,4 +311,3 @@ max_queue_size = 64
 # Version 4 is only available for Python 3.4+
 # Version 5 was added with Python 3.8
 pickle_protocol = 2
-
