@@ -1,1 +1,1 @@
-from jobs.repl import format, gallery, name
+from jobs.repl import format, gallery, head, name
