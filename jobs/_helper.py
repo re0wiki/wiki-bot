@@ -11,7 +11,7 @@ from time import sleep
 
 class Job(ABC):
     @abstractmethod
-    def run(self, simulate):
+    def run(self, simulate: bool):
         pass
 
 
