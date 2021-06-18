@@ -24,7 +24,5 @@
 
 * [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
 * `python main.py -h`
-* ~~`python re0/rename.py`：名称修改，包括移动页面、替换文本~~
-  * ~~需人工检查是否破坏了部分内容（如英文名、跨语言链接等）~~
-  * ~~需人工检查并视情况修改[译名替换任务](jobs/repl/name.py)~~
+* `python rename.py -h`
 

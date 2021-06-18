@@ -21,7 +21,7 @@ class CmdJob(Job):
         self.cmd = ' '.join('"' + c + '"' if ' ' in c and '"' not in c else c
                             for c in cmd)
 
-    def run(self, simulate, capture_output=False):
+    def run(self, simulate=False, capture_output=False):
         cmd = self.cmd
         if simulate:
             cmd += ' -simulate'
