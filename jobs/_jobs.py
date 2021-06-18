@@ -2,7 +2,6 @@ import logging
 from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable
 from importlib import import_module
-from itertools import cycle
 from pathlib import Path
 from shlex import join
 from subprocess import run
@@ -64,9 +63,5 @@ def load_jobs():
             import_module('jobs.' + j.stem)
 
 
-def get_job():
-    return IterableJob(cycle(jobs))
-
-
-def get_jobs_list():
+def get_jobs():
     return jobs

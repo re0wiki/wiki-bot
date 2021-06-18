@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from jobs import job, jobs_list
+from jobs import jobs, run
 
 if __name__ == '__main__':
     logging.basicConfig(
@@ -11,7 +11,7 @@ if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(
         description='将自动化规则应用到全站条目，循环执行。',
-        epilog='\n\n'.join(f'{i}\n{job}' for i, job in enumerate(jobs_list)),
+        epilog='\n\n'.join(f'{i}\n{job}' for i, job in enumerate(jobs)),
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
@@ -20,7 +20,7 @@ if __name__ == '__main__':
         type=int,
         nargs='?',
         default=0,
-        choices=range(len(jobs_list)),
+        choices=range(len(jobs)),
     )
     parser.add_argument(
         '-s',
@@ -30,6 +30,4 @@ if __name__ == '__main__':
     )
     args = parser.parse_args()
 
-    for _ in range(args.start):
-        next(job)
-    job.run(simulate=args.simulate)
+    run(start=args.start, simulate=args.simulate)
