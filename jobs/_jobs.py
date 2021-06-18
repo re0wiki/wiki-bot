@@ -25,8 +25,7 @@ class CmdJob(Job):
         if simulate:
             cmd.append('-simulate')
         logging.info(join(cmd))
-        run(cmd)
-        sleep(1)
+        return run(cmd, capture_output=True, encoding='utf8').stdout
 
     def __str__(self):
         return join(self.cmd)
@@ -39,6 +38,9 @@ class FuncJob(Job):
     def run(self, simulate):
         self.func().run(simulate)
 
+    def __str__(self):
+        return self.func.__name__
+
 
 class IterableJob(Job):
     def __init__(self, iterable: Iterable[Job]):
@@ -47,6 +49,7 @@ class IterableJob(Job):
     def run(self, simulate):
         for j in self.iterable:
             j.run(simulate)
+            sleep(1)
 
 
 jobs: list[Job] = list()
