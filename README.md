@@ -21,11 +21,8 @@
 ## Usage
 
 * [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
-* `python main.py`：运行自动任务
-* `python main.py s`：运行自动任务，但不进行任何实际更改（用于调试）
-* `python main.py list`：显示自动任务内容及编号
-* `python main.py 3`：运行自动任务，从第3项开始
-* `python re0/rename.py`：名称修改，包括移动页面、替换文本
-  * 需人工检查是否破坏了部分内容（如英文名、跨语言链接等）
-  * 需人工检查并视情况修改[替换任务](re0/repl.py)
+* `python main.py -h`
+* ~~`python re0/rename.py`：名称修改，包括移动页面、替换文本~~
+  * ~~需人工检查是否破坏了部分内容（如英文名、跨语言链接等）~~
+  * ~~需人工检查并视情况修改[替换任务](re0/repl.py)~~
 
