@@ -1,5 +1,6 @@
 from .base import base
 from .._jobs import CmdJob, add_job
+from .._starts import starts_more
 
 nbsp = '\xa0'
 
@@ -31,4 +32,4 @@ repl = base.copy()
 for o, n in pairs:
     repl += [o, n]
 
-add_job(CmdJob(repl))
+add_job(CmdJob(repl + starts_more))
