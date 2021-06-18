@@ -1,4 +1,4 @@
-from ._helper import CmdJob, add_job
+from ._jobs import CmdJob, add_job
 
 add_job(
     CmdJob([
