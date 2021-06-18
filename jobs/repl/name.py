@@ -6,8 +6,8 @@ from itertools import chain
 import opencc
 
 from .base import base
-from .._jobs import CmdJob, add_job
-from .._starts import starts_more
+from ..jobs_ import CmdJob, add_job
+from ..starts_ import starts_more
 
 converter = opencc.OpenCC('s2t.json')
 

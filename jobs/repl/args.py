@@ -1,6 +1,6 @@
 from .base import base
-from .._jobs import CmdJob, add_job
-from .._starts import starts_more
+from ..jobs_ import CmdJob, add_job
+from ..starts_ import starts_more
 
 pairs = [
     ('Image-Size', '请手动移除该参数'),

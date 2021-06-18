@@ -1,4 +1,4 @@
-from ._jobs import CmdJob, FuncJob, IterableJob, add_job
+from .jobs_ import CmdJob, FuncJob, IterableJob, add_job
 
 
 def rm_unnecessary_cats():

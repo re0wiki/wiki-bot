@@ -61,9 +61,9 @@ def add_job(job: Job):
 
 
 def load_jobs():
-    """遍历初始化所有子模块/子包，'_'开头的除外"""
+    """遍历初始化所有子模块/子包，以'_'开头或结尾的除外"""
     for j in Path('jobs').iterdir():
-        if not j.name.startswith('_'):
+        if not j.name.startswith('_') and not j.name.endswith('_'):
             import_module('jobs.' + j.stem)
 
 

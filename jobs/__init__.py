@@ -1,6 +1,6 @@
 from itertools import cycle
 
-from jobs._jobs import IterableJob, Job, get_jobs, load_jobs
+from jobs.jobs_ import IterableJob, Job, get_jobs, load_jobs
 
 load_jobs()
 jobs = get_jobs()

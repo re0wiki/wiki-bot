@@ -1,5 +1,5 @@
-from ._jobs import CmdJob, add_job
-from ._starts import starts_more
+from .jobs_ import CmdJob, add_job
+from .starts_ import starts_more
 
 add_job(CmdJob([
     'noreferences',
