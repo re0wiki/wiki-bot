@@ -11,7 +11,7 @@ from time import sleep
 
 class Job(ABC):
     @abstractmethod
-    def run(self, simulate=False):
+    def run(self, simulate):
         pass
 
 
@@ -21,7 +21,7 @@ class CmdJob(Job):
         self.cmd = ['python', 'pywikibot/pwb.py'
                     ] + cmd + ['-titleregexnot:"no bot/"']
 
-    def run(self, simulate=False):
+    def run(self, simulate):
         cmd = self.cmd
         if simulate:
             cmd.append('-simulate')
@@ -34,7 +34,7 @@ class FuncJob(Job):
     def __init__(self, func: Callable[[], Job]):
         self.func = func
 
-    def run(self, simulate=False):
+    def run(self, simulate):
         self.func().run(simulate)
 
 
@@ -42,9 +42,9 @@ class IterableJob(Job):
     def __init__(self, iterable: Iterable[Job]):
         self.iterable = iterable
 
-    def run(self, simulate=False):
+    def run(self, simulate):
         for j in self.iterable:
-            j.run()
+            j.run(simulate)
 
 
 jobs: list[Job] = list()
@@ -61,5 +61,9 @@ def load_jobs():
             import_module('jobs.' + j.stem)
 
 
-def get_jobs():
-    return cycle(jobs)
+def get_job():
+    return IterableJob(cycle(jobs))
+
+
+def get_jobs_list():
+    return jobs
