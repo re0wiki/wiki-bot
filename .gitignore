@@ -129,4 +129,7 @@ dmypy.json
 .pyre/
 
 # other
+throttle.ctrl
+pywikibot.lwp
 user-password.py
+*apicache*
