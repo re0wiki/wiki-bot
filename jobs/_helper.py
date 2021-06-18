@@ -29,6 +29,9 @@ class CmdJob(Job):
         run(cmd)
         sleep(1)
 
+    def __str__(self):
+        return join(self.cmd)
+
 
 class FuncJob(Job):
     def __init__(self, func: Callable[[], Job]):
