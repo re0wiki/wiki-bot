@@ -1,7 +1,7 @@
 import argparse
 import logging
 
-from jobs import jobs_list
+from jobs import job, jobs_list
 
 if __name__ == '__main__':
     logging.basicConfig(
@@ -16,8 +16,9 @@ if __name__ == '__main__':
     )
     parser.add_argument(
         'start',
-        help='从第几个任务开始执行 (default: 0)',
+        help='从第几个任务开始执行',
         type=int,
+        nargs='?',
         default=0,
         choices=range(len(jobs_list)),
     )
@@ -27,4 +28,8 @@ if __name__ == '__main__':
         help='不对服务器内容做任何实际更改，只显示将更改的内容',
         action='store_true',
     )
-    parser.parse_args()
+    args = parser.parse_args()
+
+    for _ in range(args.start):
+        next(job)
+    job.run(simulate=args.simulate)
