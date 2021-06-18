@@ -3,7 +3,6 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable
 from importlib import import_module
 from pathlib import Path
-from shlex import join
 from subprocess import run
 from time import sleep
 
@@ -17,18 +16,20 @@ class Job(ABC):
 class CmdJob(Job):
     def __init__(self, cmd: list[str]):
         # noinspection SpellCheckingInspection
-        self.cmd = ['python', 'pywikibot/pwb.py'
-                    ] + cmd + ['-titleregexnot:"no bot/"']
+        cmd = ['python', 'pywikibot/pwb.py'
+               ] + cmd + ['-titleregexnot:"no bot/"']
+        self.cmd = ' '.join('"' + c + '"' if ' ' in c and '"' not in c else c
+                            for c in cmd)
 
     def run(self, simulate, capture_output=False):
         cmd = self.cmd
         if simulate:
-            cmd.append('-simulate')
-        logging.info(join(cmd))
+            cmd += ' -simulate'
+        logging.info(cmd)
         return run(cmd, capture_output=capture_output, encoding='utf8').stdout
 
     def __str__(self):
-        return join(self.cmd)
+        return self.cmd
 
 
 class FuncJob(Job):
