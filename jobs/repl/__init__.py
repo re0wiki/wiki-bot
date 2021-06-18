@@ -1,1 +1,1 @@
-import jobs.repl.gallery
+from jobs.repl import format, gallery
