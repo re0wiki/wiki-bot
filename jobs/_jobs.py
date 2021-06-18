@@ -20,12 +20,12 @@ class CmdJob(Job):
         self.cmd = ['python', 'pywikibot/pwb.py'
                     ] + cmd + ['-titleregexnot:"no bot/"']
 
-    def run(self, simulate):
+    def run(self, simulate, capture_output=False):
         cmd = self.cmd
         if simulate:
             cmd.append('-simulate')
         logging.info(join(cmd))
-        return run(cmd, capture_output=True, encoding='utf8').stdout
+        return run(cmd, capture_output=capture_output, encoding='utf8').stdout
 
     def __str__(self):
         return join(self.cmd)

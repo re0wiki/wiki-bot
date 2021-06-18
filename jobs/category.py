@@ -13,7 +13,7 @@ def rm_unnecessary_cats():
             'listpages',
             '-format:3',
             '-subcatsr:角色',
-        ]).run(True).split('\n') if c
+        ]).run(simulate=True, capture_output=True).split('\n') if c
     ])
 
 
