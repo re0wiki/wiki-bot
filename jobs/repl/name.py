@@ -3,8 +3,13 @@ import re
 from collections import Counter
 from itertools import chain
 
+import opencc
+
 from .base import base
 from .._jobs import CmdJob, add_job
+from .._starts import starts_more
+
+converter = opencc.OpenCC('s2t.json')
 
 similar_chars = [
     '珥尔耳鲁露卢勒拉菈利莉丽里吕李',
@@ -232,11 +237,19 @@ _ = [  # 特判太麻烦的，不处理
 repl = base.copy()
 
 for n in names:
-    o = n
+    o = re.sub(r'([^?!()=<])', r'[\1]', n)
     n = n.replace('?', '')
     n = re.sub(r'\(.*?\)', '', n)
     for s in similar_chars:
-        o = re.sub(rf'[{s}]', rf'[{s}]', o)
+        o = re.sub(rf'[{s}]', rf'{s}', o)
+    t = converter.convert(o)
+    assert len(t) == len(o)
+    if t != o:
+        t, o = list(t), list(o)
+        res = list()
+        for a, b in zip(t, o):
+            res.append(a if a == b else a + b)
+        o = ''.join(res)
     if o != n:
         repl += [o, n]
 
@@ -256,4 +269,4 @@ pairs = [  # 难以用similar_chars自动生成的部分
 
 repl.extend(chain(*pairs))
 
-add_job(CmdJob(repl))
+add_job(CmdJob(repl + starts_more))
