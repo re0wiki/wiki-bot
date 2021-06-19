@@ -17,8 +17,7 @@ class CmdJob(Job):
     def __init__(self, cmd: list[str]):
         # noinspection SpellCheckingInspection
         cmd = ['python', 'pywikibot/pwb.py'] + cmd + ['-titleregexnot:no bot/']
-        self.cmd = ' '.join(
-            '"' + c.replace('"', r'\"') + '"' if ' ' in c else c for c in cmd)
+        self.cmd = ' '.join('"' + c.replace('"', r'\"') + '"' for c in cmd)
 
     def run(self, simulate=False, capture_output=False):
         cmd = self.cmd
