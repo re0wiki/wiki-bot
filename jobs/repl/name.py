@@ -238,20 +238,20 @@ repl = base.copy()
 
 for n in names:
     o = re.sub(r'([^?!()=<])', r'[\1]', n)
-    n = n.replace('?', '')
-    n = re.sub(r'\(.*?\)', '', n)
     for s in similar_chars:
         o = re.sub(rf'[{s}]', rf'{s}', o)
     t = converter.convert(o)
+    t, o = list(t), list(o)
+    res = list()
     assert len(t) == len(o)
-    if t != o:
-        t, o = list(t), list(o)
-        res = list()
-        for a, b in zip(t, o):
-            res.append(a if a == b else a + b)
-        o = ''.join(res)
-    if o != n:
-        repl += [o, n]
+    for a, b in zip(t, o):
+        res.append(a if a == b else a + b)
+    o = ''.join(res)
+
+    n = n.replace('?', '')
+    n = re.sub(r'\(.*?\)', '', n)
+
+    repl += [o, n]
 
 pairs = [  # 难以用similar_chars自动生成的部分
     ('[凛萍苹]果', '凛果'),
