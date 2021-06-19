@@ -1,5 +1,5 @@
 def ns2start(ns: str):
-    return f'-start:"{ns}:!"'
+    return f'-start:{ns}:!'
 
 
 def nss2starts(nss):
