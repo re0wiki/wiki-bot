@@ -23,11 +23,15 @@ class CmdJob(Job):
         cmd = self.cmd
         if simulate:
             cmd += ' -simulate'
+        logging.info('=' * 16 + 'start' + '=' * 16)
         logging.info(cmd)
-        return run(cmd,
-                   capture_output=capture_output,
-                   encoding='utf8',
-                   shell=True).stdout
+        res = run(cmd,
+                  capture_output=capture_output,
+                  encoding='utf8',
+                  shell=True)
+        logging.info(cmd)
+        logging.info('=' * 16 + 'end' + '=' * 16)
+        return res.stdout
 
     def __str__(self):
         return self.cmd
