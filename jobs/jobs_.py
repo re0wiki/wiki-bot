@@ -25,7 +25,10 @@ class CmdJob(Job):
         if simulate:
             cmd += ' -simulate'
         logging.info(cmd)
-        return run(cmd, capture_output=capture_output, encoding='utf8').stdout
+        return run(cmd,
+                   capture_output=capture_output,
+                   encoding='utf8',
+                   shell=True).stdout
 
     def __str__(self):
         return self.cmd
