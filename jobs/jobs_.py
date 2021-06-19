@@ -53,19 +53,32 @@ class IterableJob(Job):
             sleep(1)
 
 
-jobs: list[Job] = list()
+class Jobs:
+    def __init__(self):
+        self.jobs: list[Job] = list()
+
+    def add(self, job: Job):
+        """由子模块/子包于初始化时调用。"""
+        self.jobs.append(job)
+
+    @staticmethod
+    def load():
+        """遍历初始化所有子模块/子包，以'_'开头或结尾的除外。"""
+        for j in Path('jobs').iterdir():
+            if not j.name.startswith('_') and not j.name.endswith('_'):
+                import_module('jobs.' + j.stem)
+
+    @property
+    def info(self):
+        return '\n\n'.join(f'{i}\n{job}' for i, job in enumerate(self.jobs))
+
+    @property
+    def num(self):
+        return len(self.jobs)
 
 
-def add_job(job: Job):
-    jobs.append(job)
+# singleton
+jobs = Jobs()
 
-
-def load_jobs():
-    """遍历初始化所有子模块/子包，以'_'开头或结尾的除外"""
-    for j in Path('jobs').iterdir():
-        if not j.name.startswith('_') and not j.name.endswith('_'):
-            import_module('jobs.' + j.stem)
-
-
-def get_jobs():
-    return jobs
+# for convenience
+add_job = jobs.add

@@ -1,14 +1,12 @@
 from itertools import cycle
 
-from jobs.jobs_ import IterableJob, Job, get_jobs, load_jobs
+from jobs.jobs_ import IterableJob, Job, jobs
 
-load_jobs()
-jobs = get_jobs()
+jobs.load()
 
 
 def run(start: int, simulate: bool):
-    global jobs
-    jobs = cycle(jobs)
+    j = cycle(jobs.jobs)
     for _ in range(start):
-        next(jobs)
-    IterableJob(jobs).run(simulate=simulate)
+        next(j)
+    IterableJob(j).run(simulate=simulate)
