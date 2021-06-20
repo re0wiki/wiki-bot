@@ -16,21 +16,18 @@ class Job(ABC):
 class CmdJob(Job):
     def __init__(self, cmd: list[str]):
         # noinspection SpellCheckingInspection
-        cmd = ['python', 'pywikibot/pwb.py'] + cmd + ['-titleregexnot:no bot/']
-        self.cmd = ' '.join('"' + c.replace('"', r'\"') + '"' for c in cmd)
+        cmd = ["python", "pywikibot/pwb.py"] + cmd + ["-titleregexnot:no bot/"]
+        self.cmd = " ".join('"' + c.replace('"', r"\"") + '"' for c in cmd)
 
     def run(self, simulate=False, capture_output=False):
         cmd = self.cmd
         if simulate:
-            cmd += ' -simulate'
-        logging.info('=' * 16 + 'start' + '=' * 16)
+            cmd += " -simulate"
+        logging.info("=" * 16 + "start" + "=" * 16)
         logging.info(cmd)
-        res = run(cmd,
-                  capture_output=capture_output,
-                  encoding='utf8',
-                  shell=True)
+        res = run(cmd, capture_output=capture_output, encoding="utf8", shell=True)
         logging.info(cmd)
-        logging.info('=' * 16 + 'end' + '=' * 16)
+        logging.info("=" * 16 + "end" + "=" * 16)
         return res.stdout
 
     def __str__(self):
@@ -69,13 +66,13 @@ class Jobs:
     @staticmethod
     def load():
         """遍历初始化所有子模块/子包，以'_'开头或结尾的除外。"""
-        for j in Path('jobs').iterdir():
-            if not j.name.startswith('_') and not j.name.endswith('_'):
-                import_module('jobs.' + j.stem)
+        for j in Path("jobs").iterdir():
+            if not j.name.startswith("_") and not j.name.endswith("_"):
+                import_module("jobs." + j.stem)
 
     @property
     def info(self):
-        return '\n\n'.join(f'{i}\n{job}' for i, job in enumerate(self.jobs))
+        return "\n\n".join(f"{i}\n{job}" for i, job in enumerate(self.jobs))
 
     @property
     def num(self):
