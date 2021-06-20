@@ -12,19 +12,18 @@
 
 ## Requirements
 
-* **本项目**：`git clone --recursive https://github.com/CCXXXI/re0wiki.git`
-* **Python**：[Miniconda — Conda documentation](https://docs.conda.io/en/latest/miniconda.html)
-* **依赖**：
+- **本项目**：`git clone --recursive https://github.com/CCXXXI/re0wiki.git`
+- **Python**：[Miniconda — Conda documentation](https://docs.conda.io/en/latest/miniconda.html)
+- **依赖**：
   1. `pip install -r pywikibot/requirements.txt`
   2. `pip install -r requirements.txt`
-* [机器人密码 | Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh/wiki/Special:BotPasswords)
-* **用户配置文件**
+- [机器人密码 | Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh/wiki/Special:BotPasswords)
+- **用户配置文件**
   1. [user-config.py#L15](./user-config.py#L15)
   2. 同目录下创建`user-password.py`并填写，格式为`('<UserName>', BotPassword('<BotName>', '<BotPassword>'))`
 
 ## Usage
 
-* [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
-* `python main.py -h`
-* `python rename.py -h`
-
+- [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
+- `python main.py -h`
+- `python rename.py -h`
