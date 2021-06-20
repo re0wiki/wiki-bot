@@ -6,6 +6,6 @@ restylers:
   - isort:
       enabled: false
   - prettier-markdown:
-      arguments: ["--prose-wrap", "never"]
+      arguments: ["--prose-wrap", "preserve"]
   - "*"
   - black
