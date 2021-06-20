@@ -27,24 +27,19 @@ if __name__ == "__main__":
     ]
 
     for ns in ns_more:
-        pages = (
-            CmdJob(cmd + [ns2start(ns)])
-            .run(simulate=True, capture_output=True)
-            .split("\n")
-        )
+        pages = (CmdJob(cmd + [ns2start(ns)]).run(
+            simulate=True, capture_output=True).split("\n"))
         for page in pages:
             if page:
                 o_pages.append(ns + ":" + page)
 
     for o_page in o_pages:
         n_page = o_page.replace(old, new)
-        CmdJob(
-            [
-                "movepages",
-                "-always",
-                f'-from:"{o_page}"',
-                f'-to:"{n_page}"',
-            ]
-        ).run()
+        CmdJob([
+            "movepages",
+            "-always",
+            f'-from:"{o_page}"',
+            f'-to:"{n_page}"',
+        ]).run()
 
     CmdJob(base + [f'"{old}"', f'"{new}"'] + starts_more).run()

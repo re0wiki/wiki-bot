@@ -6,20 +6,10 @@ base = [
     "-always",
 ]
 
-add_job(
-    CmdJob(
-        base
-        + [
-            "-moves",
-            "-limit:128",
-        ]
-    )
-)
-add_job(
-    CmdJob(
-        base
-        + [
-            "-recentchanges:128",
-        ]
-    )
-)
+add_job(CmdJob(base + [
+    "-moves",
+    "-limit:128",
+]))
+add_job(CmdJob(base + [
+    "-recentchanges:128",
+]))
