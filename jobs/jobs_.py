@@ -25,10 +25,7 @@ class CmdJob(Job):
             cmd += " -simulate"
         logging.info("=" * 16 + "start" + "=" * 16)
         logging.info(cmd)
-        res = run(cmd,
-                  capture_output=capture_output,
-                  encoding="utf8",
-                  shell=True)
+        res = run(cmd, capture_output=capture_output, encoding="utf8", shell=True)
         logging.info(cmd)
         logging.info("=" * 16 + "end" + "=" * 16)
         return res.stdout
