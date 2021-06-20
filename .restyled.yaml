@@ -3,8 +3,6 @@ restylers:
       enabled: false
   - reorder-python-imports:
       enabled: false
-  - isort:
-      enabled: false
   - prettier-markdown:
       arguments: ["--prose-wrap", "preserve"]
   - "*"
