@@ -12,7 +12,7 @@
 
 ## Requirements
 
-- **本项目**：`git clone --recursive https://github.com/CCXXXI/re0wiki.git`
+- **本项目**：`git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/CCXXXI/re0wiki.git`
 - **Python**：[Miniconda — Conda documentation](https://docs.conda.io/en/latest/miniconda.html)
 - **依赖**：
   1. `pip install -r pywikibot/requirements.txt`
