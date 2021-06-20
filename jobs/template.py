@@ -2,19 +2,19 @@ from .jobs_ import CmdJob, add_job
 
 # noinspection SpellCheckingInspection
 pairs = [
-    ('Character', 'Infobox character'),
-    ('Re:Zero Light Novel Volumes', 'Infobox novel'),
-    ('Parent Tab', None),
-    ('Lugnica Navbox', None),
-    ('Vollachia Navbox', None),
-    ('Royal Election Navbox', None),
-    ('Anime Navigation', None),
-    ('Manga Navigation', None),
-    ('Disambig', None),
+    ("Character", "Infobox character"),
+    ("Re:Zero Light Novel Volumes", "Infobox novel"),
+    ("Parent Tab", None),
+    ("Lugnica Navbox", None),
+    ("Vollachia Navbox", None),
+    ("Royal Election Navbox", None),
+    ("Anime Navigation", None),
+    ("Manga Navigation", None),
+    ("Disambig", None),
 ]
 
-repl = ['template', '-always']
-rm = repl + ['-remove']
+repl = ["template", "-always"]
+rm = repl + ["-remove"]
 
 for o, n in pairs:
     if n:
