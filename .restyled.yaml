@@ -3,7 +3,10 @@ restylers:
       enabled: false
   - reorder-python-imports:
       enabled: false
+  - autopep8:
+      enabled: false
+  - yapf:
+      enabled: false
   - prettier-markdown:
       arguments: ["--prose-wrap", "preserve"]
   - "*"
-  - black
