@@ -2,10 +2,10 @@ import unittest
 
 
 class TestJobs(unittest.TestCase):
-    """自动化规则"""
+    """测试自动化规则。"""
 
     def test_repl_name(self):
-        """similar_chars不应重复"""
+        """similar_chars不应重复。"""
         from jobs.repl.name import similar_chars
 
         all_chars = "".join(similar_chars)
