@@ -57,7 +57,7 @@ class IterableJob(Job):
 
 class Jobs:
     def __init__(self):
-        self.jobs: list[Job] = list()
+        self.jobs: list[Job] = []
 
     def add(self, job: Job):
         """由子模块/子包于初始化时调用。"""
