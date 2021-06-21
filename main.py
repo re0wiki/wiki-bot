@@ -2,6 +2,7 @@ import argparse
 import logging
 
 from jobs import jobs, run
+import sys
 
 logging.basicConfig(
     level=logging.INFO,
@@ -30,4 +31,7 @@ parser.add_argument(
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    run(start=args.start, simulate=args.simulate)
+    try:
+        run(start=args.start, simulate=args.simulate)
+    except KeyboardInterrupt:
+        sys.exit(0)
