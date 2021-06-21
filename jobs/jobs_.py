@@ -23,13 +23,21 @@ class CmdJob(Job):
         cmd = self.cmd
         if simulate:
             cmd += " -simulate"
+
         logging.info("=" * 16 + "start" + "=" * 16)
         logging.info(cmd)
-        res = run(
-            cmd, capture_output=capture_output, encoding="utf8", shell=True, check=True
-        )
-        logging.info(cmd)
-        logging.info("=" * 16 + "end" + "=" * 16)
+        try:
+            res = run(
+                cmd,
+                capture_output=capture_output,
+                encoding="utf8",
+                shell=True,
+                check=True,
+            )
+        finally:
+            logging.info(cmd)
+            logging.info("=" * 16 + "end" + "=" * 16)
+
         return res.stdout
 
     def __str__(self):
@@ -53,8 +61,11 @@ class IterableJob(Job):
 
     def run(self, simulate):
         for j in self.iterable:
-            j.run(simulate)
-            sleep(1)
+            try:
+                j.run(simulate)
+            except KeyboardInterrupt:
+                logging.info("KeyboardInterrupt: 1s后自动进行下一项任务，1s内按 Ctrl+C 以退出。")
+                sleep(1)
 
 
 class Jobs:
