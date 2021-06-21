@@ -242,7 +242,7 @@ for n in names:
         o = re.sub(rf"[{s}]", rf"{s}", o)
     t = converter.convert(o)
     t, o = list(t), list(o)
-    res = list()
+    res = []
     assert len(t) == len(o)
     for a, b in zip(t, o):
         res.append(a if a == b else a + b)
