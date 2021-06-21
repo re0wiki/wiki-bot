@@ -2,6 +2,7 @@ import argparse
 import logging
 
 from jobs import jobs, run
+import sys
 
 logging.basicConfig(
     level=logging.INFO,
@@ -33,4 +34,4 @@ if __name__ == "__main__":
     try:
         run(start=args.start, simulate=args.simulate)
     except KeyboardInterrupt:
-        exit(0)
+        sys.exit(0)
