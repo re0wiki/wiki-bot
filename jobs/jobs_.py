@@ -70,11 +70,11 @@ class IterableJob(Job):
 
 class Jobs:
     def __init__(self):
-        self.jobs: list[Job] = []
+        self.jobs_: list[Job] = []
 
     def add(self, job: Job):
         """由子模块/子包于初始化时调用。"""
-        self.jobs.append(job)
+        self.jobs_.append(job)
 
     @staticmethod
     def load():
@@ -85,11 +85,11 @@ class Jobs:
 
     @property
     def info(self):
-        return "\n\n".join(f"{i}\n{job}" for i, job in enumerate(self.jobs))
+        return "\n\n".join(f"{i}\n{job}" for i, job in enumerate(self.jobs_))
 
     @property
     def num(self):
-        return len(self.jobs)
+        return len(self.jobs_)
 
 
 # singleton

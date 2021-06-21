@@ -6,7 +6,7 @@ jobs.load()
 
 
 def run(start: int, simulate: bool):
-    j = cycle(jobs.jobs)
+    j = cycle(jobs.jobs_)
     for _ in range(start):
         next(j)
     IterableJob(j).run(simulate=simulate)
