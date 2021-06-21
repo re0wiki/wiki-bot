@@ -1,17 +1,18 @@
 import re
+from collections import defaultdict
 from itertools import chain
 
-import opencc
+from opencc import OpenCC
 
 from .base import base
 from ..jobs_ import CmdJob, add_job
 from ..starts_ import starts_more
 
-converter = opencc.OpenCC("s2t.json")
+s2t = OpenCC("s2t.json").convert
 
-similar_chars = [
+similar_chars = (
     "珥尔耳鲁露卢勒拉菈利莉丽里吕李",
-    "书修休杰珠裘鸠吉基其姬奇齐",
+    "书舒修休杰珠裘鸠吉基其姬奇齐",
     "库克古谷格铬科赫黑海哈",
     "托图多朵特提狄缇德蒂黛",
     "丝斯司兹茨",
@@ -39,17 +40,39 @@ similar_chars = [
     "米蜜",
     "菜莱",
     "蕾雷",
+    "文温",
     ".·",
-]
+)
 
-names = [  # 多字少字的
-    "菜月·?昴",
-    "安娜斯?塔西娅",
-    "培提尔其乌?斯",
-    "威尔海(鲁)?姆",
-    "莱茵哈鲁?特",
-]
-names += [  # 普通的
+
+class SimilarCharsMap(defaultdict):
+    """字符到相似字符的映射。"""
+
+    def __missing__(self, key):
+        """一个字符总是与它本身相似。"""
+        self[key] = key
+        return key
+
+
+sc_map = SimilarCharsMap()  # singleton
+sc_map |= {c: sc for sc in similar_chars for c in sc}
+
+
+def f(chars: str):
+    """
+    返回匹配相似字符的正则表达式。
+
+    短命名以方便大量使用。
+
+    :param chars: 任意个字符
+    :return: "[similar_chars]"
+    """
+    return "[" + "".join(set(chain(*(sc_map[c] + s2t(sc_map[c]) for c in chars)))) + "]"
+
+
+# 命令行太长，分两段执行
+patterns = [[] for _ in range(2)]
+patterns[0] += [  # 普通的
     "丝碧卡",
     "亚拉基亚",
     "亨克尔",
@@ -130,7 +153,6 @@ names += [  # 普通的
     "缇丰",
     "缇莉艾娜",
     "罗伊",
-    "罗兹瓦尔",
     "梅札斯",
     "罗姆爷",
     "艾佐",
@@ -195,8 +217,17 @@ names += [  # 普通的
     "福尔图娜",
     "汤普森",
     "莉西亚",
+    "苏文",
 ]
-names += [  # 需要特判的
+patterns[1] = [  # 多字少字的
+    "菜月·?昴",
+    "安娜斯?塔西娅",
+    "培提尔其乌?斯",
+    "威尔海(鲁)?姆",
+    "莱茵哈鲁?特",
+    "罗兹瓦尔?",
+]
+patterns[1] += [  # 需要特判的
     "加菲尔(?!丝)(?!特)(?!艾)",
     "拉菲尔(?!丝)(?!特)(?!艾)",
     "(?<!加)(?<!拉)菲鲁特(?!娜)",
@@ -226,39 +257,39 @@ _ = [  # 特判太麻烦的，不处理
     "(?<!文森)狄加",
 ]
 
-repl = base.copy()
 
-for n in names:
-    o = re.sub(r"([^?!()=<])", r"[\1]", n)
-    for s in similar_chars:
-        o = re.sub(rf"[{s}]", rf"{s}", o)
-    t = converter.convert(o)
-    t, o = list(t), list(o)
-    res = []
-    assert len(t) == len(o)
-    for a, b in zip(t, o):
-        res.append(a if a == b else a + b)
-    o = "".join(res)
+def p2o(pattern: str):
+    """返回传入的正则表达式对应的所有可能译名对应的正则表达式。"""
+    return "".join(c if c in "?!()=<" else f(c) for c in pattern)
 
-    n = n.replace("?", "")
-    n = re.sub(r"\(.*?\)", "", n)
 
-    repl += [o, n]
+def p2n(pattern: str):
+    """返回传入的正则表达式对应的标准译名。"""
+    return re.sub(r"\(.*?\)|\?", "", pattern)
 
-pairs = [  # 难以用similar_chars自动生成的部分
-    ("[凛萍苹]果", "凛果"),
-    ("半精灵", "半Elf"),
-    ("贝阿托莉丝", "碧翠丝"),
-    ("[奥欧]德", "欧德"),
-    ("[奥欧]托", "奥托"),
-    ("[修舒]尔特", "修尔特"),
-    ("(?<!莉)(?<!希斯尼)阿[珥尔耳鲁露卢勒拉菈利莉丽里吕李](?!姆)(?!伯)(?!基亚)", "阿尔"),
-    ("欧德(?!古勒斯)|魂力", "{{Od}}"),
-    ("拉古那|源池", "{{Laguna}}"),
+
+repl = [base.copy() for _ in range(2)]
+
+for i in range(2):
+    for p in patterns[i]:
+        repl[i] += [p2o(p), p2n(p)]
+
+pairs = [  # 手动添加的替换组
+    (f"{f('凛萍苹')}{f('果')}", "凛果"),
+    (f"{f('半')}{f('精')}{f('灵')}", "半Elf"),
+    (f"{f('贝')}{f('阿')}{f('托')}{f('莉')}{f('丝')}", "碧翠丝"),
+    (f"{f('欧')}德", "欧德"),
+    (f"{f('奥')}托", "奥托"),
+    (f"{f('修')}{f('尔')}特", "修尔特"),
+    (f"{f('基')}{f('尔')}提", "基尔提"),
+    (f"阿{f('尔')}(?!{f('姆')})(?!{f('伯')})(?!{f('基')}{f('亚')})", "阿尔"),
+    (f"欧德(?!{f('古')}{f('勒')}{f('斯')})|{f('魂')}{f('力')}", "{{Od}}"),
+    (f"{f('拉')}{f('古')}{f('那')}|{f('源')}{f('池')}", "{{Laguna}}"),
+    (f"{f('空')}{f('斯')}{f('图')}{f('卢')}", "柯司兹尔"),
     (r"\{\{Od\}\}\{\{Laguna\}\}", "{{Od}}·{{Laguna}}"),
-    ("空斯图卢", "柯司兹尔"),
 ]
 
-repl.extend(chain(*pairs))
+repl[1].extend(chain(*pairs))
 
-add_job(CmdJob(repl + starts_more))
+for i in range(2):
+    add_job(CmdJob(repl[i] + starts_more))
