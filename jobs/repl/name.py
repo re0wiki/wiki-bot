@@ -1,6 +1,4 @@
-import logging
 import re
-from collections import Counter
 from itertools import chain
 
 import opencc
@@ -43,12 +41,6 @@ similar_chars = [
     "蕾雷",
     ".·",
 ]
-
-all_chars = "".join(similar_chars)
-if len(all_chars) != len(set(all_chars)):
-    chars_counter = Counter("".join(similar_chars))
-    logging.error(chars_counter.most_common(16))
-    assert 0
 
 names = [  # 多字少字的
     "菜月·?昴",
