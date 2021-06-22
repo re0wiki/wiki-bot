@@ -9,8 +9,9 @@ def update_doc():
             "-dotall",
             r"(?<=<pre>\n).*(?=\n</pre>)",
             jobs.info,
-            "-page:project:攻略指南/bot",
-        ]
+            "-page:No bot/jobs",
+        ],
+        skip_no_bot=False,
     )
 
 
