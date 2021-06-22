@@ -1,8 +1,8 @@
 import argparse
 import logging
+import sys
 
 from jobs import jobs, run
-import sys
 
 logging.basicConfig(
     level=logging.INFO,
