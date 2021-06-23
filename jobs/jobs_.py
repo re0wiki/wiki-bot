@@ -15,12 +15,10 @@ class Job(ABC):
 
 class CmdJob(Job):
     def __init__(self, cmd: list[str], skip_no_bot=True):
-        # noinspection SpellCheckingInspection
-        cmd = (
-            ["python", "pywikibot/pwb.py"]
-            + cmd
-            + ["-titleregexnot:no bot/" if skip_no_bot else ""]
-        )
+        cmd = ["python", "pywikibot/pwb.py"] + cmd
+        if skip_no_bot:
+            cmd.append("-titleregexnot:no bot/")
+
         self.cmd = " ".join('"' + c.replace('"', r"\"") + '"' for c in cmd)
 
     def run(self, simulate=False, capture_output=False):
