@@ -66,8 +66,8 @@ class IterableJob(Job):
             try:
                 j.run(simulate)
             except KeyboardInterrupt:
-                logging.info("KeyboardInterrupt: 1s后自动进行下一项任务，1s内按 Ctrl+C 以退出。")
-                sleep(1)
+                logging.info("KeyboardInterrupt: 3s后自动进行下一项任务，3s内按 Ctrl+C 以退出。")
+                sleep(3)
 
 
 class Jobs:
