@@ -14,6 +14,7 @@ pairs = [
     ("Abilities", "能力"),
     ("Trivia", "你知道吗"),
     ("Lyrics?", "歌词"),
+    ("References?", "注释与外部链接"),
 ]
 
 repl = base.copy()
