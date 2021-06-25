@@ -1,9 +1,9 @@
 import re
 from collections import defaultdict
-from itertools import chain
 
 from opencc import OpenCC
 
+from utils import flatten
 from .base import base
 from ..jobs_ import CmdJob, add_job
 from ..starts_ import starts_more
@@ -68,7 +68,11 @@ def f(chars: str):
     :param chars: 任意个字符
     :return: "[similar_chars]"
     """
-    return "[" + "".join(set(chain(*(sc_map[c] + s2t(sc_map[c]) for c in chars)))) + "]"
+    return (
+        "["
+        + "".join(sorted(set(flatten(sc_map[c] + s2t(sc_map[c]) for c in chars))))
+        + "]"
+    )
 
 
 # 命令行太长，分两段执行
@@ -293,7 +297,7 @@ pairs = [  # 手动添加的替换组
     (r"\{\{Od\}\}\{\{Laguna\}\}", "{{Od}}·{{Laguna}}"),
 ]
 
-repl[1].extend(chain(*pairs))
+repl[1].extend(flatten(pairs))
 
 for i in range(2):
     add_job(CmdJob(repl[i] + starts_more))
