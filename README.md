@@ -10,13 +10,11 @@
 
 用于 [Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh) 的一些脚本。
 
-## Requirements
+## Deployment
 
 - **本项目**：`git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/CCXXXI/re0wiki.git`
 - **Python**：[Miniconda — Conda documentation](https://docs.conda.io/en/latest/miniconda.html)
-- **依赖**：
-  1. `pip install -r pywikibot/requirements.txt`
-  2. `pip install -r requirements.txt`
+- **requirements**：`pip install -r requirements.txt`
 - [机器人密码 | Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh/wiki/Special:BotPasswords)
 - **用户配置文件**
   1. [user-config.py#L15](./user-config.py#L15)
