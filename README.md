@@ -12,7 +12,7 @@
 
 ## Deployment
 
-- **本项目**：`git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/CCXXXI/re0wiki.git`
+- **本项目**：`git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/CCXXXI/re0wiki.git`
 - **Python**：[Miniconda — Conda documentation](https://docs.conda.io/en/latest/miniconda.html)
 - **requirements**：`pip install -r requirements.txt`
 - [机器人密码 | Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh/wiki/Special:BotPasswords)
