@@ -42,7 +42,9 @@ def upload_file(target: pywikibot.Site, source: pywikibot.FilePage, summary, tex
     with TemporaryDirectory() as tmp_dir:
         filename = path.join(tmp_dir, target.title(as_filename=True, with_ns=False))
         source.download(filename)
-        target.upload(filename, comment=text, text=text)
+        target.upload(
+            filename, comment=text, text=text, report_success=True, ignore_warnings=True
+        )
     summary["uploaded"] += 1
 
 
