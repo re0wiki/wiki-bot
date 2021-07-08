@@ -2,7 +2,6 @@ import logging
 import mimetypes
 import pathlib
 from os import path
-from pprint import pformat
 from tempfile import TemporaryDirectory
 
 from tqdm import tqdm
@@ -21,12 +20,11 @@ def get_ext(filename: str):
     return pathlib.Path(filename).suffix
 
 
-def upload_file(target: pywikibot.Site, source: pywikibot.FilePage, summary, text):
+def upload_file(target: pywikibot.Site, source: pywikibot.FilePage, text):
     """File uploading behavior. See **pywikibot.page.FilePage** for more details.
 
     :param target: target site
     :param source: path or url of the image to be uploaded
-    :param summary: Summary object which records some statistics while running
     :param text: Initial page text
     """
     # 生成你站文件名。注意有时候英文站的标题为xxx.jpg的图可能实际是个png图 所以优先使用mime来推断类型
@@ -47,7 +45,6 @@ def upload_file(target: pywikibot.Site, source: pywikibot.FilePage, summary, tex
         target.upload(
             filename, comment=text, text=text, report_success=True, ignore_warnings=True
         )
-    summary["uploaded"] += 1
 
 
 def get_final_redirect_target(page: pywikibot.Page):
@@ -68,13 +65,6 @@ def main():
     target.login()
     if target.logged_in():
         logging.info(f"Logged in to {target}")
-
-    summary = {
-        "scanned_files": 0,
-        "uploaded": 0,
-        "skipped": 0,
-        "matched files": [],
-    }
 
     logging.info(f"Generating image list for all images on {source} ...")
     images_source = list(tqdm(source.allimages()))
@@ -107,12 +97,10 @@ def main():
             continue
 
     # 这边就是en上的一张一张图片循环过去
-    summary["scanned_files"] = len(images_source)
     for im_source in tqdm(images_source):
         # 如果当前的FilePage是重定向 那就找到它最终的目标再进行下面的操作
         im_source = get_final_redirect_target(im_source)
         if im_source is None:
-            summary["skipped"] += 1
             continue
 
         same_sh1 = im_source.latest_file_info.sha1 in images_target_sha1
@@ -130,37 +118,13 @@ def main():
                 hasattr(im_source.latest_file_info, "mime")
                 and im_source.latest_file_info.mime == "video/youtube"
             ):
-                summary["skipped"] += 1
                 continue
 
             text = "\n".join([x.astext() for x in im_source.iterlanglinks()])
             if text != "":
                 text += "\n"
             text += f"[[{source.code}:{im_source.title(with_ns=True)}]]"
-            upload_file(target, im_source, summary, text=text)
-
-        # 如果它和你站图片有match到 那就往最后的report/summary中加入对应的条目
-        else:
-            if same_sh1:
-                im_target = images_target_sha1[im_source.latest_file_info.sha1]
-            else:
-                im_target = images_target_stem[
-                    get_stem(im_source.title(with_ns=False)).replace(" ", "_")
-                ]
-            summary["matched files"].append(
-                {
-                    "match_sha1": same_sh1,
-                    "match_name": same_name,
-                    f"{source}_title": im_source.title(),
-                    f"{source}_url": im_source.full_url(),
-                    f"{target}_title": im_target.title(),
-                    f"{target}_url": im_target.full_url(),
-                }
-            )
-            summary["skipped"] += 1
-
-    logging.info(pformat(summary))
-    return summary
+            upload_file(target, im_source, text=text)
 
 
 if __name__ == "__main__":
