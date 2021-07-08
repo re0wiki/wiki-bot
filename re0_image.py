@@ -28,9 +28,10 @@ def upload_file(target: pywikibot.Site, source: pywikibot.FilePage, text):
     :param text: Initial page text
     """
     # 生成你站文件名。注意有时候英文站的标题为xxx.jpg的图可能实际是个png图 所以优先使用mime来推断类型
+    ext = None
     if hasattr(source.latest_file_info, "mime"):
         ext = mimetypes.guess_extension(source.latest_file_info.mime)
-    else:
+    if ext is None:
         source_file_name = source.title(as_filename=True, with_ns=False)
         ext = get_ext(source_file_name)
     stem = get_stem(source.title(as_filename=True, with_ns=False))
