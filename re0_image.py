@@ -4,7 +4,7 @@ import pathlib
 from os import path
 from pprint import pformat
 from tempfile import TemporaryDirectory
-
+from tqdm import tqdm
 import pywikibot
 from pywikibot import exceptions
 
@@ -81,9 +81,8 @@ def main():
     logging.info(f"Generating the set for all images on {target} ...")
     images_target_sha1 = {}
     images_target_stem = {}
-    for fp in target.allpages(
-        namespace="File"
-    ):  # use all pages to include redirect pages
+    # use all pages to include redirect pages
+    for fp in tqdm(target.allpages(namespace="File")):
         fp: pywikibot.Page
         images_target_stem[get_stem(fp.title(with_ns=False)).replace(" ", "_")] = fp
         if fp.isRedirectPage():
@@ -107,10 +106,7 @@ def main():
 
     # 这边就是en上的一张一张图片循环过去
     summary["scanned_files"] = len(images_source)
-    for i, im_source in enumerate(images_source):
-        if i % 100 == 0:
-            logging.info(f"Scanned files: {i} / {summary['scanned_files']}")
-
+    for im_source in tqdm(images_source):
         # 如果当前的FilePage是重定向 那就找到它最终的目标再进行下面的操作
         im_source = get_final_redirect_target(im_source)
         if im_source is None:
