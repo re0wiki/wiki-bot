@@ -75,7 +75,7 @@ def main():
     }
 
     logging.info(f"Generating image list for all images on {source} ...")
-    images_source = list(source.allimages())
+    images_source = list(tqdm(source.allimages()))
 
     # 这一部分就是把你站有的图片都存到两个dict里面 一个把sha1 map到FilePage对象 一个把不带后缀的文件名map到FilePage对象 后面会用到
     logging.info(f"Generating the set for all images on {target} ...")
