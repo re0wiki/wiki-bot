@@ -4,7 +4,9 @@ import pathlib
 from os import path
 from pprint import pformat
 from tempfile import TemporaryDirectory
+
 from tqdm import tqdm
+
 import pywikibot
 from pywikibot import exceptions
 
