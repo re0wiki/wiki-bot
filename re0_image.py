@@ -43,13 +43,16 @@ def upload_file(target: pywikibot.Site, source: pywikibot.FilePage, text):
     with TemporaryDirectory() as tmp_dir:
         filename = path.join(tmp_dir, target.title(as_filename=True, with_ns=False))
         source.download(filename)
-        target.upload(
-            filename,
-            comment=text,
-            text=text,
-            report_success=False,
-            ignore_warnings=True,
-        )
+        try:
+            target.upload(
+                filename,
+                comment=text,
+                text=text,
+                report_success=False,
+                ignore_warnings=True,
+            )
+        except exceptions.APIError as e:
+            logging.warning(e)
 
 
 def get_final_redirect_target(page: pywikibot.Page):
