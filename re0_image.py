@@ -10,10 +10,12 @@ from pywikibot import exceptions
 
 
 def get_stem(filename: str):
+    """Return the stem of a filename."""
     return pathlib.Path(filename).stem
 
 
 def get_ext(filename: str):
+    """Return the extension of a filename."""
     return pathlib.Path(filename).suffix
 
 
@@ -56,6 +58,7 @@ def get_final_redirect_target(page: pywikibot.Page):
 
 
 def main():
+    """搬运图片。"""
     source = pywikibot.Site("en", "re0")
     target = pywikibot.Site("zh", "re0")
     target.login()
