@@ -51,7 +51,7 @@ def upload_file(target: pywikibot.Site, source: pywikibot.FilePage, text):
                 report_success=False,
                 ignore_warnings=True,
             )
-        except exceptions.APIError as e:
+        except (exceptions.APIError, ValueError) as e:
             logging.warning(e)
 
 
