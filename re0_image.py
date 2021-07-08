@@ -44,7 +44,11 @@ def upload_file(target: pywikibot.Site, source: pywikibot.FilePage, text):
         filename = path.join(tmp_dir, target.title(as_filename=True, with_ns=False))
         source.download(filename)
         target.upload(
-            filename, comment=text, text=text, report_success=True, ignore_warnings=True
+            filename,
+            comment=text,
+            text=text,
+            report_success=False,
+            ignore_warnings=True,
         )
 
 
