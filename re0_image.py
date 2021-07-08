@@ -146,8 +146,8 @@ def main():
                 ]
             summary["matched files"].append(
                 {
-                    f"match_sha1": same_sh1,
-                    f"match_name": same_name,
+                    "match_sha1": same_sh1,
+                    "match_name": same_name,
                     f"{source}_title": im_source.title(),
                     f"{source}_url": im_source.full_url(),
                     f"{target}_title": im_target.title(),
