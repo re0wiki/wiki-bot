@@ -111,7 +111,6 @@ def main():
         if im_source is None:
             summary["skipped"] += 1
             continue
-        assert isinstance(im_source, pywikibot.FilePage)
 
         same_sh1 = im_source.latest_file_info.sha1 in images_target_sha1
         same_name = (
