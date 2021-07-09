@@ -17,7 +17,8 @@ def rm_unnecessary_cats():
                 [
                     "listpages",
                     "-format:3",
-                    "-subcatsr:角色",
+                    "-subcatsr:角色分类",
+                    "-subcatsr:内容页面",
                 ]
             )
             .run(simulate=True, capture_output=True)
