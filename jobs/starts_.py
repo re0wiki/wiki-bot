@@ -15,5 +15,5 @@ starts_base = nss2starts(ns_base)
 starts_more = nss2starts(ns_more)
 
 if __name__ == "__main__":
-    print(starts_base)
-    print(starts_more)
+    print(" ".join(starts_base))
+    print(" ".join(starts_more))
