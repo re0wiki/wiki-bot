@@ -23,7 +23,7 @@ if __name__ == "__main__":
     cmd = [
         "listpages",
         "-format:3",
-        f'-titleregex:"{old}"',
+        f"-titleregex:{old}",
     ]
 
     for ns in ns_more:
@@ -42,9 +42,9 @@ if __name__ == "__main__":
             [
                 "movepages",
                 "-always",
-                f'-from:"{o_page}"',
-                f'-to:"{n_page}"',
+                f"-from:{o_page}",
+                f"-to:{n_page}",
             ]
         ).run()
 
-    CmdJob(base + [f'"{old}"', f'"{new}"'] + starts_more).run()
+    CmdJob(base + [old, new] + starts_more).run()
