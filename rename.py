@@ -1,5 +1,6 @@
 import argparse
 import logging
+import re
 
 from jobs.jobs_ import CmdJob
 from jobs.repl.base import base
@@ -37,7 +38,7 @@ if __name__ == "__main__":
                 o_pages.append(ns + ":" + page)
 
     for o_page in o_pages:
-        n_page = o_page.replace(old, new)
+        n_page = re.sub(old, new, o_page, flags=re.I)
         CmdJob(
             [
                 "movepages",
