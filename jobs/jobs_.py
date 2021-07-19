@@ -81,7 +81,7 @@ class Jobs:
     @staticmethod
     def load():
         """遍历初始化所有子模块/子包，以'_'开头或结尾的除外。"""
-        for j in Path("jobs").iterdir():
+        for j in sorted(Path("jobs").iterdir()):
             if not j.name.startswith("_") and not j.name.endswith("_"):
                 import_module("jobs." + j.stem)
 

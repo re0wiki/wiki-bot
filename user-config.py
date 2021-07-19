@@ -32,7 +32,7 @@ password_file = "user-password.py"
 #     log = []
 # Per default, no logging is enabled.
 # This setting can be overridden by the -log or -nolog command-line arguments.
-log = []
+log = ["*"]
 # filename defaults to modulename-bot.log
 logfilename = None
 # maximal size of a logfile in kilobytes. If the size reached that limit the
