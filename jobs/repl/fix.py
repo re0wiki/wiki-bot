@@ -9,6 +9,9 @@ add_job(
             "-always",
             "-nocase",
             "-fix:HTML",
+            "-fix:syntax",
+            "-fix:isbn",
+            "-fix:specialpages",
         ]
         + starts_base
     )
