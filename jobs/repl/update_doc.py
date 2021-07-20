@@ -9,7 +9,7 @@ def update_doc():
             "-dotall",
             r"(?<=<pre>\n).*(?=\n</pre>)",
             jobs.info,
-            "-page:No bot/jobs",
+            "-page:project:攻略指南",
         ],
     )
 
