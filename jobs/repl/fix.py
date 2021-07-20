@@ -6,10 +6,13 @@ add_job(
             "replace",
             "-automaticsummary",
             "-always",
+            # built-in fixes
             "-fix:HTML",
             "-fix:syntax",
             "-fix:isbn",
             "-fix:specialpages",
+            # user-fixes.py
+            "-fix:misc",
         ]
     )
 )
