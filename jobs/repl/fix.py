@@ -15,6 +15,7 @@ add_job(
             "-fix:misc",
             # "-fix:args",
             "-fix:gallery",
+            "-fix:head",
         ]
     )
 )

@@ -134,6 +134,29 @@ user_fixes["gallery"] = base | {
 }
 # endregion
 
+# region head
+user_fixes["head"] = base | {
+    "generator": generator_more,
+    "replacements": [
+        ("(?<== )" + o + "(?= =)", n)
+        for o, n in [
+            ("Information", "简介"),
+            ("Summary", "简介"),
+            ("Relationships", "关系"),
+            ("Synopsis", "梗概"),
+            ("Gallery", "图库"),
+            ("Image Gallery", "图库"),
+            ("Appearance", "外貌"),
+            ("Personality", "性格"),
+            ("Abilities", "能力"),
+            ("Trivia", "你知道吗"),
+            ("Lyrics?", "歌词"),
+            ("References?", "注释与外部链接"),
+        ]
+    ],
+}
+# endregion
+
 fixes: dict
 # noinspection PyUnboundLocalVariable
 fixes.update(user_fixes)
