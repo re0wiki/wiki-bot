@@ -2,6 +2,7 @@ from .jobs_ import CmdJob, FuncJob, add_job, jobs
 
 
 def update_doc():
+    """返回一个CmdJob，其作用为更新wiki上有关自动化规则的文档。"""
     return CmdJob(
         [
             "replace",
