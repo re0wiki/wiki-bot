@@ -16,6 +16,7 @@ add_job(
             # "-fix:args",
             "-fix:gallery",
             "-fix:head",
+            "-fix:translation",
         ]
     )
 )
