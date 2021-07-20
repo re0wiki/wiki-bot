@@ -11,7 +11,6 @@ def update_doc():
             jobs.info,
             "-page:No bot/jobs",
         ],
-        skip_no_bot=False,
     )
 
 
