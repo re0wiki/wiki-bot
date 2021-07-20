@@ -8,12 +8,16 @@ from time import sleep
 
 
 class Job(ABC):
+    """可执行的任务。"""
+
     @abstractmethod
     def run(self, simulate: bool):
         pass
 
 
 class CmdJob(Job):
+    """执行一条命令行指令的任务。"""
+
     def __init__(self, cmd: list[str]):
         cmd = ["python", "pywikibot/pwb.py"] + cmd
         self.cmd = " ".join('"' + c.replace('"', r"\"") + '"' for c in cmd)
@@ -44,6 +48,8 @@ class CmdJob(Job):
 
 
 class FuncJob(Job):
+    """调用某个可调用对象，并执行返回结果的任务。"""
+
     def __init__(self, func: Callable[[], Job]):
         self.func = func
 
@@ -55,6 +61,8 @@ class FuncJob(Job):
 
 
 class IterableJob(Job):
+    """迭代某个可迭代对象，并执行迭代结果的任务。"""
+
     def __init__(self, iterable: Iterable[Job]):
         self.iterable = iterable
 
@@ -68,6 +76,8 @@ class IterableJob(Job):
 
 
 class Jobs:
+    """所有任务的集合，用于单例。"""
+
     def __init__(self):
         self.jobs_: list[Job] = []
 
