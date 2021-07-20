@@ -1,11 +1,14 @@
-from .base import base
-from ..jobs_ import CmdJob, FuncJob, add_job, jobs
+from .jobs_ import CmdJob, FuncJob, add_job, jobs
 
 
 def update_doc():
     return CmdJob(
-        base
-        + [
+        [
+            "replace",
+            "-summary:update doc",
+            "-always",
+            "-nocase",
+            "-regex",
             "-dotall",
             r"(?<=<pre>\n).*(?=\n</pre>)",
             jobs.info,
