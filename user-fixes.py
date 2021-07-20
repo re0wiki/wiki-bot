@@ -5,7 +5,7 @@ from collections import defaultdict
 from opencc import OpenCC
 
 generator_base = (
-    " -start::! -start:project:! -start:template:! -start:category:! -start:file:!"
+    "-start::! -start:project:! -start:template:! -start:category:! -start:file:!"
 )
 generator_more = generator_base + " -start:module:! " "-start:mediawiki:!"
 
