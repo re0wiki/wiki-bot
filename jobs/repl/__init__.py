@@ -1,1 +1,1 @@
-from jobs.repl import fix, update_doc
+from jobs.repl import update_doc
