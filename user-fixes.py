@@ -61,6 +61,49 @@ user_fixes["misc"] = base | {
 }
 # endregion
 
+# region args
+user_fixes["args"] = base | {
+    "generator": generator_more,
+    "replacements": [
+        (rf"\|\s*{o}\s*= *", f"| {n} = ")
+        for o, n in [
+            ("Image-Size", "请手动移除该参数"),
+            ("Name", "name"),
+            ("Image", "image"),
+            ("Kanji", "name_ja_kanji"),
+            ("Romaji", "name_ja_romaji"),
+            ("Alias", "alias"),
+            ("Nickname", "nickname"),
+            ("Race", "race"),
+            ("Gender", "gender"),
+            ("Birthday", "birthday"),
+            ("Age", "age"),
+            ("Hair Color", "hair"),
+            ("Eye Color", "eyes"),
+            ("Height", "height"),
+            ("Weight", "weight"),
+            ("Affiliation", "affiliation"),
+            ("Previous Affiliation", "previous_affiliation"),
+            ("Occupation", "occupation"),
+            ("Previous Occupation", "previous_occupation"),
+            ("Status", "status"),
+            ("Relatives", "relatives"),
+            ("Magic", "magic"),
+            ("Divine Protection", "divine_protection"),
+            ("Authority", "authority"),
+            ("Weapon", "weapon"),
+            ("Equipment", "equipment"),
+            ("Anime", "anime"),
+            ("Light Novel", "novel"),
+            ("Game", "game"),
+            ("Manga", "comic"),
+            ("Japanese Voice", "voice_ja"),
+            ("English Voice", "voice_en"),
+        ]
+    ],
+}
+# endregion
+
 fixes: dict
 # noinspection PyUnboundLocalVariable
 fixes.update(user_fixes)
