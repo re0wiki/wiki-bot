@@ -11,7 +11,7 @@ base: dict[str] = {
     },
 }
 
-user_fixes = dict()
+user_fixes = {}
 
 # region misc
 nbsp = "\xa0"
