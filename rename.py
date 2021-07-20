@@ -3,7 +3,6 @@ import logging
 import re
 
 from jobs.jobs_ import CmdJob
-from jobs.repl.base import base
 from jobs.starts_ import ns2start, ns_more, starts_more
 
 if __name__ == "__main__":
@@ -48,4 +47,7 @@ if __name__ == "__main__":
             ]
         ).run()
 
-    CmdJob(base + [old, new] + starts_more).run()
+    CmdJob(
+        ["replace", "-automaticsummary", "-always", "-nocase", "-regex", old, new]
+        + starts_more
+    ).run()
