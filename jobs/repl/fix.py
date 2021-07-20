@@ -14,6 +14,7 @@ add_job(
             # user-fixes.py
             "-fix:misc",
             # "-fix:args",
+            "-fix:gallery",
         ]
     )
 )

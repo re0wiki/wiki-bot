@@ -1,1 +1,1 @@
-from jobs.repl import fix, gallery, head, translation, update_doc
+from jobs.repl import fix, head, translation, update_doc
