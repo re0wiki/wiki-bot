@@ -1,25 +1,6 @@
 from .jobs_ import CmdJob, add_job
 
-base = [
-    "redirect",
-    "do",
-    "-always",
-]
+base = ["redirect", "-always", "-randomredirect:128"]
 
-add_job(
-    CmdJob(
-        base
-        + [
-            "-moves",
-            "-limit:128",
-        ]
-    )
-)
-add_job(
-    CmdJob(
-        base
-        + [
-            "-recentchanges:128",
-        ]
-    )
-)
+add_job(CmdJob(base + ["do"]))
+add_job(CmdJob(base + ["br"]))
