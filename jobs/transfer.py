@@ -15,7 +15,7 @@ add_job(
     CmdJob(
         [
             "transferbot",
-            "-family:cc",
+            "-family:w",
             "-lang:zh",
             "-tofamily:re0",
             "-tolang:zh",
