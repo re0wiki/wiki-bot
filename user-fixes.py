@@ -66,6 +66,7 @@ user_fixes["misc"] = base | {
         (r"(?<!==)\s*\n==", r"\n\n=="),
         (r"==\n\s*", r"==\n"),
         (r"\n{3,}", r"\n\n"),
+        ("</br>", "<br>"),
     ],
 }
 # endregion
