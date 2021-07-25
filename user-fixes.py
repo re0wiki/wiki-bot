@@ -9,7 +9,6 @@ generator_base = [
     "-start:project:!",
     "-start:template:!",
     "-start:category:!",
-    "-start:file:!",
 ]
 generator_more = generator_base + ["-start:module:! ", "-start:mediawiki:!"]
 
@@ -17,7 +16,7 @@ base: dict[str] = {
     "regex": True,
     "nocase": True,
     "exceptions": {
-        "inside-tags": ["keep"],
+        "inside-tags": ["keep", "interwiki"],
     },
 }
 
