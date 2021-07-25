@@ -6,10 +6,10 @@ def nss2starts(nss):
     return [ns2start(ns) for ns in nss]
 
 
-ns_base = ["", "project", "template", "category", "file"]
+ns_base = ["", "project", "template", "category"]
 ns_more = ns_base + ["module", "mediawiki"]
 # unused
-# _ns_full = ns_more + ['user', 'help']
+_ns_full = ns_more + ["user", "help", "file"]
 
 starts_base = nss2starts(ns_base)
 starts_more = nss2starts(ns_more)

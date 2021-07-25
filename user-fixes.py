@@ -9,7 +9,6 @@ generator_base = [
     "-start:project:!",
     "-start:template:!",
     "-start:category:!",
-    "-start:file:!",
 ]
 generator_more = generator_base + ["-start:module:! ", "-start:mediawiki:!"]
 
