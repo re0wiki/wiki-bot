@@ -16,7 +16,7 @@ base: dict[str] = {
     "regex": True,
     "nocase": True,
     "exceptions": {
-        "inside-tags": ["keep"],
+        "inside-tags": ["keep", "interwiki"],
     },
 }
 
