@@ -451,7 +451,8 @@ user_fixes["translation"] = base | {
         (r"\{\{Od\}\}\{\{Laguna\}\}", "{{Od}}·{{Laguna}}"),
         (f"{f('精')}{f('灵')}", "{{Elf or Spirit}}"),
         (r"(?<=禁书与谜之)\{\{Elf or Spirit\}\}", "精<!--no bot-->灵"),
-        (r"(?<=四大|人工|自然)\{\{Elf or Spirit\}\}", "精<!--no bot-->灵"),
+        (r"(?<=人工|自然)\{\{Elf or Spirit\}\}", "精<!--no bot-->灵"),
+        (r"(?<=大)\{\{Elf or Spirit\}\}", "精<!--no bot-->灵"),
     ],
 }
 _ = [  # 特判太麻烦的，不处理
