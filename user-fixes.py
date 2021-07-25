@@ -249,9 +249,12 @@ def p2n(pattern: str):
 
 
 def get_repl_func(name: str):
-    def func(match: re.Match):
+    """返回name对应的替换函数。"""
+
+    def func(match: re.Match) -> str:
+        """若为标准译名对应的繁体名则原样返回，否则返回标准译名。"""
         cur = match.group()
-        if cur in (name, s2t(name)):
+        if cur == s2t(name):
             return cur
         return name
 
