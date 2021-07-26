@@ -55,6 +55,7 @@ if __name__ == "__main__":
             "-nocase",
             "-regex",
             r"-exceptinside:\[\[:?(zh|de|en|es|fr|it|nl|pl|pt-br|ru|uk|wp|wikipedia)\s?:[^\]]*\]\]",
+            r"-exceptinside:name_en.*",
             old,
             new,
         ]
