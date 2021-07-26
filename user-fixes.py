@@ -70,14 +70,14 @@ user_fixes["misc"] = base | {
 }
 # endregion
 
-# region args
+# region para
 user_fixes["args"] = base | {
     "generator": generator_more,
     "replacements": [
         (rf"\|\s*{o}\s*= *", f"| {n} = ")
         for o, n in [
             ("Image-Size", "请手动移除该参数"),
-            ("Name", "name"),
+            ("Name", "name_en"),
             ("Image", "image"),
             ("Kanji", "name_ja_kanji"),
             ("Romaji", "name_ja_romaji"),
