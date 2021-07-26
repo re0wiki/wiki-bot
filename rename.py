@@ -20,15 +20,9 @@ if __name__ == "__main__":
 
     o_pages = []
 
-    cmd = [
-        "listpages",
-        "-format:3",
-        f"-titleregex:{old}",
-    ]
-
     for ns in ns_more:
         pages = (
-            CmdJob(cmd + [ns2start(ns)])
+            CmdJob(["listpages", "-format:3", f"-titleregex:{old}", ns2start(ns)])
             .run(simulate=True, capture_output=True)
             .split("\n")
         )
