@@ -48,6 +48,15 @@ if __name__ == "__main__":
         ).run()
 
     CmdJob(
-        ["replace", "-automaticsummary", "-always", "-nocase", "-regex", old, new]
+        [
+            "replace",
+            "-automaticsummary",
+            "-always",
+            "-nocase",
+            "-regex",
+            r"-exceptinside:\[\[:?(zh|de|en|es|fr|it|nl|pl|pt-br|ru|uk|wp|wikipedia)\s?:[^\]]*\]\]",
+            old,
+            new,
+        ]
         + starts_more
     ).run()
