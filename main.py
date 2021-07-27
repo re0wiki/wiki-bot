@@ -1,6 +1,6 @@
 import argparse
 import logging
-from contextlib import suppress
+import sys
 
 from jobs import jobs, run
 
@@ -29,5 +29,7 @@ parser.add_argument(
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    with suppress(KeyboardInterrupt):
+    try:
         run(index=args.index, simulate=args.simulate)
+    except KeyboardInterrupt:
+        sys.exit(130)
