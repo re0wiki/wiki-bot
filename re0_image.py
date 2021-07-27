@@ -111,14 +111,13 @@ def main():
         if im_source is None:
             continue
 
-        same_sh1 = im_source.latest_file_info.sha1 in images_target_sha1
         same_name = (
             get_stem(im_source.title(with_ns=False)).replace(" ", "_")
             in images_target_stem
         )
 
         # 如果当前的FilePage的sha1和文件名都没有和你站图片匹配的 那就进行更新操作
-        if not same_sh1 and not same_name:
+        if not same_name:
             im_source = pywikibot.FilePage(source, im_source.title())
 
             # 忽略youtube视频
