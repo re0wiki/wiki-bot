@@ -1,6 +1,5 @@
 import argparse
 import logging
-from contextlib import suppress
 
 from jobs import jobs, run
 
@@ -29,5 +28,4 @@ parser.add_argument(
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    with suppress(KeyboardInterrupt):
-        run(index=args.index, simulate=args.simulate)
+    run(index=args.index, simulate=args.simulate)
