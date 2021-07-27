@@ -31,5 +31,4 @@ parser.add_argument(
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    with suppress(KeyboardInterrupt):
-        run(start=args.start, simulate=args.simulate)
+    run(start=args.start, simulate=args.simulate)
