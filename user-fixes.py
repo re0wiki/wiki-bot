@@ -77,7 +77,7 @@ user_fixes["para"] = base | {
         (rf"\|\s*{o}\s*= *", f"| {n} = ")
         for o, n in [
             ("Image-Size", "请手动移除该参数"),
-            ("Name", "name_en"),
+            ("Name", "name"),
             ("Image", "image"),
             ("Kanji", "name_ja_kanji"),
             ("Romaji", "name_ja_romaji"),
