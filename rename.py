@@ -20,7 +20,7 @@ if __name__ == "__main__":
 
     o_pages = []
 
-    for ns in ns_more:
+    for ns in ns_more + ["file"]:
         pages = (
             CmdJob(["listpages", "-format:3", f"-titleregex:{old}", ns2start(ns)])
             .run(simulate=True, capture_output=True)
