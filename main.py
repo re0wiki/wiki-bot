@@ -1,5 +1,6 @@
 import argparse
 import logging
+import sys
 
 from jobs import jobs, run
 
@@ -28,4 +29,7 @@ parser.add_argument(
 
 if __name__ == "__main__":
     args = parser.parse_args()
-    run(index=args.index, simulate=args.simulate)
+    try:
+        run(index=args.index, simulate=args.simulate)
+    except KeyboardInterrupt:
+        sys.exit(130)
