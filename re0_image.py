@@ -1,6 +1,4 @@
 import logging
-import mimetypes
-import pathlib
 from os import path
 from tempfile import TemporaryDirectory
 
@@ -10,41 +8,35 @@ import pywikibot
 from pywikibot import exceptions
 
 
-def get_stem(filename: str):
-    """Return the stem of a filename."""
-    return pathlib.Path(filename).stem
+def transfer_file(
+    *,
+    target_site: pywikibot.Site,
+    source_site: pywikibot.Site,
+    source_page: pywikibot.FilePage,
+):
+    """搬运一张图片。"""
+    if not target_site.logged_in():
+        target_site.login()
 
+    title = source_page.title(as_filename=True, with_ns=False)
+    target_page: pywikibot.FilePage = pywikibot.FilePage(target_site, title)
 
-def get_ext(filename: str):
-    """Return the extension of a filename."""
-    return pathlib.Path(filename).suffix
+    source_page = get_final_redirect_target(source_page)
+    if source_page is None:
+        logging.warning(f"source_page is None. {title=}")
+        return
 
+    text = "\n".join([x.astext() for x in source_page.iterlanglinks()])
+    if text != "":
+        text += "\n"
+    text += f"[[{source_site.code}:{source_page.title(with_ns=True)}]]"
 
-def upload_file(target: pywikibot.Site, source: pywikibot.FilePage, text):
-    """File uploading behavior. See **pywikibot.page.FilePage** for more details.
-
-    :param target: target site
-    :param source: path or url of the image to be uploaded
-    :param text: Initial page text
-    """
-    # 生成你站文件名。注意有时候英文站的标题为xxx.jpg的图可能实际是个png图 所以优先使用mime来推断类型
-    ext = None
-    if hasattr(source.latest_file_info, "mime"):
-        ext = mimetypes.guess_extension(source.latest_file_info.mime)
-    if ext is None:
-        source_file_name = source.title(as_filename=True, with_ns=False)
-        ext = get_ext(source_file_name)
-    stem = get_stem(source.title(as_filename=True, with_ns=False))
-    target: pywikibot.FilePage = pywikibot.FilePage(target, stem + ext)
-
-    # 真正的上传
-    logging.info(f"UPLOAD file to page '{target.title()}' with '{source}'\n")
-    logging.debug("saving page:\n" + target.title() + text)
+    logging.info(f"upload {title}")
     with TemporaryDirectory() as tmp_dir:
-        filename = path.join(tmp_dir, target.title(as_filename=True, with_ns=False))
-        source.download(filename)
+        filename = path.join(tmp_dir, title)
+        source_page.download(filename)
         try:
-            target.upload(
+            target_page.upload(
                 filename,
                 comment=text,
                 text=text,
@@ -66,78 +58,34 @@ def get_final_redirect_target(page: pywikibot.Page):
         return page
 
 
-def main():
+def transfer(*, source, target):
     """搬运图片。"""
-    source = pywikibot.Site("en", "re0")
-    target = pywikibot.Site("zh", "re0")
-    target.login()
-    if target.logged_in():
-        logging.info(f"Logged in to {target}")
+    logging.info(f"{source=}")
+    logging.info(f"{target=}")
 
-    logging.info(f"Generating image list for all images on {source} ...")
-    images_source = list(tqdm(source.allimages()))
-
-    # 这一部分就是把你站有的图片都存到两个dict里面 一个把sha1 map到FilePage对象 一个把不带后缀的文件名map到FilePage对象 后面会用到
-    logging.info(f"Generating the set for all images on {target} ...")
-    images_target_sha1 = {}
-    images_target_stem = {}
     # use all pages to include redirect pages
-    for fp in tqdm(target.allpages(namespace="File")):
-        fp: pywikibot.Page
-        images_target_stem[get_stem(fp.title(with_ns=False)).replace(" ", "_")] = fp
-        if fp.isRedirectPage():
-            final_target = get_final_redirect_target(fp)
-            if not isinstance(final_target, pywikibot.FilePage):
-                logging.warning(
-                    f"Found a pages in File name which redirect "
-                    f"to a non-file page: '{fp.create_short_link()}'"
-                )
-                continue
-        elif isinstance(fp, pywikibot.FilePage):
-            try:
-                images_target_sha1[fp.latest_file_info.sha1] = fp
-            except exceptions.PageRelatedError as e:
-                logging.warning(str(e))
-        else:
-            logging.warning(
-                f"Found a non-file page in File name space: '{fp.create_short_link()}'"
-            )
-            continue
+    source_titles = {
+        page.title(with_ns=False)
+        for page in tqdm(source.allpages(namespace="File"), f"Files on {source}")
+    }
+    target_titles = {
+        page.title(with_ns=False)
+        for page in tqdm(target.allpages(namespace="File"), f"Files on {target}")
+    }
 
-    # 这边就是en上的一张一张图片循环过去
-    for im_source in tqdm(images_source):
-        # 如果当前的FilePage是重定向 那就找到它最终的目标再进行下面的操作
-        im_source = get_final_redirect_target(im_source)
-        if im_source is None:
-            continue
-
-        same_sh1 = im_source.latest_file_info.sha1 in images_target_sha1
-        same_name = (
-            get_stem(im_source.title(with_ns=False)).replace(" ", "_")
-            in images_target_stem
-        )
-
-        # 如果当前的FilePage的sha1和文件名都没有和你站图片匹配的 那就进行更新操作
-        if not same_sh1 and not same_name:
-            im_source = pywikibot.FilePage(source, im_source.title())
-
-            # 忽略youtube视频
-            if (
-                hasattr(im_source.latest_file_info, "mime")
-                and im_source.latest_file_info.mime == "video/youtube"
-            ):
-                continue
-
-            text = "\n".join([x.astext() for x in im_source.iterlanglinks()])
-            if text != "":
-                text += "\n"
-            text += f"[[{source.code}:{im_source.title(with_ns=True)}]]"
-            upload_file(target, im_source, text=text)
+    for title in tqdm(source_titles - target_titles):
+        page = pywikibot.FilePage(source, "File:" + title)
+        transfer_file(target_site=target, source_site=source, source_page=page)
 
 
 if __name__ == "__main__":
     logging.basicConfig(
-        level=logging.INFO,
+        level=logging.ERROR,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-    main()
+
+    pywikibot.output("Transfer files")
+    pywiki_logger = logging.getLogger("pywiki")
+    pywiki_logger.setLevel(logging.ERROR)
+
+    transfer(source=pywikibot.Site("en", "re0"), target=pywikibot.Site("zh", "re0"))
