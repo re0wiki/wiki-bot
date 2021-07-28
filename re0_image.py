@@ -64,14 +64,10 @@ def transfer(*, source, target):
     logging.info(f"{target=}")
 
     # use all pages to include redirect pages
-    source_titles = set(
-        page.title(with_ns=False)
-        for page in tqdm(source.allpages(namespace="File"), f"Files on {source}")
-    )
-    target_titles = set(
-        page.title(with_ns=False)
-        for page in tqdm(target.allpages(namespace="File"), f"Files on {target}")
-    )
+    source_titles = {page.title(with_ns=False)
+        for page in tqdm(source.allpages(namespace="File"), f"Files on {source}")}
+    target_titles = {page.title(with_ns=False)
+        for page in tqdm(target.allpages(namespace="File"), f"Files on {target}")}
 
     for title in tqdm(source_titles - target_titles):
         page = pywikibot.FilePage(source, "File:" + title)
