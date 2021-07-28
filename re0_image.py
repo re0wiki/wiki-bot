@@ -84,4 +84,7 @@ if __name__ == "__main__":
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
 
+    pywiki_logger = logging.getLogger("pywiki")
+    pywiki_logger.setLevel(logging.WARNING)
+
     transfer(source=pywikibot.Site("en", "re0"), target=pywikibot.Site("zh", "re0"))
