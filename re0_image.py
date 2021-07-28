@@ -75,15 +75,6 @@ def transfer(*, source, target):
 
     for title in tqdm(source_titles - target_titles):
         page = pywikibot.FilePage(source, "File:" + title)
-
-        # 忽略youtube视频
-        if (
-            hasattr(page.latest_file_info, "mime")
-            and page.latest_file_info.mime == "video/youtube"
-        ):
-            logging.warning(f"youtube视频: {title}")
-            continue
-
         transfer_file(target_site=target, source_site=source, source_page=page)
 
 
