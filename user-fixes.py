@@ -468,10 +468,10 @@ user_fixes["translation"] = base | {
             (f"{f('空')}{f('斯')}{f('图')}{f('卢')}", "柯司兹尔"),
             (f"{f('若')}{f('果')}", "如果"),
             (r"\{\{Od\}\}\{\{Laguna\}\}", "{{Od}}·{{Laguna}}"),
-            (f"(?<!禁书与谜之)(?<!人工|自然)(?<!大|邪|微|准){f('精')}{f('灵')}", "{{Elf or Spirit}}"),
-            (f"{f('妖')}{f('精')}", "{{Elf or Yousei}}"),
-            (r"(?<=半)\{\{Elf or (Spirit|Yousei)\}\}", "{{Elf}}"),
-            (r"Spirits?(?!\}\})", "{{Spirit}}"),
+            (f"(?<!禁书与谜之)(?<!人工|自然)(?<!大|邪|微|准){f('精')}{f('灵')}", "{{Spirit or Elf}}"),
+            (f"{f('妖')}{f('精')}", "{{Yousei or Elf}}"),
+            (r"(?<=半)\{\{(Spirit|Yousei) or Elf\}\}", "{{Elf}}"),
+            (r"(?<!\{\{)Spirits?", "{{Spirit}}"),
         ]
     ],
 }
