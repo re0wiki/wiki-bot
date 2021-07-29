@@ -471,7 +471,6 @@ user_fixes["translation"] = base | {
             (f"(?<!禁书与谜之)(?<!人工|自然)(?<!大|邪|微|准){f('精')}{f('灵')}", "{{Spirit or Elf}}"),
             (f"{f('妖')}{f('精')}", "{{Yousei or Elf}}"),
             (r"(?<=半)\{\{(Spirit|Yousei) or Elf\}\}", "{{Elf}}"),
-            (r"(?<!\{\{)Spirits?", "{{Spirit}}"),
         ]
     ],
 }
