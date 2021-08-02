@@ -74,7 +74,7 @@ user_fixes["misc"] = base | {
 user_fixes["para"] = base | {
     "generator": generator_more,
     "replacements": [
-        (rf"\|\s*{o}\s*= *", f"| {n} = ")
+        (rf"\|\s*{o}\s*=", f"| {n} =")
         for o, n in [
             ("Image-Size", "请手动移除该参数"),
             ("Name", "name"),
