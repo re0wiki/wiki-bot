@@ -70,8 +70,8 @@ user_fixes["misc"] = base | {
 }
 # endregion
 
-# region args
-user_fixes["args"] = base | {
+# region para
+user_fixes["para"] = base | {
     "generator": generator_more,
     "replacements": [
         (rf"\|\s*{o}\s*= *", f"| {n} = ")
