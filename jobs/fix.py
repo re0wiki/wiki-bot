@@ -9,7 +9,7 @@ fixes = [  # built-in fixes
     "misc",
     "para",
     "gallery",
-    "head",
+    "heading",
     "translation",
 ]
 
