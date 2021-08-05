@@ -149,10 +149,9 @@ user_fixes["heading"] = base | {
     "replacements": [
         ("(?<== )" + o + "(?= =)", n)
         for o, n in [
-            ("Information", "简介"),
-            ("Summary", "简介"),
             ("Relationships", "关系"),
             ("Synopsis", "梗概"),
+            ("Summary", "梗概"),
             ("Gallery", "图库"),
             ("Image Gallery", "图库"),
             ("Appearance", "外貌"),
