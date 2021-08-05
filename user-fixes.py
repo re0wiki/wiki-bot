@@ -143,8 +143,8 @@ user_fixes["gallery"] = base | {
 }
 # endregion
 
-# region head
-user_fixes["head"] = base | {
+# region heading
+user_fixes["heading"] = base | {
     "generator": generator_more,
     "replacements": [
         ("(?<== )" + o + "(?= =)", n)
