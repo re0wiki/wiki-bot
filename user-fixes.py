@@ -78,7 +78,7 @@ user_fixes["anti-ve"] = {
     },
     "generator": generator_base,
     "replacements": [
-        ("<br>", ""),
+        ("<br>", r"\n\n"),
     ],
 }
 
