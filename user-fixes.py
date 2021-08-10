@@ -70,6 +70,18 @@ user_fixes["misc"] = base | {
 }
 # endregion
 
+user_fixes["anti-ve"] = {
+    "regex": True,
+    "nocase": True,
+    "exceptions": {
+        "inside-tags": ["keep", "interwiki", "template", "table"],
+    },
+    "generator": generator_base,
+    "replacements": [
+        ("<br>", ""),
+    ],
+}
+
 # region para
 user_fixes["para"] = base | {
     "generator": generator_more,
@@ -177,7 +189,7 @@ similar_chars = (
     "肯卡嘉加伽茄贾",
     "丝斯司兹茨",
     "娅亚雅阿安",
-    "菲福飞弗芙",
+    "菲福飞弗芙伏",
     "莎沙纱萨",
     "西希席叙",
     "腾滕登坦",
@@ -203,6 +215,7 @@ similar_chars = (
     "文温",
     "霍荷",
     "谜迷",
+    "琉流",
     ".·",
 )
 
