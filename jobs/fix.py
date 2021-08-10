@@ -11,6 +11,7 @@ fixes = [  # built-in fixes
     "gallery",
     "heading",
     "translation",
+    "anti-ve",
 ]
 
 for fix in sorted(fixes):

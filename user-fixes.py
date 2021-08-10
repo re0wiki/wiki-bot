@@ -70,6 +70,18 @@ user_fixes["misc"] = base | {
 }
 # endregion
 
+user_fixes["anti-ve"] = {
+    "regex": True,
+    "nocase": True,
+    "exceptions": {
+        "inside-tags": ["keep", "interwiki", "template", "table"],
+    },
+    "generator": generator_base,
+    "replacements": [
+        ("<br>", ""),
+    ],
+}
+
 # region para
 user_fixes["para"] = base | {
     "generator": generator_more,
