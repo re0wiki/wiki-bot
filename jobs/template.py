@@ -8,6 +8,7 @@ pairs = [
     ("Lugnica Navbox", None),
     ("Vollachia Navbox", None),
     ("Royal Election Navbox", None),
+    ("Royal Selection Navbox", None),
     ("Anime Navigation", None),
     ("Manga Navigation", None),
     ("Disambig", None),
