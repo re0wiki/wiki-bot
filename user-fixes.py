@@ -70,6 +70,7 @@ user_fixes["misc"] = base | {
 }
 # endregion
 
+# region anti-ve
 user_fixes["anti-ve"] = {
     "regex": True,
     "nocase": True,
@@ -81,6 +82,7 @@ user_fixes["anti-ve"] = {
         ("<br>", r"\n\n"),
     ],
 }
+# endregion
 
 # region para
 user_fixes["para"] = base | {
