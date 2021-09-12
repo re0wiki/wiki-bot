@@ -5,6 +5,8 @@
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Total alerts](https://img.shields.io/lgtm/alerts/g/CCXXXI/re0wiki.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/CCXXXI/re0wiki/alerts/)
 [![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/CCXXXI/re0wiki.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/CCXXXI/re0wiki/context:python)
+[![codebeat badge](https://codebeat.co/badges/4304a407-09be-43de-a02c-03d3603993f0)](https://codebeat.co/projects/github-com-ccxxxi-re0wiki-main)
+[![CodeFactor](https://www.codefactor.io/repository/github/ccxxxi/re0wiki/badge)](https://www.codefactor.io/repository/github/ccxxxi/re0wiki)
 [![Discord server](https://img.shields.io/discord/779185920670171136?label=discord&logo=discord&logoColor=white)](https://discord.gg/F554jbmEUd)
 [![Telegram group](https://img.shields.io/badge/Telegram-re0wiki-blue.svg?logo=telegram)](https://t.me/re0wiki)
 
