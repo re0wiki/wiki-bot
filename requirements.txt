@@ -1,3 +1,4 @@
 -r pywikibot/requirements.txt
 opencc
 tqdm
+sentry-sdk
