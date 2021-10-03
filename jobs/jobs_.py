@@ -25,6 +25,7 @@ class CmdJob(Job):
         cmd = self.cmd
         if simulate:
             cmd += " -simulate"
+            cmd = cmd.replace('"-always"', "")
 
         logging.info("=" * 16 + "start" + "=" * 16)
         logging.info(cmd)
