@@ -6,5 +6,3 @@ labels: 新增译名
 assignees: ''
 
 ---
-
-

@@ -18,8 +18,8 @@
 - **requirements**：`pip install -r requirements.txt`
 - [机器人密码 | Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh/wiki/Special:BotPasswords)
 - **用户配置文件**
-  1. [user-config.py#L15](./user-config.py#L15)
-  2. 同目录下创建`user-password.py`并填写，格式为`('<UserName>', BotPassword('<BotName>', '<BotPassword>'))`
+    1. [user-config.py#L15](./user-config.py#L15)
+    2. 同目录下创建`user-password.py`并填写，格式为`('<UserName>', BotPassword('<BotName>', '<BotPassword>'))`
 
 ## Usage
 
