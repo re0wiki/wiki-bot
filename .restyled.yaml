@@ -1,3 +1,6 @@
+commit_template: |
+  style: reformat by ${restyler.name}
+
 restylers:
   - isort:
       enabled: false
