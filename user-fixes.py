@@ -132,7 +132,7 @@ user_fixes["para"] = base | {
 user_fixes["gallery"] = base | {
     "generator": "-catr:图库",
     "replacements": [
-        (o + "(?==)", n)
+        (o + r"\s*(?==)", n)
         for o, n in [
             ("Anime", "动画"),
             ("Season 1", "第一季"),
