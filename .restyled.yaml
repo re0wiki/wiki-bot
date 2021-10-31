@@ -11,5 +11,5 @@ restylers:
   - yapf:
       enabled: false
   - prettier-markdown:
-      arguments: ["--prose-wrap", "preserve"]
+      arguments: [ "--prose-wrap", "preserve" ]
   - "*"
