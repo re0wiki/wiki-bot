@@ -137,7 +137,7 @@ user_fixes["gallery"] = base | {
             ("Anime", "动画"),
             ("Season 1", "第一季"),
             ("Season 2", "第二季"),
-            ("Light Novel", "小说"),
+            ("Light Novels?", "小说"),
             ("Main Series", "正传"),
             ("Tanpenshuu", "月刊CA短篇"),
             ("Side Content", "特典SS"),
