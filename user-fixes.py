@@ -251,7 +251,7 @@ def f(chars: str):
 
 def p2o(pattern: str):
     """返回传入的正则表达式对应的所有可能译名对应的正则表达式。"""
-    return "".join(c if c in "?!()=<" else f(c) for c in pattern)
+    return "".join(c if c in "?!(|)=<" else f(c) for c in pattern)
 
 
 def p2n(pattern: str):
