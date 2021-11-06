@@ -1,0 +1,8 @@
+name: wiki
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - sentry-sdk
+  - regex
+  - tqdm

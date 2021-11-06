@@ -133,3 +133,5 @@ throttle.ctrl
 pywikibot.lwp
 user-password.py
 *apicache*
+
+.idea/
