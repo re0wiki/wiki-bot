@@ -5,5 +5,5 @@ dependencies:
   - regex
   - tqdm
   - pip:
-    - opencc
-    - -r pywikibot/requirements.txt
+      - opencc
+      - -r pywikibot/requirements.txt
