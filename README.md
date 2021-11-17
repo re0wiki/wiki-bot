@@ -15,7 +15,7 @@
 
 - **本项目**：`git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/CCXXXI/re0wiki.git`
 - **Python**：[conda-forge/miniforge](https://github.com/conda-forge/miniforge#install)
-- **requirements**：`conda env create -f environment.yml`
+- **requirements**：`mamba env create -f environment.yml`
 - [机器人密码 | Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh/wiki/Special:BotPasswords)
 - **用户配置文件**
   1. [user-config.py#L15](./user-config.py#L15)
