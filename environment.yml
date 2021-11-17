@@ -4,6 +4,7 @@ dependencies:
   - sentry-sdk
   - regex
   - tqdm
+  - pip
   - pip:
       - opencc
       - -r pywikibot/requirements.txt
