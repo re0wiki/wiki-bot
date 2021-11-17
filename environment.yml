@@ -1,8 +1,10 @@
-name: wiki
-channels:
-  - conda-forge
-  - defaults
+name: re0wiki
+channels: [conda-forge]
 dependencies:
   - sentry-sdk
   - regex
   - tqdm
+  - pip
+  - pip:
+      - opencc
+      - -r pywikibot/requirements.txt

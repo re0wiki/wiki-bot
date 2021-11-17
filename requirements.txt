@@ -1,2 +1,0 @@
--r pywikibot/requirements.txt
-opencc
