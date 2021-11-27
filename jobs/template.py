@@ -14,6 +14,7 @@ pairs = [
     ("Anime Navigation", None),
     ("Manga Navigation", None),
     ("Disambig", None),
+    ("LN Navigation", None),
 ]
 
 repl = ["template", "-always"]
