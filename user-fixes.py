@@ -71,6 +71,31 @@ user_fixes["misc"] = base | {
 }
 # endregion
 
+# region date
+user_fixes["date"] = base | {
+    "generator": generator_base,
+    "replacements": [
+        (rf"{m}\s*(\d+)\s*[，,]\s*(\d+)", rf"\2年{i + 1}月\1日")
+        for i, m in enumerate(
+            (
+                "January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December",
+            )
+        )
+    ],
+}
+# endregion
+
 # region anti-ve
 user_fixes["anti-ve"] = {
     "regex": True,
