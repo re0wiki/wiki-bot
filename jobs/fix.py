@@ -7,6 +7,7 @@ fixes = [  # built-in fixes
     "specialpages",
 ] + [  # user-fixes.py
     "misc",
+    "date",
     "para",
     "gallery",
     "heading",
