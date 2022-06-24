@@ -1,3 +1,4 @@
 [submodule "pywikibot"]
 	path = pywikibot
 	url = https://github.com/CCXXXI/pywikibot.git
+	branch = re0wiki
