@@ -4,6 +4,7 @@ dependencies:
   - sentry-sdk
   - regex
   - tqdm
+  - black
   - pip
   - pip:
       - opencc
