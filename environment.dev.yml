@@ -1,9 +1,12 @@
+# mamba env create -f environment.dev.yml --force
 name: re0wiki
 channels: [conda-forge]
 dependencies:
   - sentry-sdk
   - tqdm
+  - black
   - pip
   - pip:
       - opencc
+      - git+https://github.com/ccxxxi/pywikibot@re0wiki
       - -r pywikibot/requirements.txt
