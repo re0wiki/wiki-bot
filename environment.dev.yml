@@ -8,5 +8,5 @@ dependencies:
   - pip
   - pip:
       - opencc
-      - git+https://github.com/ccxxxi/pywikibot@re0wiki
+      - git+https://github.com/ccxxxi/pywikibot
       - -r pywikibot/requirements.txt
