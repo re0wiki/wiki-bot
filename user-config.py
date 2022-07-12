@@ -74,7 +74,7 @@ debug_log = []  # type: List[str]
 #
 # sample:
 # user_script_paths = ['scripts.myscripts']
-user_script_paths = []  # type: List[str]
+user_script_paths = ["scripts"]  # type: List[str]
 
 # ############# EXTERNAL FAMILIES SETTINGS ##############
 # Set your own family path to lookup for your family files.
