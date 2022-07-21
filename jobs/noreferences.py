@@ -1,5 +1,5 @@
 from .jobs_ import CmdJob, add_job
-from .starts_ import starts_more
+from .starts_ import starts_base
 
 add_job(
     CmdJob(
@@ -8,6 +8,6 @@ add_job(
             "-always",
             "-quiet",
         ]
-        + starts_more
+        + starts_base
     )
 )
