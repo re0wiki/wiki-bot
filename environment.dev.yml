@@ -8,6 +8,6 @@ dependencies:
   - pip:
       - opencc
       - -r pywikibot/requirements.txt
-# dev
+      # dev
       - git+https://github.com/ccxxxi/pywikibot
   - black
