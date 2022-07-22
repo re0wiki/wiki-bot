@@ -3,7 +3,7 @@ from pywikibot import Page
 from pywikibot.pagegenerators import AllpagesPageGenerator
 from tqdm import tqdm
 
-pattern = re.compile(r".*?:(.*)")
+pattern = re.compile(r".+?:(.+)")
 
 
 def create_redirect():
