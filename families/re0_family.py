@@ -27,7 +27,8 @@ class Family(family.Family):  # noqa: D101
         "uk": "rezero.fandom.com",
     }
 
-    def scriptpath(self, code):
+    @staticmethod
+    def scriptpath(code):
         return {
             "zh": "/zh",
             "de": "/de",
@@ -42,7 +43,8 @@ class Family(family.Family):  # noqa: D101
             "uk": "/uk",
         }[code]
 
-    def protocol(self, code):
+    @staticmethod
+    def protocol(code):
         return {
             "zh": "https",
             "de": "https",
