@@ -4,9 +4,10 @@ channels: [conda-forge]
 dependencies:
   - sentry-sdk
   - tqdm
-  - black
   - pip
   - pip:
       - opencc
-      - git+https://github.com/ccxxxi/pywikibot
       - -r pywikibot/requirements.txt
+# dev
+      - git+https://github.com/ccxxxi/pywikibot
+  - black
