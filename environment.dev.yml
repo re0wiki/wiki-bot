@@ -1,4 +1,4 @@
-# mamba env create -f environment.yml --force
+# mamba env create -f environment.dev.yml --force
 name: re0wiki
 channels: [conda-forge]
 dependencies:
@@ -8,3 +8,6 @@ dependencies:
   - pip:
       - opencc
       - -r pywikibot/requirements.txt
+      # dev
+      - git+https://github.com/ccxxxi/pywikibot
+  - black

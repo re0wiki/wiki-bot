@@ -1,16 +1,18 @@
-# This is an automatically generated file. You can find more configuration
-# parameters in 'config.py' file.
+# This is an automatically generated file. You can find more
+# configuration parameters in 'config.py' file or refer
+# https://doc.wikimedia.org/pywikibot/master/api_ref/pywikibot.config.html
 
-# The family of sites we are working on. wikipedia.py will import
-# families/xxx_family.py so if you want to change this variable,
-# you need to write such a file.
+# The family of sites to be working on.
+# Pywikibot will import families/xxx_family.py so if you want to change
+# this variable, you have to ensure that such a file exists. You may use
+# generate_family_file to create one.
 family = "re0"
 
-# The language code of the site we're working on.
+# The site code (language) of the site to be working on.
 mylang = "zh"
 
 # The dictionary usernames should contain a username for each site where you
-# have a bot account. If you have a unique username for all languages of a
+# have a bot account. If you have a unique username for all sites of a
 # family , you can use '*'
 usernames["re0"]["zh"] = "IchiSanNi"
 
@@ -34,7 +36,7 @@ password_file = "user-password.py"
 # This setting can be overridden by the -log or -nolog command-line arguments.
 log = ["*"]
 # filename defaults to modulename-bot.log
-logfilename = None
+logfilename = None  # type: Optional[str]
 # maximal size of a logfile in kilobytes. If the size reached that limit the
 # logfile will be renamed (if logfilecount is not 0) and the old file is filled
 # again. logfilesize must be an integer value
@@ -52,24 +54,27 @@ verbose_output = 0
 log_pywiki_repo_version = False
 # if True, include a lot of debugging info in logfile
 # (overrides log setting above)
-debug_log = []
+debug_log = []  # type: List[str]
 
 # ############# EXTERNAL SCRIPT PATH SETTINGS ##############
 # Set your own script path to lookup for your script files.
 #
-# Your private script path must be located inside the
-# framework folder, subfolders must be delimited by '.'.
-# every folder must contain an (empty) __init__.py file.
+# Your private script path is relative to your base directory.
+# Subfolders must be delimited by '.'. every folder must contain
+# an (empty) __init__.py file.
 #
 # The search order is
 # 1. user_script_paths in the given order
 # 2. scripts/userscripts
 # 3. scripts
 # 4. scripts/maintenance
+# 5. pywikibot/scripts
+#
+# 2. - 4. are available in directory mode only
 #
 # sample:
 # user_script_paths = ['scripts.myscripts']
-user_script_paths = []  # type: List[str]
+user_script_paths = ["scripts"]  # type: List[str]
 
 # ############# EXTERNAL FAMILIES SETTINGS ##############
 # Set your own family path to lookup for your family files.
@@ -227,6 +232,7 @@ db_port = 3306
 # read timeout, or a single value for both in a tuple.
 socket_timeout = (6.05, 45)
 
+
 # ############# COSMETIC CHANGES SETTINGS ##############
 # The bot can make some additional changes to each page it edits, e.g. fix
 # whitespace or positioning of category links.
@@ -297,7 +303,7 @@ actions_to_block = []  # type: List[str]
 
 # Set simulate to True or use -simulate option to block all actions given
 # above.
-simulate = False
+simulate = False  # type: Union[bool, str]
 
 # How many pages should be put to a queue in asynchronous mode.
 # If maxsize is <= 0, the queue size is infinite.
