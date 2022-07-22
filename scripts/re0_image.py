@@ -54,6 +54,7 @@ def get_final_redirect_target(page: pywikibot.Page):
             page = page.getRedirectTarget()
     except exceptions.CircularRedirectError as e:
         logging.warning(str(e))
+        return None
     else:
         return page
 
