@@ -11,7 +11,9 @@ def create_redirect():
     for target in tqdm(AllpagesPageGenerator()):
         if match := pattern.fullmatch(target.title()):
             if not (page := Page(target.site, match.group(1))).isRedirectPage():
-                page.set_redirect_target(target, force=True)
+                page.set_redirect_target(
+                    target, force=True, summary=f"{page.title()} -> {target.title()}"
+                )
 
 
 if __name__ == "__main__":
