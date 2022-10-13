@@ -529,6 +529,7 @@ user_fixes["translation"] = base | {
             ),
             (f"{f('妖')}{f('精')}", "{{Yousei or Elf}}"),
             (r"(?<=半)\{\{(Seirei|Yousei) or Elf\}\}", "{{Elf}}"),
+            ("风见的加护", "视风的加护"),
         ]
     ],
 }
