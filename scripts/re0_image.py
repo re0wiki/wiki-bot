@@ -18,6 +18,8 @@ def transfer_file(
         target_site.login()
 
     title = source_page.title(as_filename=True, with_ns=False)
+    if title.startswith("File:Site-"):
+        return
     target_page: pywikibot.FilePage = pywikibot.FilePage(target_site, title)
 
     source_page: pywikibot.FilePage = get_final_redirect_target(source_page)
