@@ -73,7 +73,7 @@ def transfer(*, source, target):
     logging.info(f"{target=}")
 
     # use allpages to include redirect pages
-    for page in tqdm(source.allpages(namespace="File")):
+    for page in tqdm(list(source.allpages(namespace="File"))):
         transfer_file(target_site=target, source_site=source, source_page=page)
 
 
