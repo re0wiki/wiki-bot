@@ -40,16 +40,13 @@ def transfer_file(
     with TemporaryDirectory() as tmp_dir:
         filename = path.join(tmp_dir, title)
         source_page.download(filename)
-        try:
-            target_page.upload(
-                filename,
-                comment=text,
-                text=text,
-                report_success=False,
-                ignore_warnings=True,
-            )
-        except (exceptions.APIError, ValueError) as e:
-            logging.warning(e)
+        target_page.upload(
+            filename,
+            comment=text,
+            text=text,
+            report_success=False,
+            ignore_warnings=True,
+        )
 
 
 def get_final_redirect_target(page: pywikibot.Page) -> pywikibot.FilePage | None:
@@ -73,7 +70,11 @@ def transfer(*, source, target):
 
     # use allpages to include redirect pages
     for page in tqdm(list(source.allpages(namespace="File"))):
-        transfer_file(target_site=target, source_site=source, source_page=page)
+        try:
+            transfer_file(target_site=target, source_site=source, source_page=page)
+        except (exceptions.PageRelatedError, exceptions.APIError, ValueError) as e:
+            logging.warning(e)
+            continue
 
 
 if __name__ == "__main__":
