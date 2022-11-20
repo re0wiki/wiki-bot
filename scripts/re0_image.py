@@ -61,8 +61,8 @@ def get_final_redirect_target(page: pywikibot.Page) -> pywikibot.FilePage | None
         logging.warning(str(e))
         return None
     else:
-        if not isinstance(page, pywikibot.FilePage):
-            logging.warning(f"{page.title()} is not a FilePage.")
+        if not isinstance(page, pywikibot.FilePage) or not page.exists():
+            logging.warning(f"{page.title()} is not a FilePage or does not exist.")
             return None
         return page
 
