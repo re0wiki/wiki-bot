@@ -22,7 +22,7 @@ def transfer_file(
 
     source_page: pywikibot.FilePage = get_final_redirect_target(source_page)
     if source_page is None:
-        logging.warning(f"source_page is None. {title=}")
+        logging.warning("source_page is None. title=%s", title)
         return
 
     if (
@@ -36,7 +36,7 @@ def transfer_file(
         text += "\n"
     text += f"[[{source_site.code}:{source_page.title(with_ns=True)}]]"
 
-    logging.info(f"upload {title}")
+    logging.info("upload %s", title)
     with TemporaryDirectory() as tmp_dir:
         filename = path.join(tmp_dir, title)
         source_page.download(filename)
@@ -62,15 +62,14 @@ def get_final_redirect_target(page: pywikibot.Page) -> pywikibot.FilePage | None
         return None
     else:
         if not isinstance(page, pywikibot.FilePage) or not page.exists():
-            logging.warning(f"{page.title()} is not a FilePage or does not exist.")
+            logging.warning("%s is not a FilePage or does not exist.", page)
             return None
         return page
 
 
 def transfer(*, source, target):
     """搬运图片。"""
-    logging.info(f"{source=}")
-    logging.info(f"{target=}")
+    logging.info("source=%s, target=%s", source, target)
 
     # use allpages to include redirect pages
     for page in tqdm(list(source.allpages(namespace="File"))):
