@@ -2,10 +2,9 @@ import logging
 from os import path
 from tempfile import TemporaryDirectory
 
-from tqdm import tqdm
-
 import pywikibot
 from pywikibot import exceptions
+from tqdm import tqdm
 
 
 def transfer_file(
