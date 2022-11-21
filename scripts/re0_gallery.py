@@ -18,20 +18,20 @@ def sync_galleries():
                 en_text: str = Page(link).text
                 break
         else:
-            logging.info(f"no en page for {zh_page.title()}")
+            logging.info("no en page for %s", zh_page.title())
             continue
 
         zh_galleries: list[str] = pattern.findall(zh_page.text)
         en_galleries: list[str] = pattern.findall(en_text)
         if len(en_galleries) != len(zh_galleries):
-            logging.info(f"gallery count mismatch for {zh_page.title()}")
+            logging.info("gallery count mismatch for %s", zh_page.title())
             continue
 
         it = iter(en_galleries)
         zh_page.text, cnt = pattern.subn(lambda _: next(it), zh_page.text)
 
         if not cnt:
-            logging.debug(f"same galleries for {zh_page.title()}")
+            logging.debug("same galleries for %s", zh_page.title())
             continue
 
         zh_page.save(summary=f"Sync galleries with en. {cnt} replacements.")
