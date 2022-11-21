@@ -24,7 +24,12 @@ def sync_galleries():
         zh_galleries: list[str] = pattern.findall(zh_page.text)
         en_galleries: list[str] = pattern.findall(en_text)
         if len(en_galleries) != len(zh_galleries):
-            logging.info("gallery count mismatch for %s", zh_page.title())
+            logging.info(
+                "gallery count mismatch for %s. en: %d, zh: %d",
+                zh_page.title(),
+                len(en_galleries),
+                len(zh_galleries),
+            )
             continue
 
         it = iter(en_galleries)
