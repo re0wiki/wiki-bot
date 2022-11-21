@@ -18,7 +18,7 @@ def sync_galleries():
                 en_text: str = Page(link).text
                 break
         else:
-            logging.info("no en page for %s", zh_page.title())
+            logging.debug("no en page for %s", zh_page.title())
             continue
 
         zh_galleries: list[str] = pattern.findall(zh_page.text)
