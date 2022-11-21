@@ -40,7 +40,7 @@ def sync_galleries():
             continue
 
         zh_page.text = new_text
-        zh_page.save(summary=f"Sync galleries")
+        zh_page.save(summary="Sync galleries")
 
 
 if __name__ == "__main__":
