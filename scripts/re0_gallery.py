@@ -28,13 +28,14 @@ def sync_galleries():
             continue
 
         it = iter(en_galleries)
-        zh_page.text, cnt = pattern.subn(lambda _: next(it), zh_page.text)
+        new_text = pattern.sub(lambda _: next(it), zh_page.text)
 
-        if not cnt:
-            logging.debug("same galleries for %s", zh_page.title())
+        if new_text == zh_page.text:
+            logging.debug("no change for %s", zh_page.title())
             continue
 
-        zh_page.save(summary=f"Sync galleries with en. {cnt} replacements.")
+        zh_page.text = new_text
+        zh_page.save(summary=f"Sync galleries")
 
 
 if __name__ == "__main__":
