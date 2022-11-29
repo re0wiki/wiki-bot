@@ -28,7 +28,7 @@ pattern = re.compile(r"<gallery[^>]*>.*?</gallery>", re.DOTALL)
 
 def sync_galleries():
     """Replace zh galleries with en galleries."""
-    for zh_page in tqdm(AllpagesPageGenerator(includeredirects=False)):
+    for zh_page in tqdm(list(AllpagesPageGenerator(includeredirects=False))):
         zh_page: Page
 
         # get zh text
