@@ -13,6 +13,7 @@ pairs = [
     ("Manga Navigation", None),
     ("Disambig", None),
     ("LN Navigation", None),
+    ("Re:Zero Manga Navigation", None),
 ]
 
 repl = ["template", "-always"]
