@@ -6,7 +6,7 @@ add_job(
             "category",
             "remove",
             "-batch",
-            f"-from:Image Gallery",
+            "-from:Image Gallery",
         ]
     )
 )
