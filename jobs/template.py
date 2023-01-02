@@ -4,8 +4,6 @@ from .jobs_ import CmdJob, add_job
 pairs = [
     ("Character", "Infobox character"),
     ("Re:Zero Light Novel Volumes", "Infobox novel"),
-    ("Spirit", "Seirei"),
-    ("Spirits", "Seirei"),
     ("Parent Tab", None),
     ("Lugnica Navbox", None),
     ("Vollachia Navbox", None),
@@ -15,6 +13,7 @@ pairs = [
     ("Manga Navigation", None),
     ("Disambig", None),
     ("LN Navigation", None),
+    ("Re:Zero Manga Navigation", None),
 ]
 
 repl = ["template", "-always"]
