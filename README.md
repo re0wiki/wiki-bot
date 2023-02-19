@@ -2,9 +2,8 @@
 
 [![GitHub license](https://img.shields.io/github/license/CCXXXI/re0wiki)](LICENSE)
 [![GitHub last commit](https://img.shields.io/github/last-commit/CCXXXI/re0wiki)](../../commits)
+[![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)](https://conventionalcommits.org)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![Total alerts](https://img.shields.io/lgtm/alerts/g/CCXXXI/re0wiki.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/CCXXXI/re0wiki/alerts/)
-[![Language grade: Python](https://img.shields.io/lgtm/grade/python/g/CCXXXI/re0wiki.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/CCXXXI/re0wiki/context:python)
 [![CodeFactor](https://www.codefactor.io/repository/github/ccxxxi/re0wiki/badge)](https://www.codefactor.io/repository/github/ccxxxi/re0wiki)
 [![Discord server](https://img.shields.io/discord/779185920670171136?label=discord&logo=discord&logoColor=white)](https://discord.gg/F554jbmEUd)
 [![Telegram group](https://img.shields.io/badge/Telegram-re0wiki-blue.svg?logo=telegram)](https://t.me/re0wiki)
