@@ -3,10 +3,11 @@
 [![GitHub license](https://img.shields.io/github/license/CCXXXI/re0wiki)](LICENSE)
 [![GitHub last commit](https://img.shields.io/github/last-commit/CCXXXI/re0wiki)](../../commits)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)](https://conventionalcommits.org)
+[![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)](https://www.python.org)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![CodeFactor](https://www.codefactor.io/repository/github/ccxxxi/re0wiki/badge)](https://www.codefactor.io/repository/github/ccxxxi/re0wiki)
 [![Discord server](https://img.shields.io/discord/779185920670171136?label=discord&logo=discord&logoColor=white)](https://discord.gg/F554jbmEUd)
-[![Telegram group](https://img.shields.io/badge/Telegram-re0wiki-blue.svg?logo=telegram)](https://t.me/re0wiki)
+[![Telegram group](https://img.shields.io/badge/Telegram-re0wiki-26A5E4.svg?logo=telegram)](https://t.me/re0wiki)
 
 用于 [Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh) 的一些脚本。
 
