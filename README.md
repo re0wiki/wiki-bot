@@ -1,11 +1,11 @@
-# Re:从零开始的异世界生活 Wiki
+# Wiki Bot
 
-[![GitHub license](https://img.shields.io/github/license/CCXXXI/re0wiki)](LICENSE)
-[![GitHub last commit](https://img.shields.io/github/last-commit/CCXXXI/re0wiki)](../../commits)
+[![GitHub license](https://img.shields.io/github/license/re0wiki/wiki-bot)](LICENSE)
+[![GitHub last commit](https://img.shields.io/github/last-commit/re0wiki/wiki-bot)](https://github.com/re0wiki/wiki-bot/commits)
 [![Conventional Commits](https://img.shields.io/badge/Conventional%20Commits-1.0.0-%23FE5196?logo=conventionalcommits&logoColor=white)](https://conventionalcommits.org)
 [![Python](https://img.shields.io/badge/Python-3776AB?logo=python&logoColor=white)](https://www.python.org)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
-[![CodeFactor](https://www.codefactor.io/repository/github/ccxxxi/re0wiki/badge)](https://www.codefactor.io/repository/github/ccxxxi/re0wiki)
+[![CodeFactor](https://www.codefactor.io/repository/github/re0wiki/wiki-bot/badge)](https://www.codefactor.io/repository/github/re0wiki/wiki-bot)
 [![Discord server](https://img.shields.io/discord/779185920670171136?label=discord&logo=discord&logoColor=white)](https://discord.gg/F554jbmEUd)
 [![Telegram group](https://img.shields.io/badge/Telegram-re0wiki-26A5E4.svg?logo=telegram)](https://t.me/re0wiki)
 
@@ -13,7 +13,7 @@
 
 ## Deployment
 
-- **本项目**：`git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/CCXXXI/re0wiki.git`
+- **本项目**：`git clone --depth 1 --recurse-submodules --shallow-submodules https://github.com/re0wiki/wiki-bot.git`
 - **Python**：[conda-forge/miniforge](https://github.com/conda-forge/miniforge#install)
 - **requirements**：`mamba env create -f environment.yml`
 - [机器人密码 | Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh/wiki/Special:BotPasswords)
