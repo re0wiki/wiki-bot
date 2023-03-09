@@ -199,6 +199,7 @@ user_fixes["heading"] = base | {
             ("Abilities", "能力"),
             ("Trivia", "你知道吗"),
             ("Lyrics?", "歌词"),
+            ("Characters", "登场人物"),
             ("References?", "注释与外部链接"),
         ]
     ],
