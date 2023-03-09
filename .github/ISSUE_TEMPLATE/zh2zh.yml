@@ -9,3 +9,9 @@ body:
       label: 新译名的来源
     validations:
       required: true
+  - type: textarea
+    id: reason
+    attributes:
+      label: 为什么新译名比旧译名更好？
+    validations:
+      required: true
