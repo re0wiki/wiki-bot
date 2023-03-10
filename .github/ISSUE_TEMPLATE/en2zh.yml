@@ -13,6 +13,6 @@ body:
   - type: textarea
     id: source
     attributes:
-      label: 新译名的来源
+      label: 译名的来源
     validations:
       required: true
