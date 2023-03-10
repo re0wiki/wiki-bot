@@ -7,7 +7,7 @@ body:
     id: duplicate-check
     attributes:
       label: 检查重复提议
-      description: 前往 [Issues 列表](https://github.com/re0wiki/wiki-bot/issues?q=label%3A%E4%BF%AE%E6%94%B9%E8%AF%91%E5%90%8D) 检查该译名的提议是否已经存在，若存在则直接前往讨论，不必新建 Issue。
+      description: 前往 [Issues 列表](https://github.com/re0wiki/wiki-bot/issues?q=is%3Aissue) 搜索新译名，若已被提出过则直接前往讨论，不必新建 Issue。
       options:
         - label: 该译名未被提出过
   - type: textarea
