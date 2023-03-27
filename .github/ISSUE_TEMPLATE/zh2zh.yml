@@ -16,6 +16,11 @@ body:
     attributes:
       label: 新译名的来源
       description: 尽量提供原始来源，而非其他百科等二手来源。
+      placeholder: |
+        文库 1 卷简中译
+        短篇集 1 台译
+        hyobunkon 7 章 21 节 https://tieba.baidu.com/p/7351784395
+        原创
     validations:
       required: true
   - type: textarea
