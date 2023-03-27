@@ -15,6 +15,7 @@ body:
     id: source
     attributes:
       label: 新译名的来源
+      description: 尽量提供原始来源，而非其他百科等二手来源。
     validations:
       required: true
   - type: textarea
