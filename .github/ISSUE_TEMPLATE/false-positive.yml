@@ -1,0 +1,12 @@
+name: 错误替换
+description: 机器人进行的某次替换看起来不正确。
+title: "`福尔图娜` 不应替换为 `菲鲁特娜`"
+labels: ["bug"]
+body:
+  - type: input
+    id: link
+    attributes:
+      label: 错误替换示例
+      placeholder: 'https://rezero.fandom.com/zh/wiki/...'
+    validations:
+      required: true
