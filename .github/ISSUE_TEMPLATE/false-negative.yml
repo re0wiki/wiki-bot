@@ -1,0 +1,10 @@
+name: 译名修正
+description: 某个别名没有被自动替换为现用译名。
+title: "`卡尔斯滕` 应替换为 `卡尔斯腾`"
+labels: ["bug"]
+body:
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充说明
+      description: 选填，可以补充任何内容。

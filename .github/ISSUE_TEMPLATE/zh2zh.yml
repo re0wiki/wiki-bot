@@ -29,3 +29,8 @@ body:
       label: 为什么新译名比旧译名更好？
     validations:
       required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充说明
+      description: 选填，可以补充任何内容。
