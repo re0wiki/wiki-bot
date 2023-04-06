@@ -33,4 +33,4 @@ body:
     id: extra
     attributes:
       label: 补充说明
-      description: 可选，可以补充任何内容。
+      description: 选填，可以补充任何内容。
