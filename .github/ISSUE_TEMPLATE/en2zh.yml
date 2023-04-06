@@ -23,3 +23,8 @@ body:
         原创
     validations:
       required: true
+  - type: textarea
+    id: extra
+    attributes:
+      label: 补充说明
+      description: 可选，可以补充任何内容。
