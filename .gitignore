@@ -286,7 +286,7 @@ poetry.toml
 # End of https://www.toptal.com/developers/gitignore/api/pycharm,python
 
 throttle.ctrl
-pywikibot.lwp
+pywikibot*.lwp
 user-password.py
 *apicache*
 autonomous_problems.dat
