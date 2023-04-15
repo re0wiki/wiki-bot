@@ -5,7 +5,9 @@ import re
 import sentry_sdk
 
 from jobs.jobs_ import CmdJob
-from jobs.starts_ import ns2start, ns_more, starts_more
+from jobs.starts_ import ns2start
+from jobs.starts_ import ns_base
+from jobs.starts_ import starts_more
 
 # region sentry
 sentry_sdk.init(
@@ -27,14 +29,13 @@ parser = argparse.ArgumentParser(description="移动页面 & 替换文本")
 parser.add_argument("old")
 parser.add_argument("new")
 
-
 # endregion
 
 
 def rename(old, new):
     """Move pages and replace text."""
     o_pages = []
-    for ns in ns_more + ["file"]:
+    for ns in ns_base + ["file"]:
         pages = (
             CmdJob(["listpages", "-format:3", f"-titleregex:{old}", ns2start(ns)])
             .run(simulate=True, capture_output=True)

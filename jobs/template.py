@@ -1,4 +1,5 @@
-from .jobs_ import CmdJob, add_job
+from .jobs_ import add_job
+from .jobs_ import CmdJob
 
 # noinspection SpellCheckingInspection
 pairs = [
@@ -7,6 +8,7 @@ pairs = [
     ("Parent Tab", None),
     ("Lugnica Navbox", None),
     ("Vollachia Navbox", None),
+    ("Gusteko Navbox", None),
     ("Royal Election Navbox", None),
     ("Royal Selection Navbox", None),
     ("Anime Navigation", None),
