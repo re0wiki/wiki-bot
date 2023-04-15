@@ -1,5 +1,5 @@
 import regex as re
-from pywikibot import Page, Site
+from pywikibot import Page
 from pywikibot.pagegenerators import AllpagesPageGenerator
 from tqdm import tqdm
 
@@ -8,8 +8,6 @@ pattern = re.compile(r".+?:(.+)")
 
 def create_redirect():
     """Create redirect [[stem]] for given [[prefix:stem]]."""
-    Site().login()
-
     for target in tqdm(AllpagesPageGenerator(includeredirects=False)):
         if match := pattern.fullmatch(target.title()):
             if not (page := Page(target.site, match.group(1))).isRedirectPage():
