@@ -52,7 +52,8 @@ mid_dots = "[" + "".join(chr(i) for i in mid_dots_code) + "]"
 mid_dot = "\xb7"
 
 user_fixes["misc"] = base | {
-    "generator": generator_base,
+    "generator":
+    generator_base,
     "replacements": [
         (nbsp, " "),
         (mid_dots, mid_dot),
@@ -73,26 +74,23 @@ user_fixes["misc"] = base | {
 
 # region date
 user_fixes["date"] = base | {
-    "generator": generator_base,
-    "replacements": [
-        (rf"{m}\s*(\d+)\s*[，,]\s*(\d+)", rf"\2年{i + 1}月\1日")
-        for i, m in enumerate(
-            (
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
-            )
-        )
-    ],
+    "generator":
+    generator_base,
+    "replacements": [(rf"{m}\s*(\d+)\s*[，,]\s*(\d+)", rf"\2年{i + 1}月\1日")
+                     for i, m in enumerate((
+                         "January",
+                         "February",
+                         "March",
+                         "April",
+                         "May",
+                         "June",
+                         "July",
+                         "August",
+                         "September",
+                         "October",
+                         "November",
+                         "December",
+                     ))],
 }
 # endregion
 
@@ -112,97 +110,91 @@ user_fixes["anti-ve"] = {
 
 # region para
 user_fixes["para"] = base | {
-    "generator": generator_more,
-    "replacements": [
-        (rf"\|\s*{o}\s*=", f"| {n} =")
-        for o, n in [
-            ("Image-Size", "请手动移除该参数"),
-            ("Name", "name"),
-            ("Image", "image"),
-            ("Kanji", "name_ja_kanji"),
-            ("Romaji", "name_ja_romaji"),
-            ("Alias", "alias"),
-            ("Nickname", "nickname"),
-            ("Race", "race"),
-            ("Gender", "gender"),
-            ("Birthday", "birthday"),
-            ("Age", "age"),
-            ("Hair Color", "hair"),
-            ("Eye Color", "eyes"),
-            ("Height", "height"),
-            ("Weight", "weight"),
-            ("Affiliation", "affiliation"),
-            ("Previous Affiliation", "previous_affiliation"),
-            ("Occupation", "occupation"),
-            ("Previous Occupation", "previous_occupation"),
-            ("Status", "status"),
-            ("Relatives", "relatives"),
-            ("Magic", "magic"),
-            ("Divine Protection", "divine_protection"),
-            ("Authority", "authority"),
-            ("Weapon", "weapon"),
-            ("Equipment", "equipment"),
-            ("Anime", "anime"),
-            ("Light Novel", "novel"),
-            ("Game", "game"),
-            ("Manga", "comic"),
-            ("Japanese Voice", "voice_ja"),
-            ("English Voice", "voice_en"),
-        ]
-    ],
+    "generator":
+    generator_more,
+    "replacements": [(rf"\|\s*{o}\s*=", f"| {n} =") for o, n in [
+        ("Image-Size", "请手动移除该参数"),
+        ("Name", "name"),
+        ("Image", "image"),
+        ("Kanji", "name_ja_kanji"),
+        ("Romaji", "name_ja_romaji"),
+        ("Alias", "alias"),
+        ("Nickname", "nickname"),
+        ("Race", "race"),
+        ("Gender", "gender"),
+        ("Birthday", "birthday"),
+        ("Age", "age"),
+        ("Hair Color", "hair"),
+        ("Eye Color", "eyes"),
+        ("Height", "height"),
+        ("Weight", "weight"),
+        ("Affiliation", "affiliation"),
+        ("Previous Affiliation", "previous_affiliation"),
+        ("Occupation", "occupation"),
+        ("Previous Occupation", "previous_occupation"),
+        ("Status", "status"),
+        ("Relatives", "relatives"),
+        ("Magic", "magic"),
+        ("Divine Protection", "divine_protection"),
+        ("Authority", "authority"),
+        ("Weapon", "weapon"),
+        ("Equipment", "equipment"),
+        ("Anime", "anime"),
+        ("Light Novel", "novel"),
+        ("Game", "game"),
+        ("Manga", "comic"),
+        ("Japanese Voice", "voice_ja"),
+        ("English Voice", "voice_en"),
+    ]],
 }
 # endregion
 
 # region gallery
 user_fixes["gallery"] = base | {
-    "generator": "-catr:图库",
-    "replacements": [
-        (o + r"\s*(?==)", n)
-        for o, n in [
-            ("Anime", "动画"),
-            ("Season 1", "第一季"),
-            ("Season 2", "第二季"),
-            ("Light Novels?", "小说"),
-            ("Main Series", "正传"),
-            ("Tanpenshuu", "月刊CA短篇"),
-            ("Side Content", "特典SS"),
-            ("Side Stories", "特典SS"),
-            ("Manga", "漫画"),
-            ("Daisshou", "第1章"),
-            ("Dainishou", "第2章"),
-            ("Daisanshou", "第3章"),
-            ("Daiyonshou", "第4章"),
-            ("Anthology", "官方同人精选集"),
-            ("Games", "游戏"),
-            ("Death or Kiss", "死或吻"),
-            ("-Infinity", "INFINITY"),
-            ("The Prophecy of the Throne", "虚假的王选候补"),
-            (r"Misc\.?", "其他"),
-        ]
-    ],
+    "generator":
+    "-catr:图库",
+    "replacements": [(o + r"\s*(?==)", n) for o, n in [
+        ("Anime", "动画"),
+        ("Season 1", "第一季"),
+        ("Season 2", "第二季"),
+        ("Light Novels?", "小说"),
+        ("Main Series", "正传"),
+        ("Tanpenshuu", "月刊CA短篇"),
+        ("Side Content", "特典SS"),
+        ("Side Stories", "特典SS"),
+        ("Manga", "漫画"),
+        ("Daisshou", "第1章"),
+        ("Dainishou", "第2章"),
+        ("Daisanshou", "第3章"),
+        ("Daiyonshou", "第4章"),
+        ("Anthology", "官方同人精选集"),
+        ("Games", "游戏"),
+        ("Death or Kiss", "死或吻"),
+        ("-Infinity", "INFINITY"),
+        ("The Prophecy of the Throne", "虚假的王选候补"),
+        (r"Misc\.?", "其他"),
+    ]],
 }
 # endregion
 
 # region heading
 user_fixes["heading"] = base | {
-    "generator": generator_more,
-    "replacements": [
-        ("(?<== )" + o + "(?= =)", n)
-        for o, n in [
-            ("Relationships", "关系"),
-            ("Synopsis", "梗概"),
-            ("Summary", "梗概"),
-            ("Gallery", "图库"),
-            ("Image Gallery", "图库"),
-            ("Appearance", "外貌"),
-            ("Personality", "性格"),
-            ("Abilities", "能力"),
-            ("Trivia", "你知道吗"),
-            ("Lyrics?", "歌词"),
-            ("Characters", "登场人物"),
-            ("References?", "注释与外部链接"),
-        ]
-    ],
+    "generator":
+    generator_more,
+    "replacements": [("(?<== )" + o + "(?= =)", n) for o, n in [
+        ("Relationships", "关系"),
+        ("Synopsis", "梗概"),
+        ("Summary", "梗概"),
+        ("Gallery", "图库"),
+        ("Image Gallery", "图库"),
+        ("Appearance", "外貌"),
+        ("Personality", "性格"),
+        ("Abilities", "能力"),
+        ("Trivia", "你知道吗"),
+        ("Lyrics?", "歌词"),
+        ("Characters", "登场人物"),
+        ("References?", "注释与外部链接"),
+    ]],
 }
 # endregion
 
@@ -270,10 +262,9 @@ def f(chars: str):
     :return: "[similar_chars]"
     """
     return (
-        "["
-        + "".join(sorted(set(flatten(sc_map[c] + s2t(sc_map[c]) for c in chars))))
-        + "]"
-    )
+        "[" +
+        "".join(sorted(set(flatten(sc_map[c] + s2t(sc_map[c])
+                                   for c in chars)))) + "]")
 
 
 def p2o(pattern: str):
@@ -300,10 +291,10 @@ def get_repl_func(name: str):
 
 
 user_fixes["translation"] = base | {
-    "generator": generator_more,
+    "generator":
+    generator_more,
     "replacements": [
-        (p2o(p), get_repl_func(p2n(p)))
-        for p in [  # 普通的
+        (p2o(p), get_repl_func(p2n(p))) for p in [  # 普通的
             "丝碧卡",
             "亚拉基亚",
             "亨克尔",
@@ -515,8 +506,7 @@ user_fixes["translation"] = base | {
             "杰比聂尔",
             "爱梅拉妲",
             "德莱森",
-        ]
-        + [  # 多字少字的
+        ] + [  # 多字少字的
             "菜月·?昴",
             "安娜斯?塔西娅",
             "培提尔其乌?斯",
@@ -524,8 +514,7 @@ user_fixes["translation"] = base | {
             "莱茵哈鲁?特",
             "罗兹瓦尔?",
             "帕尔?米拉",
-        ]
-        + [  # 需要特判的
+        ] + [  # 需要特判的
             "加菲尔(?!丝|特|艾)",
             "拉菲尔(?!丝|特|艾)",
             "利格鲁(?!卡|姆)",
@@ -553,10 +542,8 @@ user_fixes["translation"] = base | {
             "(?<!芙蕾|佩)多尔肯(?!罗登|普里恩)",
             "(?<!罗)伊娜",
         ]
-    ]
-    + [
-        (o, get_repl_func(n))
-        for o, n in [  # 手动添加的替换组
+    ] + [
+        (o, get_repl_func(n)) for o, n in [  # 手动添加的替换组
             (rf"{f('凛淋萍平苹')}{f('果')}", "{{Ringa}}"),
             (f"{f('流')}{f('丽')}{f('连')}", "琉璃泪"),
             (f"{f('贝')}{f('阿')}{f('托')}{f('莉')}{f('丝')}", "碧翠丝"),
@@ -573,7 +560,9 @@ user_fixes["translation"] = base | {
             (f"其{f('他它她')}", "其他"),
             (r"\{\{Od\}\}\{\{Laguna\}\}", "{{Od}}·{{Laguna}}"),
             (
-                "(?<!禁书与谜之|人工|自然|契约|[大邪微准])" f"{f('精')}{f('灵')}" "(?!骑士|[术使])",
+                "(?<!禁书与谜之|人工|自然|契约|[大邪微准])"
+                f"{f('精')}{f('灵')}"
+                "(?!骑士|[术使])",
                 "{{Seirei or Elf}}",
             ),
             (f"{f('妖')}{f('精')}", "{{Yousei or Elf}}"),
