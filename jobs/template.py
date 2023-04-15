@@ -1,4 +1,5 @@
-from .jobs_ import CmdJob, add_job
+from .jobs_ import add_job
+from .jobs_ import CmdJob
 
 # noinspection SpellCheckingInspection
 pairs = [
