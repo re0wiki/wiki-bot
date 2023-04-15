@@ -1,7 +1,8 @@
 import regex as re
-from pywikibot import Page
 from pywikibot.pagegenerators import AllpagesPageGenerator
 from tqdm import tqdm
+
+from pywikibot import Page
 
 pattern = re.compile(r".+?:(.+)")
 
