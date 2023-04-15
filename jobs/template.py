@@ -7,6 +7,7 @@ pairs = [
     ("Parent Tab", None),
     ("Lugnica Navbox", None),
     ("Vollachia Navbox", None),
+    ("Gusteko Navbox", None),
     ("Royal Election Navbox", None),
     ("Royal Selection Navbox", None),
     ("Anime Navigation", None),
