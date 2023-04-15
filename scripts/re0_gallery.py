@@ -1,7 +1,7 @@
 import logging
 
 import regex as re
-from pywikibot import Page, Site
+from pywikibot import Page
 from pywikibot.cosmetic_changes import CosmeticChangesToolkit
 from pywikibot.pagegenerators import AllpagesPageGenerator
 from tqdm import tqdm
@@ -28,8 +28,6 @@ pattern = re.compile(r"<gallery[^>]*>.*?</gallery>", re.DOTALL)
 
 def sync_galleries():
     """Replace zh galleries with en galleries."""
-    Site().login()
-
     for zh_page in tqdm(list(AllpagesPageGenerator(includeredirects=False))):
         zh_page: Page
 
