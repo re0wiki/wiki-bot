@@ -116,7 +116,6 @@ user_fixes["para"] = base | {
     "replacements": [
         (rf"\|\s*{o}\s*=", f"| {n} =")
         for o, n in [
-            ("Image-Size", "请手动移除该参数"),
             ("Name", "name"),
             ("Image", "image"),
             ("Kanji", "name_ja_kanji"),
@@ -148,6 +147,8 @@ user_fixes["para"] = base | {
             ("Manga", "comic"),
             ("Japanese Voice", "voice_ja"),
             ("English Voice", "voice_en"),
+            ("Image-Size", "该参数已弃用"),
+            ("Pages", "该参数已弃用"),
         ]
     ],
 }
