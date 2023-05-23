@@ -149,6 +149,7 @@ user_fixes["para"] = base | {
             ("English Voice", "voice_en"),
             ("Pages", "pages_ja"),
             ("ISBN", "isbn_ja"),
+            ("Release Date", "date_ja"),
             ("Image-Size", "该参数已弃用"),
         ]
     ],
