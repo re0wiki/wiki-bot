@@ -147,8 +147,8 @@ user_fixes["para"] = base | {
             ("Manga", "comic"),
             ("Japanese Voice", "voice_ja"),
             ("English Voice", "voice_en"),
+            ("Pages", "pages"),
             ("Image-Size", "该参数已弃用"),
-            ("Pages", "该参数已弃用"),
         ]
     ],
 }
