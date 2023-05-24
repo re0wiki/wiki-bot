@@ -75,8 +75,12 @@ user_fixes["misc"] = base | {
 user_fixes["date"] = base | {
     "generator": generator_base,
     "replacements": [
-        (rf"{m}\s*(\d+)\s*[，,]\s*(\d+)", rf"\2年{i + 1}月\1日")
-        for i, m in enumerate(
+        (
+            rf"{month}\s*(\d+)\s*[，,]\s*(\d+)",
+            # yyyy-mm-dd
+            lambda m: f"{m.group(2)}-{str(i + 1).zfill(2)}-{m.group(1).zfill(2)}",
+        )
+        for i, month in enumerate(
             (
                 "January",
                 "February",
