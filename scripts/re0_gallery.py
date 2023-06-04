@@ -23,7 +23,8 @@ NESTED_TEMPLATE_REGEX = re.compile(
     re.VERBOSE | re.DOTALL,
 )
 
-pattern = re.compile(r"<gallery[^>]*>.*?</gallery>", re.DOTALL)
+gallery_pattern = re.compile(r"<gallery[^>]*>.*?</gallery>", re.DOTALL)
+tabber_pattern = re.compile(r"<tabber>.*?</tabber>", re.DOTALL)
 
 
 def sync_galleries():
@@ -51,11 +52,36 @@ def sync_galleries():
         zh_text = NESTED_TEMPLATE_REGEX.sub("\0", zh_text)
 
         # check galleries counts
-        zh_galleries: list[str] = pattern.findall(zh_text)
-        en_galleries: list[str] = pattern.findall(en_text)
+        zh_galleries: list[str] = gallery_pattern.findall(zh_text)
+        en_galleries: list[str] = gallery_pattern.findall(en_text)
+        is_sync_tabber = False
         if len(en_galleries) != len(zh_galleries):
             logging.info(
                 "gallery count mismatch for %s. en: %d, zh: %d",
+                zh_page.title(),
+                len(en_galleries),
+                len(zh_galleries),
+            )
+
+            # try to sync the tabber for 图库
+            if not zh_page.title().endswith("图库"):
+                continue
+            en_tabbers: list[str] = tabber_pattern.findall(en_text)
+            if len(en_tabbers) == 0:
+                logging.warning("no en tabber for %s", zh_page.title())
+                continue
+            if len(en_tabbers) > 1:
+                logging.warning("multiple en tabbers for %s", zh_page.title())
+                continue
+            is_sync_tabber = True
+            zh_text = tabber_pattern.sub(en_tabbers[0], zh_text)
+
+        # check galleries counts again
+        zh_galleries: list[str] = gallery_pattern.findall(zh_text)
+        en_galleries: list[str] = gallery_pattern.findall(en_text)
+        if len(en_galleries) != len(zh_galleries):
+            logging.warning(
+                "gallery count still mismatch for %s. en: %d, zh: %d",
                 zh_page.title(),
                 len(en_galleries),
                 len(zh_galleries),
@@ -64,7 +90,7 @@ def sync_galleries():
 
         # replace galleries
         it = iter(en_galleries)
-        zh_text = pattern.sub(lambda _: next(it), zh_text)
+        zh_text = gallery_pattern.sub(lambda _: next(it), zh_text)
 
         # restore templates
         it = iter(zh_templates)
@@ -79,8 +105,11 @@ def sync_galleries():
             continue
 
         zh_page.text = zh_text
-        zh_page.save(summary=f"Sync galleries with {link}")
+        zh_page.save(
+            summary=f"Sync {'tabber' if is_sync_tabber else 'galleries'} with {link}"
+        )
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     sync_galleries()
