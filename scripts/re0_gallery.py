@@ -23,7 +23,7 @@ NESTED_TEMPLATE_REGEX = re.compile(
     re.VERBOSE | re.DOTALL,
 )
 
-pattern = re.compile(r"<gallery[^>]*>.*?</gallery>", re.DOTALL)
+gallery_pattern = re.compile(r"<gallery[^>]*>.*?</gallery>", re.DOTALL)
 
 
 def sync_galleries():
@@ -51,8 +51,8 @@ def sync_galleries():
         zh_text = NESTED_TEMPLATE_REGEX.sub("\0", zh_text)
 
         # check galleries counts
-        zh_galleries: list[str] = pattern.findall(zh_text)
-        en_galleries: list[str] = pattern.findall(en_text)
+        zh_galleries: list[str] = gallery_pattern.findall(zh_text)
+        en_galleries: list[str] = gallery_pattern.findall(en_text)
         if len(en_galleries) != len(zh_galleries):
             logging.info(
                 "gallery count mismatch for %s. en: %d, zh: %d",
@@ -64,7 +64,7 @@ def sync_galleries():
 
         # replace galleries
         it = iter(en_galleries)
-        zh_text = pattern.sub(lambda _: next(it), zh_text)
+        zh_text = gallery_pattern.sub(lambda _: next(it), zh_text)
 
         # restore templates
         it = iter(zh_templates)
