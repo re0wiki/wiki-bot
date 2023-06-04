@@ -188,7 +188,7 @@ user_fixes["gallery"] = base | {
             ("Death or Kiss", "死或吻"),
             ("-Infinity", "INFINITY"),
             ("The Prophecy of the Throne", "虚假的王选候补"),
-            (r"Misc\.?", "其他"),
+            (r"Misc(ellaneous|\.)?", "其他"),
         ]
     ],
 }
