@@ -83,4 +83,5 @@ def sync_galleries():
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.INFO)
     sync_galleries()
