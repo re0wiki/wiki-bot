@@ -185,7 +185,6 @@ user_fixes["gallery"] = base | {
             ("Daiyonshou", "第4章"),
             ("Anthology", "官方同人精选集"),
             ("Games", "游戏"),
-            ("Death or Kiss", "死或吻"),
             ("-Infinity", "INFINITY"),
             ("The Prophecy of the Throne", "虚假的王选候补"),
             (r"Misc(ellaneous|\.)?", "其他"),
