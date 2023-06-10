@@ -70,7 +70,6 @@ user_fixes["misc"] = base | {
         (r"'''(\{\{R\|.*?\}\})'''", r"\1"),
     ],
 }
-
 # endregion
 
 
