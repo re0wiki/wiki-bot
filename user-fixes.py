@@ -1,6 +1,7 @@
 import itertools
 from collections import defaultdict
 from functools import partial
+
 import regex as re
 from opencc import OpenCC
 
