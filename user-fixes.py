@@ -1,6 +1,6 @@
 import itertools
 from collections import defaultdict
-
+from functools import partial
 import regex as re
 from opencc import OpenCC
 
@@ -69,16 +69,23 @@ user_fixes["misc"] = base | {
         (r"'''(\{\{R\|.*?\}\})'''", r"\1"),
     ],
 }
+
+
 # endregion
 
+
 # region date
+def match_to_yyyymmdd(mouth: int, match: re.Match) -> str:
+    return f"{match.group(2)}-{str(mouth).zfill(2)}-{match.group(1).zfill(2)}"
+
+
 user_fixes["date"] = base | {
     "generator": generator_base,
     "replacements": [
         (
             rf"{month}\s*(\d+)\s*[，,]\s*(\d+)",
-            # yyyy-mm-dd
-            lambda m: f"{m.group(2)}-{str(i + 1).zfill(2)}-{m.group(1).zfill(2)}",
+            # avoid late binding of i
+            partial(match_to_yyyymmdd, i + 1),
         )
         for i, month in enumerate(
             (
