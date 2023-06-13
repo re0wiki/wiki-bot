@@ -24,7 +24,7 @@ NESTED_TEMPLATE_REGEX = re.compile(
 )
 
 gallery_pattern = re.compile(r"<gallery[^>]*>.*?</gallery>", re.DOTALL)
-page_pattern = re.compile(r"(?<=}}).*(?=\[\[)", re.DOTALL)
+page_pattern = re.compile(r"(?<=}}).*?(?=\[\[)", re.DOTALL)
 
 
 def sync_galleries():
