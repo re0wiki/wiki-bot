@@ -25,7 +25,7 @@ NESTED_TEMPLATE_REGEX = re.compile(
 )
 
 gallery_pattern = re.compile(r"<gallery[^>]*>.*?</gallery>", re.DOTALL)
-tabber_pattern = re.compile(r"<tabber>.*?</tabber>", re.DOTALL)
+page_pattern = re.compile(r"(?<=}}).*(?=\[\[)", re.DOTALL)
 
 
 def sync_galleries():
@@ -34,12 +34,12 @@ def sync_galleries():
         zh_page: Page
 
         # get zh text
-        zh_text = zh_page.text
+        zh_raw_text = zh_text = zh_page.text
 
         # get en text
         for link in zh_page.iterlanglinks():
             if link.site.code == "en":
-                en_text: str = Page(link).text
+                en_raw_text = en_text = Page(link).text
                 break
         else:
             logging.debug("no en page for %s", zh_page.title())
@@ -64,18 +64,19 @@ def sync_galleries():
                 len(zh_galleries),
             )
 
-            # try to sync the tabber for 图库
+            # try to sync the page for 图库
             if not zh_page.title().endswith("图库"):
                 continue
-            en_tabbers: list[str] = tabber_pattern.findall(en_text)
-            if len(en_tabbers) == 0:
-                logging.warning("no en tabber for %s", zh_page.title())
+            en_pages: list[str] = page_pattern.findall(en_raw_text)
+            zh_pages: list[str] = page_pattern.findall(zh_raw_text)
+            if len(en_pages) != 1:
+                logging.warning("en page format mismatch for %s", zh_page.title())
                 continue
-            if len(en_tabbers) > 1:
-                logging.warning("multiple en tabbers for %s", zh_page.title())
+            if len(zh_pages) != 1:
+                logging.warning("zh page format mismatch for %s", zh_page.title())
                 continue
             is_sync_tabber = True
-            zh_text = tabber_pattern.sub(en_tabbers[0], zh_text)
+            zh_text = page_pattern.sub(en_pages[0], zh_raw_text)
 
         # check galleries counts again
         zh_galleries: list[str] = gallery_pattern.findall(zh_text)
