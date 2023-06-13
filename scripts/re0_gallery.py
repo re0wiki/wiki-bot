@@ -9,7 +9,6 @@ from tqdm import tqdm
 NESTED_TEMPLATE_REGEX = re.compile(
     r"""
 {{\s*(?:msg:\s*)?
-  (?!!)
   (?:[^{\|#0-9][^{\|#]*?)\s*
   (?:\|(?:[^{]*?
           (?:(?:{{{[^{}]+?}}}
