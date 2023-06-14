@@ -70,8 +70,7 @@ def transfer(*, source, target):
     """搬运图片。"""
     logging.info("source=%s, target=%s", source, target)
 
-    # use allpages to include redirect pages
-    for page in tqdm(list(source.allpages(namespace="File"))):
+    for page in tqdm(list(source.allimages())):
         try:
             transfer_file(target_site=target, source_site=source, source_page=page)
         except (exceptions.PageRelatedError, exceptions.APIError, ValueError) as e:
