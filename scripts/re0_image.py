@@ -83,9 +83,4 @@ if __name__ == "__main__":
         level=logging.INFO,
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     )
-
-    pywikibot.output("Transfer files")
-    pywiki_logger = logging.getLogger("pywiki")
-    pywiki_logger.setLevel(logging.ERROR)
-
     transfer(source=pywikibot.Site("en", "re0"), target=pywikibot.Site("zh", "re0"))
