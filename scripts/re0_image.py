@@ -11,7 +11,7 @@ def transfer_file(
     *,
     target_site: pywikibot.Site,
     source_site: pywikibot.Site,
-    source_page: pywikibot.Page,
+    source_page: pywikibot.FilePage,
 ):
     """搬运一张图片。"""
     if not target_site.logged_in():
@@ -22,7 +22,6 @@ def transfer_file(
         return
     target_page: pywikibot.FilePage = pywikibot.FilePage(target_site, title)
 
-    source_page: pywikibot.FilePage = get_final_redirect_target(source_page)
     if source_page is None:
         logging.warning("source_page is None. title=%s", title)
         return
@@ -51,26 +50,12 @@ def transfer_file(
         )
 
 
-def get_final_redirect_target(page: pywikibot.Page) -> pywikibot.FilePage | None:
-    """Continuously get redirect target until a non-redirect page encountered."""
-    try:
-        while page.isRedirectPage():
-            page = page.getRedirectTarget()
-    except exceptions.CircularRedirectError as e:
-        logging.warning(str(e))
-        return None
-    else:
-        if not isinstance(page, pywikibot.FilePage) or not page.exists():
-            logging.warning("%s is not a FilePage or does not exist.", page)
-            return None
-        return page
-
-
 def transfer(*, source, target):
     """搬运图片。"""
     logging.info("source=%s, target=%s", source, target)
 
     for page in tqdm(list(source.allimages())):
+        assert isinstance(page, pywikibot.FilePage)
         try:
             transfer_file(target_site=target, source_site=source, source_page=page)
         except (exceptions.PageRelatedError, exceptions.APIError, ValueError) as e:
