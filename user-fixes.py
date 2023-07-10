@@ -193,8 +193,8 @@ user_fixes["gallery"] = base | {
             ("Anthology", "官方同人精选集"),
             ("Games?", "游戏"),
             ("-Infinity", "INFINITY"),
-            ("The Prophecy of the Throne", "禁书与谜之精灵"),
-            ("Forbidden Book and the Mysterious Spirit", "虚假的王选候补"),
+            ("The Prophecy of the Throne", "虚假的王选候补"),
+            ("Forbidden Book and the Mysterious Spirit", "禁书与谜之精灵"),
             (r"Misc(ellaneous|\.)?", "其他"),
         ]
     ],
