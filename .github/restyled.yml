@@ -1,5 +1,4 @@
 auto: true
 commit_template: "style: restyle by ${restyler.name}"
 restylers:
-  - "*"
   - black

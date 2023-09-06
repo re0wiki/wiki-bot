@@ -3,7 +3,7 @@ from abc import ABC, abstractmethod
 from collections.abc import Callable, Iterable
 from importlib import import_module
 from pathlib import Path
-from subprocess import run
+from subprocess import run, CalledProcessError
 
 
 class Job(ABC):
@@ -37,6 +37,9 @@ class CmdJob(Job):
                 shell=True,
                 check=True,
             )
+        except CalledProcessError as e:
+            logging.error(e)
+            return ""
         finally:
             logging.info(cmd)
             logging.info("=" * 16 + "end" + "=" * 16)
