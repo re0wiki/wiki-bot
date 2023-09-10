@@ -40,7 +40,9 @@ def transfer_file(
     logging.info("upload %s", title)
     with TemporaryDirectory() as tmp_dir:
         filename = path.join(tmp_dir, title)
-        source_page.download(filename)
+        if not source_page.download(filename):
+            logging.warning("download failed. title=%s", title)
+            return
         target_page.upload(
             filename,
             comment=text,
