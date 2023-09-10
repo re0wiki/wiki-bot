@@ -97,13 +97,13 @@ def sync_galleries():
         it = iter(zh_templates)
         zh_text = re.sub("\0", lambda _: next(it), zh_text)
 
-        # cosmetic changes
-        zh_text = CosmeticChangesToolkit(zh_page).change(zh_text)
-
         # check if text changed
         if zh_text == zh_page.text:
             logging.debug("no change for %s", zh_page.title())
             continue
+
+        # cosmetic changes
+        zh_text = CosmeticChangesToolkit(zh_page).change(zh_text)
 
         zh_page.text = zh_text
         zh_page.save(
