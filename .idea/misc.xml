@@ -3,7 +3,7 @@
   <component name="Black">
     <option name="enabledOnReformat" value="true" />
     <option name="enabledOnSave" value="true" />
-    <option name="sdkUUID" value="8a4beda2-4309-491b-9477-9a454e4ef31f" />
+    <option name="sdkName" value="re0wiki" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="re0wiki" project-jdk-type="Python SDK" />
 </project>
