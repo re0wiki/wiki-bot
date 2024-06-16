@@ -3,8 +3,9 @@ import logging
 import regex as re
 from pywikibot import Page
 from pywikibot.cosmetic_changes import CosmeticChangesToolkit
-from pywikibot.pagegenerators import AllpagesPageGenerator
+from pywikibot.pagegenerators import GeneratorFactory
 from tqdm import tqdm
+import pywikibot
 
 NESTED_TEMPLATE_REGEX = re.compile(
     r"""
@@ -29,7 +30,11 @@ page_pattern = re.compile(r"(?<=}}).*?(?=\[\[)", re.DOTALL)
 
 def sync_galleries():
     """Replace zh galleries with en galleries."""
-    for zh_page in tqdm(list(AllpagesPageGenerator(includeredirects=False))):
+
+    gen_factory = GeneratorFactory()
+    gen_factory.handle_args(pywikibot.handle_args())
+
+    for zh_page in tqdm(list(gen_factory.getCombinedGenerator())):
         zh_page: Page
 
         # get zh text
@@ -63,9 +68,7 @@ def sync_galleries():
                 len(zh_galleries),
             )
 
-            # try to sync the page for 图库
-            if not zh_page.title().endswith("图库"):
-                continue
+            # try to sync the page
             en_pages: list[str] = page_pattern.findall(en_raw_text)
             zh_pages: list[str] = page_pattern.findall(zh_raw_text)
             if len(en_pages) != 1:

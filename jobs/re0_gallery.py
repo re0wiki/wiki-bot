@@ -1,3 +1,3 @@
 from .jobs_ import CmdJob, add_job
 
-add_job(CmdJob(["re0_gallery"]))
+add_job(CmdJob(["re0_gallery", "-catr:图库"]))

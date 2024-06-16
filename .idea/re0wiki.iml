@@ -5,7 +5,7 @@
       <excludeFolder url="file://$MODULE_DIR$/scripts/apicache-py3" />
       <excludeFolder url="file://$MODULE_DIR$/apicache-py3" />
     </content>
-    <orderEntry type="inheritedJdk" />
+    <orderEntry type="jdk" jdkName="re0wiki" jdkType="Python SDK" />
     <orderEntry type="sourceFolder" forTests="false" />
   </component>
   <component name="PyDocumentationSettings">
