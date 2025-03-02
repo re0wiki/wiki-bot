@@ -1,4 +1,4 @@
-# mamba env create -yf environment.dev.yml
+# conda env create -f environment.dev.yml
 name: re0wiki
 channels: [conda-forge]
 dependencies:
