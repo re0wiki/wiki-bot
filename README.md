@@ -24,6 +24,5 @@
 ## Usage
 
 - [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
-- `bash auto.sh`
 - `python main.py -h`
 - `python rename.py -h`
