@@ -10,3 +10,4 @@ dependencies:
       - -r pywikibot/requirements.txt
       # dev
       - git+https://github.com/ccxxxi/pywikibot
+  - black
