@@ -16,10 +16,11 @@
 - **本项目**：`git clone --recurse-submodules https://github.com/re0wiki/wiki-bot.git`
 - **Python**：[conda-forge/miniforge](https://github.com/conda-forge/miniforge#install)
 - **requirements**：`conda env create -f environment.yml`
+    - 需要 C++ 编译工具，可以 `sudo apt install build-essential` 或用其他方式安装
 - [机器人密码 | Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh/wiki/Special:BotPasswords)
 - **用户配置文件**
-  1. [user-config.py#L17](./user-config.py#L17)
-  2. 同目录下创建`user-password.py`并填写，格式为`('<UserName>', BotPassword('<BotName>', '<BotPassword>'))`
+    1. [user-config.py#L17](./user-config.py#L17)
+    2. 同目录下创建`user-password.py`并填写，格式为`('<UserName>', BotPassword('<BotName>', '<BotPassword>'))`
 
 ## Usage
 
