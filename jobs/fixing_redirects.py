@@ -5,6 +5,7 @@ add_job(
     CmdJob(
         [
             "fixing_redirects",
+            "-always",
         ]
         + starts_more
     )
