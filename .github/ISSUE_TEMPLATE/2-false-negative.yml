@@ -1,6 +1,6 @@
-name: 译名修正
+name: 遗漏替换
 description: 某个别名没有被自动替换为现用译名。
-title: "`卡尔斯滕` 应替换为 `卡尔斯腾`"
+title: "`卡尔斯滕` 应自动替换为 `卡尔斯腾`"
 labels: ["bug"]
 body:
   - type: textarea
