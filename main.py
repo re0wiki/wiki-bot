@@ -2,17 +2,7 @@ import argparse
 import logging
 import sys
 
-import sentry_sdk
-
 from jobs import jobs, run
-
-# region sentry
-sentry_sdk.init(
-    "https://b9865f81742941e1b658462ed983cfe7@o996799.ingest.sentry.io/5975280",
-    traces_sample_rate=1.0,
-)
-sentry_sdk.set_user({"ip_address": "{{auto}}"})
-# endregion
 
 # region logging
 logging.basicConfig(
