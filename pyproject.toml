@@ -5,3 +5,12 @@ description = "用于 Re:从零开始的异世界生活 Wiki 的一些脚本"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = []
+
+[dependency-groups]
+dev = [
+    "ruff>=0.14.10",
+    "ty>=0.0.7",
+]
+
+[tool.ruff]
+extend-exclude = ['pywikibot']

@@ -4,4 +4,10 @@
     <option name="sdkName" value="uv (wiki-bot)" />
   </component>
   <component name="ProjectRootManager" version="2" project-jdk-name="uv (wiki-bot)" project-jdk-type="Python SDK" />
+  <component name="RuffConfiguration">
+    <option name="enabled" value="true" />
+  </component>
+  <component name="TyConfiguration">
+    <option name="enabled" value="true" />
+  </component>
 </project>
