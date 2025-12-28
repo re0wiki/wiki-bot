@@ -12,7 +12,6 @@ from pywikibot import family
 
 
 class Family(family.Family):  # noqa: D101
-
     name = "w"
     langs = {
         "zh": "community.fandom.com",
