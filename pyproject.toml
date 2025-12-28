@@ -23,6 +23,7 @@ dependencies = [
     "regex>=2025.11.3",
     "requests>=2.31.0",
     "requests-sse>=0.5.2",
+    "tqdm>=4.67.1",
     "wikitextparser>=0.56.4",
 ]
 
