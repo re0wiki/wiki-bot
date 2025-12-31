@@ -228,6 +228,16 @@ wheels = [
 ]
 
 [[package]]
+name = "pywikibot"
+version = "11.0.0.dev4"
+source = { git = "https://github.com/re0wiki/pywikibot#dc1f6e979c8ebb63518a10ae0a7d29a2bdac26a3" }
+dependencies = [
+    { name = "mwparserfromhell" },
+    { name = "packaging" },
+    { name = "requests" },
+]
+
+[[package]]
 name = "regex"
 version = "2025.11.3"
 source = { registry = "https://pypi.org/simple" }
@@ -429,6 +439,7 @@ dependencies = [
 
 [package.dev-dependencies]
 dev = [
+    { name = "pywikibot" },
     { name = "ruff" },
     { name = "ty" },
 ]
@@ -459,6 +470,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
+    { name = "pywikibot", git = "https://github.com/re0wiki/pywikibot" },
     { name = "ruff", specifier = ">=0.14.10" },
     { name = "ty", specifier = ">=0.0.7" },
 ]
