@@ -1,11 +1,8 @@
-import logging
-
 import regex as re
-from pywikibot import Page
 from pywikibot.cosmetic_changes import CosmeticChangesToolkit
 from pywikibot.pagegenerators import GeneratorFactory
-from tqdm import tqdm
-import pywikibot
+
+import pywikibot as pwb
 
 NESTED_TEMPLATE_REGEX = re.compile(
     r"""
@@ -23,97 +20,97 @@ NESTED_TEMPLATE_REGEX = re.compile(
 """,
     re.VERBOSE | re.DOTALL,
 )
+GALLERY_REGEX = re.compile(r"<gallery[^>]*>.*?</gallery>", re.DOTALL)
+PAGE_REGEX = re.compile(r"(?<=}}).*?(?=\[\[)", re.DOTALL)
 
-gallery_pattern = re.compile(r"<gallery[^>]*>.*?</gallery>", re.DOTALL)
-page_pattern = re.compile(r"(?<=}}).*?(?=\[\[)", re.DOTALL)
 
-
-def sync_galleries():
+class GalleryBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
     """Replace zh galleries with en galleries."""
 
-    gen_factory = GeneratorFactory()
-    gen_factory.handle_args(pywikibot.handle_args())
+    def treat_page(self) -> None:
+        # Get zh text.
+        zh_raw_text = zh_text = self.current_page.text
 
-    for zh_page in tqdm(list(gen_factory.getCombinedGenerator())):
-        zh_page: Page
-
-        # get zh text
-        zh_raw_text = zh_text = zh_page.text
-
-        # get en text
-        for link in zh_page.iterlanglinks():
+        # Get en text.
+        for link in self.current_page.iterlanglinks():
             if link.site.code == "en":
-                en_raw_text = en_text = Page(link).text
+                en_raw_text = en_text = pwb.Page(link).text
                 break
         else:
-            logging.debug("no en page for %s", zh_page.title())
-            continue
+            return pwb.logging.info("No en page for %s.", self.current_page.title())
 
-        # ignore en templates
+        # Ignore en templates.
         en_text = NESTED_TEMPLATE_REGEX.sub("", en_text)
 
-        # backup zh templates
+        # Backup zh templates.
         zh_templates = NESTED_TEMPLATE_REGEX.findall(zh_text)
         zh_text = NESTED_TEMPLATE_REGEX.sub("\0", zh_text)
 
-        # check galleries counts
-        zh_galleries: list[str] = gallery_pattern.findall(zh_text)
-        en_galleries: list[str] = gallery_pattern.findall(en_text)
+        # Check galleries counts.
+        zh_galleries: list[str] = GALLERY_REGEX.findall(zh_text)
+        en_galleries: list[str] = GALLERY_REGEX.findall(en_text)
         is_sync_tabber = False
         if len(en_galleries) != len(zh_galleries):
-            logging.info(
-                "gallery count mismatch for %s. en: %d, zh: %d",
-                zh_page.title(),
+            pwb.logging.info(
+                "Gallery count mismatch for %s. en: %d, zh: %d.",
+                self.current_page.title(),
                 len(en_galleries),
                 len(zh_galleries),
             )
 
-            # try to sync the page
-            en_pages: list[str] = page_pattern.findall(en_raw_text)
-            zh_pages: list[str] = page_pattern.findall(zh_raw_text)
-            if len(en_pages) != 1:
-                logging.warning("en page format mismatch for %s", zh_page.title())
-                continue
-            if len(zh_pages) != 1:
-                logging.warning("zh page format mismatch for %s", zh_page.title())
-                continue
+            # Try to sync the page.
+            en_pages: list[str] = PAGE_REGEX.findall(en_raw_text)
+            zh_pages: list[str] = PAGE_REGEX.findall(zh_raw_text)
+            if len(en_pages) != 1 or len(zh_pages) != 1:
+                return pwb.logging.error(
+                    "Incorrect page format for %s. en: %d, zh: %d.",
+                    self.current_page.title(),
+                    len(en_pages),
+                    len(zh_pages),
+                )
+
             is_sync_tabber = True
-            zh_text = page_pattern.sub(en_pages[0], zh_raw_text)
+            zh_text = PAGE_REGEX.sub(en_pages[0], zh_raw_text)
 
-        # check galleries counts again
-        zh_galleries: list[str] = gallery_pattern.findall(zh_text)
-        en_galleries: list[str] = gallery_pattern.findall(en_text)
-        if len(en_galleries) != len(zh_galleries):
-            logging.warning(
-                "gallery count still mismatch for %s. en: %d, zh: %d",
-                zh_page.title(),
-                len(en_galleries),
-                len(zh_galleries),
-            )
-            continue
+            # Check galleries counts again.
+            zh_galleries: list[str] = GALLERY_REGEX.findall(zh_text)
+            en_galleries: list[str] = GALLERY_REGEX.findall(en_text)
+            if len(en_galleries) != len(zh_galleries):
+                return pwb.logging.error(
+                    "Gallery count still mismatch for %s. en: %d, zh: %d.",
+                    self.current_page.title(),
+                    len(en_galleries),
+                    len(zh_galleries),
+                )
 
-        # replace galleries
+        # Replace galleries.
         it = iter(en_galleries)
-        zh_text = gallery_pattern.sub(lambda _: next(it), zh_text)
+        zh_text = GALLERY_REGEX.sub(lambda _: next(it), zh_text)
 
-        # restore templates
+        # Restore templates.
         it = iter(zh_templates)
         zh_text = re.sub("\0", lambda _: next(it), zh_text)
 
-        # check if text changed
-        if zh_text == zh_page.text:
-            logging.debug("no change for %s", zh_page.title())
-            continue
+        # Cosmetic changes.
+        zh_text = CosmeticChangesToolkit(self.current_page).change(zh_text)
+        if zh_text is bool:
+            return pwb.logging.error(
+                "Cosmetic failed for %s.", self.current_page.title()
+            )
 
-        # cosmetic changes
-        zh_text = CosmeticChangesToolkit(zh_page).change(zh_text)
+        # Check if text changed.
+        if zh_text == self.current_page.text:
+            return pwb.logging.info("No change for %s.", self.current_page.title())
 
-        zh_page.text = zh_text
-        zh_page.save(
-            summary=f"Sync {'tabber' if is_sync_tabber else 'galleries'} with {link}"
+        self.put_current(
+            zh_text,
+            summary=f"Sync {'tabber' if is_sync_tabber else 'galleries'} with {link}.",
         )
+
+        return None
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.INFO)
-    sync_galleries()
+    factory = GeneratorFactory()
+    factory.handle_args(pwb.handle_args())
+    GalleryBot(generator=factory.getCombinedGenerator(preload=True)).run()
