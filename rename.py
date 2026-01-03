@@ -2,8 +2,8 @@ import argparse
 import logging
 import re
 
-from jobs.jobs_ import Job
-from jobs.starts_ import ns2start, ns_base, starts_more
+from jobs.run_job import run_job
+from jobs.starts import ns2start, ns_base, starts_more
 
 # region logging
 logging.basicConfig(
@@ -16,7 +16,6 @@ logging.basicConfig(
 parser = argparse.ArgumentParser(description="移动页面 & 替换文本")
 parser.add_argument("old")
 parser.add_argument("new")
-
 # endregion
 
 
@@ -24,27 +23,27 @@ def rename(old, new):
     """Move pages and replace text."""
     o_pages = []
     for ns in ns_base + ["file"]:
-        pages = (
-            Job(["listpages", "-format:3", f"-titleregex:{old}", ns2start(ns)])
-            .run(simulate=True, capture_output=True)
-            .split("\n")
-        )
+        pages = run_job(
+            ["listpages", "-format:3", f"-titleregex:{old}", ns2start(ns)],
+            simulate=True,
+            capture_output=True,
+        ).split("\n")
         for page in pages:
             if page:
                 o_pages.append(ns + ":" + page)
 
     for o_page in o_pages:
         n_page = re.sub(old, new, o_page, flags=re.I)
-        Job(
+        run_job(
             [
                 "movepages",
                 "-always",
                 f"-from:{o_page}",
                 f"-to:{n_page}",
             ]
-        ).run()
+        )
 
-    Job(
+    run_job(
         [
             "replace",
             "-automaticsummary",
@@ -56,7 +55,7 @@ def rename(old, new):
             new,
         ]
         + starts_more
-    ).run()
+    )
 
 
 if __name__ == "__main__":
