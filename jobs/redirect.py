@@ -1,4 +1,4 @@
-from .jobs_ import CmdJob, add_job
+from .jobs_ import Job, add_job
 
-add_job(CmdJob(["redirect", "do"]))
-add_job(CmdJob(["redirect", "br", "-delete"]))
+add_job(Job(["redirect", "do"]))
+add_job(Job(["redirect", "br", "-delete"]))

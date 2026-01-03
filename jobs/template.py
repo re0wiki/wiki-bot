@@ -1,5 +1,4 @@
-from .jobs_ import add_job
-from .jobs_ import CmdJob
+from .jobs_ import Job, add_job
 
 # noinspection SpellCheckingInspection
 pairs = [
@@ -28,5 +27,5 @@ for o, n in pairs:
     else:
         rm.append(o)
 
-add_job(CmdJob(repl))
-add_job(CmdJob(rm))
+add_job(Job(repl))
+add_job(Job(rm))

@@ -1,4 +1,4 @@
-from .jobs_ import CmdJob, add_job
+from .jobs_ import Job, add_job
 
 fixes = [  # built-in fixes
     "HTML",
@@ -16,4 +16,4 @@ fixes = [  # built-in fixes
 ]
 
 for fix in sorted(fixes):
-    add_job(CmdJob(["replace", "-automaticsummary", "-always", "-fix:" + fix]))
+    add_job(Job(["replace", "-automaticsummary", "-always", "-fix:" + fix]))

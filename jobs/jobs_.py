@@ -1,20 +1,10 @@
 import logging
-from abc import ABC, abstractmethod
-from collections.abc import Callable, Iterable
 from importlib import import_module
 from pathlib import Path
-from subprocess import run, CalledProcessError
+from subprocess import CalledProcessError, run
 
 
-class Job(ABC):
-    """可执行的任务。"""
-
-    @abstractmethod
-    def run(self, simulate: bool):
-        pass
-
-
-class CmdJob(Job):
+class Job:
     """执行一条命令行指令的任务。"""
 
     def __init__(self, cmd: list[str]):
@@ -48,30 +38,6 @@ class CmdJob(Job):
 
     def __str__(self):
         return self.cmd
-
-
-class FuncJob(Job):
-    """调用某个可调用对象，并执行返回结果的任务。"""
-
-    def __init__(self, func: Callable[[], Job]):
-        self.func = func
-
-    def run(self, simulate):
-        self.func().run(simulate)
-
-    def __str__(self):
-        return self.func.__name__
-
-
-class IterableJob(Job):
-    """迭代某个可迭代对象，并执行迭代结果的任务。"""
-
-    def __init__(self, iterable: Iterable[Job]):
-        self.iterable = iterable
-
-    def run(self, simulate):
-        for j in self.iterable:
-            j.run(simulate)
 
 
 class Jobs:

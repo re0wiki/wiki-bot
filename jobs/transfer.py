@@ -1,7 +1,7 @@
-from .jobs_ import CmdJob, add_job
+from .jobs_ import Job, add_job
 
 add_job(
-    CmdJob(
+    Job(
         [
             "transferbot",
             "-lang:en",
@@ -12,7 +12,7 @@ add_job(
 )
 
 add_job(
-    CmdJob(
+    Job(
         [
             "transferbot",
             "-family:w",

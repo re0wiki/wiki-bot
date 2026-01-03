@@ -1,8 +1,8 @@
-from .jobs_ import CmdJob, add_job
+from .jobs_ import Job, add_job
 from .starts_ import starts_more
 
 add_job(
-    CmdJob(
+    Job(
         [
             "interwiki",
             "-quiet",

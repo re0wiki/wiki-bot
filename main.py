@@ -2,7 +2,7 @@ import argparse
 import logging
 import sys
 
-from jobs import jobs, run
+from jobs import jobs
 
 # region logging
 logging.basicConfig(
@@ -34,6 +34,11 @@ parser.add_argument(
 if __name__ == "__main__":
     args = parser.parse_args()
     try:
-        run(index=args.index, simulate=args.simulate)
+        jobs_ = jobs.jobs_
+        if args.index == 231:
+            for job in jobs_:
+                job.run(args.simulate)
+        else:
+            jobs_[args.index].run(args.simulate)
     except KeyboardInterrupt:
         sys.exit(130)

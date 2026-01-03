@@ -1,3 +1,3 @@
-from .jobs_ import CmdJob, add_job
+from .jobs_ import Job, add_job
 
-add_job(CmdJob(["re0_gallery", "-catr:图库"]))
+add_job(Job(["re0_gallery", "-catr:图库"]))

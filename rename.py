@@ -2,7 +2,7 @@ import argparse
 import logging
 import re
 
-from jobs.jobs_ import CmdJob
+from jobs.jobs_ import Job
 from jobs.starts_ import ns2start, ns_base, starts_more
 
 # region logging
@@ -25,7 +25,7 @@ def rename(old, new):
     o_pages = []
     for ns in ns_base + ["file"]:
         pages = (
-            CmdJob(["listpages", "-format:3", f"-titleregex:{old}", ns2start(ns)])
+            Job(["listpages", "-format:3", f"-titleregex:{old}", ns2start(ns)])
             .run(simulate=True, capture_output=True)
             .split("\n")
         )
@@ -35,7 +35,7 @@ def rename(old, new):
 
     for o_page in o_pages:
         n_page = re.sub(old, new, o_page, flags=re.I)
-        CmdJob(
+        Job(
             [
                 "movepages",
                 "-always",
@@ -44,7 +44,7 @@ def rename(old, new):
             ]
         ).run()
 
-    CmdJob(
+    Job(
         [
             "replace",
             "-automaticsummary",

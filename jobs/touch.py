@@ -1,3 +1,3 @@
-from .jobs_ import CmdJob, add_job
+from .jobs_ import Job, add_job
 
-add_job(CmdJob(["touch", "-random:128"]))
+add_job(Job(["touch", "-random:128"]))
