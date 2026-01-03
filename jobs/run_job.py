@@ -14,6 +14,7 @@ def run_job(job: list[str], simulate=False, capture_output=False) -> str:
             cmd,
             capture_output=capture_output,
             encoding="utf8",
+            shell=True,
             check=True,
         )
     except CalledProcessError as e:
