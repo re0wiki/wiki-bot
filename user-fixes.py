@@ -13,7 +13,7 @@ generator_base = [
 ]
 generator_more = generator_base + ["-start:module:! ", "-start:mediawiki:!"]
 
-base: dict[str] = {
+base: dict[str, bool | dict] = {
     "regex": True,
     "nocase": True,
     "exceptions": {
