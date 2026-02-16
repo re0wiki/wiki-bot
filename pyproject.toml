@@ -12,6 +12,9 @@ dependencies = [
 [tool.ruff]
 extend-exclude = ['pywikibot']
 
+[tool.uv]
+default-groups = "all"
+
 [tool.uv.sources]
 pywikibot = { git = "https://github.com/re0wiki/pywikibot" }
 
