@@ -116,7 +116,7 @@ def main() -> None:
 
     options = {}
     for arg in args:
-        options[arg] = True
+        options[arg.removeprefix("-")] = True
 
     GalleryBot(generator=factory.getCombinedGenerator(preload=True), **options).run()
 
