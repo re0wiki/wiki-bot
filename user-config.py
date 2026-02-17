@@ -15,7 +15,6 @@ mylang = "zh"
 # have a bot account. If you have a unique username for all sites of a
 # family , you can use '*'
 usernames["re0"] = {
-    "zh": "IchiSanNi",
     "de": "IchiSanNi",
     "en": "IchiSanNi",
     "es": "IchiSanNi",
@@ -27,6 +26,7 @@ usernames["re0"] = {
     "pt-br": "IchiSanNi",
     "ru": "IchiSanNi",
     "uk": "IchiSanNi",
+    "zh": "IchiSanNi",
 }
 
 # The list of BotPasswords is saved in another file. Import it if needed.
