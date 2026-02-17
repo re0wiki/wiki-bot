@@ -110,7 +110,16 @@ class GalleryBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
         return None
 
 
-if __name__ == "__main__":
+def main() -> None:
     factory = GeneratorFactory()
-    factory.handle_args(pwb.handle_args())
-    GalleryBot(generator=factory.getCombinedGenerator(preload=True)).run()
+    args = factory.handle_args(pwb.handle_args())
+
+    options = {}
+    for arg in args:
+        options[arg] = True
+
+    GalleryBot(generator=factory.getCombinedGenerator(preload=True), **options).run()
+
+
+if __name__ == "__main__":
+    main()
