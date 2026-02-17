@@ -93,7 +93,7 @@ class GalleryBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
 
         # Cosmetic changes.
         zh_text = CosmeticChangesToolkit(self.current_page).change(zh_text)
-        if zh_text is bool:
+        if isinstance(zh_text, bool):
             return pwb.logging.error(
                 "Cosmetic failed for %s.", self.current_page.title()
             )
