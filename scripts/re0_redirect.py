@@ -1,21 +1,25 @@
 import regex as re
-from pywikibot.pagegenerators import AllpagesPageGenerator
-from tqdm import tqdm
+from pywikibot.pagegenerators import GeneratorFactory
 
-from pywikibot import Page
+import pywikibot as pwb
 
-pattern = re.compile(r".+?:(.+)")
+REGEX = re.compile(r".+?:(.+)")
 
 
-def create_redirect():
+class RedirectBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
     """Create redirect [[stem]] for given [[prefix:stem]]."""
-    for target in tqdm(AllpagesPageGenerator(includeredirects=False)):
-        if match := pattern.fullmatch(target.title()):
-            if not (page := Page(target.site, match.group(1))).isRedirectPage():
+
+    def treat_page(self) -> None:
+        if match := REGEX.fullmatch(self.current_page.title()):
+            if not (page := pwb.Page(self.site, match.group(1))).exists():
                 page.set_redirect_target(
-                    target, force=True, summary=f"{page.title()} -> {target.title()}"
+                    self.current_page,
+                    create=True,
+                    summary=f"{page.title()} -> {self.current_page.title()}",
                 )
 
 
 if __name__ == "__main__":
-    create_redirect()
+    factory = GeneratorFactory()
+    factory.handle_args(pwb.handle_args())
+    RedirectBot(generator=factory.getCombinedGenerator(preload=True)).run()

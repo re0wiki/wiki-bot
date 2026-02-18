@@ -19,7 +19,7 @@ jobs: list[list[str]] = [
     ["noreferences", "-quiet"] + starts_base,
     ["re0_gallery", "-catr:图库"],
     ["re0_image"],
-    ["re0_redirect"],
+    ["re0_redirect", "-start:!"],
     ["redirect", "do"],
     ["redirect", "br", "-delete"],
     [
