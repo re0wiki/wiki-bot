@@ -1,7 +1,7 @@
 from .starts import starts_base, starts_more
 
 jobs: list[list[str]] = [
-    ["category", "remove", "-batch", "-from:Image Gallery"],
+    ["category", "remove", "-from:Image Gallery"],
     ["cosmetic_changes", "-async", "-ignore:method"] + starts_base,
     ["replace", "-automaticsummary", "-fix:HTML"],
     ["replace", "-automaticsummary", "-fix:anti-ve"],
@@ -15,7 +15,7 @@ jobs: list[list[str]] = [
     ["replace", "-automaticsummary", "-fix:syntax"],
     ["replace", "-automaticsummary", "-fix:translation"],
     ["fixing_redirects"] + starts_more,
-    ["interwiki", "-quiet", "-async", "-auto", "-force", "-localonly"] + starts_more,
+    ["interwiki", "-quiet", "-async", "-localonly"] + starts_more,
     ["noreferences", "-quiet"] + starts_base,
     ["re0_gallery", "-catr:图库"],
     ["re0_image"],

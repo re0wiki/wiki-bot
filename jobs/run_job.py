@@ -7,7 +7,13 @@ def run_job(job: list[str], simulate=False, capture_output=False) -> str:
     cmd = ["python", "pywikibot/pwb.py", *job]
     if simulate:
         cmd.append("-simulate")
-    elif job[0] != "interwiki":
+    elif job[0] == "category":
+        cmd.append("-batch")
+        cmd.append("-always")
+    elif job[0] == "interwiki":
+        cmd.append("-auto")
+        cmd.append("-force")
+    elif job[0] != "transferbot":
         cmd.append("-always")
 
     # Run the job.
