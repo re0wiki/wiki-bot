@@ -1,27 +1,27 @@
 from .starts import starts_base, starts_more
 
 jobs: list[list[str]] = [
-    ["category", "remove", "-from:Image Gallery"],
-    ["cosmetic_changes", "-async", "-ignore:method"] + starts_base,
-    ["replace", "-automaticsummary", "-fix:HTML"],
-    ["replace", "-automaticsummary", "-fix:anti-ve"],
+    # 跨站同步
+    ["transferbot", "-lang:en", "-tolang:zh", "-start"],
+    ["re0_gallery", "-catr:图库"],
+    ["re0_image"],
+    [
+        "transferbot",
+        "-family:w",
+        "-lang:zh",
+        "-tofamily:re0",
+        "-tolang:zh",
+        "-start:mediawiki:!",
+        "-titleregex:Gadget.*css",
+        "-overwrite",
+    ],
+    ["interwiki", "-quiet", "-async", "-localonly"] + starts_more,
+    # 整理新搬运页面
     ["replace", "-automaticsummary", "-fix:date"],
     ["replace", "-automaticsummary", "-fix:gallery"],
     ["replace", "-automaticsummary", "-fix:heading"],
-    ["replace", "-automaticsummary", "-fix:isbn"],
-    ["replace", "-automaticsummary", "-fix:misc"],
-    ["replace", "-automaticsummary", "-fix:para"],
-    ["replace", "-automaticsummary", "-fix:specialpages"],
-    ["replace", "-automaticsummary", "-fix:syntax"],
-    ["replace", "-automaticsummary", "-fix:translation"],
-    ["fixing_redirects"] + starts_more,
-    ["interwiki", "-quiet", "-async", "-localonly"] + starts_more,
-    ["noreferences", "-quiet"] + starts_base,
-    ["re0_gallery", "-catr:图库"],
-    ["re0_image"],
-    ["re0_redirect", "-start:!"],
-    ["redirect", "do"],
-    ["redirect", "br", "-delete"],
+    ["category", "remove", "-from:Image Gallery"],
+    # 模板维护
     [
         "template",
         "Character",
@@ -45,16 +45,23 @@ jobs: list[list[str]] = [
         "Re:Zero Manga Navigation",
         "Music Navigation",
     ],
+    ["replace", "-automaticsummary", "-fix:para"],
+    # 重定向维护
+    ["re0_redirect", "-start:!"],
+    ["fixing_redirects"] + starts_more,
+    ["redirect", "do"],
+    ["redirect", "br", "-delete"],
+    # 语法规范化
+    ["cosmetic_changes", "-async", "-ignore:method"] + starts_base,
+    ["replace", "-automaticsummary", "-fix:HTML"],
+    ["replace", "-automaticsummary", "-fix:anti-ve"],
+    ["replace", "-automaticsummary", "-fix:syntax"],
+    # 内容规范化
+    ["replace", "-automaticsummary", "-fix:translation"],
+    ["replace", "-automaticsummary", "-fix:isbn"],
+    ["replace", "-automaticsummary", "-fix:specialpages"],
+    ["noreferences", "-quiet"] + starts_base,
+    ["replace", "-automaticsummary", "-fix:misc"],
+    # 刷新
     ["touch", "-random:128"],
-    ["transferbot", "-lang:en", "-tolang:zh", "-start"],
-    [
-        "transferbot",
-        "-family:w",
-        "-lang:zh",
-        "-tofamily:re0",
-        "-tolang:zh",
-        "-start:mediawiki:!",
-        "-titleregex:Gadget.*css",
-        "-overwrite",
-    ],
 ]
