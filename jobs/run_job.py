@@ -4,7 +4,17 @@ from subprocess import CalledProcessError, run
 
 def run_job(job: list[str], simulate=False, capture_output=False) -> str:
     # Get the command line.
-    cmd = ["python", "pywikibot/pwb.py", *job, "-simulate" if simulate else "-always"]
+    cmd = ["python", "pywikibot/pwb.py", *job]
+    if simulate:
+        cmd.append("-simulate")
+    elif job[0] == "category":
+        cmd.append("-batch")
+        cmd.append("-always")
+    elif job[0] == "interwiki":
+        cmd.append("-auto")
+        cmd.append("-force")
+    elif job[0] != "transferbot":
+        cmd.append("-always")
 
     # Run the job.
     logging.info("=" * 16 + "start" + "=" * 16)

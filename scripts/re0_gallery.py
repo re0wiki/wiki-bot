@@ -93,7 +93,7 @@ class GalleryBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
 
         # Cosmetic changes.
         zh_text = CosmeticChangesToolkit(self.current_page).change(zh_text)
-        if zh_text is bool:
+        if isinstance(zh_text, bool):
             return pwb.logging.error(
                 "Cosmetic failed for %s.", self.current_page.title()
             )
@@ -110,7 +110,16 @@ class GalleryBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
         return None
 
 
-if __name__ == "__main__":
+def main() -> None:
     factory = GeneratorFactory()
-    factory.handle_args(pwb.handle_args())
-    GalleryBot(generator=factory.getCombinedGenerator(preload=True)).run()
+    args = factory.handle_args(pwb.handle_args())
+
+    options = {}
+    for arg in args:
+        options[arg.removeprefix("-")] = True
+
+    GalleryBot(generator=factory.getCombinedGenerator(preload=True), **options).run()
+
+
+if __name__ == "__main__":
+    main()
