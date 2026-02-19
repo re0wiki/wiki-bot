@@ -1,4 +1,5 @@
 import argparse
+import itertools
 import logging
 import sys
 
@@ -25,7 +26,7 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument(
     "index",
-    help="任务编号，231代表所有任务",
+    help="任务编号，231代表循环所有任务",
     type=int,
     choices=list(range(len(jobs))) + [231],
 )
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     try:
         if args.index == 231:
-            for job in jobs:
+            for job in itertools.cycle(jobs):
                 run_job(job, args.simulate)
         else:
             run_job(jobs[args.index], args.simulate)
