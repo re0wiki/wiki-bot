@@ -21,6 +21,7 @@ jobs: list[list[str]] = [
     ["replace", "-automaticsummary", "-fix:gallery"],
     ["replace", "-automaticsummary", "-fix:heading"],
     ["category", "remove", "-nodelete", "-from:Image Gallery"],
+    ["category", "remove", "-nodelete", "-from:Relationships"],
     # 模板维护
     [
         "template",
