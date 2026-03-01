@@ -33,18 +33,23 @@ jobs: list[list[str]] = [
     [
         "template",
         "-remove",
-        "Parent Tab",
-        "Lugnica Navbox",
-        "Vollachia Navbox",
+        # Navbox
         "Gusteko Navbox",
+        "Lugunica Navbox",
         "Royal Election Navbox",
         "Royal Selection Navbox",
+        "Terminology Navbox",
+        "Vollachia Navbox",
+        # Navigation
         "Anime Navigation",
-        "Manga Navigation",
-        "Disambig",
         "LN Navigation",
-        "Re:Zero Manga Navigation",
+        "Manga Navigation",
         "Music Navigation",
+        "Re:Zero Manga Navigation",
+        # Other
+        "Construction",
+        "Parent Tab",
+        "References",
     ],
     ["replace", "-automaticsummary", "-fix:para"],
     # 重定向维护
