@@ -25,3 +25,7 @@
 - [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
 - `python main.py -h`
 - `python rename.py -h`
+
+## Status
+
+当前运行状态见 [User:IchiSanNi/jobs](https://rezero.fandom.com/zh/wiki/User:IchiSanNi/jobs)。
