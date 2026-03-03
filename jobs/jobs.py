@@ -28,7 +28,7 @@ jobs: list[list[str]] = [
         "Character",
         "Infobox character",
         "Re:Zero Light Novel Volumes",
-        "Infobox novel",
+        "Infobox book",
     ],
     [
         "template",
