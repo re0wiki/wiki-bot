@@ -68,6 +68,7 @@ jobs: list[list[str]] = [
     ["replace", "-automaticsummary", "-fix:specialpages"],
     ["noreferences", "-quiet"] + starts_base,
     ["replace", "-automaticsummary", "-fix:misc"],
-    # 刷新
+    # 杂项
+    ["re0_nav", "-page:MediaWiki:Wiki-navigation"],
     ["touch", "-random:128"],
 ]
