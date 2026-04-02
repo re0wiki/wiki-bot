@@ -5,16 +5,6 @@ jobs: list[list[str]] = [
     ["transferbot", "-lang:en", "-tolang:zh", "-start"],
     ["re0_gallery", "-catr:图库"],
     ["re0_image"],
-    [
-        "transferbot",
-        "-family:w",
-        "-lang:zh",
-        "-tofamily:re0",
-        "-tolang:zh",
-        "-start:mediawiki:!",
-        "-titleregex:Gadget.*css",
-        "-overwrite",
-    ],
     ["interwiki", "-quiet", "-async", "-localonly"] + starts_more,
     # 整理新搬运页面
     ["replace", "-automaticsummary", "-fix:date"],
