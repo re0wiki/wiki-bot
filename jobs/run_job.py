@@ -20,7 +20,7 @@ def run_job(job: list[str], simulate=False, capture_output=False) -> str:
         res = run(
             cmd,
             capture_output=capture_output,
-            encoding="utf8",
+            encoding="mbcs",
             shell=True,
             check=True,
         )
