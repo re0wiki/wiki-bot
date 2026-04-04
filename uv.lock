@@ -251,7 +251,7 @@ wheels = [
 [[package]]
 name = "pywikibot"
 version = "11.1.0.dev0"
-source = { git = "https://github.com/re0wiki/pywikibot#6ccc1c0c7b24c03b93b37620e0373d4bd98434fe" }
+source = { git = "https://github.com/re0wiki/pywikibot#a131e594855e1e9e4d09c66a38dd188139ba4c20" }
 dependencies = [
     { name = "mwparserfromhell" },
     { name = "packaging" },
