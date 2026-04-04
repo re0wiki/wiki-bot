@@ -324,7 +324,7 @@ user_fixes["translation"] = base | {
     "generator": generator_more,
     "replacements": [
         (p2o(p), get_repl_func(p2n(p)))
-        for p in [  # 普通的
+        for p in [
             "丝碧卡",
             "亚拉基亚",
             "亨克尔",
@@ -534,8 +534,6 @@ user_fixes["translation"] = base | {
             "巴罗伊",
             "雷姆",
             "波多尔德",
-        ]
-        + [  # 多字少字的
             "菜月·?昴",
             "安娜斯?塔西亚",
             "培提尔其乌?斯",
@@ -543,8 +541,6 @@ user_fixes["translation"] = base | {
             "莱茵哈鲁?特",
             "罗兹瓦尔?",
             "帕尔?米拉",
-        ]
-        + [  # 需要特判的
             "加菲尔(?!丝|特|艾)",
             "拉菲尔(?!丝|特|艾)",
             "(?<!阿)利格鲁(?!卡|姆)",
