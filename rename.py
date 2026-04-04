@@ -1,13 +1,7 @@
 import argparse
-import logging
 
 from jobs.run_job import run_job
 from jobs.starts import ns2start, ns_base, starts_more
-
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-)
 
 
 def rename(old, new):
