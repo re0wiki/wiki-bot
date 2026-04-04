@@ -37,9 +37,10 @@ def rename(old, new):
         "replace",
         "-automaticsummary",
         r"-exceptinside:'\[\[:?(zh|de|en|es|fr|it|nl|pl|pt-br|ru|uk|wp|wikipedia)\s?:[^\]]*\]\]'",
+        *starts_more,
         f"'{old}'",
         f"'{new}'",
-    ] + starts_more
+    ]
     print(" ".join(replace_cmd))
 
 
