@@ -163,9 +163,6 @@ user_fixes["para"] = base | {
             ("Release Date", "date_ja"),
             ("Painter", "painter"),
             ("Cover", "cover"),
-            ("Previous", "该参数已弃用"),
-            ("Next", "该参数已弃用"),
-            ("Image-Size", "该参数已弃用"),
         ]
     ],
 }
