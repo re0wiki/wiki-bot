@@ -1,26 +1,18 @@
 name: 新增译名
 description: 某事物尚无中文译名，提议新增译名。
-title: "`Emilia` -> `艾米莉娅`"
-labels: ["新增译名"]
+title: "`Emilia` -> `爱蜜莉雅`"
+labels: [ "新增译名" ]
 body:
-  - type: checkboxes
-    id: duplicate-check
+  - type: dropdown
+    id: new_src
     attributes:
-      label: 检查重复提议
-      description: 前往 [Issues 列表](https://github.com/re0wiki/wiki-bot/issues?q=is%3Aissue) 搜索译名，若已被提出过则直接前往讨论，不必新建 Issue。
+      label: 新译名来源
+      description: "本站的译名优先级为 `官方简体中文译名` > `官方繁体中文译名` > `民间中文译名`，详见 [译名选取规则](https://rezero.fandom.com/zh/wiki/ReZero_Wiki:%E8%AF%91%E5%90%8D%E8%A1%A8#%E9%80%89%E5%8F%96%E8%A7%84%E5%88%99)。"
+      multiple: true
       options:
-        - label: 该译名未被提出过
-          required: true
-  - type: textarea
-    id: source
-    attributes:
-      label: 译名的来源
-      description: 尽量提供原始来源，而非其他百科等二手来源。
-      placeholder: |
-        文库 1 卷简中译
-        短篇集 1 台译
-        hyobunkon 7 章 21 节 https://tieba.baidu.com/p/7351784395
-        原创
+        - 官方简体中文译名
+        - 官方繁体中文译名
+        - 民间中文译名
     validations:
       required: true
   - type: textarea
