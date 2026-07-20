@@ -10,12 +10,12 @@
 [![Telegram group](https://img.shields.io/badge/Telegram-re0wiki-26A5E4.svg?logo=telegram)](https://t.me/re0wiki)
 
 用于 [Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh) 的一些脚本。
+
 核心功能：把英文站页面/图片/图库同步到中文站，并用自定义规则（译名表、格式规范）批量整理中文站内容。
 
 ## Deployment
 
-- **本项目**：`git clone --recurse-submodules https://github.com/re0wiki/wiki-bot.git`
-  （`pywikibot/` 是 submodule，指向 re0wiki 的定制 fork，必须拉下来）
+- **本项目**：`git clone --recurse-submodules https://github.com/re0wiki/wiki-bot.git`（`pywikibot/` 是 submodule，指向 re0wiki 的定制 fork，必须拉下来）
 - **Python**：3.14，用 [uv](https://docs.astral.sh/uv/) 安装依赖：`uv sync`
 - [机器人密码 | Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh/wiki/Special:BotPasswords)
 - **用户配置文件**
@@ -24,15 +24,9 @@
 
 ## Usage
 
-- 循环执行全部维护任务（常驻）：
-  - `python main.py 231`（加 `-s` 为模拟运行，不写 wiki）
-  - 单个任务：`python main.py -h` 查看编号列表
+- 循环执行全部维护任务（常驻）：`python main.py 231`（加 `-s` 为模拟运行，不写 wiki）；单个任务：`python main.py -h` 查看编号列表
 - 批量改名（移动页面 + 替换全站文本）：`python rename.py -h`
-- 所有 pywikibot 自带脚本也可直接用：`python pywikibot/pwb.py <script> ...`，参见
-  [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
-- 译名增删改：编辑 [user-fixes.py](./user-fixes.py) 的 `translation` fix，提交信息用
-  `feat(translation): add X` / `fix(translation): 旧 -> 新`。
-  译名问题的用户反馈走 GitHub Issues（有现成模板）。
+- 所有 pywikibot 自带脚本也可直接用：`python pywikibot/pwb.py <script> ...`，参见 [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
 
 ## Status
 
@@ -40,4 +34,4 @@
 
 ## For AI agents
 
-仓库结构、fork 定制说明、译名机制等见 [AGENTS.md](./AGENTS.md)。
+仓库结构、fork 定制说明、译名维护工作流等见 [AGENTS.md](./AGENTS.md)。
