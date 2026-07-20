@@ -11,21 +11,27 @@
 
 用于 [Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh) 的一些脚本。
 
+核心功能：把英文站页面/图片/图库同步到中文站，并用自定义规则（译名表、格式规范）批量整理中文站内容。
+
 ## Deployment
 
-- **本项目**：`git clone --recurse-submodules https://github.com/re0wiki/wiki-bot.git`
-- **Python**：[uv](https://docs.astral.sh/uv/)
+- **本项目**：`git clone --recurse-submodules https://github.com/re0wiki/wiki-bot.git`（`pywikibot/` 是 submodule，指向 re0wiki 的定制 fork，必须拉下来）
+- **Python**：3.14，用 [uv](https://docs.astral.sh/uv/) 安装依赖：`uv sync`
 - [机器人密码 | Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh/wiki/Special:BotPasswords)
 - **用户配置文件**
-    1. [user-config.py#L17](./user-config.py#L17)
-    2. 同目录下创建`user-password.py`并填写，格式为`('<UserName>', BotPassword('<BotName>', '<BotPassword>'))`
+    1. [user-config.py#L17](./user-config.py#L17)（账号名，默认 IchiSanNi）
+    2. 同目录下创建 `user-password.py` 并填写，格式为 `('<UserName>', BotPassword('<BotName>', '<BotPassword>'))`
 
 ## Usage
 
-- [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
-- `python main.py -h`
-- `python rename.py -h`
+- 循环执行全部维护任务（常驻）：`python main.py 231`（加 `-s` 为模拟运行，不写 wiki）；单个任务：`python main.py -h` 查看编号列表
+- 批量改名（移动页面 + 替换全站文本）：`python rename.py -h`
+- 所有 pywikibot 自带脚本也可直接用：`python pywikibot/pwb.py <script> ...`，参见 [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
 
 ## Status
 
 当前运行状态见 [User:IchiSanNi/jobs](https://rezero.fandom.com/zh/wiki/User:IchiSanNi/jobs)。
+
+## For AI agents
+
+仓库结构、fork 定制说明、译名维护工作流等见 [AGENTS.md](./AGENTS.md)。
