@@ -24,6 +24,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `user-config.py` | pywikibot 配置：family=re0, mylang=zh, 账号 IchiSanNi（12 个语言站同账号） |
 | `user-fixes.py` | **核心资产**。自定义 fix 集：misc/date/anti-ve/para/gallery/heading/**translation**/HTML/syntax 等。`translation` 用「相似字符 → 正则」机制（`f()`/`p2o()`/`p2n()`）把几百个别名归一到标准译名 |
 | `scripts/re0_*.py` | 4 个自定义脚本：gallery（用 en 站图库覆盖 zh）、image（图片差量同步）、nav（编译 Wiki-navigation）、redirect（给 `前缀:词干` 页建裸词干重定向） |
+| `scripts/verify_wiki_access.py` | 只读诊断：验证 pywikibot 库与裸 API 两条 wiki 通路和凭据是否有效，期望输出 `ALL CHECKS PASSED` |
 | `families/re0_family.py` | re0 family 定义，12 个语言子站（de/en/es/fr/it/ko/nl/pl/pt-br/ru/uk/zh 都在 rezero.fandom.com，en 无路径前缀其余 `/<code>`）。注意 family 文件注释说 "do not commit" 但本项目故意提交了 |
 | `rename.py` | 交互式改名工具：移动页面 + 全站替换文本（只打印命令不执行） |
 | `pywikibot/` | submodule，含 re0wiki 定制补丁（见下） |
@@ -36,6 +37,24 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 - **导航**：`MediaWiki:Wiki-navigation` 由 `Project:Wiki-navigation` 经 `scripts/re0_nav.py` 编译生成，勿手动编辑。
 - **状态页**：wiki 上 `User:IchiSanNi/jobs` 与 `jobs/jobs.py` 的任务一一对应。
 - 译名表与译名工作流见下节；`<div class="as-is">` 保护机制见 fork 定制节。
+
+## 读写 wiki
+
+- **红线**：写入测试只允许在 zh 站 `User:IchiSanNi/沙盒`；正式批量写入需用户明确指示；**绝不写 zh 以外的语言站**；不读不打印 `user-password.py`（pywikibot 会自己加载）。
+- 以 pywikibot 库方式为主，在仓库根目录跑（`user-config.py`/`families/` 都在根目录）：
+
+```python
+import pywikibot
+
+site = pywikibot.Site("zh", "re0")   # 读任意语言站都可以，写只限 zh
+site.login()                          # 写入前必须
+assert site.user() == "IchiSanNi"
+p = pywikibot.Page(site, "角色:菜月·昴")
+p.text                                # 读
+p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚本用 bot=True
+```
+
+- 完整配方（pagegenerators 生成器、simple_request 裸 API、BotPassword 逃生舱、实测坑）见 `docs/wiki-access.md`；凭据有效性验证跑 `scripts/verify_wiki_access.py`。
 
 ## pywikibot fork 的定制（rebase 上游时必须保留）
 
