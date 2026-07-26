@@ -22,7 +22,7 @@
 - Template 命名空间共 279 页：129 顶层模板（其中 15 个重定向）+ 150 子页（`Tab/*` 116 个、`/doc` 25 个）。
   （2026-07-26 待办 2 清理删除 26 顶层 + 3 子页后约为 103 顶层 + 147 子页，下次盘点时刷新。）
 - 文档覆盖：37/129 有某种文档（`/doc` 子页 24、调用 `{{Documentation}}` 31、noinclude 内联说明 8）；**77 个非重定向模板无任何文档**。
-- 分类：`Category:模板` 直属成员仅 11 个 + 12 个子分类；**94 个顶层模板 wikitext 里没有任何分类**。
+- 分类：~~94 个顶层模板无分类~~（2026-07-26 待办 3 已清零，103 顶层模板全部入树）。
 - 引用量：全命名空间**真零引用模板 32 个**（见待办 2，已处理）。
 
 ## 技术约定（实测）
@@ -40,8 +40,9 @@
 | `Ruby` 系（Ruby、Ruby-ja、Ruby-zh-b/zh-p/zh-ja） | Ruby transclusions with too many parameters（异常追踪） |
 | `Category redirect` | 已重定向的分类、尚未清空的已重定向分类 |
 
-- `Category:模板` 旧文案自称「应覆盖全站模板」，实际远未覆盖（见待办 3）。
 - **Fandom 的 templatelinks 不记录 `#tag`/解析器函数参数内的模板调用**：`{{!}}` 在 143 个图库页的 `{{#tag:tabber}}` 参数里真实使用，`embeddedin()` 计数却为 0（2026-07-26 实测）。判「零引用」不能只看 embeddedin，须辅以全站 wikitext grep：用 `generator=allpages` 逐命名空间取 `rvprop=content`，正则搜 `\{\{\s*(subst:\s*)?名称\s*[|}]` 调用形态（含 subst 残留）。
+- **元模板/子模板分类的填充机制**（2026-07-26 查明，非误用）：`Template:元模板标记`（原名 `Template:元模板`，与分类同形易误读故改名）被元模板页引用——目前只有 `Tab`——给引用页加 `Category:元模板` 并显示「用于派生X模板」；`Category:子模板` 收组成件模板（`T category`、`元模板标记`、`T/piece`、`MW`）。
+- **模板的归类入口可能在其 `/doc` 子页**：`T`、`T/piece` 的分类是 `/doc` 里 `<includeonly>[[Category:...]]</includeonly>` 经 `{{Documentation}}` 注入的，模板本体 wikitext 里搜不到。改挂这类分类后分类表不会立即刷新，需 `page.purge(forcelinkupdate=True)` 触发重解析。
 
 ## 待办
 
@@ -80,8 +81,9 @@
 - **保留 6 个**：`!`（143 个图库页在 `#tag:tabber` 参数里使用，embeddedin 盲区实锤）、`!!`、`=`（转义元模板备用）、`Ruby-zh-b`/`Ruby-zh-p`（注音族 zh 分工：b=竖排注音符号、p=拼音，暂无使用场景但族内保留）、`Sandbox`（Tab 用法试验场，近半年仍在用）。
 - **待定项已处理**：`RailModule` 确认无使用需求（侧栏自定义内容展示位，当前无可放内容）——已摘除 Wiki-navigation 导航项并重编译、删除模板；`Category:断言模板`（断言体系删除后空分类）已一并删除。
 
-### 3. 分类补全与子分类整理
+### 3. ~~分类补全与子分类整理~~（2026-07-26 已完成）
 
-- 94 个顶层模板无分类。待决策：全部平铺进 `Category:模板`，还是按现有子分类体系细分（信息框/分页/著作权/消息框/维护/外部链接/字词转换/引文/首页/重定向/元模板/子模板）。
-- 子分类怪异点：`Category:元模板` 只有 `Tab` 一个成员；`Category:子模板` 的成员是 `T category` 和 `元模板`（像是误用）。整理时一并处理。
-- 加分类时遵守 onlyinclude/noinclude 约定（见上），别泄漏进引用页。
+- 决策：按子分类细分（平铺会与 Template 命名空间作用重合）；新建 `注音模板`/`内容模板`/`格式模板` 3 个子分类，现共 15 个子分类。
+- 60 个无分类顶层模板全部归类：重定向 17、字词转换 7、注音 5、引文 6、外部链接 4、首页 3、消息框 1（Welcome）、维护 2（Init、Disambiguation）、内容 5、子模板 1（MW）、格式 8、直属 1（`=`）。原直属的 `T`、`Ruby-ja`、`Ruby-zh-ja`、`T/piece` 改挂对应子分类；终态 103 个顶层模板 100% 入树。
+- 怪异点查明非误用（机制见技术约定）：`Template:元模板` 改名 `Template:元模板标记` 消歧并留重定向；`Category:元模板`（Tab 经引用元模板标记加入）与 `Category:子模板`（组成件）语义各自成立。
+- 仍直属 `Category:模板` 的 8 个：`!`、`!!`、`=`、Blur、DISPLAYTITLE、Documentation、Self、Tocright——均为通用元/工具模板，如需可再细分（Blur/Tocright→格式、Documentation→子模板、Self→著作权），非必要。
