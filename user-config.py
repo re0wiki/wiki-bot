@@ -144,7 +144,7 @@ put_throttle: int | float = 5
 
 # Sometimes you want to know when a delay is inserted. If a delay is larger
 # than 'noisysleep' seconds, it is logged on the screen.
-noisysleep = 0
+noisysleep = 2
 
 # Defer bot edits during periods of database server lag. For details, see
 # https://www.mediawiki.org/wiki/Manual:Maxlag_parameter
