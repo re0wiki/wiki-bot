@@ -6,6 +6,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 ## 知识归处（仓库文档 vs Hermes skill）
 
 - 与本仓库/wiki 绑定的知识**只写进本仓库文档**（AGENTS.md 放精简规则与指针，`docs/` 放详细配方），随 git 提交——这是唯一权威来源。**不要存为 Hermes skill**：skill 在仓库之外、不随代码走，曾经因此漂移出相互矛盾的副本。任务结束时的「save as skill」惯例对本仓库知识不适用，改为写进 `docs/`。
+- 判断标准是「知识从哪里来、在哪里验证」，不是「理论上能不能用在别处」：源自本仓库实践的 pywikibot / Fandom / Cloudflare 限流 / 模板审计等知识，即使看似通用，**也算本仓库知识**，进 `docs/`。（有过教训：曾被重新框架成「通用 Fandom 知识」存成 skill。）
 - skill 只用于跨仓库/跨资源的流程（例如译名核验横跨 OCR 语料库与 gh issue）。新建 skill 前检查内容不与 `docs/` 重复。
 
 ## 环境
