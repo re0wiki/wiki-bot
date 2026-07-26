@@ -111,7 +111,8 @@ login_name = bp.login_name(username)  # → "IchiSanNi@pywikibot"
 - `RecentChangesPageGenerator` 返回有重复条目（同一编辑出现多次），统计时需去重。
 - 主空间 `allpages` 按字母序，CJK 前缀排在英文之后——采样统计前缀分布必须扫全量。
 - 写沙盒后可用 `curl 'https://rezero.fandom.com/zh/api.php?action=query&prop=revisions&titles=...&rvprop=content&rvslots=main&format=json'` 匿名验证结果。
-- **限速（Fandom 已接入 Cloudflare）**：`user-config.py` 必须保持 `minthrottle >= 1`、`put_throttle >= 5`（当前 1/5，实测全任务零 429）。失速会被 Cloudflare 429，且响应头带巨大的 `Retry-After`（实测 1500s+，越罚越重）；pywikibot 会在 `throttle.get_delay()` 里**无条件睡满它**（`maxthrottle` 管不住，`retry_after` 在 `min(delay, maxdelay)` 之外）。治理方式是不触发 429（配置限速），而非给 fork 打补丁——为保持 fork 干净、方便合并上游，明确不打 `retry_after` 钳制补丁。曾误判为 throttle.ctrl 持久化惩罚：该文件在 11.x 只记录并发进程数，删它不解决 429。
+- **限速（Fandom 已接入 Cloudflare）**：`user-config.py` 必须保持 `minthrottle >= 1`、`put_throttle >= 5`（当前 1/5，实测全任务零 429）。失速会被 Cloudflare 429 且 `Retry-After` 高达数千秒、pywikibot 无条件睡满（`maxthrottle` 管不住）。治理方式是不触发 429（配置限速），明确不给 fork 打 `retry_after` 钳制补丁。根因考据与「何时绕开 pywikibot」见 `docs/cloudflare-429.md`。
+- **批量编辑模式**（同一变换改多页）：① 全量扫描（`list=allpages` + `prop=revisions` 取原文和 revid）→ ② 本地分析出候选清单 → ③ 循环编辑：login → csrf token → edit 带 `baserevid` 防冲突、`bot="1"` 抑制通知，写间隔 ≥0.5s。扫 28K+ 页用 `aplimit=max`（500）分批，勿逐页请求。
 
 ## 验证凭据是否仍然有效
 

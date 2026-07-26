@@ -3,6 +3,11 @@
 Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基于 Pywikibot。
 主要工作：把英文站内容同步到中文站，并对中文站做译名/格式规范化。
 
+## 知识归处（仓库文档 vs Hermes skill）
+
+- 与本仓库/wiki 绑定的知识**只写进本仓库文档**（AGENTS.md 放精简规则与指针，`docs/` 放详细配方），随 git 提交——这是唯一权威来源。**不要存为 Hermes skill**：skill 在仓库之外、不随代码走，曾经因此漂移出相互矛盾的副本。任务结束时的「save as skill」惯例对本仓库知识不适用，改为写进 `docs/`。
+- skill 只用于跨仓库/跨资源的流程（例如译名核验横跨 OCR 语料库与 gh issue）。新建 skill 前检查内容不与 `docs/` 重复。
+
 ## 环境
 
 - **Python 3.14**（`.python-version`，`pyproject.toml` 要求 `>=3.14`），uv 管理，有 `uv.lock`。
@@ -32,7 +37,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 ## wiki 侧结构（zh 站）
 
 - **伪命名空间**：没有注册自定义 namespace，文章页靠标题前缀分类（全在主空间）：`角色:`、`术语:`、`小说:`、`漫画:`、`动画:`、`游戏:`、`音乐:`、`设定集、画集:`、`声优:`、`制作人员:`、`存档:`。偶见繁体 `小說:` 残留；英文前缀页（`Re:`、`Sword Demon Love Story:` 等）是待整理的搬运残留。改前缀 = 移动页面，走 bot 而非手动。
-- **页首模板**：`{{Init}}`（`{{#invoke:Init|main}}`，Tab 系统初始化，几乎每篇文章都有）+ `{{To do}}`（归入 `Category:待修撰`，大部分文章常态携带，不是积压事故）。新搬运页另有 `[[Category:新搬运待整理]]`（见 fork 定制节），人工整理后摘除——该分类是真实待办队列。
+- **页首模板**：`{{Init}}`（`{{#invoke:Init|main}}`，Tab 系统初始化，几乎每篇文章都有）+ `{{To do}}`（归入 `Category:待修撰`，大部分文章常态携带，不是积压事故）。新搬运页另有 `[[Category:新搬运待整理]]`（见 fork 定制节），人工整理后摘除——该分类是真实待办队列。页首顺序固定：`{{Init}}` → `{{To do}}` → `{{Tab/...}}`（部分页才有）→ 其他内容。
 - **模板体系**：`Tab/*` 子页族（每部作品一套页面顶部标签，配 `{{Tab}}` 使用）；`Infobox character/book/novel/episode/location/item/quest/event/album/battle` 等信息框；注音族 `Ruby-zh-ja`（中日双语 ruby）/`R`/`Ruby-zh-b/zh-p/ja`；`QUOTE`（页首引语 + voice 音频）。
 - **导航**：`MediaWiki:Wiki-navigation` 由 `Project:Wiki-navigation` 经 `scripts/re0_nav.py` 编译生成，勿手动编辑。
 - **状态页**：wiki 上 `User:IchiSanNi/jobs` 与 `jobs/jobs.py` 的任务一一对应。
@@ -77,6 +82,7 @@ p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚�
 ## 坑
 
 - `run_job` 用 `shell=True` + `encoding="mbcs"`（Windows GBK 控制台），子进程输出乱码先怀疑这里。
+- Fandom 已接入 Cloudflare：失速会被 429 且 `Retry-After` 高达数千秒。`user-config.py` 保持 `minthrottle>=1`、`put_throttle>=5` 预防，根因与对策见 `docs/cloudflare-429.md`。
 - `jobs/jobs.py` 的 interwiki 任务不带 `-auto`（由 run_job 补），直接手敲 pwb.py 跑要记得加。
 - transferbot **不接受 `-always`**（加了会报错）；它不加也会自动覆盖目标页。
 - `touch -random:128` 在任务列表末尾，是为了触发缓存刷新，不是无意义操作。
