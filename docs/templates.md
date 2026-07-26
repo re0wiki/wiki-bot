@@ -41,7 +41,7 @@
 | `Category redirect` | 已重定向的分类、尚未清空的已重定向分类 |
 
 - **Fandom 的 templatelinks 不记录 `#tag`/解析器函数参数内的模板调用**：`{{!}}` 在 143 个图库页的 `{{#tag:tabber}}` 参数里真实使用，`embeddedin()` 计数却为 0（2026-07-26 实测）。判「零引用」不能只看 embeddedin，须辅以全站 wikitext grep：用 `generator=allpages` 逐命名空间取 `rvprop=content`，正则搜 `\{\{\s*(subst:\s*)?名称\s*[|}]` 调用形态（含 subst 残留）。
-- **元模板/子模板分类的填充机制**（2026-07-26 查明，非误用）：`Template:元模板标记`（原名 `Template:元模板`，与分类同形易误读故改名）被元模板页引用——目前只有 `Tab`——给引用页加 `Category:元模板` 并显示「用于派生X模板」；`Category:子模板` 收组成件模板（`T category`、`元模板标记`、`T/piece`、`MW`）。
+- **元模板分类**（2026-07-27 由「元模板/子模板」两分类合并而成）：`Category:元模板` = 被其他模板调用、不直接用于文章页的模板。判据是机制而非修辞——MediaWiki 模板只有宏展开，没有继承，「派生」（如 `Tab/LN` 预填参数调 `Tab`）与「组成」（如 `T` 调 `T/piece`）是同一种 transclusion，拆两类无可判定标准故合并。成员：`Tab`（noinclude 里声明「用于派生分页模板」+ 挂分类；原 `{{元模板标记}}` 全站仅此一处使用，已内联并删除该模板及旧名重定向 `Template:元模板`）、`MW`、`T category`、`T/piece`、`Documentation`。原 `Category:子模板` 已删除。
 - **模板的归类入口可能在其 `/doc` 子页**：`T`、`T/piece` 的分类是 `/doc` 里 `<includeonly>[[Category:...]]</includeonly>` 经 `{{Documentation}}` 注入的，模板本体 wikitext 里搜不到。改挂这类分类后分类表不会立即刷新，需 `page.purge(forcelinkupdate=True)` 触发重解析。
 
 ## 待办
@@ -83,7 +83,8 @@
 
 ### 3. ~~分类补全与子分类整理~~（2026-07-26 已完成）
 
-- 决策：按子分类细分（平铺会与 Template 命名空间作用重合）；新建 `注音模板`/`内容模板`/`格式模板` 3 个子分类，现共 15 个子分类。
+- 决策：按子分类细分（平铺会与 Template 命名空间作用重合）；新建 `注音模板`/`内容模板`/`格式模板` 3 个子分类，时共 15 个子分类（2026-07-27 子模板并入元模板后为 14）。
 - 60 个无分类顶层模板全部归类：重定向 17、字词转换 7、注音 5、引文 6、外部链接 4、首页 3、消息框 1（Welcome）、维护 2（Init、Disambiguation）、内容 5、子模板 1（MW）、格式 8、直属 1（`=`）。原直属的 `T`、`Ruby-ja`、`Ruby-zh-ja`、`T/piece` 改挂对应子分类；终态 103 个顶层模板 100% 入树。
 - 怪异点查明非误用（机制见技术约定）：`Template:元模板` 改名 `Template:元模板标记` 消歧并留重定向；`Category:元模板`（Tab 经引用元模板标记加入）与 `Category:子模板`（组成件）语义各自成立。
-- 仍直属 `Category:模板` 的 8 个：`!`、`!!`、`=`、Blur、DISPLAYTITLE、Documentation、Self、Tocright——均为通用元/工具模板，如需可再细分（Blur/Tocright→格式、Documentation→子模板、Self→著作权），非必要。
+- 仍直属 `Category:模板` 的 7 个：`!`、`!!`、`=`、Blur、DISPLAYTITLE、Self、Tocright——均为通用工具模板，如需可再细分（Blur/Tocright→格式、Self→著作权），非必要。
+- 后续（2026-07-27）：`Category:子模板` 并入 `Category:元模板`（理由见技术约定）；`元模板标记` 内联进 `Tab` 后删除（含旧名重定向）；`Documentation` 移入元模板；索引页「模板工具（元模板）」节同步更新。
