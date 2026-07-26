@@ -34,6 +34,8 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `rename.py` | 交互式改名工具：移动页面 + 全站替换文本（只打印命令不执行） |
 | `pywikibot/` | submodule，含 re0wiki 定制补丁（见下） |
 
+pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template 等）的选用速查见 `docs/pywikibot-scripts.md`——能用现成脚本就别手写。
+
 ## wiki 侧结构（zh 站）
 
 - **伪命名空间**：没有注册自定义 namespace，文章页靠标题前缀分类（全在主空间）：`角色:`、`术语:`、`小说:`、`漫画:`、`动画:`、`游戏:`、`音乐:`、`设定集、画集:`、`声优:`、`制作人员:`、`存档:`。偶见繁体 `小說:` 残留；英文前缀页（`Re:`、`Sword Demon Love Story:` 等）是待整理的搬运残留。改前缀 = 移动页面，走 bot 而非手动。
