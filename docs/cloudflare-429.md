@@ -37,12 +37,14 @@ maxthrottle = 60   # 常规延迟硬顶（管不住 retry_after，见上）
 
 ## 什么时候绕开 pywikibot
 
+配置限速生效后**默认都走 pywikibot**（含 `site.simple_request` 调裸 API），
+裸 `requests` 只是最后的逃生舱：
+
 | 场景 | 用法 |
 |---|---|
-| pywikibot 任务（interwiki、transferbot、replace、cosmetic_changes） | 走 pywikibot + 上面的配置限速 |
-| 临时批量扫描（列全站页面、查模式） | 裸 `requests`，配方见 `docs/wiki-access.md` |
-| 临时批量编辑（同一变换改 10+ 页） | 裸 `requests`，写间隔 ≥0.5s |
-| 交互式探索 | pywikibot（配置限速已生效） |
+| pywikibot 任务、批量扫描、批量编辑、交互式探索 | 一律 pywikibot（配置限速已实测零 429） |
+| pywikibot 未封装的功能 | `site.simple_request`（复用已认证会话与限速） |
+| 仅当 pywikibot 本身故障，或脚本无法加载仓库 `user-config.py`（在仓库外跑、无配置限速保护） | 才裸 `requests`，且写间隔 ≥0.5s |
 
 裸 `requests` 的 BotPassword 登录完整流程见 `scripts/verify_wiki_access.py`；
 **login POST 也必须走带 429 退避的重试封装**，不能裸发。
