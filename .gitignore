@@ -290,3 +290,6 @@ pywikibot*.lwp
 user-password.py
 *apicache*
 autonomous_problems.dat
+
+# 运行时产物 + 盘点输出/草稿等一次性工作文件
+logs/
