@@ -16,7 +16,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 - **pywikibot 是 git submodule**（fork：`github.com/re0wiki/pywikibot`，upstream 是 wikimedia/pywikibot）。克隆要 `--recurse-submodules`。更新 submodule 后提交信息写 `chore: update pywikibot`。
 - Lint：`ruff check` / `ruff format`（`pyproject.toml` 里 extend-exclude 了 pywikibot 子模块，不要给它 lint）。类型检查用 `ty`。
 - 没有测试套件。验证方式 = `-s/--simulate` 干跑 + 上 wiki 查编辑结果。
-- Secrets：`user-password.py`（BotPasswords，gitignored，勿读勿提交）。`logs/`、`apicache/`、`throttle.ctrl` 是运行时产物，别动。
+- Secrets：`user-password.py`（BotPasswords，gitignored，勿读勿提交）。
 
 ## 架构地图
 
