@@ -133,12 +133,14 @@ upload_to_commons = False
 #
 # 'maxlag' is used to control the rate of server access (see below).
 # Set minthrottle to non-zero to use a throttle on read access.
-minthrottle = 0
+# Fandom 已接入 Cloudflare，读请求完全不限速会触发 429 惩罚。
+minthrottle = 1
 maxthrottle = 60
 
 # Slow down the robot such that it never makes a second page edit within
 # 'put_throttle' seconds.
-put_throttle: int | float = 0
+# 实测 5s/次的写入节奏在 Cloudflare 下全程无 429。
+put_throttle: int | float = 5
 
 # Sometimes you want to know when a delay is inserted. If a delay is larger
 # than 'noisysleep' seconds, it is logged on the screen.
@@ -257,16 +259,6 @@ simulate: bool | str = False
 # Increasing this value will increase memory space but could speed up
 # processing. As higher this value this effect will decrease.
 max_queue_size = 64
-
-# Pickle protocol version to use for storing dumps.
-# This config variable is not used for loading dumps.
-# Version 0 is a more or less human-readable protocol
-# Version 2 is common to both Python 2 and 3, and should
-# be used when dumps are accessed by both versions.
-# Version 3 is only available for Python 3
-# Version 4 is only available for Python 3.4+
-# Version 5 was added with Python 3.8
-pickle_protocol = 2
 
 # ############# INTERWIKI SETTINGS ##############
 
