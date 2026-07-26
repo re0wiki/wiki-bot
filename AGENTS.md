@@ -6,6 +6,8 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 ## 知识归处（仓库文档 vs Hermes skill）
 
 - 与本仓库/wiki 绑定的知识**只写进本仓库文档**（AGENTS.md 放精简规则与指针，`docs/` 放详细配方），随 git 提交——这是唯一权威来源。**不要存为 Hermes skill**：skill 在仓库之外、不随代码走，曾经因此漂移出相互矛盾的副本。任务结束时的「save as skill」惯例对本仓库知识不适用，改为写进 `docs/`。
+- 判断标准是「知识从哪里来、在哪里验证」，不是「理论上能不能用在别处」：源自本仓库实践的 pywikibot / Fandom / Cloudflare 限流 / 模板审计等知识，即使看似通用，**也算本仓库知识**，进 `docs/`。（有过教训：曾被重新框架成「通用 Fandom 知识」存成 skill。）
+- 分工：把知识写进 `docs/` 是**主 agent**（有文件工具）的职责，任务收尾时主动做。回合结束后的后台 skill review（只有 memory/skill 工具的 fork agent）对本仓库知识应**直接放弃**（'Nothing to save'）——它碰不了仓库文件，不要建/改 skill，也不要把知识代为塞进 memory。
 - skill 只用于跨仓库/跨资源的流程（例如译名核验横跨 OCR 语料库与 gh issue）。新建 skill 前检查内容不与 `docs/` 重复。
 
 ## 环境
@@ -16,7 +18,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 - **pywikibot 是 git submodule**（fork：`github.com/re0wiki/pywikibot`，upstream 是 wikimedia/pywikibot）。克隆要 `--recurse-submodules`。更新 submodule 后提交信息写 `chore: update pywikibot`。
 - Lint：`ruff check` / `ruff format`（`pyproject.toml` 里 extend-exclude 了 pywikibot 子模块，不要给它 lint）。类型检查用 `ty`。
 - 没有测试套件。验证方式 = `-s/--simulate` 干跑 + 上 wiki 查编辑结果。
-- Secrets：`user-password.py`（BotPasswords，gitignored，勿读勿提交）。`logs/`、`apicache/`、`throttle.ctrl` 是运行时产物，别动。
+- Secrets：`user-password.py`（BotPasswords，gitignored，勿读勿提交）。
 
 ## 架构地图
 
@@ -30,15 +32,18 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `user-fixes.py` | **核心资产**。自定义 fix 集：misc/date/anti-ve/para/gallery/heading/**translation**/HTML/syntax 等。`translation` 用「相似字符 → 正则」机制（`f()`/`p2o()`/`p2n()`）把几百个别名归一到标准译名 |
 | `scripts/re0_*.py` | 4 个自定义脚本：gallery（用 en 站图库覆盖 zh）、image（图片差量同步）、nav（编译 Wiki-navigation）、redirect（给 `前缀:词干` 页建裸词干重定向） |
 | `scripts/verify_wiki_access.py` | 只读诊断：验证 pywikibot 库与裸 API 两条 wiki 通路和凭据是否有效，期望输出 `ALL CHECKS PASSED` |
+| `docs/` | `wiki-access.md`（读写配方）、`cloudflare-429.md`（限流根因与对策）、`template-usage-audit.md`（零引用模板审计工作流）、`templates.md`（模板盘点数据与待办） |
 | `families/re0_family.py` | re0 family 定义，12 个语言子站（de/en/es/fr/it/ko/nl/pl/pt-br/ru/uk/zh 都在 rezero.fandom.com，en 无路径前缀其余 `/<code>`）。注意 family 文件注释说 "do not commit" 但本项目故意提交了 |
 | `rename.py` | 交互式改名工具：移动页面 + 全站替换文本（只打印命令不执行） |
 | `pywikibot/` | submodule，含 re0wiki 定制补丁（见下） |
+
+pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template 等）的选用速查见 `docs/pywikibot-scripts.md`——能用现成脚本就别手写。
 
 ## wiki 侧结构（zh 站）
 
 - **伪命名空间**：没有注册自定义 namespace，文章页靠标题前缀分类（全在主空间）：`角色:`、`术语:`、`小说:`、`漫画:`、`动画:`、`游戏:`、`音乐:`、`设定集、画集:`、`声优:`、`制作人员:`、`存档:`。偶见繁体 `小說:` 残留；英文前缀页（`Re:`、`Sword Demon Love Story:` 等）是待整理的搬运残留。改前缀 = 移动页面，走 bot 而非手动。
 - **页首模板**：`{{Init}}`（`{{#invoke:Init|main}}`，Tab 系统初始化，几乎每篇文章都有）+ `{{To do}}`（归入 `Category:待修撰`，大部分文章常态携带，不是积压事故）。新搬运页另有 `[[Category:新搬运待整理]]`（见 fork 定制节），人工整理后摘除——该分类是真实待办队列。页首顺序固定：`{{Init}}` → `{{To do}}` → `{{Tab/...}}`（部分页才有）→ 其他内容。
-- **模板体系**：`Tab/*` 子页族（每部作品一套页面顶部标签，配 `{{Tab}}` 使用）；`Infobox character/book/novel/episode/location/item/quest/event/album/battle` 等信息框；注音族 `Ruby-zh-ja`（中日双语 ruby）/`R`/`Ruby-zh-b/zh-p/ja`；`QUOTE`（页首引语 + voice 音频）。
+- **模板体系**：`Tab/*` 子页族（每部作品一套页面顶部标签，配 `{{Tab}}` 使用）；`Infobox character/book/novel/episode/location/item/quest/event/album/battle` 等信息框；注音族 `Ruby-zh-ja`（中日双语 ruby）/`R`/`Ruby-zh-b/zh-p/ja`；`QUOTE`（页首引语 + voice 音频）。全站模板索引在 wiki 的 `ReZero Wiki:模板`，模板信息分层（wiki/仓库各存什么）、盘点数据与维护待办见 `docs/templates.md`。
 - **导航**：`MediaWiki:Wiki-navigation` 由 `Project:Wiki-navigation` 经 `scripts/re0_nav.py` 编译生成，勿手动编辑。
 - **状态页**：wiki 上 `User:IchiSanNi/jobs` 与 `jobs/jobs.py` 的任务一一对应。
 - 译名表与译名工作流见下节；`<div class="as-is">` 保护机制见 fork 定制节。

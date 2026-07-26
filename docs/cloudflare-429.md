@@ -18,6 +18,36 @@ Fandom 前端接 Cloudflare，按 **TLS 指纹 + 请求速率**限流。本文�
    `retry_after` 在 `min(delay, maxdelay)` 之外）。
 3. **死亡螺旋**：429 → 睡 25 分钟 → 全速恢复 → 立即再 429 → …
 
+## pywikibot 11.x 内部机制（读 installed 源码，别凭记忆推测）
+
+- `throttle.py` `Throttle.get_delay()` = `max(mindelay, retry_after, min(delay, maxdelay))`：
+  `retry_after` 在 `min(delay, maxdelay)` 钳制**之外**，所以 `maxthrottle` 管不住它。
+- `comms/http.py` `request()` 对**每个**响应执行
+  `site.throttle.retry_after = int(response.headers.get('retry-after', 0))`——
+  429 把它设成巨值，下一个成功响应（无此头）重置为 0：进程内自愈，不落盘。
+- 日志里有两层独立的等待，别混淆：
+  - `Waiting X seconds before retrying` = API 重试层（`retry_wait`→`retry_max` 倍增）；
+  - `Sleeping for N seconds` = throttle 层在执行 `Retry-After`（实测 1542s → 2980s → 3594s 递增）。
+- **惩罚窗口**：429 风暴刚过，全新进程（`retry_after=0`、无 throttle.ctrl）首发请求也会
+  立即吃 429（实测 `Retry-After: 474`）——Cloudflare 按请求模式/IP 维持短期滚动惩罚，
+  与客户端状态无关。测试修复时别把首发 429 当成「修复失败」，等窗口过去或用已证安全的速率测。
+- pywikibot 11.x 默认值（`config.py`）：`minthrottle=0.1`、`put_throttle=10`、`maxthrottle=60`、
+  `maxlag=5`、`max_retries=15`、`retry_wait=5`、`retry_max=120`。
+
+## 诊断流程
+
+1. 排除 UA 封禁：用 curl 分别带 pywikibot UA / 浏览器 UA / curl UA 打 api.php，全 200 则是行为限流。
+2. 归因先查自己：把 `user-config.py` 与 `pywikibot/config.py` 默认值做 diff——
+   用户自定义值是首要嫌疑；过时的模板残留（如 `pickle_protocol=2`，上游已改 5）会静默覆盖新默认值，删掉。
+3. 用裸 requests +  pacing 实测 tolerated rate，再下定论。
+
+## 实测耐受速率（rezero.fandom.com，2026-07）
+
+- 读：50 页一批的 `prop=revisions` GET，间隔 ~0.5–1s → 28228 页零 429。
+- 写：间隔 ~5s，BotPassword 登录会话 → 293 次编辑零 429。
+- UA 无关：pywikibot UA / 浏览器 UA / curl UA 对照测试全 200。
+- 事故前配置 `minthrottle=0, put_throttle=0`：~7-8 req/s 读，约 4500 次请求 / 10 分钟后触发 429。
+
 ## 对策：配置限速（唯一治理方式）
 
 `user-config.py`：
