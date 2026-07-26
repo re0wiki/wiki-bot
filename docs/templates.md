@@ -20,9 +20,10 @@
 引用量用 `Page.embeddedin()` 逐模板统计（Fandom 不支持 `mostlinkedtemplates`）。
 
 - Template 命名空间共 279 页：129 顶层模板（其中 15 个重定向）+ 150 子页（`Tab/*` 116 个、`/doc` 25 个）。
+  （2026-07-26 待办 2 清理删除 26 顶层 + 3 子页后约为 103 顶层 + 147 子页，下次盘点时刷新。）
 - 文档覆盖：37/129 有某种文档（`/doc` 子页 24、调用 `{{Documentation}}` 31、noinclude 内联说明 8）；**77 个非重定向模板无任何文档**。
 - 分类：`Category:模板` 直属成员仅 11 个 + 12 个子分类；**94 个顶层模板 wikitext 里没有任何分类**。
-- 引用量：全命名空间**真零引用模板 32 个**（下表）。
+- 引用量：全命名空间**真零引用模板 32 个**（见待办 2，已处理）。
 
 ## 技术约定（实测）
 
@@ -38,13 +39,13 @@
 | `Seirei or Elf` / `Yousei or Elf` | 需复核译名 |
 | `Ruby` 系（Ruby、Ruby-ja、Ruby-zh-b/zh-p/zh-ja） | Ruby transclusions with too many parameters（异常追踪） |
 | `Category redirect` | 已重定向的分类、尚未清空的已重定向分类 |
-| `角色分类` | 角色分类 |
 
 - `Category:模板` 旧文案自称「应覆盖全站模板」，实际远未覆盖（见待办 3）。
+- **Fandom 的 templatelinks 不记录 `#tag`/解析器函数参数内的模板调用**：`{{!}}` 在 143 个图库页的 `{{#tag:tabber}}` 参数里真实使用，`embeddedin()` 计数却为 0（2026-07-26 实测）。判「零引用」不能只看 embeddedin，须辅以全站 wikitext grep：用 `generator=allpages` 逐命名空间取 `rvprop=content`，正则搜 `\{\{\s*(subst:\s*)?名称\s*[|}]` 调用形态（含 subst 残留）。
 
 ## 待办
 
-### 1. `/doc` 子页补全（77 个模板缺文档，工作量大，分批做）
+### 1. `/doc` 子页补全（工作量大，分批做）
 
 按主空间引用量排序的优先级清单（前 20，做完即覆盖绝大部分实际使用）：
 
@@ -69,19 +70,15 @@
 | 31 | Infobox battle、Twitter |
 
 完整清单见 `logs/template_inventory.json`（`has_doc_subpage`/`uses_Documentation_tpl`/`inline_doc_in_noinclude` 全 false 者）。
-注意 29 个零引用模板（见待办 2）评审删除后，缺文档清单会同步缩短。
+原清单中属零引用模板的条目已随待办 2 的删除自然消失。
 
-### 2. 零引用模板评审（32 个，删除或保留）
+### 2. ~~零引用模板评审~~（2026-07-26 已完成）
 
-```
-! !! = Assert empty Assert eq Auto link Border-radius Cc-by-sa-3.0
-Character CopyText Doc Header InfoboxGrid Jiro Onofy Lowercase title
-Mainpage right Navbar Navbox Advanced Nomobile Notice Permission Poll
-RailModule Ruby-zh-b Ruby-zh-p Sandbox Theme Tl To en Transclude
-晚街与灯 角色分类
-```
+32 个零引用模板经全站 wikitext grep 复核（发现 embeddedin 盲区，见技术约定）后处置：
 
-注意：`!`/`!!`/`=` 这类是转义用元模板，零引用不代表可删（可能被 subst 或正在模板代码里以 `{{!}}` 形式使用——删除前先全文搜索 `{{!}}` 等用法）。`Ruby-zh-b`/`Ruby-zh-p` 是注音族成员，删前先确认族内分工。
+- **删除 26 个模板 + 连带孤儿 6 页**：Assert empty、Assert eq、Auto link、角色分类、Navbar、Navbox Advanced、Transclude、Doc、Border-radius、Cc-by-sa-3.0、Permission、Header、InfoboxGrid、Jiro Onofy、Lowercase title、Mainpage right、Nomobile、Notice、Poll、Theme、To en、晚街与灯，及零引用重定向 Character、CopyText、Tl；连带删除 Mainpage Staff、Tab/Assert、Module:assert（+/doc）、MediaWiki:Gadget-Poll.css、Cc-by-sa-3.0/doc、Permission/doc。删除前 wikitext 存档在 `logs/deleted_templates_2026-07-26.json`。
+- **保留 6 个**：`!`（143 个图库页在 `#tag:tabber` 参数里使用，embeddedin 盲区实锤）、`!!`、`=`（转义元模板备用）、`Ruby-zh-b`/`Ruby-zh-p`（注音族 zh 分工：b=竖排注音符号、p=拼音，暂无使用场景但族内保留）、`Sandbox`（Tab 用法试验场，近半年仍在用）。
+- **待定**：`RailModule`（空页，但 `ReZero Wiki:Wiki-navigation` 导航菜单有入口，删除需先改导航源并重编译）；`Category:断言模板`（断言体系删除后已空）。
 
 ### 3. 分类补全与子分类整理
 
