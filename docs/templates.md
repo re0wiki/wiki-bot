@@ -78,7 +78,7 @@
 
 - **删除 26 个模板 + 连带孤儿 6 页**：Assert empty、Assert eq、Auto link、角色分类、Navbar、Navbox Advanced、Transclude、Doc、Border-radius、Cc-by-sa-3.0、Permission、Header、InfoboxGrid、Jiro Onofy、Lowercase title、Mainpage right、Nomobile、Notice、Poll、Theme、To en、晚街与灯，及零引用重定向 Character、CopyText、Tl；连带删除 Mainpage Staff、Tab/Assert、Module:assert（+/doc）、MediaWiki:Gadget-Poll.css、Cc-by-sa-3.0/doc、Permission/doc。删除前 wikitext 存档在 `logs/deleted_templates_2026-07-26.json`。
 - **保留 6 个**：`!`（143 个图库页在 `#tag:tabber` 参数里使用，embeddedin 盲区实锤）、`!!`、`=`（转义元模板备用）、`Ruby-zh-b`/`Ruby-zh-p`（注音族 zh 分工：b=竖排注音符号、p=拼音，暂无使用场景但族内保留）、`Sandbox`（Tab 用法试验场，近半年仍在用）。
-- **待定**：`RailModule`（空页，但 `ReZero Wiki:Wiki-navigation` 导航菜单有入口，删除需先改导航源并重编译）；`Category:断言模板`（断言体系删除后已空）。
+- **待定项已处理**：`RailModule` 确认无使用需求（侧栏自定义内容展示位，当前无可放内容）——已摘除 Wiki-navigation 导航项并重编译、删除模板；`Category:断言模板`（断言体系删除后空分类）已一并删除。
 
 ### 3. 分类补全与子分类整理
 
