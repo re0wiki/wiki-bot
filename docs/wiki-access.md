@@ -106,6 +106,7 @@ login_name = bp.login_name(username)  # → "IchiSanNi@pywikibot"
 
 - 搜索"菜月昴"能命中 `角色:菜月·昴` 等页（Fandom 搜索对别名友好），但 `intitle:` 语法无效。
 - Fandom API **不支持** `list=mostlinkedtemplates`；查模板引用量改用 `Page.embeddedin(total=N)` 逐个查。
+- `api.QueryGenerator` 带 `generator=` 时**逐页 yield page dict**（不是 `{"query": {"pages": {...}}}` 包裹结构）；不带 generator 时才是整包响应。解析前先确认用的是哪种形态。
 - `allcategories` 不支持 `acsort` 参数，返回条目也没有 `size` 键；分类规模用 `Category.categoryinfo`。
 - `site.namespaces` 迭代返回的是 int 键，取对象用 `site.namespaces[ns_id]`。
 - `RecentChangesPageGenerator` 返回有重复条目（同一编辑出现多次），统计时需去重。
