@@ -68,14 +68,18 @@ p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚�
 
 ## pywikibot fork 的定制（rebase 上游时必须保留）
 
-提交 `dc44b42b9 chore: apply re0wiki customizations` + `f053e27e8`（`import re` → `import regex as re`）+ `0a2611321`：
+在 `f053e27e8`（`import re` → `import regex as re`）之上，每个定制一个独立提交（2026-07-27 起由单个大 commit 拆分）：
 
-- `textlib.py`：新增 `keep` 标签 = `<div class="as-is">...</div>`，fixes 的 exceptions 里普遍加了 `keep` —— wiki 上可以用这个 div 保护内容不被 bot 改。
+- `textlib.py` + `fixes.py`：新增 `keep` 标签 = `<div class="as-is">...</div>`，textlib 加 regex，HTML/syntax/isbn/specialpages fixes 的 exceptions 里加 `keep` —— wiki 上可以用这个 div 保护内容不被 bot 改。
+- `fixes.py`：HTML/syntax/specialpages 三个 fix 补默认 generator。
+- `fixes.py`：HTML fix 把 `<br>` 归一到不闭合形式（MediaWiki 渲染等价，不闭合是本 wiki 惯例）。
+- `fixes.py`：syntax fix 注释掉外链竖线规则（误报太多）。
 - `textlib.py`：`replaceLanguageLinks` 的 CategorySelect 分支加守卫，模板页（含子页）改走 noinclude 感知分支——否则 `getCategoryLinks` 不识别 `<noinclude>` 包裹，会把分类从 noinclude 里拽出来放到页尾（Fandom 有 CategorySelect 扩展，cosmetic_changes 的 standardizePageFooter 必踩）。
 - `transferbot.py`：搬运时不写编辑历史子页，改为在页首加 `{{Init}}{{To do}}` + 来源链接 + `[[Category:新搬运待整理]]`（namespace 8/828 除外）。
-- `_filepage.py`：下载 URL 加 `&format=original`，否则 Fandom API 返回 webp。
+- `_filepage.py`：下载 URL 加 `&format=original`，否则 Fandom API 返回 webp（同时去掉了 suffix 调整——内容已是原格式，扩展名与标题一致）。
 - `_tokenwallet.py`：先取 csrf token（绕过 Fandom bug：一起取时只有部分 token 能拿到且不触发 pywikibot 重试；先取 csrf 会失败一次但触发自动重试，第二次成功。丑陋但可用）。
-- `fixes.py`：HTML fix 允许 `<br>` 不闭合、syntax fix 去掉了误报多的外链竖线规则、几个 fix 补了 generator。
+- `requirements.txt`：加 `regex` 依赖（f053e27e8 的 import 改动需要）。
+- `noreferences.py`：zh 参考资料段标题加「注释与外部链接」。
 - `redirect.py`：moved-pages offset 允许 0。
 
 ## 译名维护工作流（最常见的改动）
