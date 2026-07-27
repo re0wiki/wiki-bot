@@ -69,10 +69,9 @@ p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚�
 
 ## pywikibot fork 的定制（rebase 上游时必须保留）
 
-每个定制一个独立提交（2026-07-27 起由单个大 commit 拆分；历史上另有 `import regex as re` 全库替换、requirements 加 regex、redirect offset、TokenWallet csrf-first 四个补丁，2026-07 验证不再必要后摘除）：
+每个定制一个独立提交（2026-07-27 起由单个大 commit 拆分；历史上另有 `import regex as re` 全库替换、requirements 加 regex、redirect offset、TokenWallet csrf-first、fixes 默认 generator 五个补丁，2026-07 验证不再必要后摘除——generator 已改为在 `jobs/jobs.py` 里显式传 `starts_base`）：
 
 - `textlib.py` + `fixes.py`：新增 `keep` 标签 = `<div class="as-is">...</div>`，textlib 加 regex，HTML/syntax/isbn/specialpages fixes 的 exceptions 里加 `keep` —— wiki 上可以用这个 div 保护内容不被 bot 改。
-- `fixes.py`：HTML/syntax/specialpages 三个 fix 补默认 generator。
 - `fixes.py`：HTML fix 把 `<br>` 归一到不闭合形式（MediaWiki 渲染等价，不闭合是本 wiki 惯例）。
 - `fixes.py`：syntax fix 注释掉外链竖线规则（误报太多）。
 - `textlib.py`：`replaceLanguageLinks` 的 CategorySelect 分支加守卫，模板页（含子页）改走 noinclude 感知分支——否则 `getCategoryLinks` 不识别 `<noinclude>` 包裹，会把分类从 noinclude 里拽出来放到页尾（Fandom 有 CategorySelect 扩展，cosmetic_changes 的 standardizePageFooter 必踩）。
