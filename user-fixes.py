@@ -1,8 +1,8 @@
 import itertools
+import re
 from collections import defaultdict
 from functools import partial
 
-import regex as re
 from opencc import OpenCC
 
 generator_base = [
@@ -564,7 +564,7 @@ user_fixes["translation"] = base | {
             "(?<!丢)芙拉姆",
             "(?<!加)弗利艾",
             "(?<!法)拉塞尔",
-            "(?<!芙蕾|佩)多尔肯(?!罗登|普里恩)",
+            "(?<!佩)(?<!芙蕾)多尔肯(?!罗登|普里恩)",
             "(?<!罗)伊娜",
             "潘多拉(?!顿)",
             "希尔菲(?!亚)",
@@ -593,7 +593,7 @@ user_fixes["translation"] = base | {
             (f"{f('空')}{f('斯')}{f('图')}{f('卢')}", "柯司兹尔"),
             (f"其{f('他它她')}", "其他"),
             (
-                "(?<!禁书与谜之|术语:|人工|自然|契约|[大邪微准])"
+                "(?<!禁书与谜之)(?<!术语:)(?<!人工)(?<!自然)(?<!契约)(?<![大邪微准])"
                 f"{f('精')}{f('灵')}"
                 "(?!骑士|[术使])",
                 "{{Seirei or Elf}}",
