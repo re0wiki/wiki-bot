@@ -71,6 +71,25 @@ MediaWiki 对**所有适用组**的窗口分别计数、任一超限即拒绝（
 
 旧事故时把 bot 打慢的除了 Cloudflare 429，可能也混有这道 ratelimited 重试。
 
+## `-async` 任务的并发分析（interwiki / cosmetic_changes）
+
+结论：**`-async` 不产生不受控的并发**，当前配置下安全。机制与实测：
+
+- `-async` = `page.save(asynchronous=True)` → 请求进 `page_put_queue`，
+  由**单个**后台守护线程（`_putthread`，`pywikibot.async_manager`）串行取出执行。
+  不是多线程并发写，写仍然排队逐个发。
+- 后台保存走的还是同一个 `site.throttle`（线程安全），`put_throttle=2` 照常生效。
+- 唯一真并发现象：throttle 读写锁分离，写只等 `last_write`（不等读），
+  所以一次写可以紧跟在读之后发出。最坏合计 ≈ 读 3.8 + 写 0.5 ≈ **4.3 req/s**，
+  仍远低于事故线 7-8 req/s。
+- interwiki 跨 12 个语言站：每个 `Site` 有**独立** Throttle，`minthrottle` 不跨站协调；
+  但 interwiki 没有读线程（无 Thread 调用），跨站查询是单线程顺序的，
+  合计速率仍被 RTT 锁死在 ~3.8 req/s。`-async` 只影响保存。
+- 实证（`scripts/probe_async_concurrency.py`）：主线程全速预载 2000 页 +
+  80 次异步沙盒写并发交叠，结束 `retry_after=0`，零 429。
+- 推论：旧事故的 ~7-8 req/s 很可能就是 `minthrottle=0, put_throttle=0` 时代
+  `-async` 让读、写两条线同时无限制发请求的叠加产物。
+
 ## 对策：配置限速（唯一治理方式）
 
 `user-config.py`：
