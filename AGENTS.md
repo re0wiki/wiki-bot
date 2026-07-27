@@ -15,7 +15,8 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 - **Python 3.14**（`.python-version`，`pyproject.toml` 要求 `>=3.14`），uv 管理，有 `uv.lock`。
 - 安装：`uv sync`（`default-groups = "all"`，会把 dev + pwb 组全装上）。
 - 运行脚本：`PYTHONPATH= .venv/Scripts/python.exe <script>`（Windows 上 Hermes 会注入指向自身 venv 的 PYTHONPATH，必须清空，否则 import 错包）。
-- **pywikibot 是 git submodule**（fork：`github.com/re0wiki/pywikibot`，upstream 是 wikimedia/pywikibot）。克隆要 `--recurse-submodules`。更新 submodule 后提交信息写 `chore: update pywikibot`。
+- **pywikibot 是 git submodule**（fork：`github.com/re0wiki/pywikibot`，upstream 是 wikimedia/pywikibot）。克隆要 `--recurse-submodules`（否则 `uv sync` 会因路径缺失失败）。更新 submodule 后提交信息写 `chore: update pywikibot`。
+- pywikibot 通过 `[tool.uv.sources]` 以 **editable 方式从 submodule 路径装入 venv**（`{ path = "pywikibot", editable = true }`），submodule gitlink 是唯一版本锁，无需再同步 uv.lock 里的 commit。`pyproject.toml` 里的 `[tool.ty.environment] extra-paths = ["./pywikibot"]` 是必须的：ty 无法静态解析 PEP 660 editable finder，删掉会导致全项目 unresolved-import。
 - Lint：`ruff check` / `ruff format`（`pyproject.toml` 里 extend-exclude 了 pywikibot 子模块，不要给它 lint）。类型检查用 `ty`。
 - 没有测试套件。验证方式 = `-s/--simulate` 干跑 + 上 wiki 查编辑结果。
 - Secrets：`user-password.py`（BotPasswords，gitignored，勿读勿提交）。
@@ -32,7 +33,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `user-fixes.py` | **核心资产**。自定义 fix 集：misc/date/anti-ve/para/gallery/heading/**translation**/HTML/syntax 等。`translation` 用「相似字符 → 正则」机制（`f()`/`p2o()`/`p2n()`）把几百个别名归一到标准译名 |
 | `scripts/re0_*.py` | 4 个自定义脚本：gallery（用 en 站图库覆盖 zh）、image（图片差量同步）、nav（编译 Wiki-navigation）、redirect（给 `前缀:词干` 页建裸词干重定向） |
 | `scripts/verify_wiki_access.py` | 只读诊断：验证 pywikibot 库与裸 API 两条 wiki 通路和凭据是否有效，期望输出 `ALL CHECKS PASSED` |
-| `docs/` | `wiki-access.md`（读写配方）、`cloudflare-429.md`（限流根因与对策）、`template-usage-audit.md`（零引用模板审计工作流）、`templates.md`（模板盘点数据与待办） |
+| `docs/` | `wiki-access.md`（读写配方）、`cloudflare-429.md`（限流根因与对策）、`template-usage-audit.md`（零引用模板审计工作流）、`templates.md`（模板盘点数据与待办）、`pywikibot-update.md`（submodule rebase 上游流程） |
 | `families/re0_family.py` | re0 family 定义，12 个语言子站（de/en/es/fr/it/ko/nl/pl/pt-br/ru/uk/zh 都在 rezero.fandom.com，en 无路径前缀其余 `/<code>`）。注意 family 文件注释说 "do not commit" 但本项目故意提交了 |
 | `rename.py` | 交互式改名工具：移动页面 + 全站替换文本（只打印命令不执行） |
 | `pywikibot/` | submodule，含 re0wiki 定制补丁（见下） |
@@ -50,7 +51,7 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 
 ## 读写 wiki
 
-- **红线**：写入测试只允许在 zh 站 `User:IchiSanNi/沙盒`；正式批量写入需用户明确指示；**绝不写 zh 以外的语言站**；不读不打印 `user-password.py`（pywikibot 会自己加载）。
+- **红线**：写入测试只允许在 zh 站的测试页面——`User:IchiSanNi` 的所有子页面，或任意命名空间的 `Sandbox`/`沙盒` 页及其子页面；正式批量写入需用户明确指示；**绝不写 zh 以外的语言站**；不读不打印 `user-password.py`（pywikibot 会自己加载）。
 - 以 pywikibot 库方式为主，在仓库根目录跑（`user-config.py`/`families/` 都在根目录）：
 
 ```python
@@ -68,14 +69,15 @@ p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚�
 
 ## pywikibot fork 的定制（rebase 上游时必须保留）
 
-提交 `dc44b42b9 chore: apply re0wiki customizations` + `f053e27e8`（`import re` → `import regex as re`）：
+每个定制一个独立提交（2026-07-27 起由单个大 commit 拆分；历史上另有 `import regex as re` 全库替换、requirements 加 regex、redirect offset、TokenWallet csrf-first、fixes 默认 generator 五个补丁，2026-07 验证不再必要后摘除——generator 已改为在 `jobs/jobs.py` 里显式传 `starts_base`）：
 
-- `textlib.py`：新增 `keep` 标签 = `<div class="as-is">...</div>`，fixes 的 exceptions 里普遍加了 `keep` —— wiki 上可以用这个 div 保护内容不被 bot 改。
+- `textlib.py` + `fixes.py`：新增 `keep` 标签 = `<div class="as-is">...</div>`，textlib 加 regex，HTML/syntax/isbn/specialpages fixes 的 exceptions 里加 `keep` —— wiki 上可以用这个 div 保护内容不被 bot 改。
+- `fixes.py`：HTML fix 把 `<br>` 归一到不闭合形式（MediaWiki 渲染等价，不闭合是本 wiki 惯例）。
+- `fixes.py`：syntax fix 注释掉外链竖线规则（误报太多）。
+- `textlib.py`：`replaceLanguageLinks` 的 CategorySelect 分支加守卫，模板页（含子页）改走 noinclude 感知分支——否则 `getCategoryLinks` 不识别 `<noinclude>` 包裹，会把分类从 noinclude 里拽出来放到页尾（Fandom 有 CategorySelect 扩展，cosmetic_changes 的 standardizePageFooter 必踩）。
 - `transferbot.py`：搬运时不写编辑历史子页，改为在页首加 `{{Init}}{{To do}}` + 来源链接 + `[[Category:新搬运待整理]]`（namespace 8/828 除外）。
-- `_filepage.py`：下载 URL 加 `&format=original`，否则 Fandom API 返回 webp。
-- `_tokenwallet.py`：先取 csrf token（绕过 Fandom bug：一起取时只有部分 token 能拿到且不触发 pywikibot 重试；先取 csrf 会失败一次但触发自动重试，第二次成功。丑陋但可用）。
-- `fixes.py`：HTML fix 允许 `<br>` 不闭合、syntax fix 去掉了误报多的外链竖线规则、几个 fix 补了 generator。
-- `redirect.py`：moved-pages offset 允许 0。
+- `_filepage.py`：下载 URL 加 `&format=original`，否则 Fandom API 返回 webp。同时必须去掉上游的 suffix 调整：它从 URL 路径取扩展名，而 Fandom URL 以 `/revision/latest` 结尾（无扩展名），留着会把下载文件的真扩展名剥掉（Wikimedia 的 URL 路径以文件名结尾，所以上游留着没事）。
+- `noreferences.py`：zh 参考资料段标题加「注释与外部链接」。
 
 ## 译名维护工作流（最常见的改动）
 

@@ -268,13 +268,35 @@ wheels = [
 
 [[package]]
 name = "pywikibot"
-version = "11.1.0.dev0"
-source = { git = "https://github.com/re0wiki/pywikibot#dc44b42b95173bb7934ea159842dd6a0c6693dd6" }
+source = { editable = "pywikibot" }
 dependencies = [
     { name = "mwparserfromhell" },
     { name = "packaging" },
     { name = "requests" },
 ]
+
+[package.metadata]
+requires-dist = [
+    { name = "beautifulsoup4", marker = "extra == 'html'", specifier = ">=4.14.3" },
+    { name = "fake-useragent", marker = "extra == 'http'", specifier = ">=2.2.0" },
+    { name = "googlesearch-python", marker = "extra == 'google'", specifier = ">=1.3.0" },
+    { name = "memento-client", marker = "extra == 'memento'", specifier = "==0.6.1" },
+    { name = "memento-client", marker = "extra == 'scripts'", specifier = "==0.6.1" },
+    { name = "memento-client", marker = "extra == 'weblinkchecker-py'", specifier = "==0.6.1" },
+    { name = "mwoauth", marker = "extra == 'mwoauth'", specifier = ">=0.4.0" },
+    { name = "mwparserfromhell", specifier = ">=0.7.2" },
+    { name = "packaging", specifier = ">=25.0" },
+    { name = "pillow", marker = "python_full_version >= '3.10' and platform_python_implementation == 'CPython' and extra == 'tkinter'", specifier = ">=12.2.0" },
+    { name = "pillow", marker = "python_full_version >= '3.11' and platform_python_implementation == 'PyPy' and extra == 'tkinter'", specifier = ">=12.2.0" },
+    { name = "pydot", marker = "extra == 'graphviz'", specifier = ">=4.0.1" },
+    { name = "pyjwt", marker = "extra == 'mwoauth'", specifier = "!=2.10.0,!=2.10.1" },
+    { name = "pymysql", marker = "extra == 'mysql'", specifier = ">=1.1.2" },
+    { name = "python-stdnum", marker = "extra == 'isbn'", specifier = ">=2.2" },
+    { name = "requests", specifier = ">=2.32.3" },
+    { name = "requests-sse", marker = "extra == 'eventstreams'", specifier = ">=0.5.2" },
+    { name = "wikitextparser", marker = "extra == 'wikitextparser'", specifier = ">=0.56.4" },
+]
+provides-extras = ["eventstreams", "isbn", "graphviz", "google", "memento", "wikitextparser", "mysql", "tkinter", "mwoauth", "html", "http", "weblinkchecker-py", "scripts"]
 
 [[package]]
 name = "regex"
@@ -482,7 +504,6 @@ pwb = [
     { name = "pyjwt" },
     { name = "pymysql" },
     { name = "python-stdnum" },
-    { name = "regex" },
     { name = "requests" },
     { name = "requests-sse" },
     { name = "wikitextparser" },
@@ -496,7 +517,7 @@ requires-dist = [
 
 [package.metadata.requires-dev]
 dev = [
-    { name = "pywikibot", git = "https://github.com/re0wiki/pywikibot" },
+    { name = "pywikibot", editable = "pywikibot" },
     { name = "ruff", specifier = ">=0.15.1" },
     { name = "ty", specifier = ">=0.0.17" },
 ]
@@ -517,7 +538,6 @@ pwb = [
     { name = "pyjwt", specifier = "!=2.10.0,!=2.10.1" },
     { name = "pymysql", specifier = ">=1.1.2" },
     { name = "python-stdnum", specifier = ">=2.2" },
-    { name = "regex", specifier = ">=2026.1.15" },
     { name = "requests", specifier = ">=2.32.3" },
     { name = "requests-sse", specifier = ">=0.5.2" },
     { name = "wikitextparser", specifier = ">=0.56.4" },

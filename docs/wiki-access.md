@@ -98,7 +98,8 @@ login_name = bp.login_name(username)  # → "IchiSanNi@pywikibot"
 ```
 
 流程：GET login token → POST login（lgname/lgpassword/lgtoken）→ GET csrf token → POST edit
-（token=csrf, bot="1"）。**login token 和 csrf token 必须分两次取**（Fandom 一起取会缺 token）。
+（token=csrf, bot="1"）。login token 和 csrf token 分两次取（历史上 Fandom 一起取会缺 token；
+2026-07 实测批量取已能完整返回，pywikibot ≥11.4 也有缺 key 自动补取机制，但分两次取无副作用，保留此惯例）。
 加 `formatversion=2` 可让响应没有数字键，解析更干净。完整可跑代码见 `scripts/verify_wiki_access.py`。
 **login POST 也必须走带 429 退避的重试封装**，不能裸发——否则一被限速连登录都过不去（实测踩过）。
 
