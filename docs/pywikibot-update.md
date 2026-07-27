@@ -11,7 +11,7 @@ git branch backup/pre-rebase-$(git rev-parse --short main) main   # 安全网
 git rebase upstream/master main
 ```
 
-- 冲突通常很少：第一个提交（`import re` → `import regex as re`，触及全库）最容易撞，一般是上游在 import 块附近加了行——保留上游新增行、同时把 `import re` 换成 `import regex as re` 即可。其余定制提交碰的文件上游很少动（transferbot 常年为 0 冲突）。
+- 冲突通常很少：定制只碰 5 个文件（fixes.py / textlib.py / _filepage.py / noreferences.py / transferbot.py），上游很少动这些区域（transferbot 常年为 0 冲突）。
 - `GIT_EDITOR=true git rebase --continue` 避免弹编辑器。
 
 ## 验证（比冲突解决更重要）
@@ -22,7 +22,7 @@ git rebase upstream/master main
 git range-diff <old-base>..backup/pre-rebase-xxx upstream/master..main
 
 # 2. 定制点抽查（详见 AGENTS.md 定制清单）
-grep -rn '^import re$' pywikibot/ scripts/   # 应为空
+git diff upstream/master main --stat   # 应只碰 fixes/textlib/_filepage/noreferences/transferbot 5 个文件
 grep '"keep"' pywikibot/fixes.py              # 4 处（HTML/syntax/isbn/specialpages）
 grep 'as-is' pywikibot/textlib.py
 grep 'format=original' pywikibot/page/_filepage.py
