@@ -41,25 +41,29 @@ Fandom 前端接 Cloudflare，按 **TLS 指纹 + 请求速率**限流。本文�
    用户自定义值是首要嫌疑；过时的模板残留（如 `pickle_protocol=2`，上游已改 5）会静默覆盖新默认值，删掉。
 3. 用裸 requests +  pacing 实测 tolerated rate，再下定论。
 
-## 实测耐受速率（rezero.fandom.com，2026-07）
+## 实测耐受速率（rezero.fandom.com）
 
-- 读：50 页一批的 `prop=revisions` GET，间隔 ~0.5–1s → 28228 页零 429。
-- 写：间隔 ~5s，BotPassword 登录会话 → 293 次编辑零 429。
+- 读：50 页一批的 `prop=revisions` GET，间隔 ~0.5–1s → 28228 页零 429（2026-07）。
+- 写：间隔 ~5s，BotPassword 登录会话 → 293 次编辑零 429（2026-07）。
 - UA 无关：pywikibot UA / 浏览器 UA / curl UA 对照测试全 200。
 - 事故前配置 `minthrottle=0, put_throttle=0`：~7-8 req/s 读，约 4500 次请求 / 10 分钟后触发 429。
+- 复测（2026-07，探测脚本 `scripts/probe_read_rate.py` / `probe_write_rate.py`）：
+  - 读：`list=allpages` GET，间隔 0.35s / 0.25s / 0.20s 各 300 请求（~3.8 req/s 持续 4.5 分钟）→ 零 429。
+  - 写：沙盒连续小编辑，间隔 2s×10 + 1s×10 → 零 429（样本小，故配置取 2s 而非 1s）。
+- 边界未探明：0.2s 到 7-8 req/s（事故速率）之间没测，越靠近事故速率惩罚风险越大，不建议再往上探。
 
 ## 对策：配置限速（唯一治理方式）
 
 `user-config.py`：
 
 ```python
-minthrottle = 1    # 读间隔 ≥1s
-put_throttle = 5   # 写间隔 ≥5s
-maxthrottle = 60   # 常规延迟硬顶（管不住 retry_after，见上）
+minthrottle = 0.25  # 读间隔 ≥0.25s（实测 0.2s 零 429，留余量）
+put_throttle = 2    # 写间隔 ≥2s（实测 1s 零 429，样本小留余量）
+maxthrottle = 60    # 常规延迟硬顶（管不住 retry_after，见上）
 ```
 
 实测规模：2900+ 次读（translation 干跑 85s）、2600+ 次读（cosmetic_changes 全命名空间 145s）
-+ 沙盒写，**零 429**。
++ 沙盒写，**零 429**（1/5 配置下）；0.25/2 配置的探测数据见上节。
 
 **明确不给 fork 打 `retry_after` 钳制补丁**（`throttle.py` 里 `min(retry_after, maxthrottle)`）：
 为保持 fork 干净、方便合并上游，治理靠「不触发 429」而非「触发后睡短一点」。

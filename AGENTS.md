@@ -87,7 +87,7 @@ p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚�
 ## 坑
 
 - `run_job` 用 `shell=True` + `encoding="mbcs"`（Windows GBK 控制台），子进程输出乱码先怀疑这里。
-- Fandom 已接入 Cloudflare：失速会被 429 且 `Retry-After` 高达数千秒。`user-config.py` 保持 `minthrottle>=1`、`put_throttle>=5` 预防，根因与对策见 `docs/cloudflare-429.md`。
+- Fandom 已接入 Cloudflare：失速会被 429 且 `Retry-After` 高达数千秒。`user-config.py` 保持 `minthrottle>=0.25`、`put_throttle>=2` 预防，根因与对策见 `docs/cloudflare-429.md`。
 - `jobs/jobs.py` 的 interwiki 任务不带 `-auto`（由 run_job 补），直接手敲 pwb.py 跑要记得加。
 - transferbot **不接受 `-always`**（加了会报错）；它不加也会自动覆盖目标页。
 - `touch -random:128` 在任务列表末尾，是为了触发缓存刷新，不是无意义操作。

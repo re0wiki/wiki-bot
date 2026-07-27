@@ -134,13 +134,14 @@ upload_to_commons = False
 # 'maxlag' is used to control the rate of server access (see below).
 # Set minthrottle to non-zero to use a throttle on read access.
 # Fandom 已接入 Cloudflare，读请求完全不限速会触发 429 惩罚。
-minthrottle = 1
+# 实测 0.2s 间隔（~3.8 req/s）900 请求零 429，取 0.25 留余量（旧事故为 7-8 req/s）。
+minthrottle = 0.25
 maxthrottle = 60
 
 # Slow down the robot such that it never makes a second page edit within
 # 'put_throttle' seconds.
-# 实测 5s/次的写入节奏在 Cloudflare 下全程无 429。
-put_throttle: int | float = 5
+# 实测沙盒连续编辑 1s/次 零 429（样本小），取 2s 留余量。
+put_throttle: int | float = 2
 
 # Sometimes you want to know when a delay is inserted. If a delay is larger
 # than 'noisysleep' seconds, it is logged on the screen.
