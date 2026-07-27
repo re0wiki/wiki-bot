@@ -14,15 +14,17 @@
 
 与译名表（同一份数据的两种表达、需双向手动同步）不同：模板信息**按受众分层、内容不重叠**，两边各存各的、互留指针即可，没有同步负担。
 
-## 盘点数据（2026-07-26）
+## 盘点数据（2026-07-27 刷新）
 
 盘点脚本：`scripts/template_inventory.py`（只读；输出到 `logs/template_inventory.json`）。
 引用量用 `Page.embeddedin()` 逐模板统计（Fandom 不支持 `mostlinkedtemplates`）。
 
-- Template 命名空间共 279 页：129 顶层模板（其中 15 个重定向）+ 150 子页（`Tab/*` 116 个、`/doc` 25 个）。
-  （2026-07-26 待办 2 清理删除 26 顶层 + 3 子页后约为 103 顶层 + 147 子页，下次盘点时刷新。）
-- 文档覆盖：37/129 有某种文档（`/doc` 子页 24、调用 `{{Documentation}}` 31、noinclude 内联说明 8）；**77 个非重定向模板无任何文档**。
-- 分类：~~94 个顶层模板无分类~~（2026-07-26 待办 3 已清零，103 顶层模板全部入树）。
+- Template 命名空间共 248 页：101 顶层模板（其中 19 个重定向）+ 147 子页（`Tab/*` 116 个、`/doc` 23 个）。
+- 文档覆盖（82 个非重定向顶层模板）：**29 个有文档，53 个缺失**。文档有三种存在形式：
+  - `/doc` 子页 20 个（经 `{{Documentation}}` 渲染进模板页）；
+  - `{{Documentation|content=...}}` 内联 8 个（BV、Bot、DISPLAYTITLE、Infobox character、NoteTA、Q、QA、To do——文档直接写在 content 参数里，无 /doc 子页）；
+  - `<noinclude>` 内联说明 1 个（StructuredQuote）。
+- 分类：~~94 个顶层模板无分类~~（2026-07-26 待办 3 已清零，顶层模板全部入树）。
 - 引用量：全命名空间**真零引用模板 32 个**（见待办 2，已处理）。
 
 ## 技术约定（实测）
@@ -70,7 +72,7 @@
 | 34 | T category |
 | 31 | Infobox battle、Twitter |
 
-完整清单见 `logs/template_inventory.json`（`has_doc_subpage`/`uses_Documentation_tpl`/`inline_doc_in_noinclude` 全 false 者）。
+完整清单见 `logs/template_inventory.json`（`has_doc_subpage`/`doc_via_content_param`/`inline_doc_in_noinclude` 全 false 者）。
 原清单中属零引用模板的条目已随待办 2 的删除自然消失。
 
 ### 2. ~~零引用模板评审~~（2026-07-26 已完成）

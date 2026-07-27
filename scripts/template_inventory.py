@@ -54,6 +54,38 @@ NOINCLUDE_RE = re.compile(r"<noinclude>(.*?)</noinclude>", re.DOTALL | re.IGNORE
 DOC_HINT_RE = re.compile(r"用法|使用说明|参数|示例|说明|usage", re.IGNORECASE)
 CAT_RE = re.compile(r"\[\[\s*[Cc]ategory\s*:\s*([^\]|]+)")
 
+
+def extract_doc_call(text):
+    """提取 {{Documentation...}} 完整调用（括号配对），无调用返回 None。"""
+    m = re.search(r"\{\{\s*[Dd]ocumentation(?=\s*[|}])", text)
+    if not m:
+        return None
+    depth, i = 0, m.start()
+    while i < len(text) - 1:
+        two = text[i : i + 2]
+        if two == "{{":
+            depth += 1
+            i += 2
+        elif two == "}}":
+            depth -= 1
+            i += 2
+            if depth == 0:
+                return text[m.start() : i]
+        else:
+            i += 1
+    return None
+
+
+def doc_content_param(call):
+    """{{Documentation}} 调用是否带了非空 content= 参数（文档直接内联在参数里）。
+
+    注：positional 参数形态 {{Documentation|某页/doc}}（自定义文档页）本站暂无，未处理。
+    """
+    inner = call[2:-2]
+    m = re.search(r"\|\s*content\s*=(.*)", inner, re.DOTALL | re.IGNORECASE)
+    return bool(m and m.group(1).strip())
+
+
 inventory = {}
 for title, v in tops.items():
     text = v["text"]
@@ -63,7 +95,8 @@ for title, v in tops.items():
     cats_in_noinclude = [c.strip() for c in CAT_RE.findall(noincludes)]
     cats_outside = [c.strip() for c in CAT_RE.findall(outside)]
     has_doc_page = f"{title}/doc" in doc_subpages
-    uses_doc_tpl = "{{Documentation" in text or "{{documentation" in text
+    doc_call = extract_doc_call(text)
+    via_content = doc_content_param(doc_call) if doc_call else False
     inline_doc = bool(DOC_HINT_RE.search(noincludes))
     inventory[title] = {
         "len": len(text),
@@ -71,9 +104,12 @@ for title, v in tops.items():
         "cats_in_wikitext": cats_all,
         "cats_leaked_outside_noinclude": cats_outside,
         "has_doc_subpage": has_doc_page,
-        "uses_Documentation_tpl": uses_doc_tpl,
+        "uses_Documentation_tpl": doc_call is not None,
+        # {{Documentation|content=...}}：文档内联在参数里，无需 /doc 子页
+        "doc_via_content_param": via_content,
         "inline_doc_in_noinclude": inline_doc,
-        "is_redirect": text.lstrip().lower().startswith("#redirect"),
+        # MediaWiki 重定向 magic word 本地化：en=#redirect，zh=#重定向
+        "is_redirect": bool(re.match(r"\s*#(redirect|重定向)", text, re.IGNORECASE)),
     }
 
 
@@ -110,28 +146,45 @@ with open("logs/template_inventory.json", "w", encoding="utf-8") as f:
     json.dump(result, f, ensure_ascii=False, indent=1)
 
 # ── 4. 摘要统计 ─────────────────────────────────────────────
-n_doc = sum(1 for v in inventory.values() if v["has_doc_subpage"])
-n_uses_doc_tpl = sum(1 for v in inventory.values() if v["uses_Documentation_tpl"])
-n_inline = sum(1 for v in inventory.values() if v["inline_doc_in_noinclude"])
-n_any_doc = sum(
-    1
-    for v in inventory.values()
-    if v["has_doc_subpage"]
-    or v["uses_Documentation_tpl"]
-    or v["inline_doc_in_noinclude"]
+# 文档覆盖只统计非重定向模板（重定向无需文档）
+nonred = {t: v for t, v in inventory.items() if not v["is_redirect"]}
+n_redirect = len(inventory) - len(nonred)
+
+
+def has_any_doc(v):
+    return v["has_doc_subpage"] or v["doc_via_content_param"] or v["inline_doc_in_noinclude"]
+
+
+n_doc = sum(1 for v in nonred.values() if v["has_doc_subpage"])
+n_via_content = sum(
+    1 for v in nonred.values() if v["doc_via_content_param"] and not v["has_doc_subpage"]
 )
-n_redirect = sum(1 for v in inventory.values() if v["is_redirect"])
+n_inline = sum(
+    1
+    for v in nonred.values()
+    if v["inline_doc_in_noinclude"] and not v["has_doc_subpage"] and not v["doc_via_content_param"]
+)
+n_any_doc = sum(1 for v in nonred.values() if has_any_doc(v))
+# 调了 {{Documentation}} 但既无 /doc 又无 content= —— 渲染为空，仍属无文档
+phantom = [
+    t
+    for t, v in nonred.items()
+    if v["uses_Documentation_tpl"] and not v["has_doc_subpage"] and not v["doc_via_content_param"]
+]
 n_categorized = sum(1 for v in inventory.values() if v["cats_in_wikitext"])
 n_leak = sum(1 for v in inventory.values() if v["cats_leaked_outside_noinclude"])
 
-print("\n===== 摘要 =====")
-print(f"顶层模板          : {len(tops)}")
-print(f"  其中重定向      : {n_redirect}")
-print(f"有 /doc 子页      : {n_doc}")
-print(f"用 Documentation  : {n_uses_doc_tpl}")
-print(f"noinclude 内联文档: {n_inline}")
-print(f"有任何文档        : {n_any_doc}")
-print(f"缺任何文档        : {len(tops) - n_any_doc}")
-print(f"wikitext 里有分类 : {n_categorized}")
+print("\n===== 摘要（文档覆盖按非重定向模板统计）=====")
+print(f"顶层模板             : {len(tops)}")
+print(f"  其中重定向         : {n_redirect}")
+print(f"非重定向模板         : {len(nonred)}")
+print(f"  /doc 子页文档      : {n_doc}")
+print(f"  Documentation 内联 : {n_via_content}（content= 参数）")
+print(f"  noinclude 内联文档 : {n_inline}")
+print(f"  有任何文档         : {n_any_doc}")
+print(f"  缺任何文档         : {len(nonred) - n_any_doc}")
+if phantom:
+    print(f"  空调 Documentation : {len(phantom)}（无 /doc 且无 content=，实际无文档）: {phantom}")
+print(f"wikitext 里有分类    : {n_categorized}")
 print(f"分类泄漏(noinclude外): {n_leak}")
 print(f"Category:模板 直属成员: {len(tpl_cat_members)}, 子分类: {len(tpl_cat_subcats)}")
