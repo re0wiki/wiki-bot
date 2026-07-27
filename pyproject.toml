@@ -12,11 +12,16 @@ dependencies = [
 [tool.ruff]
 extend-exclude = ['pywikibot']
 
+# pywikibot 以 editable 方式从 submodule 安装（PEP 660 finder），
+# ty 无法静态解析该 finder，需显式把 submodule 根目录加入搜索路径。
+[tool.ty.environment]
+extra-paths = ["./pywikibot"]
+
 [tool.uv]
 default-groups = "all"
 
 [tool.uv.sources]
-pywikibot = { git = "https://github.com/re0wiki/pywikibot" }
+pywikibot = { path = "pywikibot", editable = true }
 
 [dependency-groups]
 dev = [
