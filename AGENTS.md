@@ -76,7 +76,7 @@ p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚�
 - `fixes.py`：syntax fix 注释掉外链竖线规则（误报太多）。
 - `textlib.py`：`replaceLanguageLinks` 的 CategorySelect 分支加守卫，模板页（含子页）改走 noinclude 感知分支——否则 `getCategoryLinks` 不识别 `<noinclude>` 包裹，会把分类从 noinclude 里拽出来放到页尾（Fandom 有 CategorySelect 扩展，cosmetic_changes 的 standardizePageFooter 必踩）。
 - `transferbot.py`：搬运时不写编辑历史子页，改为在页首加 `{{Init}}{{To do}}` + 来源链接 + `[[Category:新搬运待整理]]`（namespace 8/828 除外）。
-- `_filepage.py`：下载 URL 加 `&format=original`，否则 Fandom API 返回 webp（同时去掉了 suffix 调整——内容已是原格式，扩展名与标题一致）。
+- `_filepage.py`：下载 URL 加 `&format=original`，否则 Fandom API 返回 webp。同时必须去掉上游的 suffix 调整：它从 URL 路径取扩展名，而 Fandom URL 以 `/revision/latest` 结尾（无扩展名），留着会把下载文件的真扩展名剥掉（Wikimedia 的 URL 路径以文件名结尾，所以上游留着没事）。
 - `_tokenwallet.py`：先取 csrf token（绕过 Fandom bug：一起取时只有部分 token 能拿到且不触发 pywikibot 重试；先取 csrf 会失败一次但触发自动重试，第二次成功。丑陋但可用）。
 - `requirements.txt`：加 `regex` 依赖（f053e27e8 的 import 改动需要）。
 - `noreferences.py`：zh 参考资料段标题加「注释与外部链接」。
