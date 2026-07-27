@@ -51,7 +51,7 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 
 ## 读写 wiki
 
-- **红线**：写入测试只允许在 zh 站 `User:IchiSanNi/沙盒`；正式批量写入需用户明确指示；**绝不写 zh 以外的语言站**；不读不打印 `user-password.py`（pywikibot 会自己加载）。
+- **红线**：写入测试只允许在 zh 站的测试页面——`User:IchiSanNi` 的所有子页面，或任意命名空间的 `Sandbox`/`沙盒` 页及其子页面；正式批量写入需用户明确指示；**绝不写 zh 以外的语言站**；不读不打印 `user-password.py`（pywikibot 会自己加载）。
 - 以 pywikibot 库方式为主，在仓库根目录跑（`user-config.py`/`families/` 都在根目录）：
 
 ```python
