@@ -53,13 +53,13 @@ jobs: list[list[str]] = [
     ["redirect", "br", "-delete"],
     # 语法规范化
     ["cosmetic_changes", "-async", "-ignore:method"] + starts_base,
-    ["replace", "-automaticsummary", "-fix:HTML"],
+    ["replace", "-automaticsummary", "-fix:HTML"] + starts_base,
     ["replace", "-automaticsummary", "-fix:anti-ve"],
-    ["replace", "-automaticsummary", "-fix:syntax"],
+    ["replace", "-automaticsummary", "-fix:syntax"] + starts_base,
     # 内容规范化
     ["replace", "-automaticsummary", "-fix:translation"],
     ["replace", "-automaticsummary", "-fix:isbn"],
-    ["replace", "-automaticsummary", "-fix:specialpages"],
+    ["replace", "-automaticsummary", "-fix:specialpages"] + starts_base,
     ["noreferences", "-quiet"] + starts_base,
     ["replace", "-automaticsummary", "-fix:misc"],
     # 杂项
