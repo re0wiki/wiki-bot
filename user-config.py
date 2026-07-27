@@ -135,12 +135,19 @@ upload_to_commons = False
 # Set minthrottle to non-zero to use a throttle on read access.
 # Fandom 已接入 Cloudflare，读请求完全不限速会触发 429 惩罚。
 # 实测 0.2s 间隔（~3.8 req/s）900 请求零 429，取 0.25 留余量（旧事故为 7-8 req/s）。
+# 补测：单连接全速（RTT ~0.26s 限速在 ~3.8 req/s）3000 请求/14 分钟零 429。
+# 注意 RTT 已 ≥ 0.25s，minthrottle 再低也不会更快——请求周期被网络延迟锁死；
+# 该值只是 RTT 变好时的安全天花板（0.25s → ≤4 req/s）。
 minthrottle = 0.25
 maxthrottle = 60
 
 # Slow down the robot such that it never makes a second page edit within
 # 'put_throttle' seconds.
-# 实测沙盒连续编辑 1s/次 零 429（样本小），取 2s 留余量。
+# 真正的写入瓶颈不是 Cloudflare，是 MediaWiki 编辑限速：本账号属 user 组
+# （40 次编辑/60s 滚动窗口，userinfo uiprop=ratelimits 可查），超限报
+# ratelimited 错误（pywikibot 会自动退避重试，但浪费请求）。
+# 2s → 30 次/分，留余量；不要再调低。另：move 限速 min(bot 80, sysop 20)/60s
+# = 20 次/分，大批量移动页面必撞 ratelimited 重试，属预期。
 put_throttle: int | float = 2
 
 # Sometimes you want to know when a delay is inserted. If a delay is larger

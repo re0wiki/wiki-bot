@@ -50,7 +50,26 @@ Fandom 前端接 Cloudflare，按 **TLS 指纹 + 请求速率**限流。本文�
 - 复测（2026-07，探测脚本 `scripts/probe_read_rate.py` / `probe_write_rate.py`）：
   - 读：`list=allpages` GET，间隔 0.35s / 0.25s / 0.20s 各 300 请求（~3.8 req/s 持续 4.5 分钟）→ 零 429。
   - 写：沙盒连续小编辑，间隔 2s×10 + 1s×10 → 零 429（样本小，故配置取 2s 而非 1s）。
-- 边界未探明：0.2s 到 7-8 req/s（事故速率）之间没测，越靠近事故速率惩罚风险越大，不建议再往上探。
+- 边界探测（2026-07，`scripts/probe_read_boundary.py` / `probe_write_boundary.py`）：
+  - 读：间隔 0.15s → 0.10s → 0.05s → 0.02s → **全速** 逐级加压，共 3000 请求 / 14 分钟
+    → **零 429**。单连接被 RTT（~0.26s）锁死在 ~3.8 req/s，根本达不到 Cloudflare 触发点。
+    推论：`minthrottle ≤ 0.25` 后继续调低**不会再变快**（周期 = max(minthrottle, RTT)），
+    该值只剩「RTT 变好时的安全天花板」作用。
+  - 写：0.5s×20 + 0.25s×20 通过后，全速档在第 40+ 次编辑被拦——但不是 Cloudflare 429，
+    是 **MediaWiki 自身编辑限速**（见下节）。
+
+## MediaWiki ratelimits（写操作的第二道限流，与 Cloudflare 无关）
+
+`userinfo?uiprop=ratelimits` 实测（2026-07）。IchiSanNi 同时属 user/bot/sysop 组，
+MediaWiki 对**所有适用组**的窗口分别计数、任一超限即拒绝（报 `ratelimited` API 错误，
+非 HTTP 429；pywikibot 会自动退避重试，但浪费请求）：
+
+| 动作 | 适用窗口 | 生效上限 | 安全间隔 |
+|---|---|---|---|
+| edit | user 40/60s，bot 80/60s | **40 次/分** | ≥1.5s，配置取 2s |
+| move | bot 80/60s，sysop 20/60s | **20 次/分** | ≥3s（put_throttle=2 大批量移动必撞重试，属预期） |
+
+旧事故时把 bot 打慢的除了 Cloudflare 429，可能也混有这道 ratelimited 重试。
 
 ## 对策：配置限速（唯一治理方式）
 
