@@ -26,7 +26,6 @@ grep -rn '^import re$' pywikibot/ scripts/   # 应为空
 grep '"keep"' pywikibot/fixes.py              # 4 处（HTML/syntax/isbn/specialpages）
 grep 'as-is' pywikibot/textlib.py
 grep 'format=original' pywikibot/page/_filepage.py
-grep 'csrf' pywikibot/site/_tokenwallet.py
 grep '注释与外部链接' scripts/noreferences.py
 grep '新搬运待整理' scripts/transferbot.py
 ```
