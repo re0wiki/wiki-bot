@@ -19,12 +19,14 @@ INLINE = [
     "Slider",
     "Welcome",
     "Announcements",
+    "Latest Volume",
     "Social Media",
     "Portal",
 ]
-# Latest Volume 链（Latest Volume、/LN、/Manga）刻意不内联：
-# 外层 <tabber> 的内容里嵌套内层 <tabber>，依赖 transclusion 先展开模板再解析标签；
-# 字面内联会导致内层 tabber 被转义（实测渲染 diff 证实）。
+# Latest Volume 链内联需改写嵌套 tabber（参考 角色:爱蜜莉雅/图库 的成熟写法）：
+# 外层保持字面 <tabber>，内层（/LN、/Manga 本体）的 <tabber> 改写为 {{#tag:tabber|...}}，
+# 其中深度 0 的管道符全部转义为 {{!}}（magic word，故分隔符 |-| 变 {{!}}-{{!}}）。
+# 直接字面内联会让内层 <tabber> 被转义成纯文本（实测渲染 diff 证实）。
 
 site = pywikibot.Site("zh", "re0")
 MAIN = "Re:从零开始的异世界生活 Wiki"
@@ -45,6 +47,54 @@ main_text = pywikibot.Page(site, MAIN).text
 bodies = {}
 for name in INLINE:
     bodies[name] = transclude_body(pywikibot.Page(site, f"Template:{name}").text)
+
+
+def escape_pipes(text):
+    """深度 0（不在 {{}} / [[]] 内）的 | 全部转义为 {{!}}。"""
+    out, brace, link = [], 0, 0
+    i = 0
+    while i < len(text):
+        two = text[i : i + 2]
+        if two == "{{":
+            brace += 1
+            i += 2
+        elif two == "}}" and brace:
+            brace -= 1
+            i += 2
+        elif two == "[[":
+            link += 1
+            i += 2
+        elif two == "]]" and link:
+            link -= 1
+            i += 2
+        elif text[i] == "|" and brace == 0 and link == 0:
+            out.append("{{!}}")
+            i += 1
+            continue
+        else:
+            out.append(text[i])
+            i += 1
+            continue
+        out.append(two)
+    return "".join(out)
+
+
+def inline_nested_tabber(body):
+    """把内层 <tabber>...</tabber> 改写为 {{#tag:tabber|...}}（管道全转义）。"""
+    m = re.search(r"<tabber>(.*)</tabber>", body, flags=re.DOTALL)
+    assert m, "未找到 tabber"
+    inner = escape_pipes(m.group(1))
+    return body[: m.start()] + "{{#tag:tabber|" + inner + "}}" + body[m.end() :]
+
+
+# Latest Volume：先把 /LN、/Manga 子页改写后并入本体
+lv = bodies["Latest Volume"]
+for sub in ["Latest Volume/LN", "Latest Volume/Manga"]:
+    sub_body = transclude_body(pywikibot.Page(site, f"Template:{sub}").text)
+    pat = re.compile(r"\{\{\s*" + re.escape(sub).replace("\\ ", r"[ _]") + r"\s*\}\}")
+    assert pat.search(lv), sub
+    lv = pat.sub(lambda m, s=sub_body: inline_nested_tabber(s), lv)
+bodies["Latest Volume"] = lv
 
 inlined = main_text
 while True:  # 迭代到不动点：父模板内联会引入子模板调用
