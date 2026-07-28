@@ -20,10 +20,7 @@
 引用量用 `Page.embeddedin()` 逐模板统计（Fandom 不支持 `mostlinkedtemplates`）。
 
 - Template 命名空间共 248 页：101 顶层模板（其中 19 个重定向）+ 147 子页（`Tab/*` 116 个、`/doc` 23 个）。
-- 文档覆盖（82 个非重定向顶层模板）：**29 个有文档，53 个缺失**。文档有三种存在形式：
-  - `/doc` 子页 20 个（经 `{{Documentation}}` 渲染进模板页）；
-  - `{{Documentation|content=...}}` 内联 8 个（BV、Bot、DISPLAYTITLE、Infobox character、NoteTA、Q、QA、To do——文档直接写在 content 参数里，无 /doc 子页）；
-  - `<noinclude>` 内联说明 1 个（StructuredQuote）。
+- 文档覆盖（82 个非重定向顶层模板）：**38 个有文档，44 个缺失**。文档统一放在 `/doc` 子页（经 `{{Documentation}}` 渲染进模板页）——2026-07-28 已将全部内联形式（`{{Documentation|content=...}}` 8 个、`<noinclude>` 内联说明 1 个）迁入 `/doc`，今后新增模板文档一律用 `/doc` 子页，templatedata 也放 `/doc`（TemplateData 扩展会读，先例 `Blur/doc`）。
 - 分类：~~94 个顶层模板无分类~~（2026-07-26 待办 3 已清零，顶层模板全部入树）。
 - 引用量：全命名空间**真零引用模板 32 个**（见待办 2，已处理）。
 
