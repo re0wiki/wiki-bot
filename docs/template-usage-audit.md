@@ -6,17 +6,22 @@
 
 ## 为什么 embeddedin 单独不可信
 
-Fandom 的 templatelinks 至少漏两种真实使用：
+Fandom 的 templatelinks 曾被认为是「会漏真实使用」，2026-07-28 更正：当时唯一的证据
+（`{{!}}` 在 143 个图库页的 `#tag:tabber` 参数里、embeddedin=0）真实原因是
+**`{{!}}` 自 MW 1.24 起是内置 magic word**，根本不产生 transclusion——embeddedin=0 是对的，
+grep 命中的也只是语法不是调用。同理 `{{=}}`（1.39 起）。判「语法出现是否真是模板调用」
+的最可靠手段是 `action=parse&prop=templates`：magic word 处理的不会出现在列表里。
+（同名模板存在时 magic word 优先，模板是死代码。）
 
-1. **`#tag:` 扩展内容**：`{{#tag:tabber|...}}` 里的 `{{!}}`（`{{!}}-{{!}}` 行分隔符）
-   渲染时是活的模板调用，但从不记入 templatelinks。实测：`Template:!` embeddedin=0，
-   但 143 页有字面 `{{!}}`（全部 `*/图库` 页 + 多个 Infobox）——删了会弄坏所有 tabber。
-2. **未使用模板里的 `<includeonly>` 调用**：死模板体内 `<includeonly>{{SomeOther}}</includeonly>`
+仍真实的 embeddedin 局限：
+
+1. **未使用模板里的 `<includeonly>` 调用**：死模板体内 `<includeonly>{{SomeOther}}</includeonly>`
    在自身页面上永不解析，`SomeOther` 显示 0 引用，但源码里依赖存在。
 
 结论：对每个候选名跑全站 wikitext dump + 正则 grep
-（`\{\{\s*(?:subst\s*:\s*)?Name\s*[|}]`，首字母不区分大小写），
-元模板另查字面 `{{!}}` / `{{!!}}` / `{{=}}`。grep 命中 ⊇ templatelinks，以 grep 为准。
+（`\{\{\s*(?:subst\s*:\s*)?Name\s*[|}]`，首字母不区分大小写）。
+注意 grep 命中 ⊇ 真实调用：magic word（`{{!}}`、`{{=}}` 等）与 includeonly 死代码
+都只是语法出现——拿不准时用 `action=parse&prop=templates` 判定。
 
 ## grep 的三个坑（2026-07-28 复核实测，曾造成漏判/误判）
 
