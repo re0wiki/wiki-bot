@@ -19,8 +19,8 @@
 盘点脚本：`scripts/template_inventory.py`（只读；输出到 `logs/template_inventory.json`）。
 引用量用 `Page.embeddedin()` 逐模板统计（Fandom 不支持 `mostlinkedtemplates`）。
 
-- Template 命名空间共 202 页（2026-07-28 清理后）：70 顶层模板（**重定向已清零**）+ 132 子页（`Tab/*` 115 个、`/doc` 19 个）。
-- 文档覆盖（70 个非重定向顶层模板）：**28 个有文档，42 个缺失**。文档统一放在 `/doc` 子页（经 `{{Documentation}}` 渲染进模板页）——2026-07-28 已将全部内联形式（`{{Documentation|content=...}}` 8 个、`<noinclude>` 内联说明 1 个）迁入 `/doc`，今后新增模板文档一律用 `/doc` 子页，templatedata 也放 `/doc`（TemplateData 扩展会读，先例 `Blur/doc`）。
+- Template 命名空间共 209 页（2026-07-28 清理后实测）：70 顶层模板（**重定向已清零**）+ 139 子页（`Tab/*` 115 个、`/doc` 20 个、其他 4 个：`Latest Volume/LN`、`Latest Volume/Manga`、`Quote/main`、`T/piece`）。
+- 文档覆盖（70 个顶层模板）：**19 个有 `/doc`，51 个缺失**。文档统一放在 `/doc` 子页（经 `{{Documentation}}` 渲染进模板页）——2026-07-28 已将全部内联形式（`{{Documentation|content=...}}` 8 个、`<noinclude>` 内联说明 1 个）迁入 `/doc`，今后新增模板文档一律用 `/doc` 子页，templatedata 也放 `/doc`（TemplateData 扩展会读，先例 `Blur/doc`）。
 - 分类：~~94 个顶层模板无分类~~（2026-07-26 待办 3 已清零，顶层模板全部入树）。
 - 引用量：全命名空间**真零引用模板 32 个**（见待办 2，已处理）。
 
