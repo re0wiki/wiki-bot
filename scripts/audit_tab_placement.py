@@ -1,9 +1,11 @@
 """只读审计：Tab/* 子页链接的作品页 vs 实际携带该 tab 调用的页面，找失配。
 
-对每个 Tab/X：
-- 从其 wikitext 提取所有 wikilink 目标（主空间作品页）
-- 从 logs/template_usage_full_2026-07-28.json 取实际调用 {{Tab/X}} 的页面集
-- 失配 = 链接了但未携带（缺失）；反向 = 携带了但未链接（异常）
+判例（2026-07-28 确立的挂载惯例，见 docs/templates.md「Tab 挂载惯例」）：
+- 多块 tab 的块 0 是跨章/跨季导航块，其链接页不算应挂（每页只挂自己系列的 tab）
+- Module:/MediaWiki: 页不渲染 wikitext，tab 挂在其 /doc 页——链接与携带都不算失配
+- Category: 携带页（Tab/Content 导航设计）不算失配
+- tab 内 <!-- --> 注释的链接不算应挂
+- 红链仅报告（未搬运内容，不建页）
 输出 logs/tab_placement_audit_2026-07-28.json + 控制台摘要。
 """
 
@@ -23,18 +25,25 @@ tabs = sorted(
 print(f"Tab 子页: {len(tabs)}")
 
 LINK_RE = re.compile(r"\[\[([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]")
+BLOCK_RE = re.compile(r"\{\{Tab.*?\}\}", flags=re.DOTALL)
 report = {}
-for name in tabs:
-    full = name  # allpages 返回已含 Tab/ 前缀
+for full in tabs:
     text = pywikibot.Page(site, f"Template:{full}").text
     assert text, f"{full} 取不到内容"
+    text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+    blocks = BLOCK_RE.findall(text)
     links = set()
-    for m in LINK_RE.finditer(text):
-        t = m.group(1).strip()
-        if t.startswith(("Category:", "File:", ":")):
-            continue
-        links.add(t)
-    carriers = set(usage.get(full, []))
+    for b in blocks[1:] if len(blocks) > 1 else blocks:  # 多块 tab 块 0 = 导航块
+        for m in LINK_RE.finditer(b):
+            t = m.group(1).strip()
+            if t.startswith(("Category:", "File:", "Module:", "MediaWiki:", ":")):
+                continue
+            links.add(t)
+    carriers = {
+        c
+        for c in usage.get(full, [])
+        if not c.endswith("/doc") and not c.startswith("Category:")
+    }
     missing, redlink = [], []
     for t in sorted(links):
         if t in carriers:
@@ -43,7 +52,6 @@ for name in tabs:
         if not p.exists():
             redlink.append(t)
         elif p.isRedirectPage():
-            # 重定向页不挂 tab，看目标页
             tgt = p.getRedirectTarget().title()
             if tgt not in carriers:
                 missing.append(f"{t} (-> {tgt})")
