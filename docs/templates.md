@@ -19,11 +19,8 @@
 盘点脚本：`scripts/template_inventory.py`（只读；输出到 `logs/template_inventory.json`）。
 引用量用 `Page.embeddedin()` 逐模板统计（Fandom 不支持 `mostlinkedtemplates`）。
 
-- Template 命名空间共 248 页：101 顶层模板（其中 19 个重定向）+ 147 子页（`Tab/*` 116 个、`/doc` 23 个）。
-- 文档覆盖（82 个非重定向顶层模板）：**29 个有文档，53 个缺失**。文档有三种存在形式：
-  - `/doc` 子页 20 个（经 `{{Documentation}}` 渲染进模板页）；
-  - `{{Documentation|content=...}}` 内联 8 个（BV、Bot、DISPLAYTITLE、Infobox character、NoteTA、Q、QA、To do——文档直接写在 content 参数里，无 /doc 子页）；
-  - `<noinclude>` 内联说明 1 个（StructuredQuote）。
+- Template 命名空间共 190 页（2026-07-28 清理后实测）：55 顶层模板（**重定向已清零**）+ 135 子页（`Tab/*` 114 个、`/doc` 19 个、其他 2 个：`Quote/main`、`T/piece`）。
+- 文档覆盖（55 个顶层模板）：**18 个有 `/doc`，37 个缺失**。文档统一放在 `/doc` 子页（经 `{{Documentation}}` 渲染进模板页）——2026-07-28 已将全部内联形式（`{{Documentation|content=...}}` 8 个、`<noinclude>` 内联说明 1 个）迁入 `/doc`，今后新增模板文档一律用 `/doc` 子页，templatedata 也放 `/doc`（TemplateData 扩展会读，先例 `Blur/doc`）。
 - 分类：~~94 个顶层模板无分类~~（2026-07-26 待办 3 已清零，顶层模板全部入树）。
 - 引用量：全命名空间**真零引用模板 32 个**（见待办 2，已处理）。
 
@@ -35,15 +32,23 @@
 | 模板 | 给引用页加的分类 |
 |---|---|
 | `To do` | 待修撰 |
-| `Delete` | 请求删除 |
 | `Anime` | 剧集 |
 | `Re:Zero BD` | 圆盘 |
 | `Seirei or Elf` / `Yousei or Elf` | 需复核译名 |
-| `Ruby` 系（Ruby、Ruby-ja、Ruby-zh-b/zh-p/zh-ja） | Ruby transclusions with too many parameters（异常追踪） |
+| `Ruby` 系（Ruby、Ruby-ja、Ruby-zh-ja） | Ruby transclusions with too many parameters（异常追踪） |
 | `Category redirect` | 已重定向的分类、尚未清空的已重定向分类 |
 
-- **Fandom 的 templatelinks 不记录 `#tag`/解析器函数参数内的模板调用**：`{{!}}` 在 143 个图库页的 `{{#tag:tabber}}` 参数里真实使用，`embeddedin()` 计数却为 0（2026-07-26 实测）。判「零引用」不能只看 embeddedin，须辅以全站 wikitext grep：用 `generator=allpages` 逐命名空间取 `rvprop=content`，正则搜 `\{\{\s*(subst:\s*)?名称\s*[|}]` 调用形态（含 subst 残留）。
-- **元模板分类**（2026-07-27 由「元模板/子模板」两分类合并而成）：`Category:元模板` = 被其他模板调用、不直接用于文章页的模板。判据是机制而非修辞——MediaWiki 模板只有宏展开，没有继承，「派生」（如 `Tab/LN` 预填参数调 `Tab`）与「组成」（如 `T` 调 `T/piece`）是同一种 transclusion，拆两类无可判定标准故合并。成员：`Tab`（noinclude 里声明「用于派生分页模板」+ 挂分类；原 `{{元模板标记}}` 全站仅此一处使用，已内联并删除该模板及旧名重定向 `Template:元模板`）、`MW`、`T category`、`T/piece`、`Documentation`。原 `Category:子模板` 已删除。
+- **`{{!}}`、`{{=}}` 是 MediaWiki 内置 magic word**（1.24/1.39 起，Fandom 跑 1.43.x），不产生 transclusion，同名模板永不执行。2026-07-26 曾把 `!` 的 embeddedin=0 误判为「templatelinks 不记录 `#tag` 参数内调用」的盲区；2026-07-28 用 `action=parse&prop=templates` 实测更正：143 个图库页的 `{{!}}` 走 magic word，删同名模板不影响任何渲染（`!`、`=`、`!!` 已删）。教训：**grep 命中的是语法不是语义**，magic word 会截胡同名模板——判「模板是否真被调用」最可靠的手段是 `action=parse` 的 templates 列表。判零仍须 embeddedin + grep 双通道（grep 负责覆盖别名语法与 includeonly 死代码，见 `docs/template-usage-audit.md`）。
+- **嵌套 tabber 的正确写法**（参考 `角色:爱蜜莉雅/图库`）：外层字面 `<tabber>`，内层 `{{#tag:tabber|...}}`，内层内容里深度 0（不在 `{{}}`/`[[]]` 内）的 `|` 全部转义为 `{{!}}`——所以分隔符写作 `{{!}}-{{!}}`，表格的 `{|`、`|-` 同样要转。字面嵌套两层 `<tabber>` 会让内层被转义成纯文本；模板 transclusion 时内层 tabber 能工作是因为「先展开模板再解析标签」的时序——2026-07-28 Portal 链内联首页时实测证实。
+- **Portal 链已内联进首页**（2026-07-28）：`Portal`、`Portal Left/Right`、`Slider`、`Welcome`、`Announcements`、`Latest Volume`（+/LN、/Manga）、`Social Media` 10 个模板删除，首页内容直接编辑首页即可。内联生成器 `scripts/inline_portal_preview.py`（含渲染等价验证），存档 `logs/deleted_portal_chain_2026-07-28.json`；空分类 `Category:首页模板` 一并删除。
+- **元模板分类**（2026-07-27 由「元模板/子模板」两分类合并而成）：`Category:元模板` = 被其他模板调用、不直接用于文章页的模板。判据是机制而非修辞——MediaWiki 模板只有宏展开，没有继承，「派生」（如 `Tab/LN` 预填参数调 `Tab`）与「组成」（如 `T` 调 `T/piece`）是同一种 transclusion，拆两类无可判定标准故合并。成员：`Tab`（noinclude 里声明「用于派生分页模板」+ 挂分类；原 `{{元模板标记}}` 全站仅此一处使用，已内联并删除该模板及旧名重定向 `Template:元模板`）、`T category`、`T/piece`、`Documentation`（`MW` 已于 2026-07-28 随 USERNAME 内联删除）。原 `Category:子模板` 已删除。
+- **单点使用模板已内联**（2026-07-28）：`Web Novel Chapter List`→小说：Web、`USERNAME`/`MW`→攻略指南（mediaWikiData span）、`Facebook`/`Instagram`→两个声优页（es 站搬运的西语文本保留，用户另行专项清理）；`DISPLAYTITLE`（唯一调用在重定向页 纱提拉 上、本就无意义，摘除）、`Example`（空模板，唯一「使用」是他人沙盒的空调用骨架）直接删。每页编辑前后 parse 对比渲染等价。存档 `logs/deleted_single_use_inline_2026-07-28.json`。en 仅 `Web Novel Chapter List` 有同名（1 引用、无 zh 对应名，未来搬运重引入时在 新搬运待整理 人工处理）。**内联取舍判据**：同页多次调用的组件（`Copy`×48、`T/piece`×20）与体系族成员（`Tab/*`）不内联——模板在这些场景是正确的抽象。
+- **Tab 挂载惯例**（2026-07-28 排查确立；审计 `scripts/audit_tab_placement.py`、修复 `scripts/fix_tab_placement.py`）：
+  - **每页只挂自己系列的一个 tab**，位置在 `{{To do}}` 行之后。跨章/跨季导航链接不算应挂——`Tab/Anime S2` 链接 `动画:第1集`（S2 导航到 S1 首集），但该页只挂 `Tab/Anime S1`。
+  - **Manga Arc Chapter tab 的双块结构**：块 0 = 章导航（粗体标记本章），块 1 = 本章各话列表；应挂页只取块 1。单块 tab（Volume、Synopsis、单作品）全部链接页都应挂。
+  - **Module/MediaWiki 页的 tab 挂在其 `/doc` 页**（Module 命名空间不渲染 wikitext，Gadget CSS 同理）——审计时这些是误报。
+  - 2026-07-28 修复：Manga 系 7 个 tab（Arc 1~4 Chapter、Manga Volume、剑鬼恋歌 Chapter/Volume）历史上从未挂进任何漫画页，共补挂 194 页；另修 `Tab/Sword Demon Battle Ballad Act` 繁体死链（終幕→终幕）、`Tab/Ruby` 摘除已删 `R/ja` 导航项；`小说:…日报/KILL4` 原挂不存在的 `Tab/KILL`，换挂正确 tab；删除与 `Tab/The Great Spirit Puck's Side Story` 逐字节重复的零引用 `Tab/The Great Spirit Puck`。
+  - 审计坑：`allpages(prefix="Tab/")` 返回的标题**已含** `Tab/` 前缀（别再拼一次，且 pywikibot 对不存在页面 `.text` 返回空串不报错——要 assert 防空转）；tab 内 `<!-- -->` 注释的链接不算应挂；分类链接要区分 `[[:分类:X]]` 冒号内联（导航链接，参与比对）与裸 `[[Category:X]]`（归类赋值，跳过），且链接标题要经 pywikibot 归一化再与携带页比对（`Tab/Content` 的分类矩阵全是冒号内联 + wikitable 在 `{{Tab}}` 块外）。上述惯例判例（导航块、Module/doc、注释、分类形式）已内置进审计脚本，输出仅剩真失配与红链（红链=未搬运内容或未建分类页，建页后补挂即可）。
 - **模板的归类入口可能在其 `/doc` 子页**：`T`、`T/piece` 的分类是 `/doc` 里 `<includeonly>[[Category:...]]</includeonly>` 经 `{{Documentation}}` 注入的，模板本体 wikitext 里搜不到。改挂这类分类后分类表不会立即刷新，需 `page.purge(forcelinkupdate=True)` 触发重解析。
 
 ## 待办
@@ -60,7 +65,7 @@
 | 388 | Clear |
 | 202 | Kana2Romaji |
 | 175 | Anime |
-| 145 | Auto ruby、R |
+| 145 | R |
 | 125 | Seirei |
 | 72 | QUOTE |
 | 54 | Seiyu |
@@ -80,13 +85,21 @@
 32 个零引用模板经全站 wikitext grep 复核（发现 embeddedin 盲区，见技术约定）后处置：
 
 - **删除 26 个模板 + 连带孤儿 6 页**：Assert empty、Assert eq、Auto link、角色分类、Navbar、Navbox Advanced、Transclude、Doc、Border-radius、Cc-by-sa-3.0、Permission、Header、InfoboxGrid、Jiro Onofy、Lowercase title、Mainpage right、Nomobile、Notice、Poll、Theme、To en、晚街与灯，及零引用重定向 Character、CopyText、Tl；连带删除 Mainpage Staff、Tab/Assert、Module:assert（+/doc）、MediaWiki:Gadget-Poll.css、Cc-by-sa-3.0/doc、Permission/doc。删除前 wikitext 存档在 `logs/deleted_templates_2026-07-26.json`。
-- **保留 6 个**：`!`（143 个图库页在 `#tag:tabber` 参数里使用，embeddedin 盲区实锤）、`!!`、`=`（转义元模板备用）、`Ruby-zh-b`/`Ruby-zh-p`（注音族 zh 分工：b=竖排注音符号、p=拼音，暂无使用场景但族内保留）、`Sandbox`（Tab 用法试验场，近半年仍在用）。
+- **保留 6 个**：`!`（143 个图库页在 `#tag:tabber` 参数里使用，embeddedin 盲区实锤）、`!!`、`=`（转义元模板备用）、`Ruby-zh-b`/`Ruby-zh-p`（注音族 zh 分工：b=竖排注音符号、p=拼音，暂无使用场景但族内保留）、`Sandbox`（Tab 用法试验场，近半年仍在用）。（后续更正：`!`/`=`/`!!` 已于 2026-07-28 删除——`{{!}}`、`{{=}}` 是 MW 内置 magic word，「143 处使用」从不构成模板调用，embeddedin=0 并非盲区而是真相；`!!` 零引用随族清理。`Ruby-zh-b`/`Ruby-zh-p`/`R/ja`/`Delete` 同日删除——用户判断零引用即无保留价值；连带删除空分类 `Category:请求删除`。见技术约定。）
 - **待定项已处理**：`RailModule` 确认无使用需求（侧栏自定义内容展示位，当前无可放内容）——已摘除 Wiki-navigation 导航项并重编译、删除模板；`Category:断言模板`（断言体系删除后空分类）已一并删除。
+- **2026-07-28 复核补刀**：发现首轮复核未排除模板自身/自身文档里的示例调用，导致一批真零模板被误判为使用中。排除后重跑全站（含 ns 6，双法交叉，配方见 `docs/template-usage-audit.md`「grep 的三个坑」），追加删除 8 模板 + 8 个 `/doc`：`StructuredQuote`（连 `#SQuote:` 解析器函数也零使用）、`Infobox`（母版，实际无人调用）、`Infobox album/episode/item/location/quest`、`Tocright`；索引页同步摘除。存档 `logs/deleted_templates_2026-07-28.json`。
+- **复核中确认非遗漏**：`Auto ruby`（151 处经重定向别名 `R` 使用）、`Infobox event`（2 处经 `Infobox Events`）——grep 按本名统计为 0 是别名归账问题，非真零。（后续：`Auto ruby` 已于 2026-07-28 并入 `R`——`R` 由重定向转为模板本体，`Auto ruby` 与其零引用子页 `/ja` 删除、`/ja` 随迁为 `R/ja`，`Tab/Ruby` 链接与索引页同步；存档 `logs/deleted_auto_ruby_2026-07-28.json`。en 站无 `Auto ruby`，无搬运风险。）
+- **保留**：`Delete`（请求删除流程件，虽当前零引用）。（后续：已于 2026-07-28 删除，连 `/doc` 与空分类 `Category:请求删除`；存档 `logs/deleted_final_zero_2026-07-28.json`。）
+- **零引用重定向 12 个已删**（2026-07-28 晚些时候）：`Infobox novel`、`Re:Zero Light Novel Volumes`、`Re:Zero Arc 4/5 Manga`、`Re:Zero Bond(s) of Ice Manga`、`Re:Zero Daiisshou~Daiyonshou Manga`、`Re:Zero Daigoshou Manga`、`Re:Zero Ex Manga`（均曾指向 `Infobox book`）。en 站有同名的 9 个已加入 `jobs/jobs.py` 模板替换任务（搬运页里的旧名由 bot 批量替换为 `Infobox book`，故无需保留重定向）；en 无同名的 3 个（`Infobox novel`、`Bond of Ice`（单数）、`Ex Manga`）直接删。存档 `logs/deleted_redirects_2026-07-28.json`。
+- **重定向 `Infobox Events` 已删**（同日）：确认为 en 站搬运名（en 有 `Template:Infobox Events`，无 `Infobox event`），已加入 jobs 替换（→ `Infobox event`），zh 现存 2 处调用（术语：王室疫病、术语：王族誘拐案）已先行改名。存档 `logs/deleted_redirect_infobox_events_2026-07-28.json`。
+- **重定向 `Infobox battles`、`Re:Zero Manga Volumes` 已删**（同日）：同为 en 搬运名（en 各 31/44 引用），已加入 jobs 替换（→ `Infobox battle` / `Infobox book`），zh 现存 3 处调用已先行改名。至此索引页重定向节清空，en 旧名全部由 bot 批量替换接管。存档 `logs/deleted_redirects_round3_2026-07-28.json`。
+- **零引用子页重定向 `Tab/Infobox novel` 已删**（同日，Infobox novel → Infobox book 改名残留）。存档 `logs/deleted_tab_infobox_novel_2026-07-28.json`。
+- **别名收敛**（同日，用户定名）：`BV` 为正（B 站现行 ID 格式），21 处 `{{AV}}` 已批量改 `{{BV}}`、jobs 加替换、删 `AV`；`QUOTE`、`Quote` 由重定向转为模板本体（`Quote/big`、`Quote/small` 零直接调用，内容并入后删除；`Quote/main` 共用实现保留；`Tab/Quote` 链接、`BV/doc` 别名行同步）。至此 Template 命名空间**重定向清零**。存档 `logs/deleted_aliases_2026-07-28.json`。
 
 ### 3. ~~分类补全与子分类整理~~（2026-07-26 已完成）
 
 - 决策：按子分类细分（平铺会与 Template 命名空间作用重合）；新建 `注音模板`/`内容模板`/`格式模板` 3 个子分类，时共 15 个子分类（2026-07-27 子模板并入元模板后为 14）。
 - 60 个无分类顶层模板全部归类：重定向 17、字词转换 7、注音 5、引文 6、外部链接 4、首页 3、消息框 1（Welcome）、维护 2（Init、Disambiguation）、内容 5、子模板 1（MW）、格式 8、直属 1（`=`）。原直属的 `T`、`Ruby-ja`、`Ruby-zh-ja`、`T/piece` 改挂对应子分类；终态 103 个顶层模板 100% 入树。
 - 怪异点查明非误用（机制见技术约定）：`Template:元模板` 改名 `Template:元模板标记` 消歧并留重定向；`Category:元模板`（Tab 经引用元模板标记加入）与 `Category:子模板`（组成件）语义各自成立。
-- 仍直属 `Category:模板` 的 7 个：`!`、`!!`、`=`、Blur、DISPLAYTITLE、Self、Tocright——均为通用工具模板，如需可再细分（Blur/Tocright→格式、Self→著作权），非必要。
+- 仍直属 `Category:模板` 的 3 个：Blur、DISPLAYTITLE、Self——均为通用工具模板（原 7 个中的 `!`、`!!`、`=`、`Tocright` 已删），如需可再细分（Blur→格式、Self→著作权），非必要。
 - 后续（2026-07-27）：`Category:子模板` 并入 `Category:元模板`（理由见技术约定）；`元模板标记` 内联进 `Tab` 后删除（含旧名重定向）；`Documentation` 移入元模板；索引页「模板工具（元模板）」节同步更新。

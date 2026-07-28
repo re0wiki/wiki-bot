@@ -6,17 +6,38 @@
 
 ## 为什么 embeddedin 单独不可信
 
-Fandom 的 templatelinks 至少漏两种真实使用：
+Fandom 的 templatelinks 曾被认为是「会漏真实使用」，2026-07-28 更正：当时唯一的证据
+（`{{!}}` 在 143 个图库页的 `#tag:tabber` 参数里、embeddedin=0）真实原因是
+**`{{!}}` 自 MW 1.24 起是内置 magic word**，根本不产生 transclusion——embeddedin=0 是对的，
+grep 命中的也只是语法不是调用。同理 `{{=}}`（1.39 起）。判「语法出现是否真是模板调用」
+的最可靠手段是 `action=parse&prop=templates`：magic word 处理的不会出现在列表里。
+（同名模板存在时 magic word 优先，模板是死代码。）
 
-1. **`#tag:` 扩展内容**：`{{#tag:tabber|...}}` 里的 `{{!}}`（`{{!}}-{{!}}` 行分隔符）
-   渲染时是活的模板调用，但从不记入 templatelinks。实测：`Template:!` embeddedin=0，
-   但 143 页有字面 `{{!}}`（全部 `*/图库` 页 + 多个 Infobox）——删了会弄坏所有 tabber。
-2. **未使用模板里的 `<includeonly>` 调用**：死模板体内 `<includeonly>{{SomeOther}}</includeonly>`
+仍真实的 embeddedin 局限：
+
+1. **未使用模板里的 `<includeonly>` 调用**：死模板体内 `<includeonly>{{SomeOther}}</includeonly>`
    在自身页面上永不解析，`SomeOther` 显示 0 引用，但源码里依赖存在。
 
 结论：对每个候选名跑全站 wikitext dump + 正则 grep
-（`\{\{\s*(?:subst\s*:\s*)?Name\s*[|}]`，首字母不区分大小写），
-元模板另查字面 `{{!}}` / `{{!!}}` / `{{=}}`。grep 命中 ⊇ templatelinks，以 grep 为准。
+（`\{\{\s*(?:subst\s*:\s*)?Name\s*[|}]`，首字母不区分大小写）。
+注意 grep 命中 ⊇ 真实调用：magic word（`{{!}}`、`{{=}}` 等）与 includeonly 死代码
+都只是语法出现——拿不准时用 `action=parse&prop=templates` 判定。
+
+## grep 的三个坑（2026-07-28 复核实测，曾造成漏判/误判）
+
+1. **必须排除模板自身与自身 `/doc`**：模板文档里的示例调用（`{{StructuredQuote|...}}` 之类）
+   会被 grep 算作「使用」——2026-07-26 首轮复核因此把 `StructuredQuote`、未用 Infobox 系、
+   `Tocright` 误判为 used 而漏删，2026-07-28 排除自身后才暴露。
+2. **重定向别名的用量记在目标上**：页面写 `{{R}}` 时按本名 grep `Auto ruby` 是 0，
+   但 `embeddedin(Auto ruby)`=151——templatelinks 会把经重定向的引用归到目标页。
+   判「零」要 embeddedin 交叉验证（或 grep 时把所有重定向别名并进模式）；
+   反过来，embeddedin 有的盲区（上节）靠 grep 补。**两法都零才算零**。
+3. **别漏命名空间**：授权模板（`Fairuse`/`PD` 等）只用在 File 页（ns 6），
+   维护模板可能在 User/Project 页——dump 范围要含 0/2/4/6/8/10/14/828
+   （本节的旧配方排除 ns 6/7，只适用于当时已知名单，不复用）。
+
+复核脚本：`scripts/recheck_template_usage.py`（全命名空间批量 dump + 逐模板 grep，
+排除自身/自身子页，输出零引用清单与重定向标注）。
 
 ## 全站 dump 配方（全命名空间，默认限速下 ~11k 页 ~3 分钟）
 
