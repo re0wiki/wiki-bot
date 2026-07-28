@@ -3,7 +3,7 @@
 判例（2026-07-28 确立的挂载惯例，见 docs/templates.md「Tab 挂载惯例」）：
 - 多块 tab 的块 0 是跨章/跨季导航块，其链接页不算应挂（每页只挂自己系列的 tab）
 - Module:/MediaWiki: 页不渲染 wikitext，tab 挂在其 /doc 页——链接与携带都不算失配
-- Category: 携带页（Tab/Content 导航设计）不算失配
+- 链接标题经 pywikibot 归一化（[[:分类:X]]/[[分类:X]] -> Category:X），Category 页正常参与比对
 - tab 内 <!-- --> 注释的链接不算应挂
 - 红链仅报告（未搬运内容，不建页）
 输出 logs/tab_placement_audit_2026-07-28.json + 控制台摘要。
@@ -31,19 +31,25 @@ for full in tabs:
     text = pywikibot.Page(site, f"Template:{full}").text
     assert text, f"{full} 取不到内容"
     text = re.sub(r"<!--.*?-->", "", text, flags=re.DOTALL)
+    text = re.sub(r"<noinclude>.*?</noinclude>", "", text, flags=re.DOTALL)
     blocks = BLOCK_RE.findall(text)
+    if len(blocks) > 1:  # 多块 tab 块 0 = 导航块
+        text = text.replace(blocks[0], "", 1)
     links = set()
-    for b in blocks[1:] if len(blocks) > 1 else blocks:  # 多块 tab 块 0 = 导航块
-        for m in LINK_RE.finditer(b):
-            t = m.group(1).strip()
-            if t.startswith(("Category:", "File:", "Module:", "MediaWiki:", ":")):
-                continue
-            links.add(t)
-    carriers = {
-        c
-        for c in usage.get(full, [])
-        if not c.endswith("/doc") and not c.startswith("Category:")
-    }
+    for m in LINK_RE.finditer(
+        text
+    ):  # 块外内容也算（Tab/Content 的分类矩阵是 wikitable）
+        raw = m.group(1).strip()
+        # 归一化：[[:分类:X]]/[[Category:X]]/[[分类:X]] -> Category:X
+        t = pywikibot.Page(site, raw).title()
+        if t.startswith(("File:", "Module:", "MediaWiki:")):
+            continue
+        # 裸 [[Category:X]] 是归类赋值（如 includeonly 注入），不是导航链接；
+        # 只有 [[:分类:X]] 冒号内联形式才算（Tab/Content 矩阵）
+        if t.startswith("Category:") and not raw.startswith(":"):
+            continue
+        links.add(t)
+    carriers = {c for c in usage.get(full, []) if not c.endswith("/doc")}
     missing, redlink = [], []
     for t in sorted(links):
         if t in carriers:
