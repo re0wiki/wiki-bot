@@ -19,7 +19,7 @@
 盘点脚本：`scripts/template_inventory.py`（只读；输出到 `logs/template_inventory.json`）。
 引用量用 `Page.embeddedin()` 逐模板统计（Fandom 不支持 `mostlinkedtemplates`）。
 
-- Template 命名空间共 218 页（2026-07-28 删 8 模板 + 8 `/doc` + 12 零引用重定向、Auto ruby 并入 R、删重定向 Infobox Events 后）：79 顶层模板（其中 5 个重定向）+ 139 子页（`Tab/*` 116 个、`/doc` 22 个）。
+- Template 命名空间共 216 页（2026-07-28 删 8 模板 + 8 `/doc` + 15 个重定向、Auto ruby 并入 R 后）：77 顶层模板（其中 3 个重定向）+ 139 子页（`Tab/*` 116 个、`/doc` 22 个）。
 - 文档覆盖（74 个非重定向顶层模板）：**30 个有文档，44 个缺失**。文档统一放在 `/doc` 子页（经 `{{Documentation}}` 渲染进模板页）——2026-07-28 已将全部内联形式（`{{Documentation|content=...}}` 8 个、`<noinclude>` 内联说明 1 个）迁入 `/doc`，今后新增模板文档一律用 `/doc` 子页，templatedata 也放 `/doc`（TemplateData 扩展会读，先例 `Blur/doc`）。
 - 分类：~~94 个顶层模板无分类~~（2026-07-26 待办 3 已清零，顶层模板全部入树）。
 - 引用量：全命名空间**真零引用模板 32 个**（见待办 2，已处理）。
@@ -84,6 +84,7 @@
 - **保留**：`Delete`（请求删除流程件，虽当前零引用）。
 - **零引用重定向 12 个已删**（2026-07-28 晚些时候）：`Infobox novel`、`Re:Zero Light Novel Volumes`、`Re:Zero Arc 4/5 Manga`、`Re:Zero Bond(s) of Ice Manga`、`Re:Zero Daiisshou~Daiyonshou Manga`、`Re:Zero Daigoshou Manga`、`Re:Zero Ex Manga`（均曾指向 `Infobox book`）。en 站有同名的 9 个已加入 `jobs/jobs.py` 模板替换任务（搬运页里的旧名由 bot 批量替换为 `Infobox book`，故无需保留重定向）；en 无同名的 3 个（`Infobox novel`、`Bond of Ice`（单数）、`Ex Manga`）直接删。存档 `logs/deleted_redirects_2026-07-28.json`。
 - **重定向 `Infobox Events` 已删**（同日）：确认为 en 站搬运名（en 有 `Template:Infobox Events`，无 `Infobox event`），已加入 jobs 替换（→ `Infobox event`），zh 现存 2 处调用（术语：王室疫病、术语：王族誘拐案）已先行改名。存档 `logs/deleted_redirect_infobox_events_2026-07-28.json`。
+- **重定向 `Infobox battles`、`Re:Zero Manga Volumes` 已删**（同日）：同为 en 搬运名（en 各 31/44 引用），已加入 jobs 替换（→ `Infobox battle` / `Infobox book`），zh 现存 3 处调用已先行改名。至此索引页重定向节清空，en 旧名全部由 bot 批量替换接管。存档 `logs/deleted_redirects_round3_2026-07-28.json`。
 
 ### 3. ~~分类补全与子分类整理~~（2026-07-26 已完成）
 

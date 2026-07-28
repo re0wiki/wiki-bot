@@ -37,6 +37,10 @@ jobs: list[list[str]] = [
         "Infobox book",
         "Infobox Events",
         "Infobox event",
+        "Infobox battles",
+        "Infobox battle",
+        "Re:Zero Manga Volumes",
+        "Infobox book",
     ],
     [
         "template",
