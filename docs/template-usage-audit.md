@@ -18,6 +18,22 @@ Fandom 的 templatelinks 至少漏两种真实使用：
 （`\{\{\s*(?:subst\s*:\s*)?Name\s*[|}]`，首字母不区分大小写），
 元模板另查字面 `{{!}}` / `{{!!}}` / `{{=}}`。grep 命中 ⊇ templatelinks，以 grep 为准。
 
+## grep 的三个坑（2026-07-28 复核实测，曾造成漏判/误判）
+
+1. **必须排除模板自身与自身 `/doc`**：模板文档里的示例调用（`{{StructuredQuote|...}}` 之类）
+   会被 grep 算作「使用」——2026-07-26 首轮复核因此把 `StructuredQuote`、未用 Infobox 系、
+   `Tocright` 误判为 used 而漏删，2026-07-28 排除自身后才暴露。
+2. **重定向别名的用量记在目标上**：页面写 `{{R}}` 时按本名 grep `Auto ruby` 是 0，
+   但 `embeddedin(Auto ruby)`=151——templatelinks 会把经重定向的引用归到目标页。
+   判「零」要 embeddedin 交叉验证（或 grep 时把所有重定向别名并进模式）；
+   反过来，embeddedin 有的盲区（上节）靠 grep 补。**两法都零才算零**。
+3. **别漏命名空间**：授权模板（`Fairuse`/`PD` 等）只用在 File 页（ns 6），
+   维护模板可能在 User/Project 页——dump 范围要含 0/2/4/6/8/10/14/828
+   （本节的旧配方排除 ns 6/7，只适用于当时已知名单，不复用）。
+
+复核脚本：`scripts/recheck_template_usage.py`（全命名空间批量 dump + 逐模板 grep，
+排除自身/自身子页，输出零引用清单与重定向标注）。
+
 ## 全站 dump 配方（全命名空间，默认限速下 ~11k 页 ~3 分钟）
 
 ```python
