@@ -19,8 +19,8 @@
 盘点脚本：`scripts/template_inventory.py`（只读；输出到 `logs/template_inventory.json`）。
 引用量用 `Page.embeddedin()` 逐模板统计（Fandom 不支持 `mostlinkedtemplates`）。
 
-- Template 命名空间共 199 页：55 顶层模板（**重定向已清零**）+ 144 子页（`Tab/*` 114 个、`/doc` 28 个、其他 2 个：`Quote/main`、`T/piece`）。
-- 文档覆盖（55 个顶层模板）：**27 个有 `/doc`，28 个缺失**。文档统一放在 `/doc` 子页（经 `{{Documentation}}` 渲染进模板页）——2026-07-28 已将全部内联形式（`{{Documentation|content=...}}` 8 个、`<noinclude>` 内联说明 1 个）迁入 `/doc`，今后新增模板文档一律用 `/doc` 子页，templatedata 也放 `/doc`（TemplateData 扩展会读，先例 `Blur/doc`）。
+- Template 命名空间共 209 页：55 顶层模板（**重定向已清零**）+ 154 子页（`Tab/*` 114 个、`/doc` 38 个、其他 2 个：`Quote/main`、`T/piece`）。
+- 文档覆盖（55 个顶层模板）：**37 个有 `/doc`，18 个缺失**。文档统一放在 `/doc` 子页（经 `{{Documentation}}` 渲染进模板页）——2026-07-28 已将全部内联形式（`{{Documentation|content=...}}` 8 个、`<noinclude>` 内联说明 1 个）迁入 `/doc`，今后新增模板文档一律用 `/doc` 子页，templatedata 也放 `/doc`（TemplateData 扩展会读，先例 `Blur/doc`）。
 - 分类：~~94 个顶层模板无分类~~（2026-07-26 待办 3 已清零，顶层模板全部入树）。
 - 引用量：全命名空间**真零引用模板 32 个**（见待办 2，已处理）。
 
@@ -66,14 +66,8 @@
 | 1000+ | Init |
 | 692 | Tab |
 | 388 | Clear |
-| 202 | Kana2Romaji |
-| 145 | R |
-| 125 | Seirei |
 | 72 | QUOTE |
 | 51 | Ringa、Tooltip |
-| 45 | Seirei or Elf |
-| 40 | Ruby-zh-ja |
-| 37 | Elf |
 | 34 | T category |
 | 31 | Twitter |
 
@@ -81,6 +75,7 @@
 原清单中属零引用模板的条目已随待办 2 的删除自然消失。
 
 - **Infobox 文档已补全**（2026-07-29）：9 个信息框模板（book/anime/seiyu/music/battle/bd/event/game/staff）全部新建 `/doc`（说明/语法/示例/templatedata），模板体内联语法小节（残留旧名 `{{Anime}}`/`{{Seiyu}}`/`{{Music}}`/`{{Re:Zero BD}}`/`{{Re:Zero Game}}`/`{{Staff}}` 与西语 `== Usos ==` 标题）全部迁入 `/doc` 并改挂 `{{Documentation}}`；book 新增 `{{Documentation}}` 调用。写入脚本 `logs/write_infobox_docs.py`，渲染与自动分类验证 `logs/verify_infobox_docs.py`。实测 quirks 已写进各 `/doc`：seiyu/staff 参数名为西班牙语（es 搬运）；battle 的参战方/指挥官/军队/伤亡只有 1–3 号参数（旧文档与部分页面里的 4 号是死参数）；book 的「英文名」与 battle 的「英译」由 `Module:Interwiki` 自动生成；game 的 `Name_en` 渲染为副标题。
+- **注音族与精灵族文档已补全**（2026-07-29）：10 个模板（`Ruby`/`Ruby-ja`/`Ruby-zh-ja`/`R`/`Kana2Romaji` + `Seirei`/`Elf`/`Yousei`/`Seirei or Elf`/`Yousei or Elf`）全部新建 `/doc`；`Ruby`/`R`/`Kana2Romaji` 模板体内的内联 templatedata、`Ruby-ja`/`Ruby-zh-ja` 的内联英文说明迁入 `/doc`，10 个模板体均改挂 `<noinclude>{{Documentation}}</noinclude>`。写入脚本 `logs/write_ruby_seirei_docs.py`，验证 `logs/verify_ruby_seirei_docs.py`（模板页「模板文件」盒 + /doc parse + 10 个引用页改动前后 parse 对比，渲染与自动分类全等价）。实测 quirks 已写进各 `/doc`：`Ruby`/`Ruby-ja`/`Ruby-zh-ja` 给第 3 个位置参数会加追踪分类 Ruby transclusions with too many parameters；`Ruby-ja` 的正文/注音与 `R` 的日文部分包在 `-{ }-` 中防繁简转换；`R` 由 `Module:Auto ruby` 实现（中文加粗 + 英文上标 + 括号内假名/罗马音，罗马音留空自动经 `Module:Kana2Romaji` 转换，转不出则只显示假名）；`Kana2Romaji` 无匹配假名时输出空串，主要由 `Infobox character` 的 `name_ja_romaji` 默认值自动调用（主空间几乎无直接调用）；`Seirei`/`Yousei` 源码含 `<!--nobot-->` 注释防 bot 译名归一。**坑**：给模板追加第二个独立 `<noinclude>{{Documentation}}</noinclude>` 时，两个 noinclude 之间的换行会被 transclude 到引用页（多一个换行 = 段落分裂，精灵族首轮踩过）；应把 `{{Documentation}}` 并入已有 noinclude 内部。
 
 ### 2. ~~零引用模板评审~~（2026-07-26 已完成）
 
