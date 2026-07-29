@@ -95,6 +95,7 @@
 - **重定向 `Infobox Events` 已删**（同日）：确认为 en 站搬运名（en 有 `Template:Infobox Events`，无 `Infobox event`），已加入 jobs 替换（→ `Infobox event`），zh 现存 2 处调用（术语：王室疫病、术语：王族誘拐案）已先行改名。存档 `logs/deleted_redirect_infobox_events_2026-07-28.json`。
 - **重定向 `Infobox battles`、`Re:Zero Manga Volumes` 已删**（同日）：同为 en 搬运名（en 各 31/44 引用），已加入 jobs 替换（→ `Infobox battle` / `Infobox book`），zh 现存 3 处调用已先行改名。至此索引页重定向节清空，en 旧名全部由 bot 批量替换接管。存档 `logs/deleted_redirects_round3_2026-07-28.json`。
 - **零引用子页重定向 `Tab/Infobox novel` 已删**（同日，Infobox novel → Infobox book 改名残留）。存档 `logs/deleted_tab_infobox_novel_2026-07-28.json`。
+- **Module 侧改名残留已清**（2026-07-29）：novel→book 改名时漏了 Module 侧——`Module:Infobox novel`（内容为 shim `return require [[Module:Infobox book]]`）与 `Module:Infobox novel/doc`（重定向）零引用、全站无 `Infobox novel` 字样，已删（en 站 Module 空间无 Infobox 模块，无搬运重引入风险）。存档 `logs/deleted_module_infobox_novel_2026-07-29.json`。至此全站 Infobox 命名统一为 `Infobox X`（X 小写英文）：Template 4 个（battle/book/character/event）+ Module 1 个（book）+ 1091 个引用页的调用写法全部规范。
 - **别名收敛**（同日，用户定名）：`BV` 为正（B 站现行 ID 格式），21 处 `{{AV}}` 已批量改 `{{BV}}`、jobs 加替换、删 `AV`；`QUOTE`、`Quote` 由重定向转为模板本体（`Quote/big`、`Quote/small` 零直接调用，内容并入后删除；`Quote/main` 共用实现保留；`Tab/Quote` 链接、`BV/doc` 别名行同步）。至此 Template 命名空间**重定向清零**。存档 `logs/deleted_aliases_2026-07-28.json`。
 
 ### 3. ~~分类补全与子分类整理~~（2026-07-26 已完成）
