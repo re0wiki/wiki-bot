@@ -32,8 +32,8 @@
 | 模板 | 给引用页加的分类 |
 |---|---|
 | `To do` | 待修撰 |
-| `Anime` | 剧集 |
-| `Re:Zero BD` | 圆盘 |
+| `Infobox anime` | 剧集 |
+| `Infobox bd` | 圆盘 |
 | `Seirei or Elf` / `Yousei or Elf` | 需复核译名 |
 | `Ruby` 系（Ruby、Ruby-ja、Ruby-zh-ja） | Ruby transclusions with too many parameters（异常追踪） |
 | `Category redirect` | 已重定向的分类、尚未清空的已重定向分类 |
@@ -65,15 +65,15 @@
 | 692 | Tab |
 | 388 | Clear |
 | 202 | Kana2Romaji |
-| 175 | Anime |
+| 175 | Infobox anime |
 | 145 | R |
 | 125 | Seirei |
 | 72 | QUOTE |
-| 54 | Seiyu |
+| 54 | Infobox seiyu |
 | 51 | Ringa、Tooltip |
 | 45 | Seirei or Elf |
 | 40 | Ruby-zh-ja |
-| 38 | Music |
+| 38 | Infobox music |
 | 37 | Elf |
 | 34 | T category |
 | 31 | Infobox battle、Twitter |
@@ -96,6 +96,7 @@
 - **重定向 `Infobox battles`、`Re:Zero Manga Volumes` 已删**（同日）：同为 en 搬运名（en 各 31/44 引用），已加入 jobs 替换（→ `Infobox battle` / `Infobox book`），zh 现存 3 处调用已先行改名。至此索引页重定向节清空，en 旧名全部由 bot 批量替换接管。存档 `logs/deleted_redirects_round3_2026-07-28.json`。
 - **零引用子页重定向 `Tab/Infobox novel` 已删**（同日，Infobox novel → Infobox book 改名残留）。存档 `logs/deleted_tab_infobox_novel_2026-07-28.json`。
 - **Module 侧改名残留已清**（2026-07-29）：novel→book 改名时漏了 Module 侧——`Module:Infobox novel`（内容为 shim `return require [[Module:Infobox book]]`）与 `Module:Infobox novel/doc`（重定向）零引用、全站无 `Infobox novel` 字样，已删（en 站 Module 空间无 Infobox 模块，无搬运重引入风险）。存档 `logs/deleted_module_infobox_novel_2026-07-29.json`。至此全站 Infobox 命名统一为 `Infobox X`（X 小写英文）：Template 4 个（battle/book/character/event）+ Module 1 个（book）+ 1091 个引用页的调用写法全部规范。
+- **信息框命名统一补漏**（2026-07-29）：首轮只查了名字带 Infobox 的页面，漏了**实现为信息框但名字不带 Infobox** 的 6 个模板（判据：wikitext 含 `<infobox>` 标签或 `#invoke` infobox 模块）。改名（移动不留重定向，308 个主空间引用页同步替换）：`Anime`→`Infobox anime`、`Seiyu`→`Infobox seiyu`、`Music`→`Infobox music`、`Re:Zero BD`→`Infobox bd`、`Staff`→`Infobox staff`、`Re:Zero Game`→`Infobox game`。en 有同名的 4 个（Anime/Music/Re:Zero BD/Re:Zero Game）已加入 jobs 模板替换任务接管搬运页；`Seiyu`/`Staff` 是 es 站搬运（en 无同名、不经 transferbot），无需替换任务。索引页 `ReZero Wiki:模板` 同步。至此 10 个信息框全部 `Infobox X` 命名。迁移脚本 `scripts/rename_infobox_templates.py`，存档 `logs/renamed_infobox_templates_2026-07-29.json`。
 - **别名收敛**（同日，用户定名）：`BV` 为正（B 站现行 ID 格式），21 处 `{{AV}}` 已批量改 `{{BV}}`、jobs 加替换、删 `AV`；`QUOTE`、`Quote` 由重定向转为模板本体（`Quote/big`、`Quote/small` 零直接调用，内容并入后删除；`Quote/main` 共用实现保留；`Tab/Quote` 链接、`BV/doc` 别名行同步）。至此 Template 命名空间**重定向清零**。存档 `logs/deleted_aliases_2026-07-28.json`。
 
 ### 3. ~~分类补全与子分类整理~~（2026-07-26 已完成）
