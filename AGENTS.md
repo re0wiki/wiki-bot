@@ -33,6 +33,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `user-fixes.py` | **核心资产**。自定义 fix 集：misc/date/anti-ve/para/gallery/heading/**translation**/HTML/syntax 等。`translation` 用「相似字符 → 正则」机制（`f()`/`p2o()`/`p2n()`）把几百个别名归一到标准译名 |
 | `scripts/re0_*.py` | 4 个自定义脚本：gallery（用 en 站图库覆盖 zh）、image（图片差量同步）、nav（编译 Wiki-navigation）、redirect（给 `前缀:词干` 页建裸词干重定向） |
 | `scripts/verify_wiki_access.py` | 只读诊断：验证 pywikibot 库与裸 API 两条 wiki 通路和凭据是否有效，期望输出 `ALL CHECKS PASSED` |
+| `scripts/recent_changes_watchdog.py` | 最近改动巡查 watchdog：rcid 水位线去重（状态 `.cache/rc_watchdog.json`，已 gitignore），排除 IchiSanNi 与 bot 标记编辑，输出待审清单。由 Hermes cron job「wiki 最近改动自动巡查」每天 10:00 调用（profile `scripts/` 下同名片是 wrapper），LLM 逐条审 diff，发现问题发 Discord `#wiki编辑事务【qq互联】` |
 | `docs/` | `wiki-access.md`（读写配方）、`cloudflare-429.md`（限流根因与对策）、`template-usage-audit.md`（零引用模板审计工作流）、`templates.md`（模板盘点数据与待办）、`pywikibot-update.md`（submodule rebase 上游流程） |
 | `families/re0_family.py` | re0 family 定义，12 个语言子站（de/en/es/fr/it/ko/nl/pl/pt-br/ru/uk/zh 都在 rezero.fandom.com，en 无路径前缀其余 `/<code>`）。注意 family 文件注释说 "do not commit" 但本项目故意提交了 |
 | `rename.py` | 交互式改名工具：移动页面 + 全站替换文本（只打印命令不执行） |
@@ -88,6 +89,7 @@ p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚�
 
 ## 坑
 
+- MediaWiki API `formatversion=2` 下 recentchanges 的 `bot`/`new`/`minor` 键**恒存在**（值为 true/false），过滤必须判断值而不是键存在性——`"bot" not in c` 会把所有编辑都滤掉。
 - `run_job` 用 `shell=True` + `encoding="mbcs"`（Windows GBK 控制台），子进程输出乱码先怀疑这里。
 - Fandom 已接入 Cloudflare：失速会被 429 且 `Retry-After` 高达数千秒。`user-config.py` 保持 `minthrottle>=0.25`、`put_throttle>=2` 预防，根因与对策见 `docs/cloudflare-429.md`。
 - `jobs/jobs.py` 的 interwiki 任务不带 `-auto`（由 run_job 补），直接手敲 pwb.py 跑要记得加。
