@@ -14,13 +14,13 @@
 
 与译名表（同一份数据的两种表达、需双向手动同步）不同：模板信息**按受众分层、内容不重叠**，两边各存各的、互留指针即可，没有同步负担。
 
-## 盘点数据（2026-07-27 刷新）
+## 盘点数据（2026-07-29 刷新）
 
 盘点脚本：`scripts/template_inventory.py`（只读；输出到 `logs/template_inventory.json`）。
 引用量用 `Page.embeddedin()` 逐模板统计（Fandom 不支持 `mostlinkedtemplates`）。
 
-- Template 命名空间共 190 页（2026-07-28 清理后实测）：55 顶层模板（**重定向已清零**）+ 135 子页（`Tab/*` 114 个、`/doc` 19 个、其他 2 个：`Quote/main`、`T/piece`）。
-- 文档覆盖（55 个顶层模板）：**18 个有 `/doc`，37 个缺失**。文档统一放在 `/doc` 子页（经 `{{Documentation}}` 渲染进模板页）——2026-07-28 已将全部内联形式（`{{Documentation|content=...}}` 8 个、`<noinclude>` 内联说明 1 个）迁入 `/doc`，今后新增模板文档一律用 `/doc` 子页，templatedata 也放 `/doc`（TemplateData 扩展会读，先例 `Blur/doc`）。
+- Template 命名空间共 199 页：55 顶层模板（**重定向已清零**）+ 144 子页（`Tab/*` 114 个、`/doc` 28 个、其他 2 个：`Quote/main`、`T/piece`）。
+- 文档覆盖（55 个顶层模板）：**27 个有 `/doc`，28 个缺失**。文档统一放在 `/doc` 子页（经 `{{Documentation}}` 渲染进模板页）——2026-07-28 已将全部内联形式（`{{Documentation|content=...}}` 8 个、`<noinclude>` 内联说明 1 个）迁入 `/doc`，今后新增模板文档一律用 `/doc` 子页，templatedata 也放 `/doc`（TemplateData 扩展会读，先例 `Blur/doc`）。
 - 分类：~~94 个顶层模板无分类~~（2026-07-26 待办 3 已清零，顶层模板全部入树）。
 - 引用量：全命名空间**真零引用模板 32 个**（见待办 2，已处理）。
 
@@ -32,8 +32,10 @@
 | 模板 | 给引用页加的分类 |
 |---|---|
 | `To do` | 待修撰 |
-| `Infobox anime` | 剧集 |
-| `Infobox bd` | 圆盘 |
+| `Infobox anime` | 剧集（仅主命名空间） |
+| `Infobox bd` | 圆盘（仅主命名空间） |
+| `Infobox battle` | 战役（经 `T category`） |
+| `Infobox event` | 事件（分类在 onlyinclude 内，不限命名空间） |
 | `Seirei or Elf` / `Yousei or Elf` | 需复核译名 |
 | `Ruby` 系（Ruby、Ruby-ja、Ruby-zh-ja） | Ruby transclusions with too many parameters（异常追踪） |
 | `Category redirect` | 已重定向的分类、尚未清空的已重定向分类 |
@@ -57,30 +59,28 @@
 
 ### 1. `/doc` 子页补全（工作量大，分批做）
 
-按主空间引用量排序的优先级清单（前 20，做完即覆盖绝大部分实际使用）：
+按主空间引用量排序的优先级清单（做完即覆盖绝大部分实际使用）：
 
 | 引用数 | 模板 |
 |---|---|
 | 1000+ | Init |
-| 719 | Infobox book |
 | 692 | Tab |
 | 388 | Clear |
 | 202 | Kana2Romaji |
-| 175 | Infobox anime |
 | 145 | R |
 | 125 | Seirei |
 | 72 | QUOTE |
-| 54 | Infobox seiyu |
 | 51 | Ringa、Tooltip |
 | 45 | Seirei or Elf |
 | 40 | Ruby-zh-ja |
-| 38 | Infobox music |
 | 37 | Elf |
 | 34 | T category |
-| 31 | Infobox battle、Twitter |
+| 31 | Twitter |
 
 完整清单见 `logs/template_inventory.json`（`has_doc_subpage`/`doc_via_content_param`/`inline_doc_in_noinclude` 全 false 者）。
 原清单中属零引用模板的条目已随待办 2 的删除自然消失。
+
+- **Infobox 文档已补全**（2026-07-29）：9 个信息框模板（book/anime/seiyu/music/battle/bd/event/game/staff）全部新建 `/doc`（说明/语法/示例/templatedata），模板体内联语法小节（残留旧名 `{{Anime}}`/`{{Seiyu}}`/`{{Music}}`/`{{Re:Zero BD}}`/`{{Re:Zero Game}}`/`{{Staff}}` 与西语 `== Usos ==` 标题）全部迁入 `/doc` 并改挂 `{{Documentation}}`；book 新增 `{{Documentation}}` 调用。写入脚本 `logs/write_infobox_docs.py`，渲染与自动分类验证 `logs/verify_infobox_docs.py`。实测 quirks 已写进各 `/doc`：seiyu/staff 参数名为西班牙语（es 搬运）；battle 的参战方/指挥官/军队/伤亡只有 1–3 号参数（旧文档与部分页面里的 4 号是死参数）；book 的「英文名」与 battle 的「英译」由 `Module:Interwiki` 自动生成；game 的 `Name_en` 渲染为副标题。
 
 ### 2. ~~零引用模板评审~~（2026-07-26 已完成）
 
