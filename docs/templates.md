@@ -27,7 +27,7 @@
 ## 技术约定（实测）
 
 - **防分类泄漏靠 `<onlyinclude>`**：把模板体包在 `<onlyinclude>` 里后，标签之外的 `[[Category:...]]`（即使没放 `<noinclude>`）不会被引用页继承。Infobox 系、`Blur` 等都是这个写法。给模板加自身分类时，放 `<noinclude>` 或 onlyinclude 之外均可，但放 onlyinclude **里面**就会泄漏到每个引用页。
-- **含 `<ref>` 的模板双重约束**（2026-07-29 `Ringa` 清理实证）：① 必须包 `div class="as-is"` + `<onlyinclude>`——否则 noreferences 任务会对其反复自动追加「注释与外部链接」段（`Template:Ringa` 2021 年残留的 5 段重复 references 即此产物，原作者晚街与灯故意留作活教材；当日已清理，机制要点并入 `Ringa/doc`）；② **不能嵌套在另一个 `<ref>` 内使用**（Cite 不支持 ref 嵌套）——嵌套时内层脚注失效、页尾报「引用错误：`name` 未在前文内使用」，`角色:阿尔` 曾踩（引用小说原文的注释里写 `{{Ringa}}`，已改纯文本；全站扫描仅此 1 页，扫描脚本 `logs/scan_ringa_nested.py`）。
+- **含 `<ref>` 的模板双重约束**（2026-07-29 `Ringa` 清理实证）：① 必须包 `div class="as-is"` + `<onlyinclude>`——否则 noreferences 任务会对其反复自动追加「注释与外部链接」段（`Template:Ringa` 2021 年残留的 5 段重复 references 即此产物，原作者晚街与灯故意留作活教材；当日已清理，机制要点并入 `Ringa/doc`）；② **不能嵌套在另一个 `<ref>` 内使用**（Cite 不支持 ref 嵌套）——嵌套时内层脚注失效、页尾报「引用错误：`name` 未在前文内使用」，`角色:阿尔` 曾踩（引用小说原文的注释里写 `{{Ringa}}`，当时改纯文本；全站扫描仅此 1 页，扫描脚本 `logs/scan_ringa_nested.py`）。（当日晚些时候用户决定 `Ringa` 弃用 ref、改用 `{{Tooltip}}` 呈现注记，两个约束就此绕开，`角色:阿尔` 的嵌套调用也随之恢复合法；上述约束仍适用于未来新建含 ref 的模板。）
 - **有意给引用页加分类的模板**（设计如此，勿当 bug「修」掉）：
 
 | 模板 | 给引用页加的分类 |
