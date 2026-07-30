@@ -5,6 +5,8 @@
 
 **文档惯例**：Module 的 `/doc` 子页由 Scribunto 自动转置渲染在代码上方（与模板 `{{Documentation}}` 机制无关），所以 Lua 头注释无需写「文档见 /doc」之类的指针；模块文档直接写进 `/doc` 子页即可（先例 `Module:Kana2Romaji/doc`）。
 
+**渲染对比的坑**：PortableInfobox 的 tab 元素 id（`pi-tab-<哈希>-N`/`pi-tabpanel-<哈希>-N`）每次 parse 随机生成——前后两次 parse 的 HTML 逐字节比较必然不等，须先归一化（`scripts/deploy_module_cleanup.py` 的 `parse_html`）。否则会像 2026-07-30 这批一样把全部对照误判为「渲染有差异」。
+
 ## 引用量总览（embeddedin，全命名空间）
 
 | Module | 引用 | 说明 |
@@ -22,6 +24,8 @@
 | **Set** | **0** | **孤儿模块** |
 
 ## 确认的问题
+
+（以下清单为审查当时状态；处置结果见文末「处置记录」——除鼠色猫语录空占位刻意保留外，其余均已于 2026-07-30 处理完毕。）
 
 ### Bug
 
@@ -46,6 +50,6 @@
 
 ## 处置记录
 
-2026-07-30 用户决定本轮全部不修，上述问题留作待办。执行修复时注意：Module 编辑会触发引用页重渲染（Init 链 2210 页），分批观察。
+- **卫生修复批次已完成**（2026-07-30，用户逐项批准）：① 调试日志全删（Title/AutoTab/Auto ruby/Infobox book 的 mw.log/mw.logObject，以后出 bug 按需再加）；② Module:Set + /doc 已删（孤儿）；③ AutoTab 评估结论保留——Scribunto 无子页列举 API，逐个 `title.exists` 探测（有缓存）是唯一手段，属必要开销，继续作为 Init 依赖，头注释已改写说明；④ Infobox book 卫生修复（函数 local 化、`Module:Title` 大小写、语言表改有序数组 + 日期并列按语言顺序定序、`local string` 遮蔽移除）；⑤ NoteTA 简化（CGroup 死路径移除——前置断言 Module:CGroup 与 Template:CGroup 均为 0 页、函数 local 化、移植残留注释清理）；⑥ 鼠色猫语录 4 个空数据子模块**保留占位**（用户：以后可能补）；⑦ Utils 的 ChatGPT 问答实录注释精简为两行；⑧ Auto ruby 参数 nil 防御。部署脚本 `scripts/deploy_module_cleanup.py`（幂等，前置断言 + 部署前后渲染对比）；验证：角色:菜月·昴、小说:1卷、ReZero Wiki:攻略指南、Template:NoteTA、R 调用片段部署前后渲染全等价（PortableInfobox tab id 归一化后），ALL CHECKS PASSED。
 
 - **Kana2Romaji 已重写**（2026-07-30，用户指示）：旧实现（顺序 gsub 大表）废弃，重写为音拍 tokenize 的完整平文式——补全ヴ系（ヴァ/ヴィ/ヴ/ヴェ/ヴォ，修掉 `ヴィルヘルム→ヴィruherumu` 漏假名与首字母不大写两个 bug）与外来拗音（ファ/ティ/チェ/ツァ等）、ん 同化（b/p/m 前→m、元音/y 前→n'）、促音 tch、长音 macron 直接作用于前一元音（含 ē，旧「ee→ei」约定废除）、`num` 全局泄漏修复。接口与「无假名→空串」契约不变（`p._Kana2Romaji(s)` + `p.Kana2Romaji(frame)` 兼容 `kana=` 与位置参数 1）。部署+回归脚本 `scripts/deploy_kana2romaji.py`（幂等：内容相同则跳过保存；19 例测试矩阵全过），`Template:Kana2Romaji/doc` 规则描述已同步更新，`角色:菜月·昴` 信息框罗马字渲染抽查通过。模块文档（接口/契约/转换规则/示例）随后按惯例迁入 `Module:Kana2Romaji/doc` 子页（首行保留 `{{Tab/Ruby}}` 导航），Lua 头注释只留标题行（/doc 自动渲染在代码上方，无需指针注释——用户指正）。行为变化点：えー/エー 现在得 ē（旧为 ei）、っち 现在得 tchi（旧为 cchi）、んb/p/m 同化为 m、・（U+30FB）现在也转空格。
