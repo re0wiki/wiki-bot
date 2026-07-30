@@ -8,8 +8,9 @@ import re
 
 os.environ.pop("PYTHONPATH", None)
 
-import pywikibot
 from pywikibot.data import api
+
+import pywikibot
 
 site = pywikibot.Site("zh", "re0")
 
@@ -22,7 +23,9 @@ assert site.user() == "IchiSanNi"
 p = pywikibot.Page(site, "Module:Kana2Romaji")
 if p.text.strip() != new_src.strip():
     p.text = new_src
-    p.save(summary="重写：完整平文式表（补ヴ系/外来拗音）、ん同化、促音 tch、长音 macron 化")
+    p.save(
+        summary="重写：完整平文式表（补ヴ系/外来拗音）、ん同化、促音 tch、长音 macron 化"
+    )
     print("已保存 Module:Kana2Romaji")
 else:
     print("Module:Kana2Romaji 已是最新，跳过保存")
@@ -70,6 +73,9 @@ for kana, expect in CASES.items():
     got = (m.group(1).strip() if m else "").strip()
     ok = got == expect
     fails += not ok
-    print(f"{'OK ' if ok else 'FAIL'} {kana:<12} -> {got!r}" + ("" if ok else f"（期望 {expect!r}）"))
+    print(
+        f"{'OK ' if ok else 'FAIL'} {kana:<12} -> {got!r}"
+        + ("" if ok else f"（期望 {expect!r}）")
+    )
 
 print(f"\n{len(CASES) - fails}/{len(CASES)} 通过")
