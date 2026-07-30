@@ -14,26 +14,30 @@
 
 与译名表（同一份数据的两种表达、需双向手动同步）不同：模板信息**按受众分层、内容不重叠**，两边各存各的、互留指针即可，没有同步负担。
 
-## 盘点数据（2026-07-27 刷新）
+## 盘点数据（2026-07-29 刷新）
 
 盘点脚本：`scripts/template_inventory.py`（只读；输出到 `logs/template_inventory.json`）。
 引用量用 `Page.embeddedin()` 逐模板统计（Fandom 不支持 `mostlinkedtemplates`）。
 
-- Template 命名空间共 190 页（2026-07-28 清理后实测）：55 顶层模板（**重定向已清零**）+ 135 子页（`Tab/*` 114 个、`/doc` 19 个、其他 2 个：`Quote/main`、`T/piece`）。
-- 文档覆盖（55 个顶层模板）：**18 个有 `/doc`，37 个缺失**。文档统一放在 `/doc` 子页（经 `{{Documentation}}` 渲染进模板页）——2026-07-28 已将全部内联形式（`{{Documentation|content=...}}` 8 个、`<noinclude>` 内联说明 1 个）迁入 `/doc`，今后新增模板文档一律用 `/doc` 子页，templatedata 也放 `/doc`（TemplateData 扩展会读，先例 `Blur/doc`）。
+- Template 命名空间共 227 页：55 顶层模板（**重定向已清零**）+ 172 子页（`Tab/*` 114 个、`/doc` 56 个、其他 2 个：`Quote/main`、`T/piece`）。
+- 文档覆盖（55 个顶层模板）：**55/55 全覆盖**（2026-07-29 最后 10 个补齐，见待办 1）。文档统一放在 `/doc` 子页（经 `{{Documentation}}` 渲染进模板页）——2026-07-28 已将全部内联形式（`{{Documentation|content=...}}` 8 个、`<noinclude>` 内联说明 1 个）迁入 `/doc`，今后新增模板文档一律用 `/doc` 子页，templatedata 也放 `/doc`（TemplateData 扩展会读，先例 `Blur/doc`）。
 - 分类：~~94 个顶层模板无分类~~（2026-07-26 待办 3 已清零，顶层模板全部入树）。
 - 引用量：全命名空间**真零引用模板 32 个**（见待办 2，已处理）。
+- **Lua 重写评估（2026-07-30）**：复杂度扫描脚本 `scripts/template_complexity.py`（只读，输出 `logs/template_complexity.json`，指标 = parser function 数/嵌套深度/长度）。结论：无值得 Lua 化的模板——最复杂的 `Infobox character`（36 个 parser 函数）的难逻辑（图库生成/罗马音/英译）已在 Module:Character image、Kana2Romaji、Interwiki 中，剩余壳是 Portable Infobox 声明式 XML（与扩展的契约，Lua 化只能手搓 HTML、丢主题与 Mercury 渲染，不动）；次复杂的 `Bot`（嵌套 #switch×4 层）全站仅 2 引用、收益为零；其余 ≤4 个 parser 函数或纯格式。模板层已是「薄壳 → Module」的理想架构。
 
 ## 技术约定（实测）
 
 - **防分类泄漏靠 `<onlyinclude>`**：把模板体包在 `<onlyinclude>` 里后，标签之外的 `[[Category:...]]`（即使没放 `<noinclude>`）不会被引用页继承。Infobox 系、`Blur` 等都是这个写法。给模板加自身分类时，放 `<noinclude>` 或 onlyinclude 之外均可，但放 onlyinclude **里面**就会泄漏到每个引用页。
+- **含 `<ref>` 的模板双重约束**（2026-07-29 `Ringa` 清理实证）：① 必须包 `div class="as-is"` + `<onlyinclude>`——否则 noreferences 任务会对其反复自动追加「注释与外部链接」段（`Template:Ringa` 2021 年残留的 5 段重复 references 即此产物，原作者晚街与灯故意留作活教材；当日已清理，机制要点并入 `Ringa/doc`）；② **不能嵌套在另一个 `<ref>` 内使用**（Cite 不支持 ref 嵌套）——嵌套时内层脚注失效、页尾报「引用错误：`name` 未在前文内使用」，`角色:阿尔` 曾踩（引用小说原文的注释里写 `{{Ringa}}`，当时改纯文本；全站扫描仅此 1 页，扫描脚本 `logs/scan_ringa_nested.py`）。（当日晚些时候用户决定 `Ringa` 弃用 ref、改用 `{{Tooltip}}` 呈现注记，两个约束就此绕开，`角色:阿尔` 的嵌套调用也随之恢复合法；上述约束仍适用于未来新建含 ref 的模板。）
 - **有意给引用页加分类的模板**（设计如此，勿当 bug「修」掉）：
 
 | 模板 | 给引用页加的分类 |
 |---|---|
 | `To do` | 待修撰 |
-| `Anime` | 剧集 |
-| `Re:Zero BD` | 圆盘 |
+| `Infobox anime` | 剧集（仅主命名空间） |
+| `Infobox bd` | 圆盘（仅主命名空间） |
+| `Infobox battle` | 战役（经 `T category`） |
+| `Infobox event` | 事件（分类在 onlyinclude 内，不限命名空间） |
 | `Seirei or Elf` / `Yousei or Elf` | 需复核译名 |
 | `Ruby` 系（Ruby、Ruby-ja、Ruby-zh-ja） | Ruby transclusions with too many parameters（异常追踪） |
 | `Category redirect` | 已重定向的分类、尚未清空的已重定向分类 |
@@ -50,35 +54,18 @@
   - 2026-07-28 修复：Manga 系 7 个 tab（Arc 1~4 Chapter、Manga Volume、剑鬼恋歌 Chapter/Volume）历史上从未挂进任何漫画页，共补挂 194 页；另修 `Tab/Sword Demon Battle Ballad Act` 繁体死链（終幕→终幕）、`Tab/Ruby` 摘除已删 `R/ja` 导航项；`小说:…日报/KILL4` 原挂不存在的 `Tab/KILL`，换挂正确 tab；删除与 `Tab/The Great Spirit Puck's Side Story` 逐字节重复的零引用 `Tab/The Great Spirit Puck`。
   - 审计坑：`allpages(prefix="Tab/")` 返回的标题**已含** `Tab/` 前缀（别再拼一次，且 pywikibot 对不存在页面 `.text` 返回空串不报错——要 assert 防空转）；tab 内 `<!-- -->` 注释的链接不算应挂；分类链接要区分 `[[:分类:X]]` 冒号内联（导航链接，参与比对）与裸 `[[Category:X]]`（归类赋值，跳过），且链接标题要经 pywikibot 归一化再与携带页比对（`Tab/Content` 的分类矩阵全是冒号内联 + wikitable 在 `{{Tab}}` 块外）。上述惯例判例（导航块、Module/doc、注释、分类形式）已内置进审计脚本，输出仅剩真失配与红链（红链=未搬运内容或未建分类页，建页后补挂即可）。
 - **模板的归类入口可能在其 `/doc` 子页**：`T`、`T/piece` 的分类是 `/doc` 里 `<includeonly>[[Category:...]]</includeonly>` 经 `{{Documentation}}` 注入的，模板本体 wikitext 里搜不到。改挂这类分类后分类表不会立即刷新，需 `page.purge(forcelinkupdate=True)` 触发重解析。
+- **文档盒也可能挂在 `Tab/*` 导航子页上**（2026-07-29 QUOTE 批实测）：`Tab/Quote` 曾用 `{{Documentation|Quote/doc}}` 给 QUOTE/Quote/Quote/main 三个页面共享渲染 Quote/doc。给模板挂 `{{Documentation}}` 前先在模板页 parse 确认现有文档盒来源，否则双盒；摘共享调用后须在被波及的其余模板体上补偿挂载。
+- **索引页分节与模板分类保持对齐**（2026-07-29 确立）：`ReZero Wiki:模板` 的分节按功能分类树组织，条目归类以模板自身 `[[Category:...]]` 为准。两者冲突时改**分类**而非迁就分节——判据是功能而非形式：`Kana2Romaji`（音译，非字词转换）字词转换→注音、`Bot`（站务声明）消息框→维护、`Category redirect` 摘除消息框留重定向、4 个信息框（anime/music/bd/game）内容→信息框。分类清空即删（`内容模板`、`消息框模板` 当日删除，同 `请求删除`/`首页模板` 先例）。索引页条目提到的模板必须存在——删模板时同步清索引（当日补清 `Quote/big`、`Quote/small`、`AV` 残留条目，补收漏网的 `BV`）。
+- **文档写作约定**（2026-07-28 修订全部 19 个 `/doc` 后确立）：文档用简体中文；结构 `;说明`/`;语法`/`;示例` + templatedata。当日修订：著作权六件套（CC-BY-SA/Fairuse/From Wikimedia/Other free/PD/Self）与 `T`、`T/piece`、`Documentation` 的英文文档全部翻译，`Bot`/`NoteTA` 繁体转简体；修正过期/错误信息——`Quote/doc` 仍称 Quote/QUOTE 是已删 `Quote/small`/`Quote/big` 的别名、`NoteTA/doc` m 上限写 10（Module 实测循环 G1..G30）、`BV/doc` templatedata 把参数 1 标 required 却演示全省略用法、`Documentation/doc` 仍教 `content=` 内联旧写法与英文分类；`Infobox character/doc` 补 `name_ja_romaji`、图片参数顺序对齐模板体（a/n/g/c）、templatedata 补全 description；`Self` 分类 模板→著作权模板（与其余著作权模板一致）。（当晚续：`{{BV}}` 的无参调试默认值 `BV1jt4y1D714` 已删——全站 24 处调用全带参、零无参用例，文档无参演示块同删、templatedata 参数 1 恢复 required。注意 BV 的 **av 兼容不是死代码**：`设定集、画集:Art Works Re:BOX`、`动画:迷你动画` 各集在用 av 号，Module:Bili 的 data-av 分支须保留。）（2026-07-29 续：**文档中的字面 wikitext 必须包 `<nowiki>`**——`-{ }-` 转换标记在 `<code>` 里会被语言转换器解析掉（`Init/doc`、`加护/doc` 由 bot 修复，`R/doc`、`Ruby-ja/doc`、`Ruby-zh-ja/doc` 由用户补修，扫描脚本 `logs/scan_langconv_literal.py`）；`<code>[[页面|文字]]</code>` 会渲染成红链（用户修 `Tab/doc`）。**文档里链到模板用 `{{T|模板名}}`**，不要写 `{{[[Template:X|X]]}}`（同 `Tab/doc` 修正）。无信息量的空 `-{}-` 示例直接删除即可，不必一律 nowiki（用户对 `Bot/doc` 的处理）。模板体内的功能性 `-{ }-`（防转换包裹、zh-hans/zh-hant 规则）不要动。验证渲染时 `{` 在 HTML 中是 `&#123;`，比对前先 unescape。）
 
 ## 待办
 
-### 1. `/doc` 子页补全（工作量大，分批做）
+### 1. ~~`/doc` 子页补全~~（2026-07-29 已完成）
 
-按主空间引用量排序的优先级清单（前 20，做完即覆盖绝大部分实际使用）：
-
-| 引用数 | 模板 |
-|---|---|
-| 1000+ | Init |
-| 719 | Infobox book |
-| 692 | Tab |
-| 388 | Clear |
-| 202 | Kana2Romaji |
-| 175 | Anime |
-| 145 | R |
-| 125 | Seirei |
-| 72 | QUOTE |
-| 54 | Seiyu |
-| 51 | Ringa、Tooltip |
-| 45 | Seirei or Elf |
-| 40 | Ruby-zh-ja |
-| 38 | Music |
-| 37 | Elf |
-| 34 | T category |
-| 31 | Infobox battle、Twitter |
-
-完整清单见 `logs/template_inventory.json`（`has_doc_subpage`/`doc_via_content_param`/`inline_doc_in_noinclude` 全 false 者）。
-原清单中属零引用模板的条目已随待办 2 的删除自然消失。
+- **Infobox 文档已补全**（2026-07-29）：9 个信息框模板（book/anime/seiyu/music/battle/bd/event/game/staff）全部新建 `/doc`（说明/语法/示例/templatedata），模板体内联语法小节（残留旧名 `{{Anime}}`/`{{Seiyu}}`/`{{Music}}`/`{{Re:Zero BD}}`/`{{Re:Zero Game}}`/`{{Staff}}` 与西语 `== Usos ==` 标题）全部迁入 `/doc` 并改挂 `{{Documentation}}`；book 新增 `{{Documentation}}` 调用。写入脚本 `logs/write_infobox_docs.py`，渲染与自动分类验证 `logs/verify_infobox_docs.py`。实测 quirks 已写进各 `/doc`：seiyu/staff 参数名为西班牙语（es 搬运）；battle 的参战方/指挥官/军队/伤亡只有 1–3 号参数（旧文档与部分页面里的 4 号是死参数）；book 的「英文名」与 battle 的「英译」由 `Module:Interwiki` 自动生成；game 的 `Name_en` 渲染为副标题。
+- **注音族与精灵族文档已补全**（2026-07-29）：10 个模板（`Ruby`/`Ruby-ja`/`Ruby-zh-ja`/`R`/`Kana2Romaji` + `Seirei`/`Elf`/`Yousei`/`Seirei or Elf`/`Yousei or Elf`）全部新建 `/doc`；`Ruby`/`R`/`Kana2Romaji` 模板体内的内联 templatedata、`Ruby-ja`/`Ruby-zh-ja` 的内联英文说明迁入 `/doc`，10 个模板体均改挂 `<noinclude>{{Documentation}}</noinclude>`。写入脚本 `logs/write_ruby_seirei_docs.py`，验证 `logs/verify_ruby_seirei_docs.py`（模板页「模板文件」盒 + /doc parse + 10 个引用页改动前后 parse 对比，渲染与自动分类全等价）。实测 quirks 已写进各 `/doc`：`Ruby`/`Ruby-ja`/`Ruby-zh-ja` 给第 3 个位置参数会加追踪分类 Ruby transclusions with too many parameters；`Ruby-ja` 的正文/注音与 `R` 的日文部分包在 `-{ }-` 中防繁简转换；`R` 由 `Module:Auto ruby` 实现（中文加粗 + 英文上标 + 括号内假名/罗马音，罗马音留空自动经 `Module:Kana2Romaji` 转换，转不出则只显示假名）；`Kana2Romaji` 无匹配假名时输出空串，主要由 `Infobox character` 的 `name_ja_romaji` 默认值自动调用（主空间几乎无直接调用）；`Seirei`/`Yousei` 源码含 `<!--nobot-->` 注释防 bot 译名归一。**坑**：给模板追加第二个独立 `<noinclude>{{Documentation}}</noinclude>` 时，两个 noinclude 之间的换行会被 transclude 到引用页（多一个换行 = 段落分裂，精灵族首轮踩过）；应把 `{{Documentation}}` 并入已有 noinclude 内部。（当晚续：精灵族 5 个 `/doc` 的工作流描述已修正——`Seirei or Elf`/`Yousei or Elf` 占位模板是 bot 把条目中直接书写的「精灵」「妖精」自动替换而来（`user-fixes.py` translation fix，精灵骑士/精灵术/精灵使与人工/自然/契约/大/邪/微/准精灵等复合词除外），非编辑者手动占位；「半精灵」直接替换为 半`{{Elf}}` 不经复核；修正脚本 `logs/fix_elf_docs.py`。）
+- **站务机制 8 个模板文档已补全**（2026-07-29）：`Init`/`Tab`/`T category`/`QUOTE`/`Category redirect`/`Soft redirect`/`Disambiguation`/`Sandbox` 全部新建 `/doc`；`Tab`、`T category` 的内联 templatedata 与 `Category redirect` 的内联繁体说明（转简体）迁入 `/doc`，8 个模板体均挂 `{{Documentation}}`（有 noinclude 的并入内部，无 noinclude 且 includeonly 包裹的才新建）。写入脚本 `logs/write_mechanism_docs.py`，改动前快照 `logs/snapshot_mechanism_before.py`（`logs/mechanism_parse_snapshot.json`），验证 `logs/verify_mechanism_docs.py`（8 模板页「模板文件」盒 + 8 个 /doc parse + 7 个引用页改动前后 parse 对比全等价，ALL CHECKS PASSED）。实测 quirks 已写进各 `/doc`：`Init`（Module:Init）做三件事——标题 `-{T|…}-` 繁简转换、按标题前缀/子页面后缀加分类（无前缀页面入「杂项」）、生成顶部分页导航（2026-07-30 起 AutoTab 已并入 Init，拼接经 Module:Tab），仅限主命名空间；`Tab` 是元模板，主空间 317 个 embeddedin 全部是经 `Tab/*` 派生页的间接引用、无直接调用（templatelinks 计嵌套），文档示例取自 `Tab/Anime S1`；`T category` 主空间 34 引用也全间接（Infobox battle→战役、Disambiguation→消歧义）；`Sandbox` 全站零引用（Tab 试验场，如实写入文档）。**坑**：`Tab/Quote` 原挂 `{{Documentation|Quote/doc}}` 给 QUOTE/Quote/Quote/main 三页共享渲染 Quote/doc——QUOTE 挂自有 /doc 前须先摘除（否则双文档盒），并在 Quote、Quote/main 模板体上补偿挂载保持各自文档盒（已同步处理，见技术约定）。
+- **最后 10 个模板文档已补全**（2026-07-29，55/55 全覆盖）：`Clear`/`Collapse`/`MG`/`Main`/`QA list`/`Ringa`/`Tooltip`/`Twitter`/`WP`/`加护` 全部新建 `/doc`；`Collapse`/`Tooltip`/`MG`/`WP` 的内联 templatedata（含 CSS 链接小节）迁入 `/doc`，10 个模板体均挂 `{{Documentation}}`（并入已有 noinclude 内部；`Collapse`/`Tooltip` 原为「双 noinclude」结构，合并为一个并保持 transclude 输出逐字节等价）。写入脚本 `logs/write_final_docs.py`，改动前快照 `logs/snapshot_final_docs_before.py`（`logs/final_docs_snapshot.json`），验证 `logs/verify_final_docs.py`（10 模板页各恰好 1 个文档盒 + 10 个 /doc parse + 10 个引用页改动前后 parse 对比渲染与自动分类全等价，ALL CHECKS PASSED）。实测 quirks 已写进各 `/doc`：`Tooltip` 主空间 51 个引用全部是经 `Seirei or Elf`/`Yousei or Elf` 的间接调用，文章页无直接调用；`Twitter` 参数名为 `#`（井号），调用须写 `|#=用户名`；`Collapse` 的 `id` 默认 0（默认同组联动）；`加护` 与 Elf/Seirei 同型但经 `{{R|加护||加護|Kago}}` 实现、无 `<!--nobot-->` 注释；`Ringa` 是带同名脚注（`name="ringa"`）的字词转换模板（as-is + onlyinclude 包裹）。**坑**：验证「恰好 1 个文档盒」不能用字符串 `模板文件` 计数——单个文档盒渲染就含 2 处（盒标题 + 底部「編輯模板文件页面」链接），应计 `<b>模板文件</b>`。
 
 ### 2. ~~零引用模板评审~~（2026-07-26 已完成）
 
@@ -94,12 +81,14 @@
 - **重定向 `Infobox Events` 已删**（同日）：确认为 en 站搬运名（en 有 `Template:Infobox Events`，无 `Infobox event`），已加入 jobs 替换（→ `Infobox event`），zh 现存 2 处调用（术语：王室疫病、术语：王族誘拐案）已先行改名。存档 `logs/deleted_redirect_infobox_events_2026-07-28.json`。
 - **重定向 `Infobox battles`、`Re:Zero Manga Volumes` 已删**（同日）：同为 en 搬运名（en 各 31/44 引用），已加入 jobs 替换（→ `Infobox battle` / `Infobox book`），zh 现存 3 处调用已先行改名。至此索引页重定向节清空，en 旧名全部由 bot 批量替换接管。存档 `logs/deleted_redirects_round3_2026-07-28.json`。
 - **零引用子页重定向 `Tab/Infobox novel` 已删**（同日，Infobox novel → Infobox book 改名残留）。存档 `logs/deleted_tab_infobox_novel_2026-07-28.json`。
+- **Module 侧改名残留已清**（2026-07-29）：novel→book 改名时漏了 Module 侧——`Module:Infobox novel`（内容为 shim `return require [[Module:Infobox book]]`）与 `Module:Infobox novel/doc`（重定向）零引用、全站无 `Infobox novel` 字样，已删（en 站 Module 空间无 Infobox 模块，无搬运重引入风险）。存档 `logs/deleted_module_infobox_novel_2026-07-29.json`。至此全站 Infobox 命名统一为 `Infobox X`（X 小写英文）：Template 4 个（battle/book/character/event）+ Module 1 个（book）+ 1091 个引用页的调用写法全部规范。
+- **信息框命名统一补漏**（2026-07-29）：首轮只查了名字带 Infobox 的页面，漏了**实现为信息框但名字不带 Infobox** 的 6 个模板（判据：wikitext 含 `<infobox>` 标签或 `#invoke` infobox 模块）。改名（移动不留重定向，308 个主空间引用页同步替换）：`Anime`→`Infobox anime`、`Seiyu`→`Infobox seiyu`、`Music`→`Infobox music`、`Re:Zero BD`→`Infobox bd`、`Staff`→`Infobox staff`、`Re:Zero Game`→`Infobox game`。en 有同名的 4 个（Anime/Music/Re:Zero BD/Re:Zero Game）已加入 jobs 模板替换任务接管搬运页；`Seiyu`/`Staff` 是 es 站搬运（en 无同名、不经 transferbot），无需替换任务。索引页 `ReZero Wiki:模板` 同步。至此 10 个信息框全部 `Infobox X` 命名。迁移脚本 `scripts/rename_infobox_templates.py`，存档 `logs/renamed_infobox_templates_2026-07-29.json`。
 - **别名收敛**（同日，用户定名）：`BV` 为正（B 站现行 ID 格式），21 处 `{{AV}}` 已批量改 `{{BV}}`、jobs 加替换、删 `AV`；`QUOTE`、`Quote` 由重定向转为模板本体（`Quote/big`、`Quote/small` 零直接调用，内容并入后删除；`Quote/main` 共用实现保留；`Tab/Quote` 链接、`BV/doc` 别名行同步）。至此 Template 命名空间**重定向清零**。存档 `logs/deleted_aliases_2026-07-28.json`。
 
 ### 3. ~~分类补全与子分类整理~~（2026-07-26 已完成）
 
-- 决策：按子分类细分（平铺会与 Template 命名空间作用重合）；新建 `注音模板`/`内容模板`/`格式模板` 3 个子分类，时共 15 个子分类（2026-07-27 子模板并入元模板后为 14）。
+- 决策：按子分类细分（平铺会与 Template 命名空间作用重合）；新建 `注音模板`/`内容模板`/`格式模板` 3 个子分类，时共 15 个子分类（2026-07-27 子模板并入元模板后为 14；2026-07-29 `内容模板`（4 个信息框改挂 `信息框模板`）与 `消息框模板`（Bot→维护、Category redirect→重定向）清空删除后为 12）。
 - 60 个无分类顶层模板全部归类：重定向 17、字词转换 7、注音 5、引文 6、外部链接 4、首页 3、消息框 1（Welcome）、维护 2（Init、Disambiguation）、内容 5、子模板 1（MW）、格式 8、直属 1（`=`）。原直属的 `T`、`Ruby-ja`、`Ruby-zh-ja`、`T/piece` 改挂对应子分类；终态 103 个顶层模板 100% 入树。
 - 怪异点查明非误用（机制见技术约定）：`Template:元模板` 改名 `Template:元模板标记` 消歧并留重定向；`Category:元模板`（Tab 经引用元模板标记加入）与 `Category:子模板`（组成件）语义各自成立。
-- 仍直属 `Category:模板` 的 3 个：Blur、DISPLAYTITLE、Self——均为通用工具模板（原 7 个中的 `!`、`!!`、`=`、`Tocright` 已删），如需可再细分（Blur→格式、Self→著作权），非必要。
+- 仍直属 `Category:模板` 的 3 个：Blur、DISPLAYTITLE、Self——均为通用工具模板（原 7 个中的 `!`、`!!`、`=`、`Tocright` 已删），如需可再细分（Blur→格式、Self→著作权），非必要。（后续：2026-07-28 `DISPLAYTITLE` 删除、`Self` 随文档修订改挂 `著作权模板`，直属仅剩 `Blur`。）
 - 后续（2026-07-27）：`Category:子模板` 并入 `Category:元模板`（理由见技术约定）；`元模板标记` 内联进 `Tab` 后删除（含旧名重定向）；`Documentation` 移入元模板；索引页「模板工具（元模板）」节同步更新。
