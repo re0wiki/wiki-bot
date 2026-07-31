@@ -1,6 +1,13 @@
-"""扫描主命名空间所有 `前缀:词干` 形式的页面，按前缀分组统计。"""
+"""扫描主命名空间所有 `前缀:词干` 形式的页面，按前缀分组统计。
+
+登记前缀清单取自 user-fixes.py 的 PSEUDO_PREFIXES（唯一权威，经
+pywikibot.fixes 导出——import pywikibot.fixes 时 user-fixes.py 被 exec 进其
+globals，静态检查不可见）。
+"""
 
 from collections import defaultdict
+
+from pywikibot.fixes import PSEUDO_PREFIXES  # ty: ignore[unresolved-import]
 
 import pywikibot
 
@@ -14,18 +21,6 @@ for page in site.allpages(namespace=0):
 
 for prefix, titles in sorted(by_prefix.items()):
     print(f"{prefix} ({len(titles)})")
-    if prefix not in [
-        "角色",
-        "术语",
-        "小说",
-        "漫画",
-        "动画",
-        "游戏",
-        "音乐",
-        "设定集、画集",
-        "声优",
-        "制作人员",
-        "存档",
-    ]:
+    if prefix not in PSEUDO_PREFIXES:
         for t in titles:
             print(f"    {t}")
