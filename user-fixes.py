@@ -78,8 +78,8 @@ user_fixes["misc"] = base | {
 
 
 # region date
-def match_to_yyyymmdd(mouth: int, match: re.Match) -> str:
-    return f"{match.group(2)}-{str(mouth).zfill(2)}-{match.group(1).zfill(2)}"
+def match_to_yyyymmdd(month: int, match: re.Match) -> str:
+    return f"{match.group(2)}-{str(month).zfill(2)}-{match.group(1).zfill(2)}"
 
 
 user_fixes["date"] = base | {

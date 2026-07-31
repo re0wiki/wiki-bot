@@ -4,6 +4,10 @@ from pywikibot.pagegenerators import GeneratorFactory
 
 import pywikibot as pwb
 
+# 改编自 pywikibot textlib.NESTED_TEMPLATE_REGEX：去掉命名捕获组（findall 要
+# 取整体匹配串做模板备份/还原）与 unhandled_depth 分支。不换成 textlib 原版
+# （findall 会返回分组元组）或 mwparserfromhell（无离线测试覆盖的同步 bot，
+# 生产验证稳定，能跑就别动）。
 NESTED_TEMPLATE_REGEX = re.compile(
     r"""
 {{\s*(?:msg:\s*)?
