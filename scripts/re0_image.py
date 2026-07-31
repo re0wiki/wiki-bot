@@ -20,7 +20,10 @@ def all_images(code: str) -> dict[str, pwb.FilePage]:
 def calc_diff(
     en_images: dict[str, pwb.FilePage], zh_images: dict[str, pwb.FilePage]
 ) -> list[pwb.FilePage]:
-    """返回 en 的图片中，zh 缺失或过时的部分。"""
+    """返回 en 的图片中，zh 缺失或过时的部分。
+
+    只增不删：en 侧删除/改名的图片不会在 zh 侧清理（保守策略，见 docs/todo.md）。
+    """
     return [
         image
         for title, image in en_images.items()
@@ -68,9 +71,6 @@ def download_all(images: list[pwb.FilePage], tmp_dir: str):
 
 def upload_all(images: list[pwb.FilePage], tmp_dir: str):
     """从临时目录上传所有图片文件到 zh。"""
-    if pwb.config.simulate:
-        pwb.logging.info("SIMULATE: skip uploading %d images.", len(images))
-        return
     pwb.Site("zh", "re0").login()
     for image in tqdm(images, "Uploading images"):
         upload_one(image, tmp_dir)
@@ -83,6 +83,16 @@ def main() -> None:
     en_images = all_images("en")
     zh_images = all_images("zh")
     diff = calc_diff(en_images, zh_images)
+    if pwb.config.simulate:
+        # 干跑连下载都跳过（下载同样打 en 站），只报告差量
+        pwb.logging.info(
+            "SIMULATE: %d images to sync, skip download/upload.", len(diff)
+        )
+        for image in diff[:20]:
+            pwb.logging.info("SIMULATE: would sync %s", image.title())
+        if len(diff) > 20:
+            pwb.logging.info("SIMULATE: ... and %d more.", len(diff) - 20)
+        return
     with TemporaryDirectory() as tmp_dir:
         download_all(diff, tmp_dir)
         upload_all(diff, tmp_dir)
