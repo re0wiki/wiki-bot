@@ -3,6 +3,9 @@
 import sys
 from pathlib import Path
 
+# 顺序要求：必须先 import pywikibot 再把仓库根挂上 sys.path。仓库根的
+# pywikibot/ 目录（submodule）可能以 namespace package 遮蔽已安装的包
+# （见 tests/conftest.py 与 AGENTS.md 的坑节）；已入 sys.modules 则无虞。
 import pywikibot
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
@@ -12,9 +15,8 @@ site = pywikibot.Site("zh", "re0")
 site.login()
 assert site.user() == "IchiSanNi"
 
-# 找到 template 替换任务（非 -remove）
-task = next(j for j in jobs if j[0] == "template" and "-remove" not in j)
-cmd = "python pywikibot/pwb.py " + " ".join(f'"{a}"' for a in task)
+task = next(j for j in jobs if j.name == "template")
+cmd = "python pywikibot/pwb.py " + " ".join(f'"{a}"' for a in task.cmd)
 
 p = pywikibot.Page(site, "User:IchiSanNi/jobs")
 lines = p.text.splitlines()
