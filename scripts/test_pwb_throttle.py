@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """pywikibot 限速配置实测：读 100 页 + 沙盒写一次。
 
 验证 user-config.py 的 minthrottle/put_throttle 调整后，

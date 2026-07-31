@@ -40,7 +40,7 @@ def snapshot():
 
     # Infobox book：取第一个主空间引用页
     tpl = pywikibot.Page(site, "Template:Infobox book")
-    book_page = next(tpl.embeddedin(namespaces=0, total=1))
+    book_page = next(iter(tpl.embeddedin(namespaces=0, total=1)))
     snaps[f"page:{book_page.title()}"] = parse_html(page=book_page.title())
 
     # NoteTA：全部引用页

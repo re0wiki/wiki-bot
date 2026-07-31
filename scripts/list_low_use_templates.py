@@ -6,7 +6,8 @@ import re
 import pywikibot
 
 site = pywikibot.Site("zh", "re0")
-data = json.load(open("logs/template_usage_recheck_2026-07-28.json", encoding="utf-8"))
+with open("logs/template_usage_recheck_2026-07-28.json", encoding="utf-8") as f:
+    data = json.load(f)
 
 DELETED = {
     "StructuredQuote",
@@ -54,12 +55,12 @@ for t, user in one:
         continue
     try:
         text = pywikibot.Page(site, user).text
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - 一次性审计脚本，任何页面读取失败都跳过
         print(f"--- {t} @ {user}: 读取失败 {e}")
         continue
     pat = re.compile(
         r"\{\{\s*(?:subst:\s*)?" + re.escape(t).replace(r"\ ", r"[ _]") + r"\s*[|}<]",
-        re.I,
+        re.IGNORECASE,
     )
     m = pat.search(text)
     if not m:

@@ -14,7 +14,7 @@ mylang = "zh"
 # The dictionary usernames should contain a username for each site where you
 # have a bot account. If you have a unique username for all sites of a
 # family , you can use '*'
-usernames["re0"] = {
+usernames["re0"] = {  # ty: ignore[unresolved-reference]  # 名字由 pywikibot 注入
     "de": "IchiSanNi",
     "en": "IchiSanNi",
     "es": "IchiSanNi",
@@ -187,7 +187,7 @@ db_hostname_format = "localhost"
 db_username = ""
 db_password = ""
 db_name_format = "{0}"
-db_connect_file = user_home_path(".my.cnf")
+db_connect_file = user_home_path(".my.cnf")  # ty: ignore[unresolved-reference]  # 名字由 pywikibot 注入
 # local port for mysql server
 # ssh -L 4711:enwiki.analytics.db.svc.eqiad.wmflabs:3306 \
 #     user@login.toolforge.org

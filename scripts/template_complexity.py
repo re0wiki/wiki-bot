@@ -11,6 +11,7 @@
 import json
 import os
 import re
+from typing import Any
 
 os.environ.pop("PYTHONPATH", None)
 
@@ -58,7 +59,7 @@ def max_depth(text):
     return best
 
 
-rows = []
+rows: list[dict[str, Any]] = []
 for title, text in pages.items():
     short = title.split(":", 1)[1]
     if "/" in short:  # 只看顶层模板

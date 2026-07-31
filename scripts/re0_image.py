@@ -36,7 +36,7 @@ def download_one(image: pwb.FilePage, tmp_dir: str) -> None:
     filename = path.join(tmp_dir, image.title(with_ns=False, as_filename=True))
     try:
         image.download(filename)
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - 单张失败不阻断整批，交由日志人工复查
         pwb.logging.error(e)
 
 
@@ -54,7 +54,7 @@ def upload_one(image: pwb.FilePage, tmp_dir: str) -> None:
             report_success=False,
             ignore_warnings=True,
         )
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001 - 单张失败不阻断整批，交由日志人工复查
         pwb.logging.error(e)
 
 

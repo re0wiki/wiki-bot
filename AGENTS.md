@@ -17,8 +17,8 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 - 运行脚本：`PYTHONPATH= .venv/Scripts/python.exe <script>`（Windows 上 Hermes 会注入指向自身 venv 的 PYTHONPATH，必须清空，否则 import 错包）。
 - **pywikibot 是 git submodule**（fork：`github.com/re0wiki/pywikibot`，upstream 是 wikimedia/pywikibot）。克隆要 `--recurse-submodules`（否则 `uv sync` 会因路径缺失失败）。更新 submodule 后提交信息写 `chore: update pywikibot`。
 - pywikibot 通过 `[tool.uv.sources]` 以 **editable 方式从 submodule 路径装入 venv**（`{ path = "pywikibot", editable = true }`），submodule gitlink 是唯一版本锁，无需再同步 uv.lock 里的 commit。`pyproject.toml` 里的 `[tool.ty.environment] extra-paths = ["./pywikibot"]` 是必须的：ty 无法静态解析 PEP 660 editable finder，删掉会导致全项目 unresolved-import。
-- Lint：`ruff check` / `ruff format`（`pyproject.toml` 里 extend-exclude 了 pywikibot 子模块，不要给它 lint）。类型检查用 `ty`。
-- 没有测试套件。验证方式 = `-s/--simulate` 干跑 + 上 wiki 查编辑结果。
+- Lint：`ruff check` / `ruff format`（`pyproject.toml` 里 extend-exclude 了 pywikibot 子模块与 logs/，不要给它们 lint；md 文件也被排除以保留手工对齐的代码块注释）。类型检查用 `ty`（`src.exclude` 排除了 pywikibot 与 logs/，正常应为 0 诊断）。
+- 离线单测：`pytest tests/`（不触 wiki；覆盖译名表一致性、re0_nav、watchdog 纯函数）。注意 `python -m pytest` 会把仓库根注入 sys.path，导致根目录的 `pywikibot/` 目录以 namespace package 遮蔽已安装的包（同理，仓库根下 `python -c "import pywikibot"` 也是坏的）——tests/conftest.py 已处理；其他临时脚本要么从子目录跑，要么先清 sys.path。Wiki 侧改动验证方式仍是 `-s/--simulate` 干跑 + 上 wiki 查编辑结果。
 - Secrets：`user-password.py`（BotPasswords，gitignored，勿读勿提交）。
 
 ## 架构地图
@@ -31,11 +31,12 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `jobs/starts.py` | namespace → `-start:ns:!` 生成器参数。`ns_base`=主/project/template/category，`ns_more` 再加 module/mediawiki |
 | `user-config.py` | pywikibot 配置：family=re0, mylang=zh, 账号 IchiSanNi（12 个语言站同账号） |
 | `user-fixes.py` | **核心资产**。自定义 fix 集：misc/date/anti-ve/para/gallery/heading/**translation**/HTML/syntax 等。`translation` 用「相似字符 → 正则」机制（`f()`/`p2o()`/`p2n()`）把几百个别名归一到标准译名 |
-| `scripts/re0_*.py` | 4 个自定义脚本：gallery（用 en 站图库覆盖 zh）、image（图片差量同步）、nav（编译 Wiki-navigation）、redirect（给 `前缀:词干` 页建裸词干重定向） |
+| `scripts/re0_*.py` | 5 个自定义脚本：gallery（用 en 站图库覆盖 zh）、image（图片差量同步）、nav（编译 Wiki-navigation）、redirect（给 `前缀:词干` 页建裸词干重定向）、move（标题命中 translation 规则的页面自动移到简体标准名，留重定向；与正文替换的差异是标题一律归一简体、不保留繁体；目标已存在时跳过待人工合并） |
 | `scripts/verify_wiki_access.py` | 只读诊断：验证 pywikibot 库与裸 API 两条 wiki 通路和凭据是否有效，期望输出 `ALL CHECKS PASSED` |
-| `scripts/recent_changes_watchdog.py` | 最近改动巡查 watchdog：rcid 水位线去重（状态 `.cache/rc_watchdog.json`，已 gitignore），排除 IchiSanNi 全部编辑（含无 flag 的手动编辑，修改时已自查）与其他账号的 bot 标记编辑，输出待审清单。区间与触发时间解耦：不设时间窗口，翻页拉取至水位线即停——漏触发（任意停机时长）、手动触发、改间隔均安全，改动超单页 500 条也不漏。由 Hermes cron job「wiki 最近改动自动巡查」每天 10:00 调用（profile `scripts/` 下同名片是 wrapper），LLM 逐条审 diff，发现问题发 Discord `#wiki编辑事务【qq互联】`；但 NiSanIchi（维护者本人的个人账号，与 bot 账号 IchiSanNi 勿混淆）的改动发现问题时只在 cron 回复中说明，不发 Discord。报告范围：机翻覆盖/语法破坏/恶意内容（译名不巡查——登记别名由 translation 任务自动归一） |
+| `scripts/recent_changes_watchdog.py` | 最近改动巡查 watchdog：rcid 水位线去重（状态 `.cache/rc_watchdog.json`，已 gitignore），排除 IchiSanNi 全部编辑（含无 flag 的手动编辑，修改时已自查）与其他账号的 bot 标记编辑。输出三段：NEW_CHANGES 逐条清单、MERGED_DIFFS（同用户同页**相邻**连续编辑合并后的 diff 增删行，⟦⟧/〔〕 标行内增删，超长截断标注）、RED_LINKS（新增内容红链实测，已跟重定向）。取数/解析固定由脚本完成（曾由 LLM 现写代码，踩过手工分组漏项、td class 多值匹配抓空、stdout 截断三个坑）；水位线在 diff 全部拉取成功后才推进，失败非零退出下轮重试，不静默漏审。区间与触发时间解耦：不设时间窗口，翻页拉取至水位线即停——漏触发（任意停机时长）、手动触发、改间隔均安全，改动超单页 500 条也不漏。由 Hermes cron job「wiki 最近改动自动巡查」每天 10:00 调用（profile `scripts/` 下同名片是 wrapper），LLM 只做判断与分流，发现问题发 Discord `#wiki编辑事务【qq互联】`；但 NiSanIchi（维护者本人的个人账号，与 bot 账号 IchiSanNi 勿混淆）的改动发现问题时只在 cron 回复中说明，不发 Discord。报告范围：机翻覆盖/语法破坏/恶意内容（译名不巡查——登记别名由 translation 任务自动归一） |
 | `docs/` | `wiki-access.md`（读写配方）、`cloudflare-429.md`（限流根因与对策）、`template-usage-audit.md`（零引用模板审计工作流）、`templates.md`（模板盘点数据与待办）、`modules.md`（Module/Lua 审查与待办）、`pywikibot-update.md`（submodule rebase 上游流程） |
-| `families/re0_family.py` | re0 family 定义，12 个语言子站（de/en/es/fr/it/ko/nl/pl/pt-br/ru/uk/zh 都在 rezero.fandom.com，en 无路径前缀其余 `/<code>`）。注意 family 文件注释说 "do not commit" 但本项目故意提交了 |
+| `families/re0_family.py` | re0 family 定义，12 个语言子站（de/en/es/fr/it/ko/nl/pl/pt-br/ru/uk/zh 都在 rezero.fandom.com，en 无路径前缀其余 `/<code>`）。注意 family 文件注释说 "do not commit" 但本项目故意提交了。另有 `w_family.py`（community.fandom.com，即 Fandom 中央站 `w:` 前缀），同理会故意提交 |
+| `tests/` | 离线单测（pytest，不触 wiki）：译名表一致性（重复条目/规则链幂等/繁体保留）、re0_nav 编译规则、watchdog 纯函数。模块经 `tests/repo_loader.py` 按路径加载（scripts/ 非包） |
 | `rename.py` | 交互式改名工具：移动页面 + 全站替换文本（只打印命令不执行） |
 | `pywikibot/` | submodule，含 re0wiki 定制补丁（见下） |
 
@@ -43,7 +44,7 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 
 ## wiki 侧结构（zh 站）
 
-- **伪命名空间**：没有注册自定义 namespace，文章页靠标题前缀分类（全在主空间）：`角色:`、`术语:`、`小说:`、`漫画:`、`动画:`、`游戏:`、`音乐:`、`设定集、画集:`、`声优:`、`制作人员:`、`存档:`。偶见繁体 `小說:` 残留；英文前缀页（`Re:`、`Sword Demon Love Story:` 等）是待整理的搬运残留。改前缀 = 移动页面，走 bot 而非手动。
+- **伪命名空间**：没有注册自定义 namespace，文章页靠标题前缀分类（全在主空间）：`角色:`、`术语:`、`小说:`、`漫画:`、`动画:`、`游戏:`、`音乐:`、`设定集、画集:`、`声优:`、`制作人员:`、`存档:`。前缀只认简体：Module:Init 按简体前缀自动分类，繁体前缀不会入分类；繁体前缀页（`小說:`/`術語:`）已于 2026-07-31 清零（当时仅剩 4 个零链入重定向，已删除，`logs/delete_traditional_prefix_redirects.py`）。`特典:` 是唯一的未登记前缀（仅 `特典:劇場前惡意` 一页，待整理）；英文前缀页（`Re:`、`Sword Demon Love Story:` 等）是待整理的搬运残留。改前缀 = 移动页面，走 bot 而非手动。前缀审计可跑 `logs/scan_title_prefixes.py`。
 - **页首模板**：`{{Init}}`（`{{#invoke:Init|main}}`，Tab 系统初始化，几乎每篇文章都有）+ `{{To do}}`（归入 `Category:待修撰`，大部分文章常态携带，不是积压事故）。新搬运页另有 `[[Category:新搬运待整理]]`（见 fork 定制节），人工整理后摘除——该分类是真实待办队列。页首顺序固定：`{{Init}}` → `{{To do}}` → `{{Tab/...}}`（部分页才有）→ 其他内容。
 - **模板体系**：`Tab/*` 子页族（每部作品一套页面顶部标签，配 `{{Tab}}` 使用）；信息框统一 `Infobox X` 命名（X 小写英文）：book/character/anime/music/bd/game/seiyu/staff/event/battle 共 10 个（2026-07-29 由 Anime/Seiyu/Music/Re:Zero BD/Staff/Re:Zero Game 改名而来，en 同名的 4 个旧名由 jobs 模板替换接管；未用的 album/episode/item/location/quest 与母版 `Infobox` 已于 2026-07-28 删除，见 `docs/templates.md` 待办 2）；注音族 `Ruby-zh-ja`（中日双语 ruby）/`R`/`Ruby-ja`（零引用的 Ruby-zh-b/zh-p 与 R/ja 已于 2026-07-28 删除）；`QUOTE`（页首引语 + voice 音频）。全站模板索引在 wiki 的 `ReZero Wiki:模板`，模板信息分层（wiki/仓库各存什么）、盘点数据与维护待办见 `docs/templates.md`。
 - **导航**：`MediaWiki:Wiki-navigation` 由 `Project:Wiki-navigation` 经 `scripts/re0_nav.py` 编译生成，勿手动编辑。
@@ -83,7 +84,7 @@ p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚�
 ## 译名维护工作流（最常见的改动）
 
 1. 译名表的给人看版本在 wiki 上（`ReZero Wiki:译名表`，含选取规则：官方简中 > 官方繁中 > 民间 > 保留英文）；bot 实际执行的唯一权威是 `user-fixes.py`，两边手动同步。用户通过 GitHub Issues 报译名问题（模板：新增/修改译名、遗漏替换、错误替换），wiki 页面明确告诉用户「不要手动移动页面或替换文本，提议通过后 Bot 会批量修改」。
-2. 改译名 = 改 `user-fixes.py` 里 `translation` fix 的两个列表：主列表（`p2o()` 自动生成别名正则）+ 手动替换组。拿不准相似字符覆盖面的，先 `python main.py <translation对应index> -s` 干跑。
+2. 改译名 = 改 `user-fixes.py` 里 `translation` fix 的两个列表：主列表 `translation_names`（`p2o()` 自动生成别名正则）+ 手动替换组 `translation_manual`。拿不准相似字符覆盖面的，先 `python main.py <translation对应index> -s` 干跑。标题含别名的页面由 `re0_move` 任务用同一张表自动移动，无需另行处理。
 3. 提交信息遵循 Conventional Commits：`feat(translation): add X` / `fix(translation): 旧 -> 新`。
 4. `_ = [...]` 列表是「特判太麻烦、明确不处理」的别名，别删。
 

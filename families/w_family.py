@@ -11,7 +11,7 @@ Please do not commit this to the Git repository!
 from pywikibot import family
 
 
-class Family(family.Family):  # noqa: D101
+class Family(family.Family):
     name = "w"
     langs = {
         "zh": "community.fandom.com",

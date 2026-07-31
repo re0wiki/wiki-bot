@@ -5,6 +5,13 @@
 
 import os
 import re
+import sys
+
+SUMMARY = (
+    sys.argv[1]
+    if len(sys.argv) > 1
+    else "重写：完整平文式表（补ヴ系/外来拗音）、ん同化、促音 tch、长音 macron 化"
+)
 
 os.environ.pop("PYTHONPATH", None)
 
@@ -23,9 +30,7 @@ assert site.user() == "IchiSanNi"
 p = pywikibot.Page(site, "Module:Kana2Romaji")
 if p.text.strip() != new_src.strip():
     p.text = new_src
-    p.save(
-        summary="重写：完整平文式表（补ヴ系/外来拗音）、ん同化、促音 tch、长音 macron 化"
-    )
+    p.save(summary=SUMMARY)
     print("已保存 Module:Kana2Romaji")
 else:
     print("Module:Kana2Romaji 已是最新，跳过保存")

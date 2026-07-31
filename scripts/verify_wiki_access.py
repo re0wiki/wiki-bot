@@ -4,9 +4,10 @@ Usage: PYTHONPATH= .venv/Scripts/python.exe scripts/verify_wiki_access.py
 Working dir: wiki-bot repo root.
 """
 
-import pywikibot
 import requests
 from pywikibot.login import BotPassword
+
+import pywikibot
 
 API = "https://rezero.fandom.com/zh/api.php"
 SANDBOX = "User:IchiSanNi/沙盒"
@@ -25,7 +26,7 @@ with open("user-password.py", encoding="utf-8") as f:
     for line in f:
         line = line.strip()
         if line.startswith("("):
-            entries.append(eval(line, {"BotPassword": BotPassword}))  # noqa: S307
+            entries.append(eval(line, {"BotPassword": BotPassword}))
 username, bp = entries[0]
 
 s = requests.Session()
@@ -60,6 +61,8 @@ r = s.get(
 ).json()
 content = r["query"]["pages"][0]["revisions"][0]["slots"]["main"]["content"]
 assert content, "sandbox returned empty content via raw API"
-print(f"[2] raw API: login {login_res['login']['result']}, sandbox {len(content)} chars")
+print(
+    f"[2] raw API: login {login_res['login']['result']}, sandbox {len(content)} chars"
+)
 
 print("ALL CHECKS PASSED")
