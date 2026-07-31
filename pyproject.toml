@@ -26,6 +26,7 @@ pywikibot = { path = "pywikibot", editable = true }
 [dependency-groups]
 dev = [
     "pywikibot",
+    "pytest>=8.0.0",
     "ruff>=0.15.1",
     "ty>=0.0.17",
 ]
