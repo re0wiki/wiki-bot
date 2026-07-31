@@ -5,7 +5,7 @@
 标题则一律归一到简体（wiki 标题惯例只认简体，前缀同理，见 AGENTS.md）。
 
 跳过：重定向页、产出模板调用的规则（{{...}}）、伪命名空间前缀会变化的、
-新标题含非法字符的、目标已存在的（需人工合并）。
+新标题含非法字符的、目标已存在且不是指回当前页的重定向的（需人工合并）。
 """
 
 import re
@@ -43,7 +43,12 @@ class MoveBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
         if ILLEGAL_TITLE_CHARS.search(new):
             pwb.warning(f"SKIP（新标题含非法字符）: {old} -> {new}")
             return
-        if pwb.Page(self.site, new).exists():
+        target = pwb.Page(self.site, new)
+        if target.exists() and not (
+            # 标准名只是指回当前页的重定向：直接移动覆盖，消除循环
+            target.isRedirectPage()
+            and target.getRedirectTarget() == page
+        ):
             pwb.warning(f"SKIP（目标已存在，需人工合并）: {old} -> {new}")
             return
         if pwb.config.simulate:
