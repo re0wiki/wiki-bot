@@ -1,27 +1,29 @@
 # Module（Lua）审查
 
 2026-07-30 对 Module 命名空间 43 个页面（15 个功能模块 + 28 个鼠色猫语录数据表）的全量审查。
-源码快照脚本 `scripts/dump_modules.py`（输出 `logs/modules/`），引用量与疑点验证 `scripts/verify_module_findings.py`。
+源码快照脚本 `scripts/dump_modules.py`（输出 `logs/modules/`），引用量与疑点验证 `scripts/oneoff/verify_module_findings.py`。
 
-**文档惯例**：Module 的 `/doc` 子页由 Scribunto 自动转置渲染在代码上方（与模板 `{{Documentation}}` 机制无关），所以 Lua 头注释无需写「文档见 /doc」之类的指针；模块文档直接写进 `/doc` 子页即可（先例 `Module:Kana2Romaji/doc`）。
+**文档惯例**：Module 的 `/doc` 子页由 Scribunto 自动转置渲染在代码上方（与模板 `{{Documentation}}` 机制无关），所以 Lua 头注释无需写「文档见 /doc」之类的指针；模块文档直接写进 `/doc` 子页即可（先例 `Module:Kana2Romaji/doc`）。2026-07-31 起全站 40 个模块均有 /doc：功能模块按 Kana2Romaji/doc 体例（导航模板首行 + `;` 定义列表，无对应 `Template:Tab/*` 的内部模块省略导航行），27 个语录数据子表统一一行说明 + 指回主模块文档。**写 /doc 的坑**：正文里的 `-{...}-` 与 `[[en:...]]` 示例必须包 `<nowiki>`（否则被 LanguageConverter 吃掉 / 变成真跨语言链接），分类提及必须前导冒号（否则 doc 页自己入分类）；`Dev:` 只是 Scribunto `require` 的前缀、**不是链接前缀**——链 dev wiki 模块要写 `[[w:c:dev:Module:Arguments|Dev:Arguments]]`。
 
-**渲染对比的坑**：PortableInfobox 的 tab 元素 id（`pi-tab-<哈希>-N`/`pi-tabpanel-<哈希>-N`）每次 parse 随机生成——前后两次 parse 的 HTML 逐字节比较必然不等，须先归一化（`scripts/deploy_module_cleanup.py` 的 `parse_html`）。否则会像 2026-07-30 这批一样把全部对照误判为「渲染有差异」。
+**渲染对比的坑**：PortableInfobox 的 tab 元素 id（`pi-tab-<哈希>-N`/`pi-tabpanel-<哈希>-N`）每次 parse 随机生成——前后两次 parse 的 HTML 逐字节比较必然不等，须先归一化（`scripts/oneoff/deploy_module_cleanup.py` 的 `parse_html`）。否则会像 2026-07-30 这批一样把全部对照误判为「渲染有差异」。
 
-## 引用量总览（embeddedin，全命名空间）
+## 引用量总览（embeddedin，全命名空间，2026-07-31 复核）
 
 | Module | 引用 | 说明 |
 |---|---|---|
-| Init / AutoTab / Title / Utils | 2210 | 每篇文章经 `{{Init}}` 间接引用 |
-| Interwiki | 2200 | 信息框英文名/英译 |
-| Tab | 1143 | 新 tab 系统（`{{Tab}}` → Tab/* 派生页） |
+| Init / Title | 2209 | 每篇文章经 `{{Init}}` 间接引用 |
+| Tab | 2404 | Init 依赖 + `{{Tab}}` 直接使用 |
+| Interwiki | 2198 | 信息框英文名/英译 |
 | Infobox book | 719 | |
-| Character image | 339 | Infobox character 图库 |
-| Kana2Romaji | 274 | |
-| 鼠色猫语录 | 209 | |
-| Auto ruby | 151 | 经 `{{R}}` |
+| Character image | 337 | Infobox character 图库 |
+| Kana2Romaji | 260 | |
+| 鼠色猫语录 | 207 | |
+| Auto ruby | 149 | 经 `{{R}}` |
 | Bili | 24 | 经 `{{BV}}` |
-| NoteTA / WikitextLC | 2 | 维基百科移植件 |
-| **Set** | **0** | **孤儿模块** |
+| NoteTA / WikitextLC | 1 | 仅 `Template:NoteTA`（该模板本身 2 引用） |
+| Sandbox | 0 | 空沙盒模块（2026-07-30 后新建），按沙盒惯例保留 |
+
+**引用排查的坑（2026-07-31 复核确认）**：CirrusSearch 的 insource 在本站**对模板/主空间源码同样返回空**（`insource:"#invoke:Init"` 在 ns 0|10|828 搜出 0 条，而 `Template:Init` 明明写着 `{{#invoke:Init|main}}`）——不只是 Module 空间。消费者排查唯一可靠路径：`scripts/dump_modules.py` 本地快照 grep（模块间 require）+ 模板空间全量 dump grep（`#invoke:` 调用面）。快照脚本已改为先清空 `logs/modules/` 再拉取，避免已删模块的残留文件误导 grep。
 
 ## 确认的问题
 
@@ -50,10 +52,24 @@
 
 ## 处置记录
 
-- **AutoTab 已并入 Init**（2026-07-30，用户指示）：AutoTab 唯一消费者是 Init（全站 grep 核实；注意 **CirrusSearch 的 insource 在本站不索引 Module 源码，返回空是假象**，消费者排查要靠本地快照 grep + 模板空间 API grep）。tab 探测逻辑（base + 9 个候选子页的 title.exists）内联进 Init，拼接改调 `Module:Tab._tab`（链接文本显式给出：主页取冒号后部分、子页取后缀名），废弃 lcp/lcs 文本裁剪与「大精灵帕克的喵喵好日子」特判（那是手工多页面场景的产物，Init 的 base+后缀模式用不到）；Module:AutoTab 与 /doc 已删，`Template:Init/doc` 描述与 `Template:Tab/Tab` 导航同步更新。部署脚本 `scripts/deploy_init_merge.py`（幂等）。验证：菜月·昴、爱蜜莉雅、罗兹瓦尔、小说:1卷、菜月·昴/猫语 合并前后渲染等价（真值法：临时恢复旧 Init+AutoTab 取基线再恢复）。**坑**：parse 输出中裸写 `http://rezero.fandom.com/...` 的外链会被规范化成 https，且同一页面两次 parse 间可能翻转——与模块版本无关的环境噪声，渲染对比时需归一化或人工甄别（菜月·昴的 QUOTE voice 链接即踩此坑）。
+- **AutoTab 已并入 Init**（2026-07-30，用户指示）：AutoTab 唯一消费者是 Init（全站 grep 核实；注意 **CirrusSearch 的 insource 在本站不索引 Module 源码，返回空是假象**，消费者排查要靠本地快照 grep + 模板空间 API grep）。tab 探测逻辑（base + 9 个候选子页的 title.exists）内联进 Init，拼接改调 `Module:Tab._tab`（链接文本显式给出：主页取冒号后部分、子页取后缀名），废弃 lcp/lcs 文本裁剪与「大精灵帕克的喵喵好日子」特判（那是手工多页面场景的产物，Init 的 base+后缀模式用不到）；Module:AutoTab 与 /doc 已删，`Template:Init/doc` 描述与 `Template:Tab/Tab` 导航同步更新。部署脚本 `scripts/oneoff/deploy_init_merge.py`（幂等）。验证：菜月·昴、爱蜜莉雅、罗兹瓦尔、小说:1卷、菜月·昴/猫语 合并前后渲染等价（真值法：临时恢复旧 Init+AutoTab 取基线再恢复）。**坑**：parse 输出中裸写 `http://rezero.fandom.com/...` 的外链会被规范化成 https，且同一页面两次 parse 间可能翻转——与模块版本无关的环境噪声，渲染对比时需归一化或人工甄别（菜月·昴的 QUOTE voice 链接即踩此坑）。
 
-- **卫生修复批次已完成**（2026-07-30，用户逐项批准）：① 调试日志全删（Title/AutoTab/Auto ruby/Infobox book 的 mw.log/mw.logObject，以后出 bug 按需再加）；② Module:Set + /doc 已删（孤儿）；③ AutoTab 评估结论保留——Scribunto 无子页列举 API，逐个 `title.exists` 探测（有缓存）是唯一手段，属必要开销，继续作为 Init 依赖，头注释已改写说明；④ Infobox book 卫生修复（函数 local 化、`Module:Title` 大小写、语言表改有序数组 + 日期并列按语言顺序定序、`local string` 遮蔽移除）；⑤ NoteTA 简化（CGroup 死路径移除——前置断言 Module:CGroup 与 Template:CGroup 均为 0 页、函数 local 化、移植残留注释清理）；⑥ 鼠色猫语录 4 个空数据子模块**保留占位**（用户：以后可能补）；⑦ Utils 的 ChatGPT 问答实录注释精简为两行；⑧ Auto ruby 参数 nil 防御。部署脚本 `scripts/deploy_module_cleanup.py`（幂等，前置断言 + 部署前后渲染对比）；验证：角色:菜月·昴、小说:1卷、ReZero Wiki:攻略指南、Template:NoteTA、R 调用片段部署前后渲染全等价（PortableInfobox tab id 归一化后），ALL CHECKS PASSED。
+- **卫生修复批次已完成**（2026-07-30，用户逐项批准）：① 调试日志全删（Title/AutoTab/Auto ruby/Infobox book 的 mw.log/mw.logObject，以后出 bug 按需再加）；② Module:Set + /doc 已删（孤儿）；③ AutoTab 评估结论保留——Scribunto 无子页列举 API，逐个 `title.exists` 探测（有缓存）是唯一手段，属必要开销，继续作为 Init 依赖，头注释已改写说明；④ Infobox book 卫生修复（函数 local 化、`Module:Title` 大小写、语言表改有序数组 + 日期并列按语言顺序定序、`local string` 遮蔽移除）；⑤ NoteTA 简化（CGroup 死路径移除——前置断言 Module:CGroup 与 Template:CGroup 均为 0 页、函数 local 化、移植残留注释清理）；⑥ 鼠色猫语录 4 个空数据子模块**保留占位**（用户：以后可能补）；⑦ Utils 的 ChatGPT 问答实录注释精简为两行；⑧ Auto ruby 参数 nil 防御。部署脚本 `scripts/oneoff/deploy_module_cleanup.py`（幂等，前置断言 + 部署前后渲染对比）；验证：角色:菜月·昴、小说:1卷、ReZero Wiki:攻略指南、Template:NoteTA、R 调用片段部署前后渲染全等价（PortableInfobox tab id 归一化后），ALL CHECKS PASSED。
 
-- **Kana2Romaji 已重写**（2026-07-30，用户指示）：旧实现（顺序 gsub 大表）废弃，重写为音拍 tokenize 的完整平文式——补全ヴ系（ヴァ/ヴィ/ヴ/ヴェ/ヴォ，修掉 `ヴィルヘルム→ヴィruherumu` 漏假名与首字母不大写两个 bug）与外来拗音（ファ/ティ/チェ/ツァ等）、ん 同化（b/p/m 前→m、元音/y 前→n'）、促音 tch、长音 macron 直接作用于前一元音（含 ē，旧「ee→ei」约定废除）、`num` 全局泄漏修复。接口与「无假名→空串」契约不变（`p._Kana2Romaji(s)` + `p.Kana2Romaji(frame)` 兼容 `kana=` 与位置参数 1）。部署+回归脚本 `scripts/deploy_kana2romaji.py`（幂等：内容相同则跳过保存；19 例测试矩阵全过），`Template:Kana2Romaji/doc` 规则描述已同步更新，`角色:菜月·昴` 信息框罗马字渲染抽查通过。模块文档（接口/契约/转换规则/示例）随后按惯例迁入 `Module:Kana2Romaji/doc` 子页（首行保留 `{{Tab/Ruby}}` 导航），Lua 头注释只留标题行（/doc 自动渲染在代码上方，无需指针注释——用户指正）。行为变化点：えー/エー 现在得 ē（旧为 ei）、っち 现在得 tchi（旧为 cchi）、んb/p/m 同化为 m、・（U+30FB）现在也转空格。
+- **Kana2Romaji 已重写**（2026-07-30，用户指示）：旧实现（顺序 gsub 大表）废弃，重写为音拍 tokenize 的完整平文式——补全ヴ系（ヴァ/ヴィ/ヴ/ヴェ/ヴォ，修掉 `ヴィルヘルム→ヴィruherumu` 漏假名与首字母不大写两个 bug）与外来拗音（ファ/ティ/チェ/ツァ等）、ん 同化（b/p/m 前→m、元音/y 前→n'）、促音 tch、长音 macron 直接作用于前一元音（含 ē，旧「ee→ei」约定废除）、`num` 全局泄漏修复。接口与「无假名→空串」契约不变（`p._Kana2Romaji(s)` + `p.Kana2Romaji(frame)` 兼容 `kana=` 与位置参数 1）。部署+回归脚本 `scripts/oneoff/deploy_kana2romaji.py`（幂等：内容相同则跳过保存；19 例测试矩阵全过），`Template:Kana2Romaji/doc` 规则描述已同步更新，`角色:菜月·昴` 信息框罗马字渲染抽查通过。模块文档（接口/契约/转换规则/示例）随后按惯例迁入 `Module:Kana2Romaji/doc` 子页（首行保留 `{{Tab/Ruby}}` 导航），Lua 头注释只留标题行（/doc 自动渲染在代码上方，无需指针注释——用户指正）。行为变化点：えー/エー 现在得 ē（旧为 ei）、っち 现在得 tchi（旧为 cchi）、んb/p/m 同化为 m、・（U+30FB）现在也转空格。
 
 - **Kana2Romaji 的 `メィ→mei`/`リィ→ri` 两条特判是必需项，勿删**（2026-07-30 考证）：它们服务 `角色:梅莉·波多尔德` 的 `name_ja_kanji = メィリィ·ポートルート`——メィリィ 是作者官方表记（なろう 6-46 节标题同款），小ぃ 不在规范拗音表内，删掉会以 `Meィriィ` 形式漏假名。输出 `Meiri` 与英文站信息框 Romaji 栏手写值一致（官方英文名是 Meili，栏位语义不同，不改）。历史：2021-03-06 建模块，次日（108839/108867）分两次针对该名补上这两条；初版表底子应抄自站外平文式表，后续フェ/フィ/フォ/ディ/ファ/ォ 等均是按与英文站手写罗马字的差异逐条打的补丁。
+
+## 2026-07-31 复审
+
+对当时 41 个模块（13 功能 + 28 语录数据表）全量重查。上次处置无回潮（无调试日志残留、AutoTab/Set 无复活、前缀表与 `user-fixes.py` 的 `PSEUDO_PREFIXES` 核对一致）。复审发现的 5 项卫生问题**当日已全部处置完毕**（见处置记录），另留 1 条双维护点备忘：
+
+- **双维护点备忘**：`Module:Title` 的 `prefixes` 与 `user-fixes.py` 的 `PSEUDO_PREFIXES` 内容相同、两处手工维护（2026-07-31 核对同步）——改前缀时两边都要动。
+
+**渲染对比的坑（本轮新增）**：`action=parse` 取的是**解析缓存**，「编辑前快照」可能是数天前的陈旧渲染——deploy 首轮对比 5 项 FAIL 全是缓存噪声（连续两次 parse 完全一致可证）。真值法照旧有效：恢复旧版模块 + purge 后取的基线才是干净的，4 项实际等价、1 项（NoteTA 悬浮文本繁转简）为预期差异。后续部署脚本已在对照页加 purge；做渲染对比时务必 purge 或走真值法，否则 OK/FAIL 都可能是缓存假象。
+
+## 处置记录（续）
+
+- **卫生修复第二轮已完成**（2026-07-31，用户批准复审 5 项全做）：① Init 的 `display_title`/`category`/`tab` 全局函数 local 化；② 鼠色猫语录的 `any_in`/`get_src_html`/`get_content_html` local 化 + 删恒真死 assert 与噪声注释；③ **Module:Utils 与 /doc 已删**——lcp/lcs/split 无消费者（模块快照 grep + 模板空间全量 dump 双重验证），唯一的活函数 `a_in_b` 内联进 Title；④ NoteTA indicator id 从 `code:len()`（等长碰撞）改为调用序号，溢出分类名与 File 悬浮文本繁转简（实测 LanguageConverter 不转换 img 的 alt/title 属性，繁体原样输出，此修正确有必要）；⑤ Bili `sub(id, 0, 0)` → `sub(id, 1, 1)`。部署脚本 `scripts/oneoff/deploy_module_hygiene2.py`（幂等，先存 Title 再删 Utils），诊断/真值法脚本 `scripts/oneoff/diagnose_module_hygiene2_diff.py`。验证：角色:菜月·昴、菜月·昴/关系、小说:1卷、术语:异世界文字、动画:第12集/猫语、鼠色猫语录/all 渲染全等价，ReZero Wiki:攻略指南仅 NoteTA 悬浮文本的预期繁转简差异。处置后全站 40 个模块（12 功能 + 28 数据表）。
+
+- **全站模块 /doc 文档补全**（2026-07-31，用户指示）：39 个 /doc 子页写入（NoteTA/doc、WikitextLC/doc 新建，其余在导航占位基础上补正文；Kana2Romaji/doc 此前已有）。功能模块按 Kana2Romaji/doc 体例写说明/接口/行为细节；27 个语录数据子表统一一行说明 + 指回主模块文档（4 个空表标注占位）；Title/doc 标注与 user-fixes.py PSEUDO_PREFIXES 的双维护点。部署脚本 `scripts/oneoff/deploy_module_docs.py`（幂等，bot flag）。验证：14 个模块页 parse 抽查文档均渲染在代码上方、无 Lua/模板错误。

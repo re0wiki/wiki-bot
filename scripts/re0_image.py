@@ -1,6 +1,7 @@
 from os import path
 from tempfile import TemporaryDirectory
 
+import pywikibot.config
 from tqdm import tqdm
 
 import pywikibot as pwb
@@ -19,7 +20,11 @@ def all_images(code: str) -> dict[str, pwb.FilePage]:
 def calc_diff(
     en_images: dict[str, pwb.FilePage], zh_images: dict[str, pwb.FilePage]
 ) -> list[pwb.FilePage]:
-    """返回 en 的图片中，zh 缺失或过时的部分。"""
+    """返回 en 的图片中，zh 缺失或过时的部分。
+
+    只增不删：en 侧删除/改名的图片不会在 zh 侧清理——残留无害，删除还要
+    同步更新引用，不值得（2026-07-31 已决策维持，见 docs/todo.md）。
+    """
     return [
         image
         for title, image in en_images.items()
@@ -73,9 +78,22 @@ def upload_all(images: list[pwb.FilePage], tmp_dir: str):
 
 
 def main() -> None:
+    # 必须消费 -simulate/-always 等全局参数：config.simulate 只在 handle_args
+    # 里设置，不调用则 main.py -s 干跑对本脚本无效，会真实上传。
+    pwb.handle_args()
     en_images = all_images("en")
     zh_images = all_images("zh")
     diff = calc_diff(en_images, zh_images)
+    if pwb.config.simulate:
+        # 干跑连下载都跳过（下载同样打 en 站），只报告差量
+        pwb.logging.info(
+            "SIMULATE: %d images to sync, skip download/upload.", len(diff)
+        )
+        for image in diff[:20]:
+            pwb.logging.info("SIMULATE: would sync %s", image.title())
+        if len(diff) > 20:
+            pwb.logging.info("SIMULATE: ... and %d more.", len(diff) - 20)
+        return
     with TemporaryDirectory() as tmp_dir:
         download_all(diff, tmp_dir)
         upload_all(diff, tmp_dir)

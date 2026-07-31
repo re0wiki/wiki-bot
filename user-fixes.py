@@ -5,6 +5,25 @@ from functools import partial
 
 from opencc import OpenCC
 
+# 伪命名空间登记前缀（唯一权威清单）：主空间文章页靠标题前缀分类，
+# Module:Init 按这些简体前缀自动分类（繁体前缀不入分类）。
+# AGENTS.md「伪命名空间」节的清单以此为准；审计工具经 pywikibot.fixes 取本常量。
+PSEUDO_PREFIXES = [
+    "角色",
+    "术语",
+    "小说",
+    "漫画",
+    "动画",
+    "游戏",
+    "音乐",
+    "设定集、画集",
+    "声优",
+    "制作人员",
+    "存档",
+]
+
+# generator_base/generator_more 是 jobs/starts.py 中 ns_base/ns_more 的副本：
+# 本文件由 pywikibot/fixes.py exec（无法 import 仓库包），两处事实源需手工同步。
 generator_base = [
     "-start::!",
     "-start:project:!",
@@ -78,8 +97,8 @@ user_fixes["misc"] = base | {
 
 
 # region date
-def match_to_yyyymmdd(mouth: int, match: re.Match) -> str:
-    return f"{match.group(2)}-{str(mouth).zfill(2)}-{match.group(1).zfill(2)}"
+def match_to_yyyymmdd(month: int, match: re.Match) -> str:
+    return f"{match.group(2)}-{str(month).zfill(2)}-{match.group(1).zfill(2)}"
 
 
 user_fixes["date"] = base | {
