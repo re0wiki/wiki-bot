@@ -31,6 +31,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `jobs/starts.py` | namespace → `-start:ns:!` 生成器参数。`ns_base`=主/project/template/category，`ns_more` 再加 module/mediawiki |
 | `user-config.py` | pywikibot 配置：family=re0, mylang=zh, 账号 IchiSanNi（12 个语言站同账号） |
 | `user-fixes.py` | **核心资产**。自定义 fix 集：misc/date/anti-ve/para/gallery/heading/**translation**/HTML/syntax 等。`translation` 用「相似字符 → 正则」机制（`f()`/`p2o()`/`p2n()`）把几百个别名归一到标准译名 |
+| `scripts/` | 常驻/可复用脚本：5 个 `re0_*` 任务脚本（见下行）、`recent_changes_watchdog.py`、诊断（`verify_wiki_access.py`/`test_pwb_throttle.py`）、429 探测 `probe_*`（见 `docs/cloudflare-429.md`）、审计工具（`dump_modules.py`/`template_inventory.py`/`template_complexity.py`/`recheck_template_usage.py`/`scan_title_prefixes.py`）、`sync_jobs_status_page.py`。`scripts/oneoff/` 是已完成任务的一次性脚本归档（pwb.py 按名字找不到，重跑要传路径）。docs 里的 `logs/xxx.py` 引用是历史出处——`logs/` 整体 gitignore，不在仓库内 |
 | `scripts/re0_*.py` | 5 个自定义脚本：gallery（用 en 站图库覆盖 zh）、image（图片差量同步）、nav（编译 Wiki-navigation）、redirect（给 `前缀:词干` 页建裸词干重定向）、move（标题命中 translation 规则的页面自动移到简体标准名，留重定向；与正文替换的差异是标题一律归一简体、不保留繁体；目标已存在时跳过待人工合并） |
 | `scripts/verify_wiki_access.py` | 只读诊断：验证 pywikibot 库与裸 API 两条 wiki 通路和凭据是否有效，期望输出 `ALL CHECKS PASSED` |
 | `scripts/recent_changes_watchdog.py` | 最近改动巡查 watchdog：rcid 水位线去重（状态 `.cache/rc_watchdog.json`，已 gitignore），排除 IchiSanNi 全部编辑（含无 flag 的手动编辑，修改时已自查）与其他账号的 bot 标记编辑。输出三段：NEW_CHANGES 逐条清单、MERGED_DIFFS（同用户同页**相邻**连续编辑合并后的 diff 增删行，⟦⟧/〔〕 标行内增删，超长截断标注）、RED_LINKS（新增内容红链实测，已跟重定向）。取数/解析固定由脚本完成（曾由 LLM 现写代码，踩过手工分组漏项、td class 多值匹配抓空、stdout 截断三个坑）；水位线在 diff 全部拉取成功后才推进，失败非零退出下轮重试，不静默漏审。区间与触发时间解耦：不设时间窗口，翻页拉取至水位线即停——漏触发（任意停机时长）、手动触发、改间隔均安全，改动超单页 500 条也不漏。由 Hermes cron job「wiki 最近改动自动巡查」每天 10:00 调用（profile `scripts/` 下同名片是 wrapper），LLM 只做判断与分流，发现问题发 Discord `#wiki编辑事务【qq互联】`；但 NiSanIchi（维护者本人的个人账号，与 bot 账号 IchiSanNi 勿混淆）的改动发现问题时只在 cron 回复中说明，不发 Discord。报告范围：机翻覆盖/语法破坏/恶意内容（译名不巡查——登记别名由 translation 任务自动归一） |
@@ -44,11 +45,11 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 
 ## wiki 侧结构（zh 站）
 
-- **伪命名空间**：没有注册自定义 namespace，文章页靠标题前缀分类（全在主空间）：`角色:`、`术语:`、`小说:`、`漫画:`、`动画:`、`游戏:`、`音乐:`、`设定集、画集:`、`声优:`、`制作人员:`、`存档:`。前缀只认简体：Module:Init 按简体前缀自动分类，繁体前缀不会入分类；繁体前缀页（`小說:`/`術語:`）已于 2026-07-31 清零（当时仅剩 4 个零链入重定向，已删除，`logs/delete_traditional_prefix_redirects.py`）。`特典:` 是唯一的未登记前缀（仅 `特典:劇場前惡意` 一页，待整理）；英文前缀页（`Re:`、`Sword Demon Love Story:` 等）是待整理的搬运残留。改前缀 = 移动页面，走 bot 而非手动。前缀审计可跑 `logs/scan_title_prefixes.py`。
+- **伪命名空间**：没有注册自定义 namespace，文章页靠标题前缀分类（全在主空间）：`角色:`、`术语:`、`小说:`、`漫画:`、`动画:`、`游戏:`、`音乐:`、`设定集、画集:`、`声优:`、`制作人员:`、`存档:`。前缀只认简体：Module:Init 按简体前缀自动分类，繁体前缀不会入分类；繁体前缀页（`小說:`/`術語:`）已于 2026-07-31 清零（当时仅剩 4 个零链入重定向，已删除，`logs/delete_traditional_prefix_redirects.py`）。`特典:` 是唯一的未登记前缀（仅 `特典:劇場前惡意` 一页，待整理）；英文前缀页（`Re:`、`Sword Demon Love Story:` 等）是待整理的搬运残留。改前缀 = 移动页面，走 bot 而非手动。前缀审计可跑 `scripts/scan_title_prefixes.py`。
 - **页首模板**：`{{Init}}`（`{{#invoke:Init|main}}`，Tab 系统初始化，几乎每篇文章都有）+ `{{To do}}`（归入 `Category:待修撰`，大部分文章常态携带，不是积压事故）。新搬运页另有 `[[Category:新搬运待整理]]`（见 fork 定制节），人工整理后摘除——该分类是真实待办队列。页首顺序固定：`{{Init}}` → `{{To do}}` → `{{Tab/...}}`（部分页才有）→ 其他内容。
 - **模板体系**：`Tab/*` 子页族（每部作品一套页面顶部标签，配 `{{Tab}}` 使用）；信息框统一 `Infobox X` 命名（X 小写英文）：book/character/anime/music/bd/game/seiyu/staff/event/battle 共 10 个（2026-07-29 由 Anime/Seiyu/Music/Re:Zero BD/Staff/Re:Zero Game 改名而来，en 同名的 4 个旧名由 jobs 模板替换接管；未用的 album/episode/item/location/quest 与母版 `Infobox` 已于 2026-07-28 删除，见 `docs/templates.md` 待办 2）；注音族 `Ruby-zh-ja`（中日双语 ruby）/`R`/`Ruby-ja`（零引用的 Ruby-zh-b/zh-p 与 R/ja 已于 2026-07-28 删除）；`QUOTE`（页首引语 + voice 音频）。全站模板索引在 wiki 的 `ReZero Wiki:模板`，模板信息分层（wiki/仓库各存什么）、盘点数据与维护待办见 `docs/templates.md`。
 - **导航**：`MediaWiki:Wiki-navigation` 由 `Project:Wiki-navigation` 经 `scripts/re0_nav.py` 编译生成，勿手动编辑。
-- **状态页**：wiki 上 `User:IchiSanNi/jobs` 与 `jobs/jobs.py` 的任务一一对应。
+- **状态页**：wiki 上 `User:IchiSanNi/jobs` 手工维护，与 `jobs/jobs.py` 的任务对应；`scripts/sync_jobs_status_page.py` 只同步 template 替换任务那一行，其余改动要手动改 wiki 页。
 - 译名表与译名工作流见下节；`<div class="as-is">` 保护机制见 fork 定制节。
 
 ## 读写 wiki
