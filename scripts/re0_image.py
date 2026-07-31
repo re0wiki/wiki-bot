@@ -1,6 +1,7 @@
 from os import path
 from tempfile import TemporaryDirectory
 
+import pywikibot.config
 from tqdm import tqdm
 
 import pywikibot as pwb
@@ -67,12 +68,18 @@ def download_all(images: list[pwb.FilePage], tmp_dir: str):
 
 def upload_all(images: list[pwb.FilePage], tmp_dir: str):
     """从临时目录上传所有图片文件到 zh。"""
+    if pwb.config.simulate:
+        pwb.logging.info("SIMULATE: skip uploading %d images.", len(images))
+        return
     pwb.Site("zh", "re0").login()
     for image in tqdm(images, "Uploading images"):
         upload_one(image, tmp_dir)
 
 
 def main() -> None:
+    # 必须消费 -simulate/-always 等全局参数：config.simulate 只在 handle_args
+    # 里设置，不调用则 main.py -s 干跑对本脚本无效，会真实上传。
+    pwb.handle_args()
     en_images = all_images("en")
     zh_images = all_images("zh")
     diff = calc_diff(en_images, zh_images)

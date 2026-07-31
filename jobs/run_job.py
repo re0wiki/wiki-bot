@@ -1,12 +1,17 @@
 import logging
+import sys
 from subprocess import CalledProcessError, run
 
 logger = logging.getLogger(__name__)
 
 
-def run_job(job: list[str], simulate=False, capture_output=False) -> str | None:
-    # Get the command line.
-    cmd = ["python", "pywikibot/pwb.py", *job]
+def build_cmd(job: list[str], simulate: bool = False) -> list[str]:
+    """拼 pwb.py 命令行。
+
+    解释器用 sys.executable 而非裸 "python"：后者从 PATH 解析，在 venv 未
+    激活的 shell 里可能是没有项目依赖（opencc 等）的其他 Python 版本。
+    """
+    cmd = [sys.executable, "pywikibot/pwb.py", *job]
     if simulate:
         cmd.append("-simulate")
     elif job[0] == "interwiki":
@@ -14,6 +19,12 @@ def run_job(job: list[str], simulate=False, capture_output=False) -> str | None:
         cmd.append("-force")
     elif job[0] != "transferbot":
         cmd.append("-always")
+    return cmd
+
+
+def run_job(job: list[str], simulate=False, capture_output=False) -> str | None:
+    # Get the command line.
+    cmd = build_cmd(job, simulate)
 
     # Run the job.
     logger.info("=" * 16 + "start" + "=" * 16)
