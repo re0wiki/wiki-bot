@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """async 并发验证：全速读 + 后台异步沙盒写同时进行，观察是否触发 429。
 
 复现 cosmetic_changes -async 的最坏工况：

@@ -71,7 +71,11 @@ def _get(params: dict, retries: int = 3) -> dict:
             if e.code in (429, 500, 502, 503, 504) and attempt < retries - 1:
                 retry_after = e.headers.get("Retry-After") if e.headers else None
                 try:
-                    delay = float(retry_after)
+                    delay = (
+                        float(retry_after)
+                        if retry_after is not None
+                        else 5 * (attempt + 1)
+                    )
                 except TypeError, ValueError:
                     delay = 5 * (attempt + 1)
                 time.sleep(
@@ -233,12 +237,12 @@ def extract_link_targets(added_lines: list[str]) -> set[str]:
 def find_missing_titles(titles: set[str]) -> set[str]:
     """批量核查标题是否存在（跟重定向）。返回不存在的（规范化后）标题集合。"""
     missing: set[str] = set()
-    titles = sorted(titles)
-    for i in range(0, len(titles), 50):
+    ordered = sorted(titles)
+    for i in range(0, len(ordered), 50):
         data = _get(
             {
                 "action": "query",
-                "titles": "|".join(titles[i : i + 50]),
+                "titles": "|".join(ordered[i : i + 50]),
                 "redirects": "1",
                 "format": "json",
                 "formatversion": "2",

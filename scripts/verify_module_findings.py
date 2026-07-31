@@ -26,10 +26,13 @@ req = api.Request(
     prop="text",
 )
 html = req.submit()["parse"]["text"]["*"]
+m1 = re.search(r'data-\w+="[^"]*"', html)
+m2 = re.search(r"data-bv|data-av", html)
+assert m1 and m2  # 验证脚本：解析结果必须含 data-* 属性
 print(
-    re.search(r'data-\w+="[^"]*"', html).group(0),
+    m1.group(0),
     "|",
-    re.search(r"data-bv|data-av", html).group(0),
+    m2.group(0),
 )
 
 print("\n===== 2. 微型数据子模块 =====")

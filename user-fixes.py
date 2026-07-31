@@ -11,7 +11,7 @@ generator_base = [
     "-start:template:!",
     "-start:category:!",
 ]
-generator_more = generator_base + ["-start:module:! ", "-start:mediawiki:!"]
+generator_more = generator_base + ["-start:module:!", "-start:mediawiki:!"]
 
 base: dict[str, bool | dict] = {
     "regex": True,
@@ -588,9 +588,11 @@ translation_manual = [  # 手动添加的替换组
     (f"{f('空')}{f('斯')}{f('图')}{f('卢')}", "柯司兹尔"),
     (f"其{f('他它她')}", "其他"),
     (
-        "(?<!禁书与谜之)(?<!术语:)(?<!人工)(?<!自然)(?<!契约)(?<![大邪微准])"
-        f"{f('精')}{f('灵')}"
-        "(?!骑士|[术使])",
+        (
+            "(?<!禁书与谜之)(?<!术语:)(?<!人工)(?<!自然)(?<!契约)(?<![大邪微准])"
+            f"{f('精')}{f('灵')}"
+            "(?!骑士|[术使])"
+        ),
         "{{Seirei or Elf}}",
     ),
     (f"{f('妖')}{f('精')}", "{{Yousei or Elf}}"),
@@ -661,4 +663,4 @@ _ = [  # 特判太麻烦的，不处理
 
 fixes: dict
 # noinspection PyUnboundLocalVariable
-fixes.update(user_fixes)
+fixes.update(user_fixes)  # ty: ignore[unresolved-reference]  # fixes 由 pywikibot/fixes.py exec 本文件时注入

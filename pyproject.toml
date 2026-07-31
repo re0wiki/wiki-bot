@@ -10,12 +10,25 @@ dependencies = [
 ]
 
 [tool.ruff]
-extend-exclude = ['pywikibot']
+# *.md：docs 内嵌代码块的注释对齐是手工排版的，不让 formatter 动。
+extend-exclude = ['pywikibot', 'logs', '*.md']
 
-# pywikibot 以 editable 方式从 submodule 安装（PEP 660 finder），
-# ty 无法静态解析该 finder，需显式把 submodule 根目录加入搜索路径。
+[tool.ruff.lint.per-file-ignores]
+# user-config.py 的名字由 pywikibot 注入；user-fixes.py 的 fixes 由
+# pywikibot/fixes.py exec 本文件时注入（见其文件末尾 _load_file）。
+"user-config.py" = ["F821"]
+"user-fixes.py" = ["F821"]
+# langs 等类属性字典是 pywikibot family 文件的既定写法。
+"families/*.py" = ["RUF012"]
+
+# ty 无法静态解析 PEP 660 editable finder，需显式把 submodule 根目录加入搜索路径
+# （仅影响 import 解析）。exclude 控制检查范围：pywikibot 是上游代码，
+# logs/ 是本地一次性脚本（已 gitignore），两者都不检查。
 [tool.ty.environment]
-extra-paths = ["./pywikibot"]
+extra-paths = ["./pywikibot", "./tests"]
+
+[tool.ty.src]
+exclude = ["pywikibot", "logs"]
 
 [tool.uv]
 default-groups = "all"

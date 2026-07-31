@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """读速率探测：匿名 GET list=allpages，逐级加快间隔，遇 429 即停。
 
 不触发 429 的间隔就是 minthrottle 的候选值。

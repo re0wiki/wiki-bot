@@ -10,8 +10,17 @@
 
 import re
 
+import pywikibot.config
 from pywikibot.exceptions import Error as PwbError
-from pywikibot.fixes import p2n, p2o, translation_manual, translation_names
+
+# translation_* / p2o / p2n 定义在 user-fixes.py，由 pywikibot/fixes.py 末尾
+# exec 进自己的 globals，静态检查不可见但运行时可用。
+from pywikibot.fixes import (
+    p2n,  # ty: ignore[unresolved-import]
+    p2o,  # ty: ignore[unresolved-import]
+    translation_manual,  # ty: ignore[unresolved-import]
+    translation_names,  # ty: ignore[unresolved-import]
+)
 from pywikibot.pagegenerators import GeneratorFactory
 
 import pywikibot as pwb
@@ -46,8 +55,7 @@ class MoveBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
         target = pwb.Page(self.site, new)
         if target.exists() and not (
             # 标准名只是指回当前页的重定向：直接移动覆盖，消除循环
-            target.isRedirectPage()
-            and target.getRedirectTarget() == page
+            target.isRedirectPage() and target.getRedirectTarget() == page
         ):
             pwb.warning(f"SKIP（目标已存在，需人工合并）: {old} -> {new}")
             return

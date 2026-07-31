@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """写速率探测：裸 API 登录后在沙盒连续小编辑，逐级加快间隔，遇 429 即停。
 
 编辑目标仅限 zh 站沙盒；每次编辑追加一行时间戳，可整页回退。
@@ -22,7 +21,7 @@ with open("user-password.py", encoding="utf-8") as f:
     for line in f:
         line = line.strip()
         if line.startswith("("):
-            entries.append(eval(line, {"BotPassword": BotPassword}))  # noqa: S307
+            entries.append(eval(line, {"BotPassword": BotPassword}))
 username, bp = entries[0]
 
 s = requests.Session()

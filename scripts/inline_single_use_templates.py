@@ -64,6 +64,7 @@ if re.search(r"\{\{USERNAME\|", p.text):
     before = norm(render(title))
     mw_body = transclude_body(tpl("MW").text).rstrip("\n")
     m = re.search(r"\{\{USERNAME\|([^{}]*)\}\}", p.text)
+    assert m  # 上方 if 已确认存在 {{USERNAME| 调用
     span = mw_body.replace("{{{1}}}", "wgUserName").replace("{{{2}}}", m.group(1))
     p.text = p.text.replace(m.group(0), span)
     p.save(summary="内联 Template:USERNAME/MW（唯一使用页）")

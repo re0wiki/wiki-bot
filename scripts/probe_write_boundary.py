@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """写速率边界探测：沙盒连续小编辑逐级加快直到触发 429。
 
 用户已确认：bot 未运行，触发限速可接受。编辑仅限 zh 站沙盒，可整页回退。
@@ -21,7 +20,7 @@ with open("user-password.py", encoding="utf-8") as f:
     for line in f:
         line = line.strip()
         if line.startswith("("):
-            entries.append(eval(line, {"BotPassword": BotPassword}))  # noqa: S307
+            entries.append(eval(line, {"BotPassword": BotPassword}))
 username, bp = entries[0]
 
 s = requests.Session()

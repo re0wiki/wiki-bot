@@ -6,6 +6,7 @@
 import json
 import os
 import re
+from typing import Any
 
 os.environ.pop("PYTHONPATH", None)
 
@@ -29,7 +30,7 @@ gen = api.QueryGenerator(
     clshow="!hidden",
 )
 
-pages = {}
+pages: dict[str, dict[str, Any]] = {}
 for info in gen:
     # 带 generator 时 QueryGenerator 逐页 yield page dict
     title = info["title"]
@@ -152,24 +153,34 @@ n_redirect = len(inventory) - len(nonred)
 
 
 def has_any_doc(v):
-    return v["has_doc_subpage"] or v["doc_via_content_param"] or v["inline_doc_in_noinclude"]
+    return (
+        v["has_doc_subpage"]
+        or v["doc_via_content_param"]
+        or v["inline_doc_in_noinclude"]
+    )
 
 
 n_doc = sum(1 for v in nonred.values() if v["has_doc_subpage"])
 n_via_content = sum(
-    1 for v in nonred.values() if v["doc_via_content_param"] and not v["has_doc_subpage"]
+    1
+    for v in nonred.values()
+    if v["doc_via_content_param"] and not v["has_doc_subpage"]
 )
 n_inline = sum(
     1
     for v in nonred.values()
-    if v["inline_doc_in_noinclude"] and not v["has_doc_subpage"] and not v["doc_via_content_param"]
+    if v["inline_doc_in_noinclude"]
+    and not v["has_doc_subpage"]
+    and not v["doc_via_content_param"]
 )
 n_any_doc = sum(1 for v in nonred.values() if has_any_doc(v))
 # 调了 {{Documentation}} 但既无 /doc 又无 content= —— 渲染为空，仍属无文档
 phantom = [
     t
     for t, v in nonred.items()
-    if v["uses_Documentation_tpl"] and not v["has_doc_subpage"] and not v["doc_via_content_param"]
+    if v["uses_Documentation_tpl"]
+    and not v["has_doc_subpage"]
+    and not v["doc_via_content_param"]
 ]
 n_categorized = sum(1 for v in inventory.values() if v["cats_in_wikitext"])
 n_leak = sum(1 for v in inventory.values() if v["cats_leaked_outside_noinclude"])
@@ -184,7 +195,9 @@ print(f"  noinclude 内联文档 : {n_inline}")
 print(f"  有任何文档         : {n_any_doc}")
 print(f"  缺任何文档         : {len(nonred) - n_any_doc}")
 if phantom:
-    print(f"  空调 Documentation : {len(phantom)}（无 /doc 且无 content=，实际无文档）: {phantom}")
+    print(
+        f"  空调 Documentation : {len(phantom)}（无 /doc 且无 content=，实际无文档）: {phantom}"
+    )
 print(f"wikitext 里有分类    : {n_categorized}")
 print(f"分类泄漏(noinclude外): {n_leak}")
 print(f"Category:模板 直属成员: {len(tpl_cat_members)}, 子分类: {len(tpl_cat_subcats)}")
