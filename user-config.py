@@ -16,6 +16,8 @@ mylang = "zh"
 # family , you can use '*'
 # 12 个语言子站同账号，用通配折叠；上游三条消费路径（Site() 解析 / LoginManager /
 # login.py -all 展开）均支持通配，2026-07 实测通过（logs/_test_star_username.py）。
+# 考古：2026-02 f2d0894 曾因 "username for re0:en is not given" 展开成 12 行，
+# 肇事者是 interwiki.py 自己的预检不认识通配——上游 T430362（11.5）已修，当前 fork 包含修复。
 usernames["re0"] = {"*": "IchiSanNi"}  # ty: ignore[unresolved-reference]  # 名字由 pywikibot 注入
 
 # The list of BotPasswords is saved in another file. Import it if needed.
