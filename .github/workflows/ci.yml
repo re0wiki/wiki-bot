@@ -1,0 +1,29 @@
+name: CI
+
+on:
+  push:
+    branches: [main, dev]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      # pywikibot 是 submodule 且经 [tool.uv.sources] 以 editable 装入，必须拉出
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+
+      # --frozen：uv.lock 与 pyproject.toml 不一致时直接失败
+      # .python-version (3.14) 由 uv 自动下载安装
+      - run: uv sync --frozen
+
+      - run: uv run ruff check
+      - run: uv run ruff format --check
+      - run: uv run ty check
+      # 离线单测；PYWIKIBOT_DIR 与 sys.path 陷阱由 tests/conftest.py 处理
+      - run: uv run pytest tests/ -q
