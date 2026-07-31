@@ -9,6 +9,8 @@ import re
 from collections import Counter
 from typing import Any
 
+from repo_loader import load_module
+
 fx = importlib.import_module("pywikibot.fixes")
 
 # translation 机制定义在 user-fixes.py，由 pywikibot/fixes.py 末尾 exec 进
@@ -17,13 +19,9 @@ p2o: Any = fx.__dict__["p2o"]
 p2n: Any = fx.__dict__["p2n"]
 get_repl_func: Any = fx.__dict__["get_repl_func"]
 translation_names: list[str] = fx.__dict__["translation_names"]
-translation_manual: list[tuple[str, str]] = fx.__dict__["translation_manual"]
 
-RULES = [(re.compile(p2o(p), re.IGNORECASE), p2n(p)) for p in translation_names] + [
-    (re.compile(o, re.IGNORECASE), n)
-    for o, n in translation_manual
-    if "{{" not in n  # 与 scripts/re0_move.py 保持一致：模板规则不能用于标题
-]
+# RULES 直接复用 re0_move 的构建结果，不再本地重复构造。
+RULES = load_module("re0_move", "scripts/re0_move.py").RULES
 
 
 def normalize(title: str) -> str:

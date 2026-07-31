@@ -33,6 +33,29 @@ RULES = [(re.compile(p2o(p), re.IGNORECASE), p2n(p)) for p in translation_names]
 ILLEGAL_TITLE_CHARS = re.compile(r"[#<>\[\]{}|]")
 
 
+def resolve_move(
+    old: str, rules: list[tuple[re.Pattern, str]] = RULES
+) -> tuple[str | None, str | None]:
+    """计算标题归一结果（纯函数，可离线测试）。
+
+    返回 (新标题, 跳过原因)：
+    - (None, None)：标题无需移动
+    - (新标题, None)：可以移动
+    - (新标题, 原因)：需跳过（伪命名空间前缀变化 / 新标题含非法字符）。
+      其余跳过条件（目标已存在）依赖 wiki，留在 MoveBot 里判断。
+    """
+    new = old
+    for pattern, name in rules:
+        new = pattern.sub(lambda _, n=name: n, new)
+    if new == old:
+        return None, None
+    if ":" in old and old.split(":", 1)[0] != new.split(":", 1)[0]:
+        return new, "伪命名空间前缀变化"
+    if ILLEGAL_TITLE_CHARS.search(new):
+        return new, "新标题含非法字符"
+    return new, None
+
+
 class MoveBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
     """Move pages with non-standard translated titles to standard names."""
 
@@ -41,16 +64,11 @@ class MoveBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
         if page.isRedirectPage():
             return
         old = page.title()
-        new = old
-        for pattern, name in RULES:
-            new = pattern.sub(lambda _, n=name: n, new)
-        if new == old:
+        new, skip = resolve_move(old)
+        if new is None:
             return
-        if ":" in old and old.split(":", 1)[0] != new.split(":", 1)[0]:
-            pwb.warning(f"SKIP（伪命名空间前缀变化）: {old} -> {new}")
-            return
-        if ILLEGAL_TITLE_CHARS.search(new):
-            pwb.warning(f"SKIP（新标题含非法字符）: {old} -> {new}")
+        if skip:
+            pwb.warning(f"SKIP（{skip}）: {old} -> {new}")
             return
         target = pwb.Page(self.site, new)
         if target.exists() and not (
