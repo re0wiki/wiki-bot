@@ -14,20 +14,9 @@ mylang = "zh"
 # The dictionary usernames should contain a username for each site where you
 # have a bot account. If you have a unique username for all sites of a
 # family , you can use '*'
-usernames["re0"] = {  # ty: ignore[unresolved-reference]  # 名字由 pywikibot 注入
-    "de": "IchiSanNi",
-    "en": "IchiSanNi",
-    "es": "IchiSanNi",
-    "fr": "IchiSanNi",
-    "it": "IchiSanNi",
-    "ko": "IchiSanNi",
-    "nl": "IchiSanNi",
-    "pl": "IchiSanNi",
-    "pt-br": "IchiSanNi",
-    "ru": "IchiSanNi",
-    "uk": "IchiSanNi",
-    "zh": "IchiSanNi",
-}
+# 12 个语言子站同账号，用通配折叠；上游三条消费路径（Site() 解析 / LoginManager /
+# login.py -all 展开）均支持通配，2026-07 实测通过（logs/_test_star_username.py）。
+usernames["re0"] = {"*": "IchiSanNi"}  # ty: ignore[unresolved-reference]  # 名字由 pywikibot 注入
 
 # The list of BotPasswords is saved in another file. Import it if needed.
 # See https://www.mediawiki.org/wiki/Manual:Pywikibot/BotPasswords to know how

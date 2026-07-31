@@ -36,6 +36,5 @@
 
 ### 6. 杂项小点
 
-- `user-config.py:17`：12 行重复用户名可用 `"*": "IchiSanNi"` 替代。
 - `user-fixes.py:81`：参数名 `mouth` 是 `month` 笔误。
 - `re0_gallery.py` 手写嵌套模板正则可考虑换依赖里已有的 `mwparserfromhell`（「能跑就别动」也成立）。
