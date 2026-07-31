@@ -34,12 +34,7 @@
 - 位置：`jobs/run_job.py`
 - list 参数在 Windows 上不需要 shell，去掉可消除 list2cmdline 引号 mangling 隐患；`encoding="mbcs"` 乱码坑可顺带评估换 `utf-8` + `errors="replace"`。
 
-### 6. pwb.py 用法级失败退出码为 0
-
-- 脚本名拼错、replace 缺替换对、未知 pwb 参数等只打印 ERROR + 用法文档，退出码仍 0（`wrapper.py` 的 `execute()` 语义），「失败即退出」覆盖不到。
-- 修法（可选）：给 fork 的 `wrapper.py` 打补丁让 `execute()` 返回 False / 脚本找不到时 `sys.exit(1)`；注意「无参数打印帮助」也走同一路径，会变成非零。是否值得动 fork 由维护者定夺。
-
-### 7. 杂项小点
+### 6. 杂项小点
 
 - `user-config.py:17`：12 行重复用户名可用 `"*": "IchiSanNi"` 替代。
 - `user-fixes.py:81`：参数名 `mouth` 是 `month` 笔误。
