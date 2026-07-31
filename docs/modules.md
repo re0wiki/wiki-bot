@@ -7,21 +7,23 @@
 
 **渲染对比的坑**：PortableInfobox 的 tab 元素 id（`pi-tab-<哈希>-N`/`pi-tabpanel-<哈希>-N`）每次 parse 随机生成——前后两次 parse 的 HTML 逐字节比较必然不等，须先归一化（`scripts/oneoff/deploy_module_cleanup.py` 的 `parse_html`）。否则会像 2026-07-30 这批一样把全部对照误判为「渲染有差异」。
 
-## 引用量总览（embeddedin，全命名空间）
+## 引用量总览（embeddedin，全命名空间，2026-07-31 复核）
 
 | Module | 引用 | 说明 |
 |---|---|---|
-| Init / AutoTab / Title / Utils | 2210 | 每篇文章经 `{{Init}}` 间接引用 |
-| Interwiki | 2200 | 信息框英文名/英译 |
-| Tab | 1143 | 新 tab 系统（`{{Tab}}` → Tab/* 派生页） |
+| Init / Title / Utils | 2209 | 每篇文章经 `{{Init}}` 间接引用 |
+| Tab | 2404 | Init 依赖 + `{{Tab}}` 直接使用 |
+| Interwiki | 2198 | 信息框英文名/英译 |
 | Infobox book | 719 | |
-| Character image | 339 | Infobox character 图库 |
-| Kana2Romaji | 274 | |
-| 鼠色猫语录 | 209 | |
-| Auto ruby | 151 | 经 `{{R}}` |
+| Character image | 337 | Infobox character 图库 |
+| Kana2Romaji | 260 | |
+| 鼠色猫语录 | 207 | |
+| Auto ruby | 149 | 经 `{{R}}` |
 | Bili | 24 | 经 `{{BV}}` |
-| NoteTA / WikitextLC | 2 | 维基百科移植件 |
-| **Set** | **0** | **孤儿模块** |
+| NoteTA / WikitextLC | 1 | 仅 `Template:NoteTA`（该模板本身 2 引用） |
+| Sandbox | 0 | 空沙盒模块（2026-07-30 后新建），按沙盒惯例保留 |
+
+**引用排查的坑（2026-07-31 复核确认）**：CirrusSearch 的 insource 在本站**对模板/主空间源码同样返回空**（`insource:"#invoke:Init"` 在 ns 0|10|828 搜出 0 条，而 `Template:Init` 明明写着 `{{#invoke:Init|main}}`）——不只是 Module 空间。消费者排查唯一可靠路径：`scripts/dump_modules.py` 本地快照 grep（模块间 require）+ 模板空间全量 dump grep（`#invoke:` 调用面）。快照脚本已改为先清空 `logs/modules/` 再拉取，避免已删模块的残留文件误导 grep。
 
 ## 确认的问题
 
@@ -57,3 +59,14 @@
 - **Kana2Romaji 已重写**（2026-07-30，用户指示）：旧实现（顺序 gsub 大表）废弃，重写为音拍 tokenize 的完整平文式——补全ヴ系（ヴァ/ヴィ/ヴ/ヴェ/ヴォ，修掉 `ヴィルヘルム→ヴィruherumu` 漏假名与首字母不大写两个 bug）与外来拗音（ファ/ティ/チェ/ツァ等）、ん 同化（b/p/m 前→m、元音/y 前→n'）、促音 tch、长音 macron 直接作用于前一元音（含 ē，旧「ee→ei」约定废除）、`num` 全局泄漏修复。接口与「无假名→空串」契约不变（`p._Kana2Romaji(s)` + `p.Kana2Romaji(frame)` 兼容 `kana=` 与位置参数 1）。部署+回归脚本 `scripts/oneoff/deploy_kana2romaji.py`（幂等：内容相同则跳过保存；19 例测试矩阵全过），`Template:Kana2Romaji/doc` 规则描述已同步更新，`角色:菜月·昴` 信息框罗马字渲染抽查通过。模块文档（接口/契约/转换规则/示例）随后按惯例迁入 `Module:Kana2Romaji/doc` 子页（首行保留 `{{Tab/Ruby}}` 导航），Lua 头注释只留标题行（/doc 自动渲染在代码上方，无需指针注释——用户指正）。行为变化点：えー/エー 现在得 ē（旧为 ei）、っち 现在得 tchi（旧为 cchi）、んb/p/m 同化为 m、・（U+30FB）现在也转空格。
 
 - **Kana2Romaji 的 `メィ→mei`/`リィ→ri` 两条特判是必需项，勿删**（2026-07-30 考证）：它们服务 `角色:梅莉·波多尔德` 的 `name_ja_kanji = メィリィ·ポートルート`——メィリィ 是作者官方表记（なろう 6-46 节标题同款），小ぃ 不在规范拗音表内，删掉会以 `Meィriィ` 形式漏假名。输出 `Meiri` 与英文站信息框 Romaji 栏手写值一致（官方英文名是 Meili，栏位语义不同，不改）。历史：2021-03-06 建模块，次日（108839/108867）分两次针对该名补上这两条；初版表底子应抄自站外平文式表，后续フェ/フィ/フォ/ディ/ファ/ォ 等均是按与英文站手写罗马字的差异逐条打的补丁。
+
+## 2026-07-31 复审
+
+对当前 41 个模块（13 功能 + 28 语录数据表）全量重查。上次处置无回潮（无调试日志残留、AutoTab/Set 无复活、前缀表与 `user-fixes.py` 的 `PSEUDO_PREFIXES` 核对一致）。剩余可改进点，均为低优先卫生项，**待用户挑选执行**：
+
+1. **Init.lua 全局函数泄漏**：`display_title`/`category`/`tab` 未 local（仅 `p.main` 导出）。Scribunto 同页解析内模块共享全局环境，`tab`/`category` 是通用名，与未来模块碰撞隐患；与上次 Infobox book 修复同类。改 `local function` 即可，无行为变化（渲染对比验证照旧）。
+2. **鼠色猫语录.lua 同类泄漏**：`any_in`/`get_src_html`/`get_content_html` 未 local；另有死代码 `assert(#contents >= 0 and ...)`（`#contents >= 0` 恒真）与噪声注释 `-- 123`。
+3. **Utils.lcp/lcs/split 已无消费者**：AutoTab 删除后 lcp/lcs 失去唯一用户；split 查无调用（模块快照 grep + 模板空间全量 dump 均 0）。按 Module:Set/assert 先例可删——删完 Utils 只剩 `a_in_b`（Title 用），也可选择把 a_in_b 内联进 Title 后整个删 Utils，或保留作工具库。
+4. **NoteTA indicator id 用 `code:len()` 当 hash**：同页两个 NoteTA 且 code 字节等长则 id 碰撞（当前全站仅 2 处使用，无实际触发）；溢出分类名是繁体（`Category:NoteTA模板參數使用數量超過限制的頁面`），与本站简体惯例不符且分类页不存在。低优先。
+5. **Bili `mw.ustring.sub(id, 0, 0)` → `sub(id, 1, 1)`**：上次已验证非 bug，纯可读性（当时未动）。
+6. **双维护点备忘**：`Module:Title` 的 `prefixes` 与 `user-fixes.py` 的 `PSEUDO_PREFIXES` 内容相同、两处手工维护（2026-07-31 核对同步）——改前缀时两边都要动。
