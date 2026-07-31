@@ -85,6 +85,7 @@ jobs: list[list[str]] = [
     ["replace", "-automaticsummary", "-fix:anti-ve"],
     ["replace", "-automaticsummary", "-fix:syntax"] + starts_base,
     # 内容规范化
+    ["re0_move", "-start:!"],
     ["replace", "-automaticsummary", "-fix:translation"],
     ["replace", "-automaticsummary", "-fix:isbn"],
     ["replace", "-automaticsummary", "-fix:specialpages"] + starts_base,
