@@ -26,7 +26,9 @@ os.makedirs(outdir, exist_ok=True)
 
 # 先清空旧快照：模块在 wiki 上被删除后，残留文件会让「本地快照 grep 排查消费者」误判
 for old in os.listdir(outdir):
-    os.remove(os.path.join(outdir, old))
+    old_path = os.path.join(outdir, old)
+    if os.path.isfile(old_path):  # new/ 等子目录保留
+        os.remove(old_path)
 
 n = 0
 for info in gen:

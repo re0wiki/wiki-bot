@@ -11,7 +11,7 @@
 
 | Module | 引用 | 说明 |
 |---|---|---|
-| Init / Title / Utils | 2209 | 每篇文章经 `{{Init}}` 间接引用 |
+| Init / Title | 2209 | 每篇文章经 `{{Init}}` 间接引用 |
 | Tab | 2404 | Init 依赖 + `{{Tab}}` 直接使用 |
 | Interwiki | 2198 | 信息框英文名/英译 |
 | Infobox book | 719 | |
@@ -62,11 +62,12 @@
 
 ## 2026-07-31 复审
 
-对当前 41 个模块（13 功能 + 28 语录数据表）全量重查。上次处置无回潮（无调试日志残留、AutoTab/Set 无复活、前缀表与 `user-fixes.py` 的 `PSEUDO_PREFIXES` 核对一致）。剩余可改进点，均为低优先卫生项，**待用户挑选执行**：
+对当时 41 个模块（13 功能 + 28 语录数据表）全量重查。上次处置无回潮（无调试日志残留、AutoTab/Set 无复活、前缀表与 `user-fixes.py` 的 `PSEUDO_PREFIXES` 核对一致）。复审发现的 5 项卫生问题**当日已全部处置完毕**（见处置记录），另留 1 条双维护点备忘：
 
-1. **Init.lua 全局函数泄漏**：`display_title`/`category`/`tab` 未 local（仅 `p.main` 导出）。Scribunto 同页解析内模块共享全局环境，`tab`/`category` 是通用名，与未来模块碰撞隐患；与上次 Infobox book 修复同类。改 `local function` 即可，无行为变化（渲染对比验证照旧）。
-2. **鼠色猫语录.lua 同类泄漏**：`any_in`/`get_src_html`/`get_content_html` 未 local；另有死代码 `assert(#contents >= 0 and ...)`（`#contents >= 0` 恒真）与噪声注释 `-- 123`。
-3. **Utils.lcp/lcs/split 已无消费者**：AutoTab 删除后 lcp/lcs 失去唯一用户；split 查无调用（模块快照 grep + 模板空间全量 dump 均 0）。按 Module:Set/assert 先例可删——删完 Utils 只剩 `a_in_b`（Title 用），也可选择把 a_in_b 内联进 Title 后整个删 Utils，或保留作工具库。
-4. **NoteTA indicator id 用 `code:len()` 当 hash**：同页两个 NoteTA 且 code 字节等长则 id 碰撞（当前全站仅 2 处使用，无实际触发）；溢出分类名是繁体（`Category:NoteTA模板參數使用數量超過限制的頁面`），与本站简体惯例不符且分类页不存在。低优先。
-5. **Bili `mw.ustring.sub(id, 0, 0)` → `sub(id, 1, 1)`**：上次已验证非 bug，纯可读性（当时未动）。
-6. **双维护点备忘**：`Module:Title` 的 `prefixes` 与 `user-fixes.py` 的 `PSEUDO_PREFIXES` 内容相同、两处手工维护（2026-07-31 核对同步）——改前缀时两边都要动。
+- **双维护点备忘**：`Module:Title` 的 `prefixes` 与 `user-fixes.py` 的 `PSEUDO_PREFIXES` 内容相同、两处手工维护（2026-07-31 核对同步）——改前缀时两边都要动。
+
+**渲染对比的坑（本轮新增）**：`action=parse` 取的是**解析缓存**，「编辑前快照」可能是数天前的陈旧渲染——deploy 首轮对比 5 项 FAIL 全是缓存噪声（连续两次 parse 完全一致可证）。真值法照旧有效：恢复旧版模块 + purge 后取的基线才是干净的，4 项实际等价、1 项（NoteTA 悬浮文本繁转简）为预期差异。后续部署脚本已在对照页加 purge；做渲染对比时务必 purge 或走真值法，否则 OK/FAIL 都可能是缓存假象。
+
+## 处置记录（续）
+
+- **卫生修复第二轮已完成**（2026-07-31，用户批准复审 5 项全做）：① Init 的 `display_title`/`category`/`tab` 全局函数 local 化；② 鼠色猫语录的 `any_in`/`get_src_html`/`get_content_html` local 化 + 删恒真死 assert 与噪声注释；③ **Module:Utils 与 /doc 已删**——lcp/lcs/split 无消费者（模块快照 grep + 模板空间全量 dump 双重验证），唯一的活函数 `a_in_b` 内联进 Title；④ NoteTA indicator id 从 `code:len()`（等长碰撞）改为调用序号，溢出分类名与 File 悬浮文本繁转简（实测 LanguageConverter 不转换 img 的 alt/title 属性，繁体原样输出，此修正确有必要）；⑤ Bili `sub(id, 0, 0)` → `sub(id, 1, 1)`。部署脚本 `scripts/oneoff/deploy_module_hygiene2.py`（幂等，先存 Title 再删 Utils），诊断/真值法脚本 `scripts/oneoff/diagnose_module_hygiene2_diff.py`。验证：角色:菜月·昴、菜月·昴/关系、小说:1卷、术语:异世界文字、动画:第12集/猫语、鼠色猫语录/all 渲染全等价，ReZero Wiki:攻略指南仅 NoteTA 悬浮文本的预期繁转简差异。处置后全站 40 个模块（12 功能 + 28 数据表）。
