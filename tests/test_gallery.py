@@ -33,31 +33,63 @@ def test_gallery_inside_zh_template_is_not_counted():
     assert "old.png" not in res.text
 
 
-def test_count_mismatch_recovers_via_tabber_section():
-    """数量不一致且 tabber 单页段可抽取时，整段同步 en 段。"""
-    zh = "{{Tab}}\n<gallery>old.png</gallery>\n[[Category:X]]"
-    en = "{{Tab}}\n<gallery>new1.png</gallery>\n<gallery>new2.png</gallery>\n[[Category:Y]]"
+def test_count_mismatch_recovers_via_tabber_block():
+    """数量不一致且两侧各有一个 tabber 块时，整块同步 en 的 tabber。"""
+    zh = (
+        "{{Init}}\n{{To do}}\n<center><tabber>\n动画=\n<gallery>old.png</gallery>\n"
+        "</tabber></center>\n[[en:X/Image Gallery]]\n[[Category:X]]"
+    )
+    en = (
+        "{{Parent Tab}}\n<center><tabber>\nAnime=\n<gallery>new1.png</gallery>\n"
+        "{{!}}-{{!}}\nSeason 2=\n<gallery>new2.png</gallery>\n"
+        "</tabber></center>\n[[Category:Y]]"
+    )
     res = g.merge_galleries(zh, en)
     assert res.text is not None and res.is_tabber
     assert "<gallery>new1.png</gallery>" in res.text
     assert "<gallery>new2.png</gallery>" in res.text
-    # 段外内容（分类）保留 zh 原文
+    # 块外内容原样保留：zh 页首模板、跨语言链接、分类；en 页首模板不混入
+    assert "{{Init}}" in res.text and "{{To do}}" in res.text
+    assert "{{Parent Tab" not in res.text
+    assert "[[en:X/Image Gallery]]" in res.text
     assert "[[Category:X]]" in res.text
 
 
+def test_tabber_sync_preserves_preamble_templates_any_order():
+    """回归：页首模板无论顺序都不被 tabber 同步吞掉。
+
+    2026-05-26 角色:夏乌拉/图库事故：页首为 {{To do}}+{{Init}} 顺序时，
+    旧 PAGE_REGEX 从第一个 }} 起替换整段，把 {{Init}} 静默删掉。
+    """
+    zh = (
+        "{{To do}}\n{{Init}}\n<center><tabber>\n<gallery>old.png</gallery>\n"
+        "</tabber></center>\n[[en:X/Image Gallery]]"
+    )
+    en = (
+        "{{Parent Tab}}\n<center><tabber>\n<gallery>new1.png</gallery>\n"
+        "<gallery>new2.png</gallery>\n</tabber></center>\n[[Category:Y]]"
+    )
+    res = g.merge_galleries(zh, en)
+    assert res.text is not None and res.is_tabber
+    assert res.text.startswith("{{To do}}\n{{Init}}\n")
+
+
 def test_count_mismatch_bad_format_returns_none():
-    """tabber 段数不为 1（无 }}…[[ 结构）时无法整段同步，报错返回 None。"""
+    """tabber 块数不为 1（无 tabber 结构）时无法整块同步，报错返回 None。"""
     zh = "<gallery>old.png</gallery>"
     en = "<gallery>new1.png</gallery>\n<gallery>new2.png</gallery>"
     res = g.merge_galleries(zh, en)
     assert res.text is None and not res.is_tabber
-    assert "incorrect page format" in res.message
+    assert "incorrect tabber format" in res.message
 
 
 def test_count_mismatch_tabber_still_mismatch_returns_none():
-    """整段同步后数量仍不一致（en 段外还有画廊），报错返回 None。"""
-    zh = "{{Tab}}\n<gallery>old.png</gallery>\n[[Category:X]]"
-    en = "{{Tab}}\n<gallery>new1.png</gallery>\n<gallery>new2.png</gallery>\n[[Category:Y]]\n<gallery>new3.png</gallery>"
+    """整块同步后数量仍不一致（en 块外还有画廊），报错返回 None。"""
+    zh = "{{Tab}}\n<tabber>\n<gallery>old.png</gallery>\n</tabber>\n[[Category:X]]"
+    en = (
+        "{{Tab}}\n<tabber>\n<gallery>new1.png</gallery>\n<gallery>new2.png</gallery>\n"
+        "</tabber>\n[[Category:Y]]\n<gallery>new3.png</gallery>"
+    )
     res = g.merge_galleries(zh, en)
     assert res.text is None and res.is_tabber
     assert "still mismatch" in res.message
