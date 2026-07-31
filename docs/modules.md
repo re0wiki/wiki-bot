@@ -3,7 +3,7 @@
 2026-07-30 对 Module 命名空间 43 个页面（15 个功能模块 + 28 个鼠色猫语录数据表）的全量审查。
 源码快照脚本 `scripts/dump_modules.py`（输出 `logs/modules/`），引用量与疑点验证 `scripts/oneoff/verify_module_findings.py`。
 
-**文档惯例**：Module 的 `/doc` 子页由 Scribunto 自动转置渲染在代码上方（与模板 `{{Documentation}}` 机制无关），所以 Lua 头注释无需写「文档见 /doc」之类的指针；模块文档直接写进 `/doc` 子页即可（先例 `Module:Kana2Romaji/doc`）。
+**文档惯例**：Module 的 `/doc` 子页由 Scribunto 自动转置渲染在代码上方（与模板 `{{Documentation}}` 机制无关），所以 Lua 头注释无需写「文档见 /doc」之类的指针；模块文档直接写进 `/doc` 子页即可（先例 `Module:Kana2Romaji/doc`）。2026-07-31 起全站 40 个模块均有 /doc：功能模块按 Kana2Romaji/doc 体例（导航模板首行 + `;` 定义列表，无对应 `Template:Tab/*` 的内部模块省略导航行），27 个语录数据子表统一一行说明 + 指回主模块文档。**写 /doc 的坑**：正文里的 `-{...}-` 与 `[[en:...]]` 示例必须包 `<nowiki>`（否则被 LanguageConverter 吃掉 / 变成真跨语言链接），分类提及必须前导冒号（否则 doc 页自己入分类）。
 
 **渲染对比的坑**：PortableInfobox 的 tab 元素 id（`pi-tab-<哈希>-N`/`pi-tabpanel-<哈希>-N`）每次 parse 随机生成——前后两次 parse 的 HTML 逐字节比较必然不等，须先归一化（`scripts/oneoff/deploy_module_cleanup.py` 的 `parse_html`）。否则会像 2026-07-30 这批一样把全部对照误判为「渲染有差异」。
 
@@ -71,3 +71,5 @@
 ## 处置记录（续）
 
 - **卫生修复第二轮已完成**（2026-07-31，用户批准复审 5 项全做）：① Init 的 `display_title`/`category`/`tab` 全局函数 local 化；② 鼠色猫语录的 `any_in`/`get_src_html`/`get_content_html` local 化 + 删恒真死 assert 与噪声注释；③ **Module:Utils 与 /doc 已删**——lcp/lcs/split 无消费者（模块快照 grep + 模板空间全量 dump 双重验证），唯一的活函数 `a_in_b` 内联进 Title；④ NoteTA indicator id 从 `code:len()`（等长碰撞）改为调用序号，溢出分类名与 File 悬浮文本繁转简（实测 LanguageConverter 不转换 img 的 alt/title 属性，繁体原样输出，此修正确有必要）；⑤ Bili `sub(id, 0, 0)` → `sub(id, 1, 1)`。部署脚本 `scripts/oneoff/deploy_module_hygiene2.py`（幂等，先存 Title 再删 Utils），诊断/真值法脚本 `scripts/oneoff/diagnose_module_hygiene2_diff.py`。验证：角色:菜月·昴、菜月·昴/关系、小说:1卷、术语:异世界文字、动画:第12集/猫语、鼠色猫语录/all 渲染全等价，ReZero Wiki:攻略指南仅 NoteTA 悬浮文本的预期繁转简差异。处置后全站 40 个模块（12 功能 + 28 数据表）。
+
+- **全站模块 /doc 文档补全**（2026-07-31，用户指示）：39 个 /doc 子页写入（NoteTA/doc、WikitextLC/doc 新建，其余在导航占位基础上补正文；Kana2Romaji/doc 此前已有）。功能模块按 Kana2Romaji/doc 体例写说明/接口/行为细节；27 个语录数据子表统一一行说明 + 指回主模块文档（4 个空表标注占位）；Title/doc 标注与 user-fixes.py PSEUDO_PREFIXES 的双维护点。部署脚本 `scripts/oneoff/deploy_module_docs.py`（幂等，bot flag）。验证：14 个模块页 parse 抽查文档均渲染在代码上方、无 Lua/模板错误。
