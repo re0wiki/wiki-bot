@@ -64,7 +64,11 @@ assert site.user() == "IchiSanNi"
 
 # ── 1. 恢复旧版取基线 ─────────────────────────────────────
 # 旧 Title require Module:Utils，先重建
-save("Module:Utils", "logs/modules/Utils.lua", "临时重建：渲染对比基线用，对比后随新部署删除")
+save(
+    "Module:Utils",
+    "logs/modules/Utils.lua",
+    "临时重建：渲染对比基线用，对比后随新部署删除",
+)
 for m in SWAP:
     save(f"Module:{m}", f"logs/modules/{m}.lua", "临时恢复旧版：渲染对比基线")
 
@@ -83,7 +87,10 @@ for m in SWAP:
     save(f"Module:{m}", f"logs/modules/new/{m}.lua", SUMMARIES[m])
 u = pywikibot.Page(site, "Module:Utils")
 if u.exists():
-    u.delete(reason="孤儿模块：lcp/lcs/split 无消费者，a_in_b 已内联进 Module:Title", prompt=False)
+    u.delete(
+        reason="孤儿模块：lcp/lcs/split 无消费者，a_in_b 已内联进 Module:Title",
+        prompt=False,
+    )
     print("已删除 Module:Utils")
 
 purge()

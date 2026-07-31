@@ -26,6 +26,7 @@ bl = api.QueryGenerator(
 aliases = [p["title"] for p in bl]
 print(aliases or "（无）")
 
+
 # ── 2. 主空间全部非重定向页面 ───────────────────────────────
 def all_mainspace(filterredir):
     gen = api.QueryGenerator(
@@ -37,6 +38,7 @@ def all_mainspace(filterredir):
         gaplimit="max",
     )
     return [p["title"] for p in gen]
+
 
 articles = all_mainspace("nonredirects")
 redirects = all_mainspace("redirects")
@@ -81,9 +83,24 @@ print(f"\n== 别名引用 ==\n{alias_users or '（无）'}")
 used = set(init_pages.get(0, []))
 for users in alias_users.values():
     # 只统计主空间使用者
-    used |= {t for t in users if ":" not in t or t.split(":", 1)[0] not in
-             {"Template", "Module", "MediaWiki", "Category", "File", "Help",
-              "Project", "User", "MediaWiki talk", "Special"}}
+    used |= {
+        t
+        for t in users
+        if ":" not in t
+        or t.split(":", 1)[0]
+        not in {
+            "Template",
+            "Module",
+            "MediaWiki",
+            "Category",
+            "File",
+            "Help",
+            "Project",
+            "User",
+            "MediaWiki talk",
+            "Special",
+        }
+    }
 missing = sorted(set(articles) - used)
 print(f"\n主空间引用 Init（含别名）: {len(used & set(articles))}")
 print(f"主空间未引用 Init 的条目: {len(missing)}")
