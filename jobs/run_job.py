@@ -1,6 +1,6 @@
 import logging
 import sys
-from subprocess import CalledProcessError, run
+from subprocess import run
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,12 @@ def build_cmd(job: list[str], simulate: bool = False) -> list[str]:
 
 
 def run_job(job: list[str], simulate=False, capture_output=False) -> str | None:
-    # Get the command line.
+    """跑一个任务。
+
+    子进程非零退出时抛 CalledProcessError——不吞失败。吞掉的后果是 231 循环
+    在 wiki 故障/凭据过期时以子进程启动速度空转锤站（叠加 429 惩罚）；
+    直接炸出来让人工介入修复。
+    """
     cmd = build_cmd(job, simulate)
 
     # Run the job.
@@ -37,9 +42,6 @@ def run_job(job: list[str], simulate=False, capture_output=False) -> str | None:
             shell=True,
             check=True,
         )
-    except CalledProcessError as e:
-        logger.error(e)
-        return ""
     finally:
         logger.info(cmd)
         logger.info("=" * 16 + "end" + "=" * 16)

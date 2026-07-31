@@ -1,7 +1,9 @@
 """jobs/run_job.py 命令行拼装的纯函数测试（不触 wiki、不起子进程）。"""
 
 import sys
+from subprocess import CalledProcessError
 
+import pytest
 from repo_loader import load_module
 
 rj = load_module("run_job", "jobs/run_job.py")
@@ -40,3 +42,14 @@ def test_transferbot_rejects_always():
     """transferbot 不接受 -always（加了会报错），且不加也会自动覆盖目标页。"""
     cmd = rj.build_cmd(["transferbot", "-lang:en"])
     assert "-always" not in cmd
+
+
+def test_run_job_raises_on_failure(monkeypatch):
+    """子进程非零退出必须抛出——不吞失败（吞了 231 循环会故障期空转锤站）。"""
+
+    def fake_run(*args, **kwargs):
+        raise CalledProcessError(1, ["x"])
+
+    monkeypatch.setattr(rj, "run", fake_run)
+    with pytest.raises(CalledProcessError):
+        rj.run_job(["touch"])

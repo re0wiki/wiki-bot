@@ -2,6 +2,7 @@ import argparse
 import itertools
 import logging
 import sys
+from subprocess import CalledProcessError
 
 from jobs.jobs import jobs
 from jobs.run_job import run_job
@@ -11,6 +12,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
 )
+logger = logging.getLogger(__name__)
 # endregion
 
 
@@ -46,5 +48,9 @@ if __name__ == "__main__":
                 run_job(job, args.simulate)
         else:
             run_job(jobs[args.index], args.simulate)
+    except CalledProcessError as e:
+        # 任务失败不继续：退出等待人工修复，避免 231 循环故障期空转锤站
+        logger.error("任务失败（exit %s），退出等待人工修复: %s", e.returncode, e.cmd)
+        sys.exit(e.returncode or 1)
     except KeyboardInterrupt:
         sys.exit(130)
