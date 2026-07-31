@@ -40,7 +40,7 @@ DOCS["Tab"] = """{{Tab/Tab}}
 
 ; 接口
 * <code>p._tab(tabs)</code>：供其他模块调用，参数为链接 wikitext 数组（遇首个空串停止）。[[Module:Init]] 经此接口生成页面导航。
-* <code>p.tab(frame)</code>：供 <nowiki>{{#invoke:tab|tab|链接1|链接2|...}}</nowiki>（经 {{T|Tab}}，参数解析依赖 [[Dev:Arguments]]）。
+* <code>p.tab(frame)</code>：供 <nowiki>{{#invoke:tab|tab|链接1|链接2|...}}</nowiki>（经 {{T|Tab}}，参数解析依赖 [[w:c:dev:Module:Arguments|Dev:Arguments]]）。
 """
 
 DOCS["Title"] = """; 说明

@@ -3,7 +3,7 @@
 2026-07-30 对 Module 命名空间 43 个页面（15 个功能模块 + 28 个鼠色猫语录数据表）的全量审查。
 源码快照脚本 `scripts/dump_modules.py`（输出 `logs/modules/`），引用量与疑点验证 `scripts/oneoff/verify_module_findings.py`。
 
-**文档惯例**：Module 的 `/doc` 子页由 Scribunto 自动转置渲染在代码上方（与模板 `{{Documentation}}` 机制无关），所以 Lua 头注释无需写「文档见 /doc」之类的指针；模块文档直接写进 `/doc` 子页即可（先例 `Module:Kana2Romaji/doc`）。2026-07-31 起全站 40 个模块均有 /doc：功能模块按 Kana2Romaji/doc 体例（导航模板首行 + `;` 定义列表，无对应 `Template:Tab/*` 的内部模块省略导航行），27 个语录数据子表统一一行说明 + 指回主模块文档。**写 /doc 的坑**：正文里的 `-{...}-` 与 `[[en:...]]` 示例必须包 `<nowiki>`（否则被 LanguageConverter 吃掉 / 变成真跨语言链接），分类提及必须前导冒号（否则 doc 页自己入分类）。
+**文档惯例**：Module 的 `/doc` 子页由 Scribunto 自动转置渲染在代码上方（与模板 `{{Documentation}}` 机制无关），所以 Lua 头注释无需写「文档见 /doc」之类的指针；模块文档直接写进 `/doc` 子页即可（先例 `Module:Kana2Romaji/doc`）。2026-07-31 起全站 40 个模块均有 /doc：功能模块按 Kana2Romaji/doc 体例（导航模板首行 + `;` 定义列表，无对应 `Template:Tab/*` 的内部模块省略导航行），27 个语录数据子表统一一行说明 + 指回主模块文档。**写 /doc 的坑**：正文里的 `-{...}-` 与 `[[en:...]]` 示例必须包 `<nowiki>`（否则被 LanguageConverter 吃掉 / 变成真跨语言链接），分类提及必须前导冒号（否则 doc 页自己入分类）；`Dev:` 只是 Scribunto `require` 的前缀、**不是链接前缀**——链 dev wiki 模块要写 `[[w:c:dev:Module:Arguments|Dev:Arguments]]`。
 
 **渲染对比的坑**：PortableInfobox 的 tab 元素 id（`pi-tab-<哈希>-N`/`pi-tabpanel-<哈希>-N`）每次 parse 随机生成——前后两次 parse 的 HTML 逐字节比较必然不等，须先归一化（`scripts/oneoff/deploy_module_cleanup.py` 的 `parse_html`）。否则会像 2026-07-30 这批一样把全部对照误判为「渲染有差异」。
 
