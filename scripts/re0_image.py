@@ -22,7 +22,8 @@ def calc_diff(
 ) -> list[pwb.FilePage]:
     """返回 en 的图片中，zh 缺失或过时的部分。
 
-    只增不删：en 侧删除/改名的图片不会在 zh 侧清理（保守策略，见 docs/todo.md）。
+    只增不删：en 侧删除/改名的图片不会在 zh 侧清理——残留无害，删除还要
+    同步更新引用，不值得（2026-07-31 已决策维持，见 docs/todo.md）。
     """
     return [
         image

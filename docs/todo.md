@@ -2,31 +2,19 @@
 
 跨任务的待办清单。单个领域（模板/Module）的待办仍各归 `templates.md` / `modules.md`。
 
-## 待用户决策
+## 已决策（2026-07-31）
 
-### 1. 图片删除/改名是否同步（re0_image）
+### 图片删除/改名不同步（re0_image 只增不删）——维持现状
 
-`scripts/re0_image.py` 的 `calc_diff` 只增不删：en 侧删除或改名的图片会在 zh 侧永久残留孤儿图。
-当前是保守策略（误删比残留难恢复）。可选方案：
+残留图片基本无害；删除还要同步更新引用，不值得处理。限制已注明在 `calc_diff` docstring。
 
-- 维持现状（docstring 已注明限制）
-- 加「en 已不存在 → zh 侧删除」任务（需排除 zh 本地自产图：哪些图是 zh 独有的？）
-- 只报告不删除（定期清单，人工清理）
+### `.idea/` 已跟踪文件——维持现状
 
-### 2. `.idea/` 已跟踪文件是否清理
+自带 .gitignore 模板没忽略那些文件所以提交了；项目无其他维护者，交上去至少无害。
 
-`.idea/` 下的 `.iml`、`misc.xml`、`modules.xml` 等提交在仓库里（gitignore 模板只排除了 workspace.xml 等）。
-若无意共享 IDE 配置，可整体 gitignore + `git rm -r --cached .idea`；若有意共享（PyCharm 打开即用），维持现状。
+### re0_redirect 对未登记前缀建重定向——维持现状
 
-### 3. re0_redirect 对未登记前缀建重定向是否符合预期
-
-`scripts/re0_redirect.py` 给**所有**含冒号的主空间标题建裸词干重定向，包括：
-
-- 未登记前缀（如 `特典:劇場前惡意` → 建 `劇場前惡意`）
-- 英文搬运残留前缀（如 `Sword Demon Love Story: ...`、`Re: ...` → 建裸词干）
-
-后者在残留页整理/移动后会留下指向旧位置的裸词干重定向（由 `redirect br -delete` 任务自愈）。
-需确认：这是期望行为，还是应限定只为登记前缀（`user-fixes.py` 的 `PSEUDO_PREFIXES`）建重定向？
+多余重定向无用但无害（`特典:`、英文残留前缀的裸词干重定向由 `redirect br -delete` 自愈）。
 
 ## 已评估、决定不做
 
