@@ -76,14 +76,14 @@ def _get(params: dict, retries: int = 3) -> dict:
                         if retry_after is not None
                         else 5 * (attempt + 1)
                     )
-                except TypeError, ValueError:
+                except (TypeError, ValueError):
                     delay = 5 * (attempt + 1)
                 time.sleep(
                     min(delay, 65)
                 )  # Fandom 的 Retry-After 可达数千秒，封顶防卡死
                 continue
             raise
-        except urllib.error.URLError, TimeoutError:
+        except (urllib.error.URLError, TimeoutError):
             if attempt < retries - 1:
                 time.sleep(5 * (attempt + 1))
                 continue
