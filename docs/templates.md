@@ -27,6 +27,9 @@
 
 ## 技术约定（实测）
 
+- **信息框参数命名约定**（2026-08-02 归一）：全站统一小写蛇形英文（`name_ja_kanji`/`date_ja`/`also_known_as` 等）。en/es 搬运旧名由 fix:para 长期归一（`user-fixes.py` para 列表——transferbot 每次搬运都会重新带入 en 侧旧名，故条目常驻），模板一律不保留旧名 fallback。有意例外：`Caption` 保持大写（7 个信息框的既有惯例）；`Name_en` 仅 game 副标题使用（零真实页面使用，保留未归一）。battle/event 的 `date/place/result` 与书籍/音乐/游戏类的 `date_ja` 语义不同（事件时间 vs 发售日期），各自保留不合并。
+- **anime/book 的 Previous/Next 是有意丢弃**（2026-08-02 用户确认）：前后集/前后卷导航由 `Tab/*` 承担，信息框不声明这两个参数——en 搬运页带入的 `| Previous/Next =` 是死参数（fix:para 已归一小写，但 anime 模板与 Module:Infobox book 均不读取，勿当 bug「修」掉）。bd 例外：`previous`/`next` 是正常声明字段（圆盘序列）。
+- **参数改名 SOP**（2026-08-02 实证，~110 页 + 9 模板 + 5 /doc）：① 全命名空间区分大小写预扫描（注意 nocase 误判——`re.IGNORECASE` 会把已合规的小写用法算成旧名；也要防 `| Date =` 这类通用名碰撞）；② 模板先加「新名 source + `<default>{{{旧名|}}}</default>` fallback」；③ 样本页 parse 快照；④ `main.py fix:para` 正式跑；⑤ 复扫确认旧名零残留；⑥ 摘 fallback + 手动同步 /doc（**replace.py 默认例外含 pre/nowiki，/doc 的语法示例与 templatedata JSON 键不会被任务触及**）；⑦ 快照对比渲染等价（normalize 掉 data-source 属性、HTML 注释、pi-tab 随机 hash）。脚本归档 `scripts/oneoff/`（prescan_param_rename / round1_add_fallbacks / round2b_character_and_docs / snapshot_renders / compare_snapshots）。
 - **防分类泄漏靠 `<onlyinclude>`**：把模板体包在 `<onlyinclude>` 里后，标签之外的 `[[Category:...]]`（即使没放 `<noinclude>`）不会被引用页继承。Infobox 系、`Blur` 等都是这个写法。给模板加自身分类时，放 `<noinclude>` 或 onlyinclude 之外均可，但放 onlyinclude **里面**就会泄漏到每个引用页。
 - **含 `<ref>` 的模板双重约束**（2026-07-29 `Ringa` 清理实证）：① 必须包 `div class="as-is"` + `<onlyinclude>`——否则 noreferences 任务会对其反复自动追加「注释与外部链接」段（`Template:Ringa` 2021 年残留的 5 段重复 references 即此产物，原作者晚街与灯故意留作活教材；当日已清理，机制要点并入 `Ringa/doc`）；② **不能嵌套在另一个 `<ref>` 内使用**（Cite 不支持 ref 嵌套）——嵌套时内层脚注失效、页尾报「引用错误：`name` 未在前文内使用」，`角色:阿尔` 曾踩（引用小说原文的注释里写 `{{Ringa}}`，当时改纯文本；全站扫描仅此 1 页，扫描脚本 `logs/scan_ringa_nested.py`）。（当日晚些时候用户决定 `Ringa` 弃用 ref、改用 `{{Tooltip}}` 呈现注记，两个约束就此绕开，`角色:阿尔` 的嵌套调用也随之恢复合法；上述约束仍适用于未来新建含 ref 的模板。）
 - **有意给引用页加分类的模板**（设计如此，勿当 bug「修」掉）：
@@ -82,11 +85,13 @@
 
 #### C. ~~待决策~~（2026-08-02 已完成，用户批准）
 
-10. ~~**seiyu/staff 的西语参数名**~~ → 归一为 image/Caption/name/name_en/name_ja_romaji/birth/(death)/(role|script/design/composer)，62 个调用页批量同步；模板用 `<default>{{{旧名|}}}</default>` 保持向后兼容（未来 es 搬运页无需立即改写，**fallback 不可摘**）。
+10. ~~**seiyu/staff 的西语参数名**~~ → 归一为 image/Caption/name/name_en/name_ja_romaji/birth/(death)/(role|script/design/composer)，62 个调用页批量同步。（当日续：用户指示「确认旧名已全部替换后清理 fallback」——同日下午 bd/music/game/event/battle 的参数名一并归一（fix:para 211 页写入），复扫零残留后**全部模板的 fallback 已按指示摘除**；para 条目常驻 user-fixes.py 兜底未来搬运，fallback 不再保留。）
 11. ~~**`Template:Quote/main` 的内联 templatedata**~~ → 已迁入 `Quote/doc`（三页共享文档，templatedata 随文档盒注入）。
-12. ~~**`Template:Infobox anime` 参数名风格**~~ → Volume/Air Date/Opening/Ending 归一为 volume/air_date/opening/ending，175 个调用页批量同步；旧名同样经 `<default>` 兼容（en 搬运页安全网，不可摘）。
+12. ~~**`Template:Infobox anime` 参数名风格**~~ → Volume/Air Date/Opening/Ending 归一为 volume/air_date/opening/ending，175 个调用页批量同步。（当日续：同 10，fallback 已摘除。另：Infobox character 的 36 个旧名 fallback 早已零使用，同批摘除。）
 
 执行脚本 `scripts/oneoff/`：`fix_batch_bc_templates.py`（16 个模板体）+ `fix_quote_doc_templatedata.py` + `rename_infobox_params_batch.py`（237 页扫描、235 页编辑、零残留）+ `fix_batch_bc_docs.py`（5 个 /doc 同步）。验证：改动前 parse 快照 `logs/batch_bc_parse_snapshot.json`，`verify_batch_bc_templates.py` 全部样本渲染等价（归一化项：HTML 注释噪音、PI `data-source` 属性——后者随参数名变化是有意元数据差异，已确认全站无 CSS/JS 依赖它）；`verify_music_bd_labels.py`（music/bd label）；`verify_params_renamed.py`（旧参数名零残留）。PI 的 `<default>` 可作参数别名 fallback 是本次确立的新手法（先例：Infobox character 的 `{{{Name|}}}` default；本次推广到 image/caption/title/data 全类型）。
+
+当日下午续（本会话）：`prescan_param_rename.py`（全 ns 区分大小写预扫描）→ `round1_add_fallbacks.py`（bd/music/game/event/battle 加 fallback）→ `main.py fix:para`（211 页写入）→ 复扫零残留 → `round2b_character_and_docs.py`（摘 9 模板 fallback + 同步 5 /doc）→ `snapshot_renders.py`/`compare_snapshots.py`（8 样本页全程渲染等价）。PI `<default>` fallback 手法在本次用作**过渡态**（改名窗口期的兼容层），终态不保留。
 
 ### 1. ~~`/doc` 子页补全~~（2026-07-29 已完成）
 

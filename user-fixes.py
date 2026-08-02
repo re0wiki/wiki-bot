@@ -185,6 +185,45 @@ user_fixes["para"] = base | {
             ("Release Date", "date_ja"),
             ("Painter", "painter"),
             ("Cover", "cover"),
+            # 信息框参数名归一（2026-08-02）：en/es 搬运的旧名 → 全站统一小写蛇形。
+            # 与上表同为长期条目——transferbot 每次搬运都会重新带入 en 侧旧名。
+            # anime
+            ("Volume", "volume"),
+            ("Air Date", "air_date"),
+            ("Opening", "opening"),
+            ("Ending", "ending"),
+            # bd
+            ("Number", "number"),
+            ("Previous", "previous"),
+            ("Next", "next"),
+            # music
+            ("Singer", "singer"),
+            ("Composition", "composition"),
+            ("Arrangement", "arrangement"),
+            ("Lyric", "lyric"),
+            ("Length", "length"),
+            # game
+            ("Developers", "developers"),
+            ("Publishers", "publishers"),
+            ("Platform", "platform"),
+            ("Genre", "genre"),
+            ("Modes", "modes"),
+            # battle + event（nocase 同时命中 Rōmaji/Also known as 大写写法）
+            ("rōmaji", "name_ja_romaji"),
+            ("also known as", "also_known_as"),
+            ("Date", "date"),
+            ("Place", "place"),
+            ("Result", "result"),
+            # seiyu/staff（es 搬运旧名，兜底保险）
+            ("nombre", "name_en"),
+            ("nacimiento", "birth"),
+            ("personaje", "role"),
+            ("guión", "script"),
+            ("diseño", "design"),
+            ("compositor", "composer"),
+            ("image1", "image"),
+            ("title1", "name"),
+            ("caption1", "Caption"),
         ]
     ],
 }
