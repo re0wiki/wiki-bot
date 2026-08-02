@@ -14,11 +14,13 @@ mylang = "zh"
 # The dictionary usernames should contain a username for each site where you
 # have a bot account. If you have a unique username for all sites of a
 # family , you can use '*'
-# 12 个语言子站同账号，用通配折叠；上游三条消费路径（Site() 解析 / LoginManager /
-# login.py -all 展开）均支持通配，2026-07 实测通过（logs/_test_star_username.py）。
-# 考古：2026-02 f2d0894 曾因 "username for re0:en is not given" 展开成 12 行，
-# 肇事者是 interwiki.py 自己的预检不认识通配——上游 T430362（11.5）已修，当前 fork 包含修复。
-usernames["re0"] = {"*": "IchiSanNi"}  # ty: ignore[unresolved-reference]  # 名字由 pywikibot 注入
+# 只给 zh 配账号：Fandom 现在一次登录会把同账号其他语言站的会话服务端作废
+# （2026-08-02 实测：en 登录后 zh 会话立即匿名，恢复原 cookie 文件也无效）。
+# 历史上通配 12 站同账号曾工作，但双站任务（transferbot/re0_gallery 读 en 写 zh）
+# 会因两侧互相强制 re-login 乒乓互踢，最终 re-login 失败崩在 User "None"。
+# 外站只需匿名读，不配用户名即不触发自动登录；interwiki 对缺账号的外站仅警告跳过
+# （interwiki.py process_unlimited），且 -localonly 本就只写 zh。
+usernames["re0"] = {"zh": "IchiSanNi"}  # ty: ignore[unresolved-reference]  # 名字由 pywikibot 注入
 
 # The list of BotPasswords is saved in another file. Import it if needed.
 # See https://www.mediawiki.org/wiki/Manual:Pywikibot/BotPasswords to know how

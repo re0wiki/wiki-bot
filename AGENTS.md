@@ -29,7 +29,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `jobs/jobs.py` | 任务列表（`Job(name, cmd)`，name 是稳定引用；fix 类任务名与 `-fix:` 参数一致），分 6 组：跨站同步 → 整理新搬运页 → 模板维护 → 重定向 → 语法规范化 → 内容规范化 → 杂项 |
 | `jobs/run_job.py` | 子进程包装：`build_cmd` 拼 `sys.executable pywikibot/pwb.py ...`（不用裸 `python`，PATH 上可能是无项目依赖的其他版本），自动加 `-always`（interwiki 加 `-auto -force`，transferbot 不加） |
 | `jobs/starts.py` | namespace → `-start:ns:!` 生成器参数。`ns_base`=主/project/template/category，`ns_more` 再加 module/mediawiki |
-| `user-config.py` | pywikibot 配置：family=re0, mylang=zh, 账号 IchiSanNi（12 个语言站同账号） |
+| `user-config.py` | pywikibot 配置：family=re0, mylang=zh, 账号 IchiSanNi（只给 zh 配账号，外站匿名读——Fandom 现在跨站登录会互踢会话，见文件内注释） |
 | `user-fixes.py` | **核心资产**。自定义 fix 集：misc/date/anti-ve/para/gallery/heading/**translation**/HTML/syntax 等。`translation` 用「相似字符 → 正则」机制（`f()`/`p2o()`/`p2n()`）把几百个别名归一到标准译名 |
 | `scripts/` | 常驻/可复用脚本：5 个 `re0_*` 任务脚本（见下行）、`recent_changes_watchdog.py`、诊断（`verify_wiki_access.py`/`test_pwb_throttle.py`）、429 探测 `probe_*`（见 `docs/cloudflare-429.md`）、审计工具（`dump_modules.py`/`template_inventory.py`/`template_complexity.py`/`recheck_template_usage.py`/`scan_title_prefixes.py`）、`sync_jobs_status_page.py`。`scripts/oneoff/` 是已完成任务的一次性脚本归档（pwb.py 按名字找不到，重跑要传路径）。docs 里的 `logs/xxx.py` 引用是历史出处——`logs/` 整体 gitignore，不在仓库内 |
 | `scripts/re0_*.py` | 5 个自定义脚本：gallery（用 en 站图库覆盖 zh）、image（图片差量同步）、nav（编译 Wiki-navigation）、redirect（给 `前缀:词干` 页建裸词干重定向）、move（标题命中 translation 规则的页面自动移到简体标准名，留重定向；与正文替换的差异是标题一律归一简体、不保留繁体；目标已存在时跳过待人工合并） |
