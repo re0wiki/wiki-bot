@@ -72,19 +72,21 @@
 4. ~~**`MediaWiki:ImportJS` 仍加载 `dev:AjaxPoll.js`**~~ → 已摘除。
    执行/验证脚本 `scripts/oneoff/fix_batch_a_2026_08_02.py` / `verify_batch_a_2026_08_02.py`（删前扫荡：assert-pass/assert-fail 与两个 CSS 页面名全站零残留）。注意 `insource:` 对含 `:`/`-`/`."` 的词会分词漏配（扫荡时连 Common.css 自身都搜不到），此类排查要靠 `check_css_imports.py` 的定向核查而非全文搜索。
 
-#### B. 中文化/本地化一致性
+#### B. ~~中文化/本地化一致性~~（2026-08-02 已完成）
 
-5. **`Template:Infobox staff` 的 label 是西班牙语**（Nombre/Nacimiento/Director/Guión/Diseño/Compositor）——es 搬运时 `Infobox seiyu` 的 label 已中文化、staff 漏翻。只改 label 零破坏（参数名不动）。
-6. **`Template:Infobox event` label 全英文**（Kanji/Rōmaji/Date/Place/Outcome/Also known as）。
-7. **`Template:Infobox bd`「Volume Chronology / Previous / Next」英文**；**`Template:Infobox music`「Kanji / Romaji」英文**——与同族其他信息框的中文 label 不一致。
-8. **著作权六件套显示文本全英文**（CC-BY-SA/Fairuse/From Wikimedia/Other free/PD/Self；`id="c-fairuse"` 被 5 个模板复制共用）——`/doc` 已中文化，模板文本未跟上；File 页读者是中文用户。
-9. **源码繁简混杂**：`Template:Bot` 全文繁体；`Category redirect`（本分類/應該/刪除）、`Disambiguation`（羅列/協助/該處）繁简混排。显示有语言转换兜底，但本站源码惯例是简体。
+5. ~~**`Template:Infobox staff` 的 label 是西班牙语**~~ → 已中文化（英译/日文/罗马字/出生/监督/剧本/设计/作曲），与 C10 参数归一并入同次编辑。
+6. ~~**`Template:Infobox event` label 全英文**~~ → 已中文化（日文/罗马字/时间/地点/结果/别名）。
+7. ~~**`Infobox bd`/`Infobox music` 英文 label**~~ → bd：圆盘序列/前一卷/后一卷；music：日文/罗马字。
+8. ~~**著作权六件套显示文本全英文**~~ → 已中文化；`id` 按模板名区分（c-cc-by-sa/c-fairuse/c-from-wikimedia/c-other-free/c-pd/c-self），CC-BY-SA 链接改用 deed.zh。
+9. ~~**源码繁简混杂**~~ → `Bot` 全文转简体（#switch 的繁体 key 保留兼容，外站链接目标不动）；`Category redirect`/`Disambiguation` 统一简体（`-{ }-` 转换标记保留）。
 
-#### C. 待决策（有破坏性，收益需权衡）
+#### C. ~~待决策~~（2026-08-02 已完成，用户批准）
 
-10. **seiyu/staff 的西语参数名**（nombre/nacimiento/personaje/guión/diseño/compositor）——改成与全站统一的命名要批量改全部声优/制作人员页的调用。
-11. **`Template:Quote/main` 的内联 templatedata** 未按「templatedata 放 /doc」约定迁移，且位于裸区（既不在 noinclude 也不在 includeonly 内）——渲染无害，但与约定不一致。
-12. **`Template:Infobox anime` 参数名风格**（`Air Date`/`Volume`/`Opening`/`Ending` 大写带空格）与其他信息框的小写下划线不一致；统一需改所有剧集页调用。
+10. ~~**seiyu/staff 的西语参数名**~~ → 归一为 image/Caption/name/name_en/name_ja_romaji/birth/(death)/(role|script/design/composer)，62 个调用页批量同步；模板用 `<default>{{{旧名|}}}</default>` 保持向后兼容（未来 es 搬运页无需立即改写，**fallback 不可摘**）。
+11. ~~**`Template:Quote/main` 的内联 templatedata**~~ → 已迁入 `Quote/doc`（三页共享文档，templatedata 随文档盒注入）。
+12. ~~**`Template:Infobox anime` 参数名风格**~~ → Volume/Air Date/Opening/Ending 归一为 volume/air_date/opening/ending，175 个调用页批量同步；旧名同样经 `<default>` 兼容（en 搬运页安全网，不可摘）。
+
+执行脚本 `scripts/oneoff/`：`fix_batch_bc_templates.py`（16 个模板体）+ `fix_quote_doc_templatedata.py` + `rename_infobox_params_batch.py`（237 页扫描、235 页编辑、零残留）+ `fix_batch_bc_docs.py`（5 个 /doc 同步）。验证：改动前 parse 快照 `logs/batch_bc_parse_snapshot.json`，`verify_batch_bc_templates.py` 全部样本渲染等价（归一化项：HTML 注释噪音、PI `data-source` 属性——后者随参数名变化是有意元数据差异，已确认全站无 CSS/JS 依赖它）；`verify_music_bd_labels.py`（music/bd label）；`verify_params_renamed.py`（旧参数名零残留）。PI 的 `<default>` 可作参数别名 fallback 是本次确立的新手法（先例：Infobox character 的 `{{{Name|}}}` default；本次推广到 image/caption/title/data 全类型）。
 
 ### 1. ~~`/doc` 子页补全~~（2026-07-29 已完成）
 
