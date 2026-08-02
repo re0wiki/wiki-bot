@@ -60,6 +60,31 @@
 
 ## 待办
 
+### 4. 2026-08-02 全站模板复查
+
+复查方式：`template_inventory.py` 刷新（数据与 07-29 完全一致：227 页 / 55 顶层 / 重定向 0 / 文档 55/55）+ `recheck_template_usage.py` 全命名空间复核（真零引用仍仅 `Sandbox` 一个，有意保留）+ 55 个顶层模板 wikitext 逐个人工审读 + CSS/JS 依赖链核查（新增审计脚本 `scripts/check_css_imports.py`：Common.css @import 清单 vs 页面实际存在性）。确认正常、**排除**的疑似点：19 个「分类在 noinclude 外」均为 onlyinclude 保护或有意设计；模板页 `[[en:…]]`/`[[es:…]]` 跨语言链接经 parse langlinks 实证生效且目标页存在（指向 en 旧名 `Character`/`Re:Zero Light Novel Volumes`/`Infobox Events` 是正确的——en 侧它们仍是本体，`en:Template:Infobox character` 反而不存在）；`Template:Copy` 的复制 JS 在 `dev:CopyText/code.js`（ImportJS 加载，选择器 `.copy-to-clipboard-button` + `data-text` 与模板标记完全匹配），功能正常；`dev:BilibiliVideo.js` 必须保留（Module:Bili 渲染时产出 `div.BilibiliVideo`，insource 搜不到是 Lua 生成）。
+
+#### A. 明确错误（建议直接修）
+
+1. **`Template:Category redirect` 的 `style:"` 是全角冒号**（`class="mbox-text" width="100%" style:"border: none; …"`）——属性整体失效，mbox-text 的 padding/width 从未生效。
+2. **`MediaWiki:Common.css` @import 仍引用已删除的 `MediaWiki:Gadget-Poll.css`**（2026-07-26 删 Poll 时漏清 import 列表，列表里是唯一残留引用）。
+3. **`MediaWiki:Gadget-Assert.css` 是断言体系的漏网孤儿**（assert-pass/assert-fail 两个 class；Assert empty/eq、Module:assert、Category:断言模板 已于 2026-07-26 全删）——删 CSS 页面并从 @import 摘除。
+4. **`MediaWiki:ImportJS` 仍加载 `dev:AjaxPoll.js`**——Poll 模板已删、全站 `insource:"ajax-poll"` 零命中，纯死重。
+
+#### B. 中文化/本地化一致性
+
+5. **`Template:Infobox staff` 的 label 是西班牙语**（Nombre/Nacimiento/Director/Guión/Diseño/Compositor）——es 搬运时 `Infobox seiyu` 的 label 已中文化、staff 漏翻。只改 label 零破坏（参数名不动）。
+6. **`Template:Infobox event` label 全英文**（Kanji/Rōmaji/Date/Place/Outcome/Also known as）。
+7. **`Template:Infobox bd`「Volume Chronology / Previous / Next」英文**；**`Template:Infobox music`「Kanji / Romaji」英文**——与同族其他信息框的中文 label 不一致。
+8. **著作权六件套显示文本全英文**（CC-BY-SA/Fairuse/From Wikimedia/Other free/PD/Self；`id="c-fairuse"` 被 5 个模板复制共用）——`/doc` 已中文化，模板文本未跟上；File 页读者是中文用户。
+9. **源码繁简混杂**：`Template:Bot` 全文繁体；`Category redirect`（本分類/應該/刪除）、`Disambiguation`（羅列/協助/該處）繁简混排。显示有语言转换兜底，但本站源码惯例是简体。
+
+#### C. 待决策（有破坏性，收益需权衡）
+
+10. **seiyu/staff 的西语参数名**（nombre/nacimiento/personaje/guión/diseño/compositor）——改成与全站统一的命名要批量改全部声优/制作人员页的调用。
+11. **`Template:Quote/main` 的内联 templatedata** 未按「templatedata 放 /doc」约定迁移，且位于裸区（既不在 noinclude 也不在 includeonly 内）——渲染无害，但与约定不一致。
+12. **`Template:Infobox anime` 参数名风格**（`Air Date`/`Volume`/`Opening`/`Ending` 大写带空格）与其他信息框的小写下划线不一致；统一需改所有剧集页调用。
+
 ### 1. ~~`/doc` 子页补全~~（2026-07-29 已完成）
 
 - **Infobox 文档已补全**（2026-07-29）：9 个信息框模板（book/anime/seiyu/music/battle/bd/event/game/staff）全部新建 `/doc`（说明/语法/示例/templatedata），模板体内联语法小节（残留旧名 `{{Anime}}`/`{{Seiyu}}`/`{{Music}}`/`{{Re:Zero BD}}`/`{{Re:Zero Game}}`/`{{Staff}}` 与西语 `== Usos ==` 标题）全部迁入 `/doc` 并改挂 `{{Documentation}}`；book 新增 `{{Documentation}}` 调用。写入脚本 `logs/write_infobox_docs.py`，渲染与自动分类验证 `logs/verify_infobox_docs.py`。实测 quirks 已写进各 `/doc`：seiyu/staff 参数名为西班牙语（es 搬运）；battle 的参战方/指挥官/军队/伤亡只有 1–3 号参数（旧文档与部分页面里的 4 号是死参数）；book 的「英文名」与 battle 的「英译」由 `Module:Interwiki` 自动生成；game 的 `Name_en` 渲染为副标题。
