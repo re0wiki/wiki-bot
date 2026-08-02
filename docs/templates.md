@@ -64,12 +64,13 @@
 
 复查方式：`template_inventory.py` 刷新（数据与 07-29 完全一致：227 页 / 55 顶层 / 重定向 0 / 文档 55/55）+ `recheck_template_usage.py` 全命名空间复核（真零引用仍仅 `Sandbox` 一个，有意保留）+ 55 个顶层模板 wikitext 逐个人工审读 + CSS/JS 依赖链核查（新增审计脚本 `scripts/check_css_imports.py`：Common.css @import 清单 vs 页面实际存在性）。确认正常、**排除**的疑似点：19 个「分类在 noinclude 外」均为 onlyinclude 保护或有意设计；模板页 `[[en:…]]`/`[[es:…]]` 跨语言链接经 parse langlinks 实证生效且目标页存在（指向 en 旧名 `Character`/`Re:Zero Light Novel Volumes`/`Infobox Events` 是正确的——en 侧它们仍是本体，`en:Template:Infobox character` 反而不存在）；`Template:Copy` 的复制 JS 在 `dev:CopyText/code.js`（ImportJS 加载，选择器 `.copy-to-clipboard-button` + `data-text` 与模板标记完全匹配），功能正常；`dev:BilibiliVideo.js` 必须保留（Module:Bili 渲染时产出 `div.BilibiliVideo`，insource 搜不到是 Lua 生成）。
 
-#### A. 明确错误（建议直接修）
+#### A. ~~明确错误~~（2026-08-02 已修复）
 
-1. **`Template:Category redirect` 的 `style:"` 是全角冒号**（`class="mbox-text" width="100%" style:"border: none; …"`）——属性整体失效，mbox-text 的 padding/width 从未生效。
-2. **`MediaWiki:Common.css` @import 仍引用已删除的 `MediaWiki:Gadget-Poll.css`**（2026-07-26 删 Poll 时漏清 import 列表，列表里是唯一残留引用）。
-3. **`MediaWiki:Gadget-Assert.css` 是断言体系的漏网孤儿**（assert-pass/assert-fail 两个 class；Assert empty/eq、Module:assert、Category:断言模板 已于 2026-07-26 全删）——删 CSS 页面并从 @import 摘除。
-4. **`MediaWiki:ImportJS` 仍加载 `dev:AjaxPoll.js`**——Poll 模板已删、全站 `insource:"ajax-poll"` 零命中，纯死重。
+1. ~~**`Template:Category redirect` 的 `style:"` 是全角冒号**~~ → 已改半角。
+2. ~~**`MediaWiki:Common.css` @import 仍引用已删除的 `MediaWiki:Gadget-Poll.css`**~~ → 已摘除。
+3. ~~**`MediaWiki:Gadget-Assert.css` 是断言体系的漏网孤儿**~~ → 已删页面并摘除 @import。
+4. ~~**`MediaWiki:ImportJS` 仍加载 `dev:AjaxPoll.js`**~~ → 已摘除。
+   执行/验证脚本 `scripts/oneoff/fix_batch_a_2026_08_02.py` / `verify_batch_a_2026_08_02.py`（删前扫荡：assert-pass/assert-fail 与两个 CSS 页面名全站零残留）。注意 `insource:` 对含 `:`/`-`/`."` 的词会分词漏配（扫荡时连 Common.css 自身都搜不到），此类排查要靠 `check_css_imports.py` 的定向核查而非全文搜索。
 
 #### B. 中文化/本地化一致性
 

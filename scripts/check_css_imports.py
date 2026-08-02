@@ -10,7 +10,12 @@ import pywikibot
 site = pywikibot.Site("zh", "re0")
 
 common = pywikibot.Page(site, "MediaWiki:Common.css").text
-imported = re.findall(r"MediaWiki:[^|'\"]+\.css", common)
+# 排除 u:dev: 等外链前缀（外部 wiki 的页面，存在性不在本站核查范围）
+imported = [
+    m
+    for m in re.findall(r"[\w:]*MediaWiki:[^|'\"]+\.css", common)
+    if m.startswith("MediaWiki:")
+]
 print("Common.css @import 引用的本地 CSS：")
 for t in imported:
     p = pywikibot.Page(site, t)
