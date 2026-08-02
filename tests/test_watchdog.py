@@ -67,3 +67,12 @@ def test_extract_link_targets_skips_prefixes_and_anchors():
     ]
     targets = wd.extract_link_targets(lines)
     assert targets == {"角色:菜月·昴", "术语:魔女教"}
+
+
+def test_extract_link_targets_strips_inline_marks():
+    """⟦⟧/〔〕 行内标记必须剥离，否则已存在页面会被误判为红链。"""
+    lines = [
+        "+ [[术语:邪⟦龍討滅戰⟧|邪⟦龍討滅戰⟧]]",
+        "+ [[角色:菜月·雷吉〔利格鲁〕⟦尔⟧|菜月·雷吉尔]]",
+    ]
+    assert wd.extract_link_targets(lines) == {"术语:邪龍討滅戰", "角色:菜月·雷吉尔"}
