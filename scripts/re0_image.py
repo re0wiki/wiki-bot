@@ -2,15 +2,28 @@ from os import path
 from tempfile import TemporaryDirectory
 
 import pywikibot.config
+from pywikibot.exceptions import NoUsernameError
 from tqdm import tqdm
 
 import pywikibot as pwb
 
 
+def login_if_configured(site: pwb.site.BaseSite) -> None:
+    """有账号才登录；没配账号的站（如 en）保持匿名。
+
+    读取不需要登录，且 Fandom 跨站登录会互踢会话（见 user-config.py 注释），
+    外站一律不登录，避免把 zh 的写会话顶掉。
+    """
+    try:
+        site.login()
+    except NoUsernameError:
+        pass
+
+
 def all_images(code: str) -> dict[str, pwb.FilePage]:
     """返回所有图片的从页面名到页面的映射。"""
     site = pwb.Site(code, "re0")
-    site.login()
+    login_if_configured(site)
     return {
         image.title(): image
         for image in tqdm(site.allimages(), f"Collecting {code} images")
@@ -65,7 +78,7 @@ def upload_one(image: pwb.FilePage, tmp_dir: str) -> None:
 
 def download_all(images: list[pwb.FilePage], tmp_dir: str):
     """从 en 下载所有图片文件到临时目录。"""
-    pwb.Site("en", "re0").login()
+    login_if_configured(pwb.Site("en", "re0"))
     for image in tqdm(images, "Downloading images"):
         download_one(image, tmp_dir)
 
