@@ -42,6 +42,7 @@
 | `Infobox battle` | 战役（经 `T category`） |
 | `Infobox event` | 事件（分类在 onlyinclude 内，不限命名空间） |
 | `Seirei or Elf` / `Yousei or Elf` | 需复核译名 |
+| `Soft redirect` | 软重定向（onlyinclude 内） |
 | `Ruby` 系（Ruby、Ruby-ja、Ruby-zh-ja） | Ruby transclusions with too many parameters（异常追踪） |
 | `Category redirect` | 已重定向的分类、尚未清空的已重定向分类 |
 
