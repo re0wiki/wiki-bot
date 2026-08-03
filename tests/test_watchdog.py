@@ -76,3 +76,13 @@ def test_extract_link_targets_strips_inline_marks():
         "+ [[角色:菜月·雷吉〔利格鲁〕⟦尔⟧|菜月·雷吉尔]]",
     ]
     assert wd.extract_link_targets(lines) == {"术语:邪龍討滅戰", "角色:菜月·雷吉尔"}
+
+
+def test_extract_link_targets_resolves_subpage_links():
+    """[[/子页]] 必须相对当前页解析，否则已存在子页被误判为红链。"""
+    lines = ["+ 其餘差異详情請见 [[/改动]]。"]
+    assert wd.extract_link_targets(lines, "设定集、画集:Re:zeropedia") == {
+        "设定集、画集:Re:zeropedia/改动"
+    }
+    # 无 page_title 时无法解析，跳过而不是误报
+    assert wd.extract_link_targets(lines) == set()

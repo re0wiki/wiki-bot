@@ -225,12 +225,15 @@ _LINK_SKIP_PREFIXES = (
 _INLINE_DEL_RE = re.compile(r"〔[^〕]*〕")
 
 
-def extract_link_targets(added_lines: list[str]) -> set[str]:
+def extract_link_targets(added_lines: list[str], page_title: str = "") -> set[str]:
     """从新增行提取内部链接目标（跳过文件/分类/站外前缀）。
 
     输入行带 parse_diff 的行内标记，必须先剥离：⟦…⟧ 是新增片段（去标记
     保留内容），〔…〕 是删除片段（整体去除，不属于新版本）。不剥离会把
     标记字符带进链接目标，使已存在页面被误判为红链。
+
+    [[/子页]] 是相对于当前页的子页链接，必须拼上 page_title 再测，
+    否则会把已存在的子页误判为红链。
     """
     targets: set[str] = set()
     for line in added_lines:
@@ -240,6 +243,10 @@ def extract_link_targets(added_lines: list[str]) -> set[str]:
             t = m.group(1).strip()
             if not t or t.lower().startswith(_LINK_SKIP_PREFIXES):
                 continue
+            if t.startswith("/"):
+                if not page_title:
+                    continue
+                t = page_title + t
             targets.add(t)
     return targets
 
@@ -373,7 +380,9 @@ def main() -> int:
             budget_exceeded = True
         sections.append(header)
         sections.extend(lines if lines else ["(无文本差异)"])
-        for t in extract_link_targets([l for l in lines if l.startswith("+")]):
+        for t in extract_link_targets(
+            [l for l in lines if l.startswith("+")], g["title"]
+        ):
             link_occurrences.setdefault(t, set()).add(g["title"])
 
     # 第三段：红链实测。失败不致命——标注后由 LLM 自行核查。
