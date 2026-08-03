@@ -3,15 +3,6 @@
 跨任务的待办与决策记录。单个领域（模板/Module）的领域知识归 `templates.md` / `modules.md`。
 已完成的待办若不再需要相关信息就直接删除，不留完成记录（有长期价值的知识并入对应领域文档；执行历史查 git）。
 
-## 待办
-
-### `Infobox character/doc` templatedata 的陈旧 `aliases`（2026-08-03 三轮复查执行中发现）
-
-30+ 个参数仍声明 `aliases: ["Name"]/["Kanji"]/["Hair Color"]…` 等 08-02 已废弃的旧名
-（当时 5 个 /doc 同步了键名，character/doc 只补过缺失参数、没清 aliases）。模板体已不收
-旧名，aliases 只是 VE 编辑辅助里的过时信息，无功能影响。清理 = 摘 templatedata 里全部
-`aliases` 块（纯文档编辑）。
-
 ## 已决策（2026-08-03）
 
 ### MediaWiki 命名空间的 JS/CSS 页面不为纯规范化改动
