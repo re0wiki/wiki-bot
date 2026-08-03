@@ -157,6 +157,10 @@ user_fixes["para"] = base | {
             ("Nickname", "nickname"),
             # 台版译名（全站唯一带空格的参数名，2026-08-03 归一）
             ("another translation", "name_zh_tw"),
+            # voice 系连字符 → 下划线（2026-08-03 归一）
+            ("voice_zh-cn", "voice_zh_cn"),
+            ("voice_zh-tw", "voice_zh_tw"),
+            ("voice_zh-hk", "voice_zh_hk"),
             ("Race", "race"),
             ("Gender", "gender"),
             ("Birthday", "birthday"),
