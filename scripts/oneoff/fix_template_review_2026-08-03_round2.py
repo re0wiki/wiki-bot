@@ -1,5 +1,9 @@
 """2026-08-03 模板复查（第二轮）全部修复（docs/todo.md 待办 A1-A3、B4-B6）。
 
+注意：A3（Documentation 自挂 {{Documentation}}）是错误修复——chrome 机制在自身页
+已渲染 /doc，自挂导致文档盒重复显示，当日已在 wiki 上回退（见 docs/templates.md
+「文档盒也可能挂在 Tab/* 导航子页上」节）。勿重跑本脚本的 A3 部分。
+
 每页：精确匹配断言 → 替换 → 保存（bot=False，手动编辑不加 bot flag）。
 保存后 action=parse 渲染验证。失败即停，不静默跳过。
 """
