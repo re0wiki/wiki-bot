@@ -155,6 +155,8 @@ user_fixes["para"] = base | {
             ("Romaji", "name_ja_romaji"),
             ("Alias", "alias"),
             ("Nickname", "nickname"),
+            # 台版译名（全站唯一带空格的参数名，2026-08-03 归一）
+            ("another translation", "name_zh_tw"),
             ("Race", "race"),
             ("Gender", "gender"),
             ("Birthday", "birthday"),
