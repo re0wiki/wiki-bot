@@ -8,9 +8,12 @@ import pywikibot as pwb
 
 
 def all_images(code: str) -> dict[str, pwb.FilePage]:
-    """返回所有图片的从页面名到页面的映射。"""
+    """返回所有图片的从页面名到页面的映射。
+
+    读取不需要登录；外站（en）一律不登录——Fandom 跨站登录会互踢会话
+    （见 user-config.py 注释）。zh 的登录由 upload_all 在上传前完成。
+    """
     site = pwb.Site(code, "re0")
-    site.login()
     return {
         image.title(): image
         for image in tqdm(site.allimages(), f"Collecting {code} images")
@@ -64,8 +67,7 @@ def upload_one(image: pwb.FilePage, tmp_dir: str) -> None:
 
 
 def download_all(images: list[pwb.FilePage], tmp_dir: str):
-    """从 en 下载所有图片文件到临时目录。"""
-    pwb.Site("en", "re0").login()
+    """从 en 匿名下载所有图片文件到临时目录（下载不需要登录）。"""
     for image in tqdm(images, "Downloading images"):
         download_one(image, tmp_dir)
 

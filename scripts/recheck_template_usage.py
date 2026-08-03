@@ -3,6 +3,7 @@
 输出：真零引用模板清单 + 仅被自身文档引用的模板清单。
 """
 
+import datetime
 import json
 import re
 
@@ -75,8 +76,10 @@ print(f"\n=== 引用 1-2 处的模板 {len(low)} 个 ===")
 for t in sorted(low):
     print(f"  {t}: {low[t]}")
 
-with open("logs/template_usage_recheck_2026-07-28.json", "w", encoding="utf-8") as f:
+today = datetime.datetime.now(tz=datetime.UTC).date()
+out = f"logs/template_usage_recheck_{today:%Y-%m-%d}.json"
+with open(out, "w", encoding="utf-8") as f:
     json.dump(
         {t: u for t, u in sorted(result.items())}, f, ensure_ascii=False, indent=1
     )
-print("\nsaved logs/template_usage_recheck_2026-07-28.json")
+print(f"\nsaved {out}")

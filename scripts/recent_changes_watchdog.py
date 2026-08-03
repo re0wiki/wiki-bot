@@ -76,14 +76,14 @@ def _get(params: dict, retries: int = 3) -> dict:
                         if retry_after is not None
                         else 5 * (attempt + 1)
                     )
-                except TypeError, ValueError:
+                except (TypeError, ValueError):
                     delay = 5 * (attempt + 1)
                 time.sleep(
                     min(delay, 65)
                 )  # Fandom 的 Retry-After 可达数千秒，封顶防卡死
                 continue
             raise
-        except urllib.error.URLError, TimeoutError:
+        except (urllib.error.URLError, TimeoutError):
             if attempt < retries - 1:
                 time.sleep(5 * (attempt + 1))
                 continue
@@ -222,10 +222,20 @@ _LINK_SKIP_PREFIXES = (
 )
 
 
+_INLINE_DEL_RE = re.compile(r"〔[^〕]*〕")
+
+
 def extract_link_targets(added_lines: list[str]) -> set[str]:
-    """从新增行提取内部链接目标（跳过文件/分类/站外前缀）。"""
+    """从新增行提取内部链接目标（跳过文件/分类/站外前缀）。
+
+    输入行带 parse_diff 的行内标记，必须先剥离：⟦…⟧ 是新增片段（去标记
+    保留内容），〔…〕 是删除片段（整体去除，不属于新版本）。不剥离会把
+    标记字符带进链接目标，使已存在页面被误判为红链。
+    """
     targets: set[str] = set()
     for line in added_lines:
+        line = _INLINE_DEL_RE.sub("", line)
+        line = line.replace("⟦", "").replace("⟧", "")
         for m in _LINK_RE.finditer(line):
             t = m.group(1).strip()
             if not t or t.lower().startswith(_LINK_SKIP_PREFIXES):
