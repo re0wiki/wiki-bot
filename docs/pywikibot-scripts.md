@@ -20,7 +20,7 @@ PYTHONPATH= .venv/Scripts/python.exe pywikibot/pwb.py <script> [生成器] [脚�
 
 | 任务 | 脚本 | 说明与示例 |
 |---|---|---|
-| 批量移动页面（改前缀、整理英文前缀残留页） | `movepages` | `-from:X -to:Y` 单个；`-pairsfile:文件` 批量（每行 `旧名<Tab>新名`，也支持空格分隔）；`-noredirect` 不留重定向；`-notalkpage` / `-nosubpages`；`-prefix:角色` 给生成器选出的整批页加前缀（会先去掉旧前缀）。比手搓 `rename.py` 的流程正规。 |
+| 批量移动页面（改前缀、整理英文前缀残留页） | `movepages` | `-from:X -to:Y` 单个；`-pairsfile:文件` 批量（每行 `旧名<Tab>新名`，也支持空格分隔）；`-noredirect` 不留重定向；`-notalkpage` / `-nosubpages`；`-prefix:角色` 给生成器选出的整批页加前缀（会先去掉旧前缀）。译名驱动的改名不需要它——re0_move + fix:translation 自动覆盖主命名空间标题与全站正文。 |
 | 批量在页首/页尾加文字 | `add_text` | `-text:"..."`（`\n` 表换行）或 `-textfile:路径`；`-up` 加到页首；`-create` 页面不存在则创建；`-createonly` 只建不改。例：给某分类所有页页首补模板：`add_text -cat:某分类 -text:"{{某模板}}" -up -always` |
 | 批量删除 / 恢复页面 | `delete` | 已实测可用（bot 账号在 zh 站有删除权限）。例：`delete -cat:单行本漫画 -titleregex:'第3章第.*卷' -summary:'删除以重新搬运'`；`-undelete` 反向操作；`-isorphan` 提示还有页面链入；`-always`。 |
 | 删除页面前先清掉全站链入 | `unlink` | `unlink "页面名" -namespace:0 -always`，把所有 `[[页面名]]` 变成纯文本。删页前置步骤。 |

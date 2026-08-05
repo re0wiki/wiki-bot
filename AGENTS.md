@@ -38,7 +38,6 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `docs/` | `todo.md`（跨任务待办与待决策项）、`wiki-access.md`（读写配方）、`cloudflare-429.md`（限流根因与对策）、`template-usage-audit.md`（零引用模板审计工作流）、`templates.md`（模板盘点数据与技术约定）、`modules.md`（Module/Lua 审查结论与约定）、`pywikibot-update.md`（submodule rebase 上游流程）、`pywikibot-scripts.md`（自带脚本选用速查） |
 | `families/re0_family.py` | re0 family 定义，12 个语言子站（de/en/es/fr/it/ko/nl/pl/pt-br/ru/uk/zh 都在 rezero.fandom.com，en 无路径前缀其余 `/<code>`）。注意 family 文件注释说 "do not commit" 但本项目故意提交了。另有 `w_family.py`（community.fandom.com，即 Fandom 中央站 `w:` 前缀），同理会故意提交 |
 | `tests/` | 离线单测（pytest，不触 wiki）：译名表一致性（RULES 与 re0_move 共享）、re0_nav 编译规则、watchdog 纯函数、re0_gallery `merge_galleries`、re0_move `resolve_move`、run_job 命令拼装。模块经 `tests/repo_loader.py` 按路径加载（scripts/ 非包） |
-| `rename.py` | 交互式改名工具：移动页面 + 全站替换文本（只打印命令不执行） |
 | `pywikibot/` | submodule，含 re0wiki 定制补丁（见下） |
 
 pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template 等）的选用速查见 `docs/pywikibot-scripts.md`——能用现成脚本就别手写。
