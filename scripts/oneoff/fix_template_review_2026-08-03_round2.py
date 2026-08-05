@@ -25,53 +25,65 @@ edits = []  # (title, [替换对 (old, new, count)]，count=0 表示全部替换
 # ── A1. /doc 模板链接约定：{{[[Template:X|X]]}} → {{T|X}} ──
 T_LINK = re.compile(r"\{\{\[\[Template:([^]|]+)\|[^]]*\]\]\}\}")
 for t in ["QUOTE", "Tooltip", "Yousei or Elf", "Yousei", "加护"]:
-    edits.append((
-        f"Template:{t}/doc",
-        [(T_LINK, r"{{T|\1}}", 0)],
-        "文档约定：模板链接改用 {{T}}（替换 {{[[Template:X|X]]}} 写法）",
-    ))
+    edits.append(
+        (
+            f"Template:{t}/doc",
+            [(T_LINK, r"{{T|\1}}", 0)],
+            "文档约定：模板链接改用 {{T}}（替换 {{[[Template:X|X]]}} 写法）",
+        )
+    )
 
 # ── A2+B6. Documentation chrome 简体化 + 措辞统一（模板文件→模板文档）──
-edits.append((
-    "Template:Documentation",
-    [
-        ("'''模板文件'''", "'''模板文档'''", 1),
-        ("編輯模板文件页面", "编辑模板文档", 1),
-        ("這如何運作？", "这如何运作？", 1),
-        ("此模板有時隱藏或不可見", "此模板有时隐藏或不可见", 1),
-    ],
-    "chrome 文本简体化（編輯/這如何運作/有時），「模板文件」统一为「模板文档」（与 /doc 约定用语一致）",
-))
+edits.append(
+    (
+        "Template:Documentation",
+        [
+            ("'''模板文件'''", "'''模板文档'''", 1),
+            ("編輯模板文件页面", "编辑模板文档", 1),
+            ("這如何運作？", "这如何运作？", 1),
+            ("此模板有時隱藏或不可見", "此模板有时隐藏或不可见", 1),
+        ],
+        "chrome 文本简体化（編輯/這如何運作/有時），「模板文件」统一为「模板文档」（与 /doc 约定用语一致）",
+    )
+)
 
 # ── A3. Documentation 自身补挂 {{Documentation}}（并入已有 noinclude）──
-edits.append((
-    "Template:Documentation",
-    [(
-        re.compile(r"<noinclude>(\r?\n)\[\[Category:元模板\]\]"),
-        r"<noinclude>\1{{Documentation}}\1[[Category:元模板]]",
-        1,
-    )],
-    "自身补挂 {{Documentation}}（/doc 此前孤儿化），并入已有 noinclude 内",
-))
+edits.append(
+    (
+        "Template:Documentation",
+        [
+            (
+                re.compile(r"<noinclude>(\r?\n)\[\[Category:元模板\]\]"),
+                r"<noinclude>\1{{Documentation}}\1[[Category:元模板]]",
+                1,
+            )
+        ],
+        "自身补挂 {{Documentation}}（/doc 此前孤儿化），并入已有 noinclude 内",
+    )
+)
 
 # ── B4. 索引：Seirei or Elf / Yousei or Elf 挪入字词转换节 ──
 OR_LINE = "* {{t|Seirei or Elf}} / {{t|Yousei or Elf}} — 译名待复核标记（bot 把条目中直接书写的「精灵」「妖精」自动替换为该标记），引用页归入 [[:Category:需复核译名]]"
 SIB_LINE = "* {{t|Seirei}} / {{t|Yousei}} / {{t|Elf}} — 精灵／妖精／Elf 字词转换（译名复核通过后的正式形态）"
-edits.append((
-    "ReZero Wiki:模板",
-    [
-        (re.compile(r"\r?\n" + re.escape(OR_LINE)), "", 1),
-        (SIB_LINE, SIB_LINE + "{NL}" + OR_LINE, 1),
-    ],
-    "Seirei or Elf / Yousei or Elf 挪入字词转换节（与模板自身分类一致，同 NoteTA 先例）",
-))
+edits.append(
+    (
+        "ReZero Wiki:模板",
+        [
+            (re.compile(r"\r?\n" + re.escape(OR_LINE)), "", 1),
+            (SIB_LINE, SIB_LINE + "{NL}" + OR_LINE, 1),
+        ],
+        "Seirei or Elf / Yousei or Elf 挪入字词转换节（与模板自身分类一致，同 NoteTA 先例）",
+    )
+)
 
 # ── B5. 索引：摘除 Sandbox 条目（已清空为最小占位、无分类）──
-edits.append((
-    "ReZero Wiki:模板",
-    [(re.compile(r"\r?\n\* \{\{t\|Sandbox\}\} — 测试用"), "", 1)],
-    "摘除 Sandbox 条目（已清空为最小占位并摘除分类，不再是可用格式模板）",
-))
+edits.append(
+    (
+        "ReZero Wiki:模板",
+        [(re.compile(r"\r?\n\* \{\{t\|Sandbox\}\} — 测试用"), "", 1)],
+        "摘除 Sandbox 条目（已清空为最小占位并摘除分类，不再是可用格式模板）",
+    )
+)
 
 for title, subs, summary in edits:
     p = pywikibot.Page(site, title)
@@ -98,6 +110,7 @@ for title, subs, summary in edits:
 if DRY:
     print("\n干跑通过", file=sys.stderr)
     sys.exit(0)
+
 
 # ── 渲染验证 ────────────────────────────────────────────────
 def parse_html(title):
