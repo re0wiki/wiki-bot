@@ -30,7 +30,8 @@ parser = argparse.ArgumentParser(
 )
 parser.add_argument(
     "job",
-    help="任务名字或编号，231代表循环所有任务",
+    nargs="*",
+    help="任务名字或编号，可传多个依次执行；不传则无限循环所有任务",
 )
 parser.add_argument(
     "-s",
@@ -41,10 +42,8 @@ parser.add_argument(
 # endregion
 
 
-def resolve(job_arg: str) -> Job | None:
-    """把命令行参数解析为任务。返回 None 表示 231（循环所有任务）。"""
-    if job_arg == "231":
-        return None
+def resolve(job_arg: str) -> Job:
+    """把命令行参数解析为任务。"""
     # 编号会随插入平移，名字才是稳定引用
     if job_arg.isdigit() and 0 <= int(job_arg) < len(jobs):
         return jobs[int(job_arg)]
@@ -57,13 +56,14 @@ def resolve(job_arg: str) -> Job | None:
 if __name__ == "__main__":
     args = parser.parse_args()
     try:
-        if (job := resolve(args.job)) is None:
-            for j in itertools.cycle(jobs):
-                run_job(j.cmd, args.simulate)
+        if args.job:
+            selected = [resolve(name) for name in args.job]
         else:
+            selected = itertools.cycle(jobs)
+        for job in selected:
             run_job(job.cmd, args.simulate)
     except CalledProcessError as e:
-        # 任务失败不继续：退出等待人工修复，避免 231 循环故障期空转锤站
+        # 任务失败不继续：退出等待人工修复，避免循环故障期空转锤站
         logger.error("任务失败（exit %s），退出等待人工修复: %s", e.returncode, e.cmd)
         sys.exit(e.returncode or 1)
     except KeyboardInterrupt:

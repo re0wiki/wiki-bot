@@ -25,7 +25,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 
 | 文件 | 作用 |
 |---|---|
-| `main.py` | 循环任务入口。`python main.py <任务名或编号>` 跑单个任务（编号随插入平移，名字稳定，`-h` 列全部），`-s` 模拟；`231` = 无限循环所有任务。任务失败（子进程非零退出）即以相同码退出等待人工修复，不继续后续任务 |
+| `main.py` | 循环任务入口。`python main.py <任务名或编号>...` 依次跑指定任务（可多个，编号随插入平移，名字稳定，`-h` 列全部），`-s` 模拟；不传参数 = 无限循环所有任务。任务失败（子进程非零退出）即以相同码退出等待人工修复，不继续后续任务 |
 | `jobs/jobs.py` | 任务列表（`Job(name, cmd)`，name 是稳定引用；fix 类任务名与 `-fix:` 参数一致），分 6 组：跨站同步 → 整理新搬运页 → 模板维护 → 重定向 → 语法规范化 → 内容规范化 → 杂项 |
 | `jobs/run_job.py` | 子进程包装：`build_cmd` 拼 `sys.executable pywikibot/pwb.py ...`（不用裸 `python`，PATH 上可能是无项目依赖的其他版本），自动加 `-always`（interwiki 加 `-auto -force`，transferbot 不加） |
 | `jobs/starts.py` | namespace → `-start:ns:!` 生成器参数。`ns_base`=主/project/template/category，`ns_more` 再加 module/mediawiki |
@@ -91,7 +91,7 @@ p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚�
 ## 坑
 
 - MediaWiki API `formatversion=2` 下 recentchanges 的 `bot`/`new`/`minor` 键**恒存在**（值为 true/false），过滤必须判断值而不是键存在性——`"bot" not in c` 会把所有编辑都滤掉。
-- `run_job` 给子进程注入 `PYTHONIOENCODING=utf-8`，管道输出按 UTF-8 解码——不再依赖 mbcs/系统 ANSI 代码页（历史上 `67fd586` 用 mbcs 治 GBK 乱码，2026-07 改为源头强制 UTF-8）。231 循环子进程继承控制台走 WriteConsoleW 宽字符 API，显示不受此变量影响。（`shell=True` 已去除——它 2026-01 加入时是裸 `python` 解释器解析错误的 workaround，`sys.executable` 绝对路径后动机已消。）
+- `run_job` 给子进程注入 `PYTHONIOENCODING=utf-8`，管道输出按 UTF-8 解码——不再依赖 mbcs/系统 ANSI 代码页（历史上 `67fd586` 用 mbcs 治 GBK 乱码，2026-07 改为源头强制 UTF-8）。循环模式子进程继承控制台走 WriteConsoleW 宽字符 API，显示不受此变量影响。（`shell=True` 已去除——它 2026-01 加入时是裸 `python` 解释器解析错误的 workaround，`sys.executable` 绝对路径后动机已消。）
 - Windows 上 ruff 无法检查可执行位，shebang 文件的 EXE001 只在 Linux（CI）触发——新增带 shebang 的脚本记得 `git update-index --chmod=+x`。
 - `scripts/recent_changes_watchdog.py` 由 Hermes cron 经 runpy 跑在 Hermes 自带的 Python 3.11 下（不走本项目 3.14 venv），语法必须兼容 3.11：pyproject.toml 里对该文件设了 ruff `per-file-target-version = py311`，否则 ruff 0.16+ 会按 requires-python 3.14 把多异常 except 的括号脱掉（PEP 758），脚本在 3.11 下起不来（50ae561→708571f 的教训）。
 - pwb.py 对**用法级失败**（脚本名拼错、replace 缺替换对、未知 pwb 参数）退出码仍为 0——`wrapper.py` 的 `execute()` 返回 False 只打印用法文档；只有未捕获异常（崩溃类：网络断开/登录失败/脚本 bug）才非零退出。因此 `run_job` 的「失败即退出」覆盖的是崩溃类失败；用法级失败要靠 `-s` 干跑先看输出。
@@ -99,5 +99,5 @@ p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚�
 - `jobs/jobs.py` 的 interwiki 任务不带 `-auto`（由 run_job 补），直接手敲 pwb.py 跑要记得加。
 - transferbot **不接受 `-always`**（加了会报错）；它不加也会自动覆盖目标页。
 - `touch -random:128` 在任务列表末尾，是为了触发缓存刷新，不是无意义操作。
-- 常驻方式：本机跑 `python main.py 231`（无限循环所有任务）。
+- 常驻方式：本机跑 `python main.py`（无限循环所有任务）。
 - 在线状态页：wiki 上 `User:IchiSanNi/jobs`。

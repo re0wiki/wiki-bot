@@ -45,7 +45,7 @@ def test_transferbot_rejects_always():
 
 
 def test_run_job_raises_on_failure(monkeypatch):
-    """子进程非零退出必须抛出——不吞失败（吞了 231 循环会故障期空转锤站）。"""
+    """子进程非零退出必须抛出——不吞失败（吞了循环模式会故障期空转锤站）。"""
 
     def fake_run(*args, **kwargs):
         raise CalledProcessError(1, ["x"])
