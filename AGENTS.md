@@ -17,7 +17,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 - 运行脚本：`PYTHONPATH= .venv/Scripts/python.exe <script>`（Windows 上 Hermes 会注入指向自身 venv 的 PYTHONPATH，必须清空，否则 import 错包）。
 - **pywikibot 是 git submodule**（fork：`github.com/re0wiki/pywikibot`，upstream 是 wikimedia/pywikibot）。克隆要 `--recurse-submodules`（否则 `uv sync` 会因路径缺失失败）。更新 submodule 后提交信息写 `chore: update pywikibot`。
 - pywikibot 通过 `[tool.uv.sources]` 以 **editable 方式从 submodule 路径装入 venv**（`{ path = "pywikibot", editable = true }`），submodule gitlink 是唯一版本锁，无需再同步 uv.lock 里的 commit。`pyproject.toml` 里的 `[tool.ty.environment] extra-paths = ["./pywikibot"]` 是必须的：ty 无法静态解析 PEP 660 editable finder，删掉会导致全项目 unresolved-import。
-- Lint：`ruff check` / `ruff format`（`pyproject.toml` 里 extend-exclude 了 pywikibot 子模块与 logs/，不要给它们 lint；md 文件也被排除以保留手工对齐的代码块注释）。类型检查用 `ty`（`src.exclude` 排除了 pywikibot 与 logs/，正常应为 0 诊断）。
+- Lint：`ruff check` / `ruff format`（`pyproject.toml` 里 extend-exclude 了 pywikibot 子模块、logs/ 与 scripts/oneoff/（一次性脚本归档，不再运行），不要给它们 lint；md 文件也被排除以保留手工对齐的代码块注释）。类型检查用 `ty`（`src.exclude` 同样排除 pywikibot、logs/ 与 scripts/oneoff/，正常应为 0 诊断）。
 - 离线单测：`pytest tests/`（不触 wiki；覆盖译名表一致性、re0_nav、watchdog 纯函数）。注意 `python -m pytest` 会把仓库根注入 sys.path，导致根目录的 `pywikibot/` 目录以 namespace package 遮蔽已安装的包（同理，仓库根下 `python -c "import pywikibot"` 也是坏的）——tests/conftest.py 已处理；其他临时脚本要么从子目录跑，要么先清 sys.path。Wiki 侧改动验证方式仍是 `-s/--simulate` 干跑 + 上 wiki 查编辑结果。
 - Secrets：`user-password.py`（BotPasswords，gitignored，勿读勿提交）。
 
@@ -38,7 +38,6 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `docs/` | `todo.md`（跨任务待办与待决策项）、`wiki-access.md`（读写配方）、`cloudflare-429.md`（限流根因与对策）、`template-usage-audit.md`（零引用模板审计工作流）、`templates.md`（模板盘点数据与技术约定）、`modules.md`（Module/Lua 审查结论与约定）、`pywikibot-update.md`（submodule rebase 上游流程）、`pywikibot-scripts.md`（自带脚本选用速查） |
 | `families/re0_family.py` | re0 family 定义，12 个语言子站（de/en/es/fr/it/ko/nl/pl/pt-br/ru/uk/zh 都在 rezero.fandom.com，en 无路径前缀其余 `/<code>`）。注意 family 文件注释说 "do not commit" 但本项目故意提交了。另有 `w_family.py`（community.fandom.com，即 Fandom 中央站 `w:` 前缀），同理会故意提交 |
 | `tests/` | 离线单测（pytest，不触 wiki）：译名表一致性（RULES 与 re0_move 共享）、re0_nav 编译规则、watchdog 纯函数、re0_gallery `merge_galleries`、re0_move `resolve_move`、run_job 命令拼装。模块经 `tests/repo_loader.py` 按路径加载（scripts/ 非包） |
-| `rename.py` | 交互式改名工具：移动页面 + 全站替换文本（只打印命令不执行） |
 | `pywikibot/` | submodule，含 re0wiki 定制补丁（见下） |
 
 pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template 等）的选用速查见 `docs/pywikibot-scripts.md`——能用现成脚本就别手写。

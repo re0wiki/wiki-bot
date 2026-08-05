@@ -155,6 +155,14 @@ user_fixes["para"] = base | {
             ("Romaji", "name_ja_romaji"),
             ("Alias", "alias"),
             ("Nickname", "nickname"),
+            # 台版译名（全站唯一带空格的参数名，2026-08-03 归一）
+            ("another translation", "name_zh_tw"),
+            # 图片说明（en 搬运旧名，2026-08-03 取消大写例外）
+            ("Caption", "caption"),
+            # voice 系连字符 → 下划线（2026-08-03 归一）
+            ("voice_zh-cn", "voice_zh_cn"),
+            ("voice_zh-tw", "voice_zh_tw"),
+            ("voice_zh-hk", "voice_zh_hk"),
             ("Race", "race"),
             ("Gender", "gender"),
             ("Birthday", "birthday"),
@@ -592,11 +600,10 @@ translation_names = [  # 主列表：p2o() 自动生成别名正则，p2n() 取�
     "兰德哈尔",
     "杰比聂尔",
     "德莱森",
-    "卡欧斯弗雷姆",
+    "卡欧斯福莱姆",
     "美佐里亚",
     "莱杰尔",
     "巴罗伊",
-    "雷姆",
     "波多尔德",
     "菜月·?昴",
     "安娜(斯)?塔西亚",
@@ -670,6 +677,8 @@ translation_manual = [  # 手动添加的替换组
     (f"{f('格')}{f('姆')}{f('雷')}{f('特')}", "加姆莱特"),
     (f"{f('戈')}{f('尔')}德", "金"),
     ("荷莉", "保莉"),
+    ("混沌之炎", "卡欧斯福莱姆"),
+    ("蕾姆", "雷姆"),
 ]
 
 user_fixes["translation"] = base | {
