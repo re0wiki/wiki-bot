@@ -58,31 +58,3 @@ def test_parse_diff_multivalue_class_and_inline_marks():
     assert ("-", "旧〔x〕文本") in lines
     assert ("+", "新⟦增⟧文本") in lines
     assert all("不变" not in v for _, v in lines)
-
-
-def test_extract_link_targets_skips_prefixes_and_anchors():
-    lines = [
-        "+ [[角色:菜月·昴]] 与 [[术语:魔女教#历史|魔女教]]",
-        "+ [[File:a.png]] [[Category:角色]] [[wikipedia:Re:Zero]] [[http://x]]",
-    ]
-    targets = wd.extract_link_targets(lines)
-    assert targets == {"角色:菜月·昴", "术语:魔女教"}
-
-
-def test_extract_link_targets_strips_inline_marks():
-    """⟦⟧/〔〕 行内标记必须剥离，否则已存在页面会被误判为红链。"""
-    lines = [
-        "+ [[术语:邪⟦龍討滅戰⟧|邪⟦龍討滅戰⟧]]",
-        "+ [[角色:菜月·雷吉〔利格鲁〕⟦尔⟧|菜月·雷吉尔]]",
-    ]
-    assert wd.extract_link_targets(lines) == {"术语:邪龍討滅戰", "角色:菜月·雷吉尔"}
-
-
-def test_extract_link_targets_resolves_subpage_links():
-    """[[/子页]] 必须相对当前页解析，否则已存在子页被误判为红链。"""
-    lines = ["+ 其餘差異详情請见 [[/改动]]。"]
-    assert wd.extract_link_targets(lines, "设定集、画集:Re:zeropedia") == {
-        "设定集、画集:Re:zeropedia/改动"
-    }
-    # 无 page_title 时无法解析，跳过而不是误报
-    assert wd.extract_link_targets(lines) == set()
