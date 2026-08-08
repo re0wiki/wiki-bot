@@ -25,7 +25,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 
 | 文件 | 作用 |
 |---|---|
-| `main.py` | 循环任务入口。`python main.py <任务名或编号>` 跑单个任务（编号随插入平移，名字稳定，`-h` 列全部），`-s` 模拟；`231` = 无限循环所有任务。任务失败（子进程非零退出）即以相同码退出等待人工修复，不继续后续任务 |
+| `main.py` | 循环任务入口。`python main.py <任务名或编号>...` 依次跑指定任务（可多个，编号随插入平移，名字稳定，`-h` 列全部），`-s` 模拟；不传参数 = 无限循环所有任务。任务失败（子进程非零退出）即以相同码退出等待人工修复，不继续后续任务 |
 | `jobs/jobs.py` | 任务列表（`Job(name, cmd)`，name 是稳定引用；fix 类任务名与 `-fix:` 参数一致），分 6 组：跨站同步 → 整理新搬运页 → 模板维护 → 重定向 → 语法规范化 → 内容规范化 → 杂项 |
 | `jobs/run_job.py` | 子进程包装：`build_cmd` 拼 `sys.executable pywikibot/pwb.py ...`（不用裸 `python`，PATH 上可能是无项目依赖的其他版本），自动加 `-always`（interwiki 加 `-auto -force`，transferbot 不加） |
 | `jobs/starts.py` | namespace → `-start:ns:!` 生成器参数。`ns_base`=主/project/template/category，`ns_more` 再加 module/mediawiki |
@@ -34,7 +34,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `scripts/` | 常驻/可复用脚本：5 个 `re0_*` 任务脚本（见下行）、`recent_changes_watchdog.py`、诊断（`verify_wiki_access.py`/`test_pwb_throttle.py`）、429 探测 `probe_*`（见 `docs/cloudflare-429.md`）、审计工具（`dump_modules.py`/`template_inventory.py`/`template_complexity.py`/`recheck_template_usage.py`/`scan_title_prefixes.py`/`check_css_imports.py`）、`sync_jobs_status_page.py`。`scripts/oneoff/` 是已完成任务的一次性脚本归档（pwb.py 按名字找不到，重跑要传路径）。docs 里的 `logs/xxx.py` 引用是历史出处——`logs/` 整体 gitignore，不在仓库内 |
 | `scripts/re0_*.py` | 5 个自定义脚本：gallery（用 en 站图库覆盖 zh）、image（图片差量同步）、nav（编译 Wiki-navigation）、redirect（给 `前缀:词干` 页建裸词干重定向）、move（标题命中 translation 规则的页面自动移到简体标准名，留重定向；与正文替换的差异是标题一律归一简体、不保留繁体；目标已存在时跳过待人工合并） |
 | `scripts/verify_wiki_access.py` | 只读诊断：验证 pywikibot 库与裸 API 两条 wiki 通路和凭据是否有效，期望输出 `ALL CHECKS PASSED` |
-| `scripts/recent_changes_watchdog.py` | 最近改动巡查 watchdog：rcid 水位线去重（状态 `.cache/rc_watchdog.json`，已 gitignore），排除 IchiSanNi 全部编辑（含无 flag 的手动编辑，修改时已自查）与其他账号的 bot 标记编辑。输出三段：NEW_CHANGES 逐条清单、MERGED_DIFFS（同用户同页**相邻**连续编辑合并后的 diff 增删行，⟦⟧/〔〕 标行内增删，超长截断标注）、RED_LINKS（新增内容红链实测，已跟重定向）。取数/解析固定由脚本完成（曾由 LLM 现写代码，踩过手工分组漏项、td class 多值匹配抓空、stdout 截断三个坑）；水位线在 diff 全部拉取成功后才推进，失败非零退出下轮重试，不静默漏审。区间与触发时间解耦：不设时间窗口，翻页拉取至水位线即停——漏触发（任意停机时长）、手动触发、改间隔均安全，改动超单页 500 条也不漏。由 Hermes cron job「wiki 最近改动自动巡查」每天 10:00 调用（profile `scripts/` 下同名片是 wrapper），LLM 只做判断与分流，发现问题发 Discord `#wiki编辑事务【qq互联】`；但 NiSanIchi（维护者本人的个人账号，与 bot 账号 IchiSanNi 勿混淆）的改动发现问题时只在 cron 回复中说明，不发 Discord。报告范围：机翻覆盖/语法破坏/恶意内容（译名不巡查——登记别名由 translation 任务自动归一） |
+| `scripts/recent_changes_watchdog.py` | 最近改动巡查 watchdog：rcid 水位线去重（状态 `.cache/rc_watchdog.json`，已 gitignore），排除 IchiSanNi 全部编辑（含无 flag 的手动编辑，修改时已自查）与其他账号的 bot 标记编辑。输出两段：NEW_CHANGES 逐条清单、MERGED_DIFFS（同用户同页**相邻**连续编辑合并后的 diff 增删行，⟦⟧/〔〕 标行内增删，超长截断标注）。曾有 RED_LINKS 红链实测段，2026-08-06 移除——中文站有繁简自动转换，繁体写法链接会被 MediaWiki 自动解析到简体页面，检测几乎只产误报。取数/解析固定由脚本完成（曾由 LLM 现写代码，踩过手工分组漏项、td class 多值匹配抓空、stdout 截断三个坑）；水位线在 diff 全部拉取成功后才推进，失败非零退出下轮重试，不静默漏审。区间与触发时间解耦：不设时间窗口，翻页拉取至水位线即停——漏触发（任意停机时长）、手动触发、改间隔均安全，改动超单页 500 条也不漏。由 Hermes cron job「wiki 最近改动自动巡查」每天 10:00 调用（profile `scripts/` 下同名片是 wrapper），LLM 只做判断与分流，发现问题发 Discord `#wiki编辑事务【qq互联】`；但 NiSanIchi（维护者本人的个人账号，与 bot 账号 IchiSanNi 勿混淆）的改动发现问题时只在 cron 回复中说明，不发 Discord。报告范围：机翻覆盖/语法破坏/恶意内容（译名不巡查——登记别名由 translation 任务自动归一） |
 | `docs/` | `todo.md`（跨任务待办与待决策项）、`wiki-access.md`（读写配方）、`cloudflare-429.md`（限流根因与对策）、`template-usage-audit.md`（零引用模板审计工作流）、`templates.md`（模板盘点数据与技术约定）、`modules.md`（Module/Lua 审查结论与约定）、`pywikibot-update.md`（submodule rebase 上游流程）、`pywikibot-scripts.md`（自带脚本选用速查） |
 | `families/re0_family.py` | re0 family 定义，12 个语言子站（de/en/es/fr/it/ko/nl/pl/pt-br/ru/uk/zh 都在 rezero.fandom.com，en 无路径前缀其余 `/<code>`）。注意 family 文件注释说 "do not commit" 但本项目故意提交了。另有 `w_family.py`（community.fandom.com，即 Fandom 中央站 `w:` 前缀），同理会故意提交 |
 | `tests/` | 离线单测（pytest，不触 wiki）：译名表一致性（RULES 与 re0_move 共享）、re0_nav 编译规则、watchdog 纯函数、re0_gallery `merge_galleries`、re0_move `resolve_move`、run_job 命令拼装。模块经 `tests/repo_loader.py` 按路径加载（scripts/ 非包） |
@@ -45,9 +45,11 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 ## wiki 侧结构（zh 站）
 
 - **伪命名空间**：没有注册自定义 namespace，文章页靠标题前缀分类（全在主空间）。登记前缀的唯一权威清单是 `user-fixes.py` 的 `PSEUDO_PREFIXES`：`角色:`、`术语:`、`小说:`、`漫画:`、`动画:`、`游戏:`、`音乐:`、`设定集、画集:`、`声优:`、`制作人员:`、`存档:`。前缀只认简体：Module:Init 按简体前缀自动分类，繁体前缀不会入分类；繁体前缀页（`小說:`/`術語:`）已于 2026-07-31 清零（当时仅剩 4 个零链入重定向，已删除，`logs/delete_traditional_prefix_redirects.py`）。`特典:` 是唯一的未登记前缀（仅 `特典:劇場前惡意` 一页，待整理）；英文前缀页（`Re:`、`Sword Demon Love Story:` 等）是待整理的搬运残留。改前缀 = 移动页面，走 bot 而非手动。前缀审计可跑 `scripts/scan_title_prefixes.py`。
-- **页首模板**：`{{Init}}`（`{{#invoke:Init|main}}`，Tab 系统初始化，几乎每篇文章都有）+ `{{To do}}`（归入 `Category:待修撰`，大部分文章常态携带，不是积压事故）。`/图库` 子页由 bot 自动同步、无需人工整理，**不带** `{{To do}}`（2026-07-31 批量移除，唯一例外是无 en 链接的 `角色:維格·阿德加德/图库`）。新搬运页另有 `[[Category:新搬运待整理]]`（见 fork 定制节），人工整理后摘除——该分类是真实待办队列。页首顺序固定：`{{Init}}` → `{{To do}}` → `{{Tab/...}}`（部分页才有）→ 其他内容。
+- **页首模板**：`{{Init}}`（`{{#invoke:Init|main}}`，Tab 系统初始化，几乎每篇文章都有）+ `{{To do}}`（归入 `Category:待修撰`，大部分文章常态携带，不是积压事故）。`/图库` 子页由 bot 自动同步、无需人工整理，**不带** `{{To do}}`（2026-07-31 批量移除）。**同步配对机制**：re0_gallery 经 /图库 页的 en 链接 `iterlanglinks` 找 en 图库并整段覆盖——**摘掉 en 链接即退出自动同步**（无 en 链接的图库页：角色：維格·阿德加德/图库、角色：沃尔夫/图库——后者 2026-08-08 摘链恢复为 Wolf 专属内容，此前被 Salum 图库覆盖过，见跨语言链接条）。新搬运页另有 `[[Category:新搬运待整理]]`（见 fork 定制节），人工整理后摘除——该分类是真实待办队列。页首顺序固定：`{{Init}}` → `{{To do}}` → `{{Tab/...}}`（部分页才有）→ 其他内容。
 - **模板体系**：`Tab/*` 子页族（每部作品一套页面顶部标签，配 `{{Tab}}` 使用）；信息框统一 `Infobox X` 命名（X 小写英文）：book/character/anime/music/bd/game/seiyu/staff/event/battle 共 10 个（2026-07-29 由 Anime/Seiyu/Music/Re:Zero BD/Staff/Re:Zero Game 改名而来，en 同名的 4 个旧名由 jobs 模板替换接管；未用的 album/episode/item/location/quest 与母版 `Infobox` 已于 2026-07-28 删除）；注音族 `Ruby-zh-ja`（中日双语 ruby）/`R`/`Ruby-ja`（零引用的 Ruby-zh-b/zh-p 与 R/ja 已于 2026-07-28 删除）；`QUOTE`（页首引语 + voice 音频）。全站模板索引在 wiki 的 `ReZero Wiki:模板`，模板信息分层（wiki/仓库各存什么）、盘点数据与技术约定见 `docs/templates.md`。
 - **导航**：`MediaWiki:Wiki-navigation` 由 `Project:Wiki-navigation` 经 `scripts/re0_nav.py` 编译生成，勿手动编辑。
+- **子页后缀**：注册点是**两处**，改动必须同步——`Module:Title` 的 `suffixes` 数组（Init 分类与 Tab 探测的数据源）+ `Template:Tab/Content` 的 前缀×后缀 分类矩阵（一个后缀 = 一整行 13 个分类）。现有后缀：关系/梗概/图库/猫语/语录/改动/攻略/短篇。`梗概` 统一对应 en /Synopsis——角色生平与作品剧情不分两个后缀（2026-08-08 合并：原 zh 原创的 `经历` 后缀整体并入 `梗概`，27 个 `角色:X/经历` 已移至 `/梗概` 并留重定向，`分类:角色经历`→`分类:角色梗概`；en 本来就只有 /Synopsis 一个后缀，合并后与 en 1:1）。`攻略` 语义是**玩法数值数据**（在用实例：`游戏:INFINITY/攻略`），不是剧情路线——en 的 /Routes 类内容无对应后缀（2026-08-08 裁决：不为单个条目新增矩阵行，`游戏:Lost in Memories/梗概` 保持 en /Synopsis+/Routes 合并，是全站唯一的多对一例外）。
+- **跨语言链接**：页尾语言链接块按 de/en/es/fr/pl/pt-br/ru/uk 字母序。**审计的正确方式**（用户定，logs/audit_langlinks_v3.py，只读）：en→zh 映射 = 遍历 en 主空间每个非重定向页 → zh 同名页 → 最终重定向目标（transferbot 保原名搬运、人工移到中文名留重定向的链路保证同名页存在）；zh→en 映射 = 全页**源码**扫 `[[en:...]]`（不用 langlinks 派生表，见坑节）；双向比对。2026-08-08 首跑+修复后复跑：1852 en 正文页全部有 zh 同名页（未搬运=0），1850 一致；剩余例外均为裁决后的有意状态：首页用 `[[en:]]` 空目标特例（脚本不匹配此写法，会恒报 missing）、游戏:Lost in Memories/梗概 是 en /Synopsis+/Routes 两页合并（链接取 Synopsis，唯一多对一）、沃尔夫与沃尔夫/图库为 zh 原创条目（en 把 Wolf 并入 Salum Pristis 但 zh 不跟随合并，en 链接已摘除——裁决：页面合并/拆分跟随 en，但 zh 编者自行编写的内容比 en 更充实的条目可作为 zh 原创保留）。**子页链接规则**：/梗概 等子页只在 en 有对应子页时带 en 链接（/Synopsis↔梗概 等）；en 无对应子页时（如菲莉丝/梗概——en 的历史在 Ferris 主页面章节里）子页不带链接，更不用 `[[en:X#章节]]` 形式（2026-08-08 摘除），否则一个 en 条目会被多个 zh 页声称对应。角色正史/游戏版本拆分（琉兹本体/复制体、狄加/莎克拉/希蓉的 Game Canon 页）经复查系跟随 en 的既有拆分（en 有 /Game Canon 与 (original)/(copy) 页），1:1 满足。曾修复： Blessing Day en 名重定向错指（Rem-rin's Day→雷姆琳之日）、3 组重复页转重定向（An Ordinary Day / Hansel and Gretel / World Guide）、Star Chanter 重定向页摘链接。补链接只加到最终目标页、并入既有语言链接块的字母序位置。en 子页命名：/Synopsis（=梗概）、/Relationships（=关系）、/Image Gallery（=图库）；en 不收声优/制作人员条目、无 /Quotes 类子页；`/猫语`、`/改动`、`存档:`、`鼠色猫语录` 是 zh 原创无对照。
 - **状态页**：wiki 上 `User:IchiSanNi/jobs` 手工维护，与 `jobs/jobs.py` 的任务对应；`scripts/sync_jobs_status_page.py` 只同步 template 替换任务那一行，其余改动要手动改 wiki 页。
 - 译名表与译名工作流见下节；`<div class="as-is">` 保护机制见 fork 定制节。
 
@@ -90,8 +92,9 @@ p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚�
 
 ## 坑
 
+- **Fandom 派生表（langlinks 等）的读取可能与页面源码不一致，且与 HTTP 缓存无关**（api.php 响应头 `no-store`、无 Age/X-Cache，已实证排除 CDN 缓存）。2026-08-08 观测：langlinks 对希洛洛返回过源码史上从未存在的值（Toneriko，115 个修订逐版验证源码始终是 Tonerico）、对菜月父母返回过「无 en 链接」（实际 2021-02 起就有，当天两页零编辑），数小时后零编辑自愈——指向 Fandom 基础设施侧的派生表重建/迁移，外部无法定位。**审计「页面有没有某链接/某分类」一律扫源码（rvprop=content），不依赖 langlinks/categories 等派生表**。
 - MediaWiki API `formatversion=2` 下 recentchanges 的 `bot`/`new`/`minor` 键**恒存在**（值为 true/false），过滤必须判断值而不是键存在性——`"bot" not in c` 会把所有编辑都滤掉。
-- `run_job` 给子进程注入 `PYTHONIOENCODING=utf-8`，管道输出按 UTF-8 解码——不再依赖 mbcs/系统 ANSI 代码页（历史上 `67fd586` 用 mbcs 治 GBK 乱码，2026-07 改为源头强制 UTF-8）。231 循环子进程继承控制台走 WriteConsoleW 宽字符 API，显示不受此变量影响。（`shell=True` 已去除——它 2026-01 加入时是裸 `python` 解释器解析错误的 workaround，`sys.executable` 绝对路径后动机已消。）
+- `run_job` 给子进程注入 `PYTHONIOENCODING=utf-8`，管道输出按 UTF-8 解码——不再依赖 mbcs/系统 ANSI 代码页（历史上 `67fd586` 用 mbcs 治 GBK 乱码，2026-07 改为源头强制 UTF-8）。循环模式子进程继承控制台走 WriteConsoleW 宽字符 API，显示不受此变量影响。（`shell=True` 已去除——它 2026-01 加入时是裸 `python` 解释器解析错误的 workaround，`sys.executable` 绝对路径后动机已消。）
 - Windows 上 ruff 无法检查可执行位，shebang 文件的 EXE001 只在 Linux（CI）触发——新增带 shebang 的脚本记得 `git update-index --chmod=+x`。
 - `scripts/recent_changes_watchdog.py` 由 Hermes cron 经 runpy 跑在 Hermes 自带的 Python 3.11 下（不走本项目 3.14 venv），语法必须兼容 3.11：pyproject.toml 里对该文件设了 ruff `per-file-target-version = py311`，否则 ruff 0.16+ 会按 requires-python 3.14 把多异常 except 的括号脱掉（PEP 758），脚本在 3.11 下起不来（50ae561→708571f 的教训）。
 - pwb.py 对**用法级失败**（脚本名拼错、replace 缺替换对、未知 pwb 参数）退出码仍为 0——`wrapper.py` 的 `execute()` 返回 False 只打印用法文档；只有未捕获异常（崩溃类：网络断开/登录失败/脚本 bug）才非零退出。因此 `run_job` 的「失败即退出」覆盖的是崩溃类失败；用法级失败要靠 `-s` 干跑先看输出。
@@ -99,5 +102,5 @@ p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚�
 - `jobs/jobs.py` 的 interwiki 任务不带 `-auto`（由 run_job 补），直接手敲 pwb.py 跑要记得加。
 - transferbot **不接受 `-always`**（加了会报错）；它不加也会自动覆盖目标页。
 - `touch -random:128` 在任务列表末尾，是为了触发缓存刷新，不是无意义操作。
-- 常驻方式：本机跑 `python main.py 231`（无限循环所有任务）。
+- 常驻方式：本机跑 `python main.py`（无限循环所有任务）。
 - 在线状态页：wiki 上 `User:IchiSanNi/jobs`。

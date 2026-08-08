@@ -23,7 +23,8 @@
 - 文档覆盖（55 个顶层模板）：**55/55 全覆盖**（2026-07-29 最后 10 个补齐）。文档统一放在 `/doc` 子页（经 `{{Documentation}}` 渲染进模板页）——2026-07-28 已将全部内联形式（`{{Documentation|content=...}}` 8 个、`<noinclude>` 内联说明 1 个）迁入 `/doc`，今后新增模板文档一律用 `/doc` 子页，templatedata 也放 `/doc`（TemplateData 扩展会读，先例 `Blur/doc`）。
 - 分类：~~94 个顶层模板无分类~~（2026-07-26 已清零，顶层模板全部入树）。
 - 引用量：全命名空间**真零引用模板 32 个**（已全部处置，处置记录见 git 历史）。
-- **Lua 重写评估（2026-07-30）**：复杂度扫描脚本 `scripts/template_complexity.py`（只读，输出 `logs/template_complexity.json`，指标 = parser function 数/嵌套深度/长度）。结论：无值得 Lua 化的模板——最复杂的 `Infobox character`（36 个 parser 函数）的难逻辑（图库生成/罗马音/英译）已在 Module:Character image、Kana2Romaji、Interwiki 中，剩余壳是 Portable Infobox 声明式 XML（与扩展的契约，Lua 化只能手搓 HTML、丢主题与 Mercury 渲染，不动）；次复杂的 `Bot`（嵌套 #switch×4 层）全站仅 2 引用、收益为零；其余 ≤4 个 parser 函数或纯格式。模板层已是「薄壳 → Module」的理想架构。
+- **Lua 重写评估（2026-07-30）**：复杂度扫描脚本 `scripts/template_complexity.py`（只读，输出 `logs/template_complexity.json`，指标 = parser function 数/嵌套深度/长度）。结论：无值得 Lua 化的模板——最复杂的 `Infobox character`（36 个 parser 函数）的难逻辑（罗马音/英译）已在 Module:Kana2Romaji、Interwiki 中（图库生成原在 Module:Character image，2026-08-08 随自动列举机制移除而删除，见下条），剩余壳是 Portable Infobox 声明式 XML（与扩展的契约，Lua 化只能手搓 HTML、丢主题与 Mercury 渲染，不动）；次复杂的 `Bot`（嵌套 #switch×4 层）全站仅 2 引用、收益为零；其余 ≤4 个 parser 函数或纯格式。模板层已是「薄壳 → Module」的理想架构。
+- **角色信息框图片为纯显式参数**（2026-08-08 移除 `Module:Character image` 自动列举机制）：`image_a/n/g/c`（及 m 段的 `image`）单图填文件名、多图填 `<gallery>` 图库块。原机制按「&lt;条目名&gt; &lt;媒介&gt; &lt;子分类&gt;角色介绍图.&lt;扩展名&gt;」命名约定自动列图，因依赖文件名与条目名严格对应太脆弱、且多年无人按此命名补图而移除。迁移实况：44 页 79 张自动图全部转为显式 gallery 参数（parse 快照对比逐段验证等价，脚本 `scripts/oneoff/migrate_character_image.py` + `build_char_image_migration.py`）；3 张未被使用的图按用户决策补进 佩特拉·莱特/安娜塔西亚·合辛/爱蜜莉雅；潘多拉/阿拉基亚/陶德·方古 的 n 段已有显式 gallery 未动（其自动图本就被 format 分支吞掉不渲染）。`Module:Character image`（+/doc）与 `Template:Tab/Character image` 已删；`*角色介绍图*` 文件与旧译名重定向**全部保留**（含 `File:角色介绍图示例图.jpg`——其唯一使用处是 2026-04-01 删除的 `ReZero Wiki:施工计划表`，历史待办存档见 `docs/todo.md`）。
 
 ## 技术约定（实测）
 

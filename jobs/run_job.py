@@ -6,7 +6,7 @@ from subprocess import run
 logger = logging.getLogger(__name__)
 
 # 强制子进程 stdio 用 UTF-8：比 mbcs（系统 ANSI 代码页，仅在 zh-CN 机器上
-# 恰好是 GBK）确定，不依赖区域设置。capture_output=False（231 循环）时子进程
+# 恰好是 GBK）确定，不依赖区域设置。capture_output=False（循环模式）时子进程
 # 继承控制台，走 WriteConsoleW 宽字符 API，不受此变量影响，显示行为不变。
 CHILD_ENV = os.environ | {"PYTHONIOENCODING": "utf-8"}
 
@@ -31,7 +31,7 @@ def build_cmd(job: list[str], simulate: bool = False) -> list[str]:
 def run_job(job: list[str], simulate=False, capture_output=False) -> str | None:
     """跑一个任务。
 
-    子进程非零退出时抛 CalledProcessError——不吞失败。吞掉的后果是 231 循环
+    子进程非零退出时抛 CalledProcessError——不吞失败。吞掉的后果是循环模式
     在 wiki 故障/凭据过期时以子进程启动速度空转锤站（叠加 429 惩罚）；
     直接炸出来让人工介入修复。
     """

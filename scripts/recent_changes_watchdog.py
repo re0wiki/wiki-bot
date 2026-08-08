@@ -20,12 +20,13 @@
 
 输出（stdout，注入 cron job 的 prompt 作为上下文）：
 - 无新改动：NO_NEW_CHANGES
-- 有新改动：三段
+- 有新改动：两段
   1. NEW_CHANGES：每行一条，含 rcid/revid/old_revid/标题/用户/时间/字节变化/摘要
   2. MERGED_DIFFS：同用户同页的**相邻**连续编辑已合并（最早 old_revid→最晚 revid），
      每节是提取出的增删行：行首 +/- 为整行增删，⟦…⟧ 为行内新增片段，〔…〕为行内删除片段。
      单节超 MAX_GROUP_LINES 截断为头+尾并标注 [TRUNCATED]；type=new 给全文并标注。
-  3. RED_LINKS：新增内容中指向不存在页面的内部链接（已跟重定向，实测结果）。
+  （曾有第三段 RED_LINKS 红链实测，2026-08-06 移除：中文站有繁简自动转换，
+  繁体写法链接会被 MediaWiki 自动解析到简体页面，检测几乎只产误报。）
 
 只读脚本；API 拉取失败时非零退出（cron 会因此报错，不会静默漏审）。
 """
@@ -206,74 +207,6 @@ def fetch_group_lines(g: dict) -> list[str]:
     return [f"{k} {v}" for k, v in pairs]
 
 
-_LINK_RE = re.compile(r"\[\[([^\[\]|#]+)(?:#[^\[\]|]*)?(?:\|[^\[\]]*)?\]\]")
-_LINK_SKIP_PREFIXES = (
-    "file:",
-    "image:",
-    "media:",
-    "文件:",
-    "图像:",
-    "档案:",
-    "category:",
-    "分类:",
-    "wikipedia:",
-    "w:",
-    "http",
-)
-
-
-_INLINE_DEL_RE = re.compile(r"〔[^〕]*〕")
-
-
-def extract_link_targets(added_lines: list[str], page_title: str = "") -> set[str]:
-    """从新增行提取内部链接目标（跳过文件/分类/站外前缀）。
-
-    输入行带 parse_diff 的行内标记，必须先剥离：⟦…⟧ 是新增片段（去标记
-    保留内容），〔…〕 是删除片段（整体去除，不属于新版本）。不剥离会把
-    标记字符带进链接目标，使已存在页面被误判为红链。
-
-    [[/子页]] 是相对于当前页的子页链接，必须拼上 page_title 再测，
-    否则会把已存在的子页误判为红链。
-    """
-    targets: set[str] = set()
-    for line in added_lines:
-        line = _INLINE_DEL_RE.sub("", line)
-        line = line.replace("⟦", "").replace("⟧", "")
-        for m in _LINK_RE.finditer(line):
-            t = m.group(1).strip()
-            if not t or t.lower().startswith(_LINK_SKIP_PREFIXES):
-                continue
-            if t.startswith("/"):
-                if not page_title:
-                    continue
-                t = page_title + t
-            targets.add(t)
-    return targets
-
-
-def find_missing_titles(titles: set[str]) -> set[str]:
-    """批量核查标题是否存在（跟重定向）。返回不存在的（规范化后）标题集合。"""
-    missing: set[str] = set()
-    ordered = sorted(titles)
-    for i in range(0, len(ordered), 50):
-        data = _get(
-            {
-                "action": "query",
-                "titles": "|".join(ordered[i : i + 50]),
-                "redirects": "1",
-                "format": "json",
-                "formatversion": "2",
-            }
-        )
-        norm = {n["from"]: n["to"] for n in data["query"].get("normalized", [])}
-        for p in data["query"]["pages"]:
-            if "missing" in p:
-                # 映射回原始写法，方便在报告中定位
-                orig = next((f for f, t in norm.items() if t == p["title"]), None)
-                missing.add(orig or p["title"])
-    return missing
-
-
 def main() -> int:
     state = {}
     if os.path.exists(STATE_FILE):
@@ -350,7 +283,6 @@ def main() -> int:
     sections: list[str] = [
         f"\nMERGED_DIFFS count={len(groups)} (同用户同页相邻连续编辑已合并)"
     ]
-    link_occurrences: dict[str, set[str]] = {}  # 链接目标 -> 出现页面
     total = 0
     budget_exceeded = False
     for idx, g in enumerate(groups, 1):
@@ -380,31 +312,6 @@ def main() -> int:
             budget_exceeded = True
         sections.append(header)
         sections.extend(lines if lines else ["(无文本差异)"])
-        for t in extract_link_targets(
-            [l for l in lines if l.startswith("+")], g["title"]
-        ):
-            link_occurrences.setdefault(t, set()).add(g["title"])
-
-    # 第三段：红链实测。失败不致命——标注后由 LLM 自行核查。
-    if link_occurrences:
-        try:
-            missing = find_missing_titles(set(link_occurrences))
-        except Exception as e:  # noqa: BLE001
-            sections.append(
-                f"\nRED_LINKS: 检查失败（{e!r}），请自行用 query&titles= API 核查新增链接"
-            )
-        else:
-            sections.append(
-                "\nRED_LINKS: none"
-                if not missing
-                else "\nRED_LINKS（新增内容中的红链，已跟重定向）"
-            )
-            for t in sorted(missing):
-                sections.append(
-                    f"- {t} ← 出现于: {', '.join(sorted(link_occurrences[t]))}"
-                )
-    else:
-        sections.append("\nRED_LINKS: none")
 
     # 全部成功后才推进水位线
     advance_waterline()
