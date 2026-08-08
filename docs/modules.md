@@ -17,7 +17,7 @@
 | Tab | 2404 | Init 依赖 + `{{Tab}}` 直接使用 |
 | Interwiki | 2198 | 信息框英文名/英译 |
 | Infobox book | 719 | |
-| Character image | 337 | Infobox character 图库 |
+| ~~Character image~~ | — | 2026-08-08 随角色介绍图自动列举机制移除而删除，见 `templates.md` |
 | Kana2Romaji | 260 | |
 | 鼠色猫语录 | 207 | |
 | Auto ruby | 149 | 经 `{{R}}` |
