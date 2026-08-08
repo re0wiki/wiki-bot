@@ -35,14 +35,18 @@
 ## 执行步骤（沿用参数改名 SOP 的 fallback 三段式）
 
 1. **模板加 fallback**：a/n/g/c 的 `<format>` 先改为纯 `{{#tag:gallery|{{{image_a}}}}}`，`<default>` 的 invoke 保留。此刻全站零页面设这些参数，渲染零变化（抽样 parse 验证）。
-2. **44 页写显式参数**：一次性脚本按实测 live 清单给每页信息框插入 `image_<sec>` 参数（多行值、`{{!}}` caption 分隔，插入位置在 `image`/`name` 参数前，对齐 doc 的 a/n/g/c 顺序）。逐页编辑前后 `action=parse` 快照对比（purge 后取快照防陈旧缓存；归一化 pi-tab 随机 hash、data-source 属性、HTML 注释，先例 `scripts/oneoff/snapshot_renders.py` / `compare_snapshots.py`）。
+2. **写显式参数**：一次性脚本按实测 live 清单给 44 页信息框插入 `image_<sec>` 参数（多行值、`{{!}}` caption 分隔，插入位置在 `image`/`name` 参数前，对齐 doc 的 a/n/g/c 顺序），另把 3 张未使用的非重复死文件补进对应页（见决策记录）。逐页编辑前后 `action=parse` 快照对比（purge 后取快照防陈旧缓存；归一化 pi-tab 随机 hash、data-source 属性、HTML 注释，先例 `scripts/oneoff/snapshot_renders.py` / `compare_snapshots.py`）。
 3. **摘除机制**：复扫确认 44 页全部带参后，模板删 5 处 invoke + 4 个 `<default>` + noinclude 里 `{{Tab/Character image}}`。再次全量快照对比（44 页应零差异；其余 292 页 default 本就渲染空图库，亦应零差异）。
 4. **删除配套资产**：`Module:Character image` 及其 `/doc`、`Template:Tab/Character image`。模板改动后模块 embeddedin 需 `purge(forcelinkupdate=True)` 才会归零，删前确认。
 5. **文档同步**：`Template:Infobox character/doc` 补 image_a/n/g/c 参数说明（若已有条目则更新语义）；wiki `ReZero Wiki:模板` 索引；本仓库 `docs/modules.md` 引用量表删 Character image 行、`docs/templates.md` Lua 重写评估段的相应表述；本文件移入完成记录或删除。
 6. 脚本归档 `scripts/oneoff/`（迁移 + 快照对比），提交信息 `feat(wiki): 移除角色介绍图自动列举机制`（wiki 侧改动无 git，仓库提交只含脚本与文档）。
 
-## 待决策
+## 决策记录（2026-08-08 用户拍板）
 
-- **56 个死文件**：建议不删（零信息损失；未使用文件无害），或人工过一遍挑明显重复的删（同一图 jpg/webp 双份、艾米莉娅/爱蜜莉雅双份）。
-- **`File:角色介绍图示例图.jpg`**：机制文档遗物、零引用，建议随机制删除。
-- **死后文件名里的旧译名**（艾米莉娅等）：不处理——文件改名不影响任何渲染，且 re0_image 本就只增不删（见 `docs/todo.md` 已决策项）。
+- **死文件不删**；其中不重复的补充进对应角色页。2026-08-08 梳理：56 个「死文件」绝大多数是旧译名**重定向**（指向现名文件，无害，不动）；真未被任何页面使用且内容不重复的仅 3 张，补充方式：
+  - `佩特拉 游戏 虚假的王选候补角色介绍图.jpg` → `角色:佩特拉·莱特` `image_g`
+  - `安娜塔西亚 游戏 虚假的王选候补角色介绍图.jpg` → `角色:安娜塔西亚·合辛` `image_g`
+  - `爱蜜莉雅 动画 たけはらみのる角色介绍图.png` → `角色:爱蜜莉雅` `image_a`（内容即 SP 图——`艾米莉娅 动画 SP角色介绍图.png` 重定向到它，caption 用 SP）
+  - 卡萝/格林/罗兹瓦尔·J·梅札斯的剑鬼恋歌图、幼年爱蜜莉雅 2 张**早已被各页 `image` 画廊显式使用**，无需补。
+- **`File:角色介绍图示例图.jpg` 不删**。它唯一的使用处是 `ReZero Wiki:施工计划表`「搬运组·长期」的「全角色介绍图」待办（含 `#invoke:Character image` 命名一览）；该页 2026-04-01 由用户删除（摘要「废除计划，自由编辑」，最后修订 revid 235488），待办描述已随之消失，无需再清理。历史待办存档见 `docs/todo.md`。
+- **文件名中的旧译名不处理**；译名自动统一任务本来就不覆盖 File 空间。
