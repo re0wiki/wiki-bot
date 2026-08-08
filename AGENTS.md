@@ -48,6 +48,7 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 - **页首模板**：`{{Init}}`（`{{#invoke:Init|main}}`，Tab 系统初始化，几乎每篇文章都有）+ `{{To do}}`（归入 `Category:待修撰`，大部分文章常态携带，不是积压事故）。`/图库` 子页由 bot 自动同步、无需人工整理，**不带** `{{To do}}`（2026-07-31 批量移除，唯一例外是无 en 链接的 `角色:維格·阿德加德/图库`）。新搬运页另有 `[[Category:新搬运待整理]]`（见 fork 定制节），人工整理后摘除——该分类是真实待办队列。页首顺序固定：`{{Init}}` → `{{To do}}` → `{{Tab/...}}`（部分页才有）→ 其他内容。
 - **模板体系**：`Tab/*` 子页族（每部作品一套页面顶部标签，配 `{{Tab}}` 使用）；信息框统一 `Infobox X` 命名（X 小写英文）：book/character/anime/music/bd/game/seiyu/staff/event/battle 共 10 个（2026-07-29 由 Anime/Seiyu/Music/Re:Zero BD/Staff/Re:Zero Game 改名而来，en 同名的 4 个旧名由 jobs 模板替换接管；未用的 album/episode/item/location/quest 与母版 `Infobox` 已于 2026-07-28 删除）；注音族 `Ruby-zh-ja`（中日双语 ruby）/`R`/`Ruby-ja`（零引用的 Ruby-zh-b/zh-p 与 R/ja 已于 2026-07-28 删除）；`QUOTE`（页首引语 + voice 音频）。全站模板索引在 wiki 的 `ReZero Wiki:模板`，模板信息分层（wiki/仓库各存什么）、盘点数据与技术约定见 `docs/templates.md`。
 - **导航**：`MediaWiki:Wiki-navigation` 由 `Project:Wiki-navigation` 经 `scripts/re0_nav.py` 编译生成，勿手动编辑。
+- **跨语言链接**：页尾语言链接块按 de/en/es/fr/pl/pt-br/ru/uk 字母序。en 站**不收**声优/制作人员条目、**无** /Quotes 类子页（故 zh `/语录` 无对照），这些页不加 en 链接属正常；`/猫语`、`/改动`、`存档:`、`鼠色猫语录` 是 zh 原创同样无对照。en 子页命名：/Synopsis（=经历/梗概）、/Relationships（=关系）、/Image Gallery（=图库）。2026-08-08 全站审计（logs/audit_langlinks2.py）补了 4 个漏链（爱蜜莉雅/经历、术语：魔女、术语：魔女因子→en:Authority、动画：休息时间）。
 - **状态页**：wiki 上 `User:IchiSanNi/jobs` 手工维护，与 `jobs/jobs.py` 的任务对应；`scripts/sync_jobs_status_page.py` 只同步 template 替换任务那一行，其余改动要手动改 wiki 页。
 - 译名表与译名工作流见下节；`<div class="as-is">` 保护机制见 fork 定制节。
 
@@ -90,6 +91,7 @@ p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚�
 
 ## 坑
 
+- **Fandom API 的 GET 响应有 CDN 缓存，可能是旧数据**（2026-08-08 实证：prop=langlinks 返回的 en 链接与页面源码不符两次——希洛洛"红链"、菜月父母"漏链"均为缓存误报）。审计类脚本的关键查询一律用 POST（绕过 CDN），或以页面源码（rvprop=content）为准。
 - MediaWiki API `formatversion=2` 下 recentchanges 的 `bot`/`new`/`minor` 键**恒存在**（值为 true/false），过滤必须判断值而不是键存在性——`"bot" not in c` 会把所有编辑都滤掉。
 - `run_job` 给子进程注入 `PYTHONIOENCODING=utf-8`，管道输出按 UTF-8 解码——不再依赖 mbcs/系统 ANSI 代码页（历史上 `67fd586` 用 mbcs 治 GBK 乱码，2026-07 改为源头强制 UTF-8）。循环模式子进程继承控制台走 WriteConsoleW 宽字符 API，显示不受此变量影响。（`shell=True` 已去除——它 2026-01 加入时是裸 `python` 解释器解析错误的 workaround，`sys.executable` 绝对路径后动机已消。）
 - Windows 上 ruff 无法检查可执行位，shebang 文件的 EXE001 只在 Linux（CI）触发——新增带 shebang 的脚本记得 `git update-index --chmod=+x`。
