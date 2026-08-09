@@ -20,6 +20,17 @@
 
 备注：帕克/问答、福尔图娜/问答、Web连载网站上评论 三个存档页本身无正文（仅来源链接），对应空占位表无可迁移内容；存档页的原推/译者署名等信息部分已入模块 `abbr` 注解。
 
+**来源存活审计（2026-08-09，logs/check_source_liveness.py + check_wayback.py，结果 logs/archive_audit/source_status.json / wayback_status.json）**：
+
+- **原推 56/56 全部存活**（fxtwitter API 逐条验证、正文可机读）——生日问答类一手重核可行。注意存档页链的多是「接受提问的预告推」，问答本体是作者后续的引用回答推，重核时需按时间线抓全（fxtwitter 单条接口不含 thread）
+- **英肉 reddit 6 帖（去重）**：本机被反爬 403 无法直连验证，但 6/6 均有 Wayback 快照（79qvoo 经时间戳重定向确认）——内容可经 Wayback 取回
+- **ask.fm/nezumiironyanko/best**（早期ask 一手出处）：直连 SSL 失败，Wayback 2016-08 快照含日文 QA 正文——但只有单页快照，ask 分页的完整覆盖未知
+- **签名会一手 privatter：已失效且无 Wayback 快照**——wiki 存档里的日文 Collapse 原文已成孤本，补齐 js 字段（上方 B 项）优先级因此提高
+- **Nico 生放送**：nicovideo 直播页存活（内容不可回放）；naver 韩文 blog（第二版来源）直连存活但无 Wayback 快照；星空宅梦 tieba 记录帖 403 未知
+- **tieba 译文帖 29 个**：本机 403 反爬 + Wayback 基本无快照（仅 1/29 有）——生死未知，需人工浏览器抽查；它们只是译文发布帖，一手出处是推特
+- **资源汇总讨论帖**（/f/p/4400000000000025340，动画实况解说与早期ask 标注的「原文存档」）：存活（2026-08-01 Wayback 快照证实存在；正文 JS 渲染，快照未含正文，Discussions API 端点未摸清，待迁移时用登录态抓）
+- 巴哈姆特第22集译文帖 502 且无快照（S1/巴哈姆特其余只是译者署名链接，不影响考证）；pastebin 奥托2018英肉存活
+
 ### 角色页日文名/罗马字的边角案例（2026-08-08 全角色审计 D 桶）
 
 主流程已收敛（见 `docs/modules.md` Kana2Romaji 条）。已结案：白羊/黑狗已补 name_ja_kanji + name_ja_romaji；梅里欧·阿嘎玛回退为 zh 更完整的 `メリオ·アガマ`（不动 en）；希洛洛的 en 链接本来就对（早前"红链"判断是 Fandom API GET 缓存旧数据）；菜月菜穗子/菜月贤一的 [[en:...]] 链接其实一直存在（同遭缓存误报）。
