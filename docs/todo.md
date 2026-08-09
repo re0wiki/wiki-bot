@@ -24,11 +24,11 @@
 - **ask.fm/nezumiironyanko/best**（早期ask 一手出处）：直连 SSL 失败，Wayback 2016-08 快照含日文 QA 正文——但只有单页快照，ask 分页的完整覆盖未知
 - **签名会一手 privatter：已失效且无 Wayback 快照**——wiki 存档里的日文 Collapse 原文已成孤本，补齐 js 字段（上方 B 项）优先级因此提高
 - **Nico 生放送**：nicovideo 直播页存活（内容不可回放）；naver 韩文 blog（第二版来源）直连存活但无 Wayback 快照；星空宅梦 tieba 记录帖 403 未知
-- **tieba 译文帖 29 个**：本机 403 反爬 + Wayback 基本无快照（仅 1/29 有）——生死未知，需人工浏览器抽查；它们只是译文发布帖，一手出处是推特
-- **资源汇总讨论帖**（/f/p/4400000000000025340，动画实况解说与早期ask 标注的「原文存档」）：存活（2026-08-01 Wayback 快照证实存在；正文 JS 渲染，快照未含正文，Discussions API 端点未摸清，待迁移时用登录态抓）
+- **tieba 译文帖 29 个**：本机直连 403 反爬 + Wayback 基本无快照（仅 1/29 有）；**browser 工具 2026-08-09 实测可读**（p/4621079261、p/6423124322 全文+回复完整；偶发「百度安全验证」由用户手动清除后重试）——但百度有吞帖/吞回复史，即使帖在回复也可能不全；它们只是译文发布帖，一手出处是推特，优先级低
+- ~~**资源汇总讨论帖**~~（/f/p/4400000000000025340，动画实况解说与早期ask 标注的「原文存档」）：**2026-08-09 用户已人工查看，无需再抓**——有用内容即 `C:\Users\ccxxx\Desktop\长月qa原档备份` 那批文件 + reddit `r/Re_Zero/wiki/translation` 英译索引（后者 Wayback 快照在 logs/archive_audit/reddit_translation_index.html）
 - 巴哈姆特第22集译文帖 502 且无快照（S1/巴哈姆特其余只是译者署名链接，不影响考证）；pastebin 奥托2018英肉存活
 
-**原档备份与英文索引（2026-08-09 用户提供）**：`C:\Users\ccxxx\Desktop\长月qa原档备份`（资源汇总帖的存档内容）+ reddit `r/Re_Zero/wiki/translation` 英译索引（本机被反爬，Wayback 快照可用，logs/archive_audit/reddit_translation_index.html）。
+**原档备份与英文索引（2026-08-09 用户提供）**：`C:\Users\ccxxx\Desktop\长月qa原档备份`（资源汇总帖的存档内容；归档副本在同日由用户手动放至 OneDrive `文档\杂项\re0\长月qa原档备份`——re0-corpus 与 wiki 均不适合 xlsx，归宿已定）+ reddit `r/Re_Zero/wiki/translation` 英译索引（本机被反爬，Wayback 快照可用，logs/archive_audit/reddit_translation_index.html）。
 
 - `动画推特解说【全】rezeroneko.xlsx`：#rezeroneko 推文全量抓取（twint 格式：id/日期/正文/链接），3044 推、79 天、2016-04~2021-03，覆盖旧版/新编/OVA/第二季全跨度。**量化出的搬运遗漏**：旧版 2-6 集推文全在 xlsx（~334 推）而存档页整缺（存档自注「1-6已找不到」）；且各集译文均为选译（推数约为 bullet 数 2-3 倍，如 新编第1集 81 推→19 条）
 - `askfm 1.xlsx`：ask.fm QA 2571 条（2014-05~2015-10，清洗版含联动推链接）——模块早期ask 只有 639 条（存档自注「译者个人口味节选」）；`askfm备用.docx` 是同时段主页原始 dump（~14000 段，格式乱），`askfm 2xlsx.txt` 为 Q:/A: 纯文本
