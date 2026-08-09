@@ -66,7 +66,7 @@ site.login()                          # 写入前必须
 assert site.user() == "IchiSanNi"
 p = pywikibot.Page(site, "角色:菜月·昴")
 p.text                                # 读
-p.save(summary="...")                 # 手动编辑不加 bot flag；批量脚本用 bot=True
+p.save(summary="...", bot=False, minor=False)  # 手动编辑（save 默认 bot=True/minor=True，须显式关）；批量脚本用 bot=True
 ```
 
 - 完整配方（pagegenerators 生成器、simple_request 裸 API、BotPassword 逃生舱、实测坑）见 `docs/wiki-access.md`；凭据有效性验证跑 `scripts/verify_wiki_access.py`。

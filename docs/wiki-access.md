@@ -32,11 +32,13 @@ assert site.user() == "IchiSanNi"
 
 p = pywikibot.Page(site, "User:IchiSanNi/沙盒")
 p.text = p.text + "\n追加内容\n"
-p.save(summary="编辑摘要")            # 手动编辑特定页面：不加 bot flag
-p.save(summary="编辑摘要", bot=True)  # 批量脚本：加 bot=True（或 p.put(...)）
+p.save(summary="编辑摘要", bot=False, minor=False)  # 手动编辑：bot/minor 都必须显式关
+p.save(summary="编辑摘要", bot=True)                # 批量脚本：加 bot=True（或 p.put(...)）
 ```
 
 - **bot flag 的取舍**：bot flag 会阻止常规通知机制（避免批量编辑刷屏）。跑批量脚本时用 `bot=True` 没问题；但手动编辑特定页面时，操作更接近需人工审查的常规编辑，**不要加 bot flag**。
+- **pywikibot ≥9.4 起 `save()` 默认 `bot=True, minor=True`**（None 选项已移除）——手动编辑不显式传 `bot=False, minor=False` 就会被标成 bot 小编辑。2026-08-09 实测踩过：6 个手动合并编辑全部带上 bot+minor 标记（该标记事后无法摘除，只能等滚出 recentchanges）。旧文档「裸 `save()` 不加 bot flag」的写法已失效。
+- 验证 bot flag 要查 `list=recentchanges`（rcprop=flags）；`usercontribs` 的 ucprop=flags **不返回 bot 键**（即使编辑带 bot flag），会漏报。
 - `botflag=` 参数已废弃，用 `bot=`；传了 botflag 只会触发 FutureWarning，不影响保存。
 - save 有内置异常保护；批量写建议 try `pywikibot.exceptions.PageSaveError`。
 
