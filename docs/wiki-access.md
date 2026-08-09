@@ -114,6 +114,7 @@ login_name = bp.login_name(username)  # → "IchiSanNi@pywikibot"
 - `Page.isRedirectPage()` 对 `#重定向 [[...]]` 的页面可能误报 `False`——信 wikitext 不信标志位。
 - **`embeddedin`/templatelinks = 0 不等于没人用**：`#tag:` 扩展内容和死模板 `<includeonly>` 里的调用不入 templatelinks。模板删除前审计流程（全站 dump 配方、分类法、删除清单）见 `docs/template-usage-audit.md`。
 - `RecentChangesPageGenerator` 返回有重复条目（同一编辑出现多次），统计时需去重。
+- `generator=allpages` 配 `rvprop=content` 会被 Fandom 静默丢弃大部分页面的 revisions（只回页面壳、无报错、无截断提示，实测 2227 页只取回 253 页源码）。全站取源码用两阶段：先 `list=allpages` 枚举标题，再 `titles=` 按 50 个/批取 content。
 - 主空间 `allpages` 按字母序，CJK 前缀排在英文之后——采样统计前缀分布必须扫全量。
 - 写沙盒后可用 `curl 'https://rezero.fandom.com/zh/api.php?action=query&prop=revisions&titles=...&rvprop=content&rvslots=main&format=json'` 匿名验证结果。
 - **限速（Fandom 已接入 Cloudflare）**：`user-config.py` 必须保持 `minthrottle >= 0.25`、`put_throttle >= 2`（当前 0.25/2）。读侧：单连接全速（RTT 锁死 ~3.8 req/s）3000 请求零 429，0.25 已处拐点、再低不会更快；写侧真正瓶颈是 MediaWiki 编辑限速（user 组 40 次/分，查 `userinfo?uiprop=ratelimits`），2s → 30 次/分。失速会被 Cloudflare 429 且 `Retry-After` 高达数千秒、pywikibot 无条件睡满（`maxthrottle` 管不住）。治理方式是不触发 429（配置限速），明确不给 fork 打 `retry_after` 钳制补丁。根因考据与「何时绕开 pywikibot」见 `docs/cloudflare-429.md`。
