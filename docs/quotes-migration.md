@@ -35,7 +35,7 @@
 
 ## 技术约束与风险
 
-- **Scribunto 10s CPU 是硬约束**：现全量查询（~2100 条目）parse 4.2s、输出 1.1MB HTML；条目 4 倍膨胀后线性外推会爆。调用面实测：205 个引用页中**仅 `鼠色猫语录/all` 一页裸调用全量输出**，其余全带关键词。Phase 0 须分解耗时（扫描 vs 输出）并定架构：候选 = /all 页改分表展示、query 加分表参数、或数据合并单表减 require 开销
+- **性能约束的实测结论（2026-08-09，4 倍规模模拟）**：Lua 侧远未触限（4x 数据 require+扫描 CPU 仅 0.4s，Scribunto 限 10s）；`frame:preprocess` 贡献仅 ~10% 且**不可去**（无 preprocess 时 `<ref>` 变字面文本、`{{Seirei}}` 等模板不展开）。**真正的硬约束是 MediaWiki post-expand include size 2MB 上限**：当前全量输出 1.1MB，4 倍后 ~4.4MB → 输出被整体丢弃（仅剩警告链接）。对策：`table=` 参数已上线（2026-08-09，按名懒加载单表，向后兼容逐字节验证），`/all` 页须在 P3 前改造（拆子页或改索引，待用户决策）
 - **Fandom 上传**：允许 mp3 ✓、**xlsx ✗**；文件大小限制待实测（88MB mp3 可能超限，备选 archive.org 托管 + wiki 外链）；xlsx 类原档的持久化归宿待决策（re0-corpus 或 wiki 文本页）
 - **译名一致性**：LLM 翻译 prompt 必须注入 `user-fixes.py` 译名表；`fix:translation` 的 generator 不覆盖 Module 命名空间是**有意为之**（动 Lua 代码风险大），翻译完后对特定内容手动跑一遍替换是允许的，但生成时仍应以译名表为准
 - **对齐留痕**：zh↔ja 对齐（实况 66 集、ask 639 条）全部产出映射表存 logs/，按比例人工抽查，不许静默通过
