@@ -14,7 +14,7 @@
 3. narou 评论 560 条**建条目**（`鼠色猫语录/Web连载网站上评论` 空占位启用）
 4. 十周年问答：**录音转写 + 英文对照**；能传 wiki 的原始资源尽量传
 5. 英译字段（es/eq/ea）**尽量补全**（reddit 英译索引链接齐全）
-6. LLM 选型：批量对齐/初翻用 **DeepSeek Flash**（用户提供 API），疑难与抽审用 Kimi K3
+6. LLM 选型：~~批量对齐/初翻用 DeepSeek Flash，疑难与抽审用 Kimi K3~~ → **2026-08-09 实测后改定 Kimi K3（kimi coding 端点）为主**：28 条对比中 K3 零实体/标题/译名错误、术语正确（ワイプ=划变转场）、行文自然（DS 需 2 处人工修 + 1 处归一兜底，K3 仅 1 处）；无注入版 K3 也认识主要角色（パック 不再译「包包」），但会在 **wiki 自有惯例**上失手（ベア子→贝蒂 ✗，应为贝亚子）且跨条目用字不一致（艾米莉亚/艾米莉娅/爱蜜莉雅碳混用）——译名表注入因此保留（一致性 + wiki 惯例，这类错误自动化兜不住）。K3 调用约定：OpenAI 格式 `https://api.kimi.com/coding/v1` + `User-Agent: claude-code/0.1.0`（无它 403，抄 Hermes Agent）+ **不并发**（算力不足易 429）；管线 provider 参数一键切换，DeepSeek Flash 留作备用。注意：译文审读与翻译同为 K3，存在共同盲区（セメント 俗语两个模型同错），关键条目仍以人工抽查为准
 
 ## 数据源
 
@@ -68,6 +68,6 @@ P1 与 P0 可并行；P3/P4/P5 相互独立，P0 完成后可任意顺序。
 
 ## 用户侧待提供
 
-- [x] LLM API：**OpenCode Zen**（`https://opencode.ai/zen/v1`，OpenAI 兼容）的免费模型 `deepseek-v4-flash-free`，2026-08-09 实测可用：日译中质量合格（译名注入生效）、~5s/条、10 并发无压力（10 并发 10 条总耗时 5.6s）；是 reasoning 模型，`reasoning_content` 与 `content` 分离且共享 max_tokens，调用时 max_tokens 要留足（建议 ≥4000）；另有 deepseek-v4-pro 与计费 API 备选。key 由用户持有，**不入 git 不入 memory**；管线脚本读 `OPENCODE_API_KEY` 环境变量，或 gitignored 的 `logs/api_keys.json`
+- [x] LLM API：~~OpenCode Zen `deepseek-v4-flash-free`~~ → **Kimi K3**（2026-08-09 实测选定，见决策记录 6）。key 由用户持有，**不入 git 不入 memory**；管线脚本读 `OPENCODE_API_KEY` 环境变量，或 gitignored 的 `logs/api_keys.json`（opencode/kimi 两个 provider 配置）
 - [ ] 录音转写偏好：本机有 RTX 4090，可本地 faster-whisper；质量待 P5 实测，不行再走 Whisper API（约 $0.5）
 - [x] 浏览器：用户已连接本地浏览器（reddit 等被反爬源可改走实时抓取；Wayback 快照偏旧，作兜底）
