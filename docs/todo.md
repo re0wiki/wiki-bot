@@ -7,6 +7,8 @@
 
 ### 鼠色猫语录迁移质量修复（2026-08-09 审计发现）
 
+**执行计划已独立成文：`docs/quotes-migration.md`**（范围决策、数据源、阶段划分、验收标准；2026-08-09 用户拍板全量入库 + LLM 补译）。以下保留审计发现备查。
+
 存档页（`Category:存档`，31 页）→ `Module:鼠色猫语录` 数据子表的旧迁移质量差。审计：logs/dump_archive_audit.py 抓全量 → logs/analyze_archive_coverage.py 两边去 wikitext/Lua 标记 + NFKC/繁简归一化逐句比对，缺失明细 logs/archive_audit/misses.txt，逐条人工复核完成。结论：20 个问答存档页正文已覆盖，但缺口如下。
 
 **不要全量重迁**：反向覆盖（模块中文句 → 存档页，logs/reverse_coverage.py）96.6% 命中，但 菲莉丝（46% 未命中）/安娜塔西亚 等表含存档页之外的扩充内容（其他来源 QA、jq/ja 字段），全量重迁会丢这些数据。走增量补齐，全部补完才可讨论删除存档页。
