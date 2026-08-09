@@ -37,16 +37,16 @@
 
 - **Scribunto 10s CPU 是硬约束**：现全量查询（~2100 条目）parse 4.2s、输出 1.1MB HTML；条目 4 倍膨胀后线性外推会爆。调用面实测：205 个引用页中**仅 `鼠色猫语录/all` 一页裸调用全量输出**，其余全带关键词。Phase 0 须分解耗时（扫描 vs 输出）并定架构：候选 = /all 页改分表展示、query 加分表参数、或数据合并单表减 require 开销
 - **Fandom 上传**：允许 mp3 ✓、**xlsx ✗**；文件大小限制待实测（88MB mp3 可能超限，备选 archive.org 托管 + wiki 外链）；xlsx 类原档的持久化归宿待决策（re0-corpus 或 wiki 文本页）
-- **译名一致性**：LLM 翻译 prompt 必须注入 `user-fixes.py` 译名表；注意 `fix:translation` 任务的 generator 不覆盖 Module 命名空间，模块数据只能靠生成时保证
+- **译名一致性**：LLM 翻译 prompt 必须注入 `user-fixes.py` 译名表；`fix:translation` 的 generator 不覆盖 Module 命名空间是**有意为之**（动 Lua 代码风险大），翻译完后对特定内容手动跑一遍替换是允许的，但生成时仍应以译名表为准
 - **对齐留痕**：zh↔ja 对齐（实况 66 集、ask 639 条）全部产出映射表存 logs/，按比例人工抽查，不许静默通过
 - 入库统一简体；模块字段值是 wikitext（`:wikitext()` 渲染），`{{Seirei}}` 等模板可用，字面 `}}` 是 bug 要杜绝（旧迁移教训）
-- reddit 抓取走 Wayback（本机被反爬 403，快照已验证可用）；tieba 译文帖只需人工浏览器抽查一次
+- reddit 等被反爬源：用户已连接本地浏览器可实时抓取；Wayback 快照偏旧作兜底（快照已验证可用）；tieba 译文帖只需人工浏览器抽查一次
 
 ## 阶段计划
 
 | 阶段 | 内容 | 产出 | 估时 | 依赖 |
 |---|---|---|---|---|
-| **P0 基础设施与试点** | DeepSeek API 接入脚本（OpenAI 兼容端点 + 译名表注入）；Lua 生成器骨架（wikitext 转义、引号/花括号校验）；性能分解实测与架构方案；**用 OVA（17 条）走通全流程**：xlsx→对齐→补译→生成→上传→渲染验证 | 管线脚本 + OVA 上线 | 1 会话 | 用户提供 DeepSeek key |
+| **P0 基础设施与试点** | LLM 接入脚本（OpenCode Zen 端点 + 译名表注入 + 429 退避）；Lua 生成器骨架（wikitext 转义、引号/花括号校验）；性能分解实测与架构方案；**用 OVA（17 条）走通全流程**：xlsx→对齐→补译→生成→上传→渲染验证 | 管线脚本 + OVA 上线 | 1 会话 | OpenCode key（已实测可用） |
 | **P1 无损小修** | F（重复键 ×2）、C（截断 8 处）、E（零散 2 条）、D（奥托 2017 ~8 组）、B（签名会 js 孤本 159 行） | 直接修模块 | 1 会话 | 无（可先于 P0） |
 | **P2 动画实况解说** | xlsx 按日期→集数映射（注意 2016 深夜档次日偏移）；66 集 LLM 对齐 zh bullet↔ja tweet；无中文推文补译 ~2000 条；生成上传；渲染验证 | `鼠色猫语录/动画实况解说` 全量 | 3-4 会话 | P0 |
 | **P3 ask 全量** | 现有 639 条中文 ↔ xlsx 日文对齐；剩余 ~1900 条补译；docx/txt 交叉验证完整性；src 填 xlsx 日期 | `鼠色猫语录/早期ask` 全量 | 2-3 会话 | P0 |
@@ -66,6 +66,6 @@ P1 与 P0 可并行；P3/P4/P5 相互独立，P0 完成后可任意顺序。
 
 ## 用户侧待提供
 
-- [ ] DeepSeek API key（建议给环境变量 `DEEPSEEK_API_KEY`，脚本直调，不进 Hermes 配置）
-- [ ] 录音转写偏好：本地 faster-whisper（免费、慢、需确认本机 GPU）还是 Whisper API（Groq/OpenAI，约 $0.5）
-- [ ] 浏览器工具：暂缓（当前路径都不需要；若 P6 thread 抓取或 tieba 抽查碰壁再配）
+- [x] LLM API：**OpenCode Zen**（`https://opencode.ai/zen/v1`，OpenAI 兼容）的免费模型 `deepseek-v4-flash-free`，2026-08-09 实测可用：日译中质量合格（译名注入生效）、~5s/条、10 并发无压力（10 并发 10 条总耗时 5.6s）；是 reasoning 模型，`reasoning_content` 与 `content` 分离且共享 max_tokens，调用时 max_tokens 要留足（建议 ≥4000）；另有 deepseek-v4-pro 与计费 API 备选。key 由用户持有，**不入 git 不入 memory**；管线脚本读 `OPENCODE_API_KEY` 环境变量，或 gitignored 的 `logs/api_keys.json`
+- [ ] 录音转写偏好：本机有 RTX 4090，可本地 faster-whisper；质量待 P5 实测，不行再走 Whisper API（约 $0.5）
+- [x] 浏览器：用户已连接本地浏览器（reddit 等被反爬源可改走实时抓取；Wayback 快照偏旧，作兜底）
