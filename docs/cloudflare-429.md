@@ -6,6 +6,14 @@ Fandom 前端接 Cloudflare，按 **TLS 指纹 + 请求速率**限流。本文�
 ## 已证伪的假设
 
 - **User-Agent 不是诱因**：同一 IP 下 `curl` 带 `Pywikibot/...` UA 得 200，pywikibot 得 429。
+- **`retry_after` 无客户端持久化**（2026-08-10 再确认）：`throttle.py:92` 仅内存赋值、
+  `http.py:337-339` 从响应头写入，无任何落盘——「删掉某个文件即可恢复」不存在，
+  新进程首发 429 是 Cloudflare 服务端滚动惩罚，只能等窗口。
+- **惩罚按 TLS 指纹分别计数**（2026-08-10 实锤）：同一时刻 curl GET api.php 200、
+  python requests/pywikibot 429；curl GET 始终可读，但 curl POST action=edit 立即返回
+  **error code 1015**（Cloudflare 限流 block 页，非 JSON）。
+- Retry-After  escalation 上限刷新：实测 6896s（此前记录 3594s），确认随触发次数持续增长。
+- 本次诱因：main.py 常驻循环与 agent 会话脚本叠加（忘记先停循环）。
 - **`throttle.ctrl` 不积累惩罚**：pywikibot 11.x 里它只是记录并发进程数的 PID 文件，
   删除它对 429 恢复无效（过去的「改善」是时间巧合）。
 
