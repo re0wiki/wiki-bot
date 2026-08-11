@@ -149,7 +149,11 @@ user_fixes["para"] = base | {
         for o, n in [
             ("Name", "name"),
             ("Image", "image"),
-            ("Kanji", "name_ja_kanji"),
+            # 2026-08-11 改名：字段实为日文名原文（en 把假名也填进 Kanji），
+            # name_ja_kanji 名不副实 → name_ja；旧名自改名规则常驻
+            # （transferbot 每次搬运重新带入 Kanji，loop 顺带收历史残留）。
+            ("Kanji", "name_ja"),
+            ("name_ja_kanji", "name_ja"),
             ("Romaji", "name_ja_romaji"),
             ("Alias", "alias"),
             ("Nickname", "nickname"),
