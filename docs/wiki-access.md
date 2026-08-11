@@ -123,6 +123,12 @@ login_name = bp.login_name(username)  # → "IchiSanNi@pywikibot"
 - **限速（Fandom 已接入 Cloudflare）**：`user-config.py` 必须保持 `minthrottle >= 0.25`、`put_throttle >= 2`（当前 0.25/2）。读侧：单连接全速（RTT 锁死 ~3.8 req/s）3000 请求零 429，0.25 已处拐点、再低不会更快；写侧真正瓶颈是 MediaWiki 编辑限速（user 组 40 次/分，查 `userinfo?uiprop=ratelimits`），2s → 30 次/分。失速会被 Cloudflare 429 且 `Retry-After` 高达数千秒、pywikibot 无条件睡满（`maxthrottle` 管不住）。治理方式是不触发 429（配置限速），明确不给 fork 打 `retry_after` 钳制补丁。根因考据与「何时绕开 pywikibot」见 `docs/cloudflare-429.md`。
 - **批量编辑模式**（同一变换改多页）：优先 pywikibot（pagegenerators 扫描 → 本地分析出候选 → 循环 `save(bot=True)`）；裸 API 路线为备选：① 全量扫描（`list=allpages` + `prop=revisions` 取原文和 revid）→ ② 本地分析出候选清单 → ③ 循环编辑：login → csrf token → edit 带 `baserevid` 防冲突、`bot="1"` 抑制通知，写间隔 ≥1.5s（MediaWiki 编辑限速 user 组 40 次/分）。扫 28K+ 页用 `aplimit=max`（500）分批，勿逐页请求。
 
+## MediaWiki Conversiontable
+
+- 自定义转换规则只解析 `-{ ... }-` 块；块外的说明/HTML（例如整页外包 `<div class="as-is">`）不影响规则加载。
+- `//` 注释必须写在分号**前**：`foo=>bar //注释;`。若写成 `foo=>bar; //注释`，MediaWiki 按分号切段后会把注释当作下一条规则 key 的前缀，导致下一条规则静默失效（2026-08-11 在 Fandom MediaWiki 1.43.9 实测；对应核心代码 `LanguageConverter::parseCachedTable()`）。
+- 排查某条规则是否生效，可用只读 API 对任意片段直接解析：`action=parse&text=<片段>&title=User:IchiSanNi/Sandbox&prop=text&contentmodel=wikitext&variant=zh-tw`；这能排除条目页缓存因素。
+
 ## 验证凭据是否仍然有效
 
 ```bash
