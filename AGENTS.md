@@ -100,6 +100,7 @@ p.save(summary="...", bot=False, minor=False)  # 手动编辑（save 默认 bot=
 - pwb.py 对**用法级失败**（脚本名拼错、replace 缺替换对、未知 pwb 参数）退出码仍为 0——`wrapper.py` 的 `execute()` 返回 False 只打印用法文档；只有未捕获异常（崩溃类：网络断开/登录失败/脚本 bug）才非零退出。因此 `run_job` 的「失败即退出」覆盖的是崩溃类失败；用法级失败要靠 `-s` 干跑先看输出。
 - Fandom 已接入 Cloudflare：失速会被 429 且 `Retry-After` 高达数千秒。`user-config.py` 保持 `minthrottle>=0.25`、`put_throttle>=2` 预防，根因与对策见 `docs/cloudflare-429.md`。
 - `jobs/jobs.py` 的 interwiki 任务不带 `-auto`（由 run_job 补），直接手敲 pwb.py 跑要记得加。
+- user-fixes 里写「不跨模板边界」的作用域正则要当心两处解析坑（2026-08-11 fix:para 死行删除规则实证）：`\{\{}` 不是 `{{`——`\}` 也是字面量，该写法匹配的是三字符 `{{}`，正确写法是 `(?!\{\{)`；DOTALL 下值匹配用 `.*` 会吞到文末，行值一律 `[^\n]*`。验证这类规则必须断言 diff 只删目标行（仅看 `new != text` 会漏掉截尾事故）。
 - transferbot **不接受 `-always`**（加了会报错）；它不加也会自动覆盖目标页。
 - `touch -random:128` 在任务列表末尾，是为了触发缓存刷新，不是无意义操作。
 - 常驻方式：本机跑 `python main.py`（无限循环所有任务）。

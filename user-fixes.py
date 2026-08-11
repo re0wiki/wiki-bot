@@ -231,6 +231,16 @@ user_fixes["para"] = base | {
             ("title1", "name"),
             ("caption1", "Caption"),
         ]
+    ]
+    + [
+        # Infobox character 的 name_ja_romaji 已废弃（2026-08-11 起罗马字全部由
+        # Kana2Romaji 自动生成）：删除该模板内的残留行（含上面刚由 Romaji 归一的行，
+        # 即 transferbot 新搬运页带入的 en 手写值也会被清掉）。作用域用 (?!\{\{)
+        # 限定在 character 信息框内（不跨 {{ 与 }}），不波及其他信息框合法的同名字段。
+        (
+            r"(?ms)(\{\{Infobox character(?:(?!\{\{|\}\}).)*?)^\| *name_ja_romaji *= *[^\n]*\n?",
+            r"\1",
+        ),
     ],
 }
 # endregion

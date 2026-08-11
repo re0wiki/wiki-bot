@@ -42,9 +42,7 @@
 
 主流程已收敛（见 `docs/modules.md` Kana2Romaji 条）。已结案：白羊/黑狗已补 name_ja_kanji + name_ja_romaji；梅里欧·阿嘎玛回退为 zh 更完整的 `メリオ·アガマ`（不动 en）；希洛洛的 en 链接本来就对（早前"红链"判断是 Fandom API GET 缓存旧数据）；菜月菜穗子/菜月贤一的 [[en:...]] 链接其实一直存在（同遭缓存误报）。
 
-剩余一项：
-
-- `角色:菜月菜穗子` / `角色:菜月贤一`：日文名是汉字（菜月 菜穂子 / 菜月 賢一），zh 假名字段一个填了读音 `なつき なおこ`、一个填了汉字本体，字段语义不统一。要定字段语义（name_ja_kanji 填汉字名 + name_ja_kana 填读音）并补 `name_ja_romaji` 手动值。
+~~剩余一项：菜月父母字段语义~~ **2026-08-11 随罗马字全量自动化解案**：字段语义定为 name_ja_kanji 填汉字名 + name_ja_kana 填读音，罗马字不再手动填写（两页已补 kana 并删 romaji，见 `docs/templates.md`）。
 
 ## 历史待办存档（ReZero Wiki:施工计划表）
 
