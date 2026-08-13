@@ -145,7 +145,8 @@ MediaWiki 对**所有适用组**的窗口分别计数、任一超限即拒绝（
 1. **轮间休眠**（2026-08-13 起，治累计量）：`main.py` 无限循环模式每轮结束睡 1 小时
    （`CYCLE_SLEEP = 3600`）——累计量限流只能靠削减日总请求量，调 minthrottle 无效。
    一轮 ~2h50m + 1h 休眠 → ~6 轮/天（原背靠背 ~8.5 轮/天，约 13 万请求/天）。
-   fixing_redirects 换装后单轮时长也会大减，此休眠可视情况重新评估。
+   fixing_redirects/gallery 换装后单轮已降至 ~70 min（同日 19:00 实测），
+   transferbot/re0_redirect 批量化后预计 ~38 min，此休眠时长可重新评估。
 2. **配置限速**（治瞬时速率，`user-config.py`）：
 
 ```python
