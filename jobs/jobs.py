@@ -86,7 +86,7 @@ jobs: list[Job] = [
     Job("fix:para", ["replace", "-automaticsummary", "-fix:para"]),
     # 重定向维护
     Job("redirect", ["re0_redirect", "-start:!"]),
-    Job("fixing-redirects", ["fixing_redirects", *starts_more]),
+    Job("fixing-redirects", ["re0_fixing_redirects", *starts_more]),
     Job("redirect-do", ["redirect", "do"]),
     Job("redirect-br", ["redirect", "br", "-delete"]),
     # 语法规范化
