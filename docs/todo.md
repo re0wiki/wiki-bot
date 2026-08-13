@@ -5,27 +5,6 @@
 
 ## 待处理
 
-### jobs 性能与数据源审计（2026-08-13，随 re0_fixing_redirects 换装所做）
-
-换装后单轮请求 ~2-3k（原 ~17k+）；单轮时长 170 min → 69.6 min → **37.6 min**（22:31→23:09 实测，-78%）。剩余按优先级：
-
-**性能（请求放大）**（耗时为 2026-08-13 两轮实测，commands.log 逐任务计时；括号内为换新脚本后单轮占比）
-
-- [x] **transferbot 15.2 min（21.8%）、~2500-4000 请求/轮**：全 en 主空间逐页迭代 + 逐页 `targetpage.exists()` 单独查询。**已修（2026-08-13）**：`scripts/re0_transferbot.py` 标题集内存比对（~30 请求）+ 缺失页 50/批取内容 + fork 补丁同款页首/摘要，创建前 zh 侧批量复核防竞争；干跑 en 1852/zh 10105/缺失 0 与 8-08 审计稳态一致。
-- [x] **re0_redirect 16.6 min（23.8%）、~2000 请求/轮**：逐页 `Page(词干).exists()` 单独查询，且 `Re:...` 等带冒号标题大量误中词干正则。**已修（2026-08-13）**：词干收集后 prop=info 50/批批量查存在性（~50 请求，秒级完成），干跑 2140 词干 0 缺失与旧版稳态一致。
-- [x] ~~**replace fix ×11 合计 ~4.1 min（5.9%）、≈ 600 请求/轮**~~ —— 2026-08-13 用户裁决不处理（见下方「已评估、决定不做」）。
-- interwiki 5.0 min ~1000/轮：跨站查询结构使然，无放大。
-- touch 4.4 min 678/轮：设计内（缓存刷新），不动。
-- [x] ~~noreferences 17.8 min（47.4%）~~ **已修（2026-08-13）**：瓶颈不是 CPU 而是 `BaseBot.skip_page` 对每页调 `page.isDisambig()`（`use_disambigs=False`）读 `prop=pageprops`，默认预载不含 → 每页 1 次请求（cProfile 实测 218 页 124s 中 118s 在此）。fork 补丁：预载带 `pageprops=True` 随内容同批缓存（50/批）→ 主空间全扫 **25 s**。
-- 已修：re0_fixing_redirects 90.5→1.2 min；re0_gallery 7.1→1.4 min（iterlanglinks 本就是每页 1 次查询，换源码解析顺带消掉 ~130 请求/轮）；re0_transferbot 15.8 min→8 s；re0_redirect 18.3 min→5 s；re0_image 3.0 min→21 s（并消除了 latest_file_info 逐页懒加载的 ~2N 隐藏请求）。
-
-**数据源（派生表遗漏风险，参照「信息框参数链接不进 links 表」机理）**
-
-- [x] **re0_gallery**：`iterlanglinks` 走 langlinks 派生表（2026-08-08 脏数据实锤）→ 可能漏同步/错配 en 图库。**已修（2026-08-13）**：改从源码扫 `[[en:...]]`（`find_en_title`，单测覆盖内联冒号链接/空目标特例），「摘链退出同步」语义不变。
-- category remove ×2 / template replace：依赖 categorylinks/templatelinks——#invoke 参数内的分类/调用不登记，但本站信息框参数不含分类、被替换模板均顶层调用，**风险低，暂不处理**。
-- redirect-do/br：redirect 表抽查与现实一致（pageid 8004 等），**风险低**。
-- interwiki（textlib 源码解析语言链接）/ replace 各 fix / re0_move（标题匹配）/ noreferences（源码）：均无派生表依赖。
-
 ### 鼠色猫语录迁移质量修复（2026-08-09 审计发现）
 
 **执行计划已独立成文：`docs/quotes-migration.md`**（范围决策、数据源、阶段划分、验收标准；2026-08-09 用户拍板全量入库 + LLM 补译）。以下保留审计发现备查。
