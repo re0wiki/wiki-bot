@@ -11,7 +11,7 @@ git branch backup/pre-rebase-$(git rev-parse --short main) main   # 安全网
 git rebase upstream/master main
 ```
 
-- 冲突通常很少：定制只碰 5 个文件（fixes.py / textlib.py / _filepage.py / noreferences.py / transferbot.py），上游很少动这些区域（transferbot 常年为 0 冲突）。
+- 冲突通常很少：定制只碰 4 个文件（fixes.py / textlib.py / _filepage.py / noreferences.py），上游很少动这些区域。
 - `GIT_EDITOR=true git rebase --continue` 避免弹编辑器。
 
 ## 验证（比冲突解决更重要）
@@ -22,12 +22,11 @@ git rebase upstream/master main
 git range-diff <old-base>..backup/pre-rebase-xxx upstream/master..main
 
 # 2. 定制点抽查（详见 AGENTS.md 定制清单）
-git diff upstream/master main --stat   # 应只碰 fixes/textlib/_filepage/noreferences/transferbot 5 个文件
+git diff upstream/master main --stat   # 应只碰 fixes/textlib/_filepage/noreferences 4 个文件
 grep '"keep"' pywikibot/fixes.py              # 4 处（HTML/syntax/isbn/specialpages）
 grep 'as-is' pywikibot/textlib.py
 grep 'format=original' pywikibot/page/_filepage.py
 grep '注释与外部链接' scripts/noreferences.py
-grep '新搬运待整理' scripts/transferbot.py
 ```
 
 主仓验证：

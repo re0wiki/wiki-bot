@@ -38,12 +38,6 @@ def test_interwiki_simulate_takes_precedence():
     assert "-auto" not in cmd
 
 
-def test_transferbot_rejects_always():
-    """transferbot 不接受 -always（加了会报错），且不加也会自动覆盖目标页。"""
-    cmd = rj.build_cmd(["transferbot", "-lang:en"])
-    assert "-always" not in cmd
-
-
 def test_run_job_raises_on_failure(monkeypatch):
     """子进程非零退出必须抛出——不吞失败（吞了循环模式会故障期空转锤站）。"""
 
