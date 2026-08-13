@@ -16,7 +16,7 @@
 - [ ] **replace fix ×11 合计 ~4.1 min（5.9%）、≈ 600 请求/轮**：replace.py 支持单次多 `-fix`（`fixes_set.append`），同 generator 的 fix 可合并为一次全扫，省 ~500。注意：各 fix generator 不同（base/more/`-catr:图库`），合并后取并集会扩大部分 fix 的扫描面；摘要与故障隔离粒度也会变——需裁决。
 - interwiki 5.0 min ~1000/轮：跨站查询结构使然，无放大。
 - touch 4.4 min 678/轮：设计内（缓存刷新），不动。
-- noreferences 17.8 min（**47.4%**）是 **CPU 密集**（预载已批量，~52 请求），不占 API 预算，429 视角无需处理；它已占循环时长近半，若要继续压墙钟时间可做纯 CPU 优化（profiling 正则或降频）。
+- [x] ~~noreferences 17.8 min（47.4%）~~ **已修（2026-08-13）**：瓶颈不是 CPU 而是 `BaseBot.skip_page` 对每页调 `page.isDisambig()`（`use_disambigs=False`）读 `prop=pageprops`，默认预载不含 → 每页 1 次请求（cProfile 实测 218 页 124s 中 118s 在此）。fork 补丁：预载带 `pageprops=True` 随内容同批缓存（50/批）→ 主空间全扫 **25 s**。
 - 已修：re0_fixing_redirects 90.5→1.2 min；re0_gallery 7.1→1.4 min（iterlanglinks 本就是每页 1 次查询，换源码解析顺带消掉 ~130 请求/轮）；re0_transferbot 15.8 min→8 s；re0_redirect 18.3 min→5 s；re0_image 3.0 min→21 s（并消除了 latest_file_info 逐页懒加载的 ~2N 隐藏请求）。
 
 **数据源（派生表遗漏风险，参照「信息框参数链接不进 links 表」机理）**

@@ -80,7 +80,7 @@ p.save(summary="...", bot=False, minor=False)  # 手动编辑（save 默认 bot=
 - `fixes.py`：syntax fix 注释掉外链竖线规则（误报太多）。
 - `textlib.py`：`replaceLanguageLinks` 的 CategorySelect 分支加守卫，模板页（含子页）改走 noinclude 感知分支——否则 `getCategoryLinks` 不识别 `<noinclude>` 包裹，会把分类从 noinclude 里拽出来放到页尾（Fandom 有 CategorySelect 扩展，cosmetic_changes 的 standardizePageFooter 必踩）。
 - `_filepage.py`：下载 URL 加 `&format=original`，否则 Fandom API 返回 webp。同时必须去掉上游的 suffix 调整：它从 URL 路径取扩展名，而 Fandom URL 以 `/revision/latest` 结尾（无扩展名），留着会把下载文件的真扩展名剥掉（Wikimedia 的 URL 路径以文件名结尾，所以上游留着没事）。
-- `noreferences.py`：zh 参考资料段标题加「注释与外部链接」。
+- `noreferences.py`：zh 参考资料段标题加「注释与外部链接」；预载带 `pageprops`——`skip_page` 对每页调 `isDisambig()`（`use_disambigs=False`）读 `prop=pageprops`，默认预载不含它导致每页一次查询（全扫 ~18 min），带上后随内容同批缓存（~25 s）。
 
 ## 译名维护工作流（最常见的改动）
 

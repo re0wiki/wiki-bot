@@ -27,6 +27,7 @@ grep '"keep"' pywikibot/fixes.py              # 4 处（HTML/syntax/isbn/special
 grep 'as-is' pywikibot/textlib.py
 grep 'format=original' pywikibot/page/_filepage.py
 grep '注释与外部链接' scripts/noreferences.py
+grep 'pageprops=True' scripts/noreferences.py
 ```
 
 主仓验证：
