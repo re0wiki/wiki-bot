@@ -5,6 +5,26 @@
 
 ## 待处理
 
+### jobs 性能与数据源审计（2026-08-13，随 re0_fixing_redirects 换装所做）
+
+换装后单轮请求估算 ~7-9k（原 ~17k+）。剩余按优先级：
+
+**性能（请求放大）**
+
+- [ ] **transferbot ~2500-4000/轮**：全 en 主空间逐页迭代 + 逐页 `targetpage.exists()` 单独查询。修法：en/zh 标题集合各 500/批拉取（~30 请求）内存比对，只搬运缺失页。中工程——须保留 fork 补丁行为（页首 {{Init}}{{To do}} + 来源链接 + [[Category:新搬运待整理]]）。
+- [ ] **re0_redirect ~2000/轮**：逐页 `Page(词干).exists()` 单独查询，且 `Re:...` 等带冒号标题大量误中词干正则。修法：收集全部候选词干后 prop=info 50/批批量查存在性（~50 请求）。小工程。
+- [ ] **replace fix ×11 ≈ 600/轮**：replace.py 支持单次多 `-fix`（`fixes_set.append`），同 generator 的 fix 可合并为一次全扫，省 ~500。注意：各 fix generator 不同（base/more/`-catr:图库`），合并后取并集会扩大部分 fix 的扫描面；摘要与故障隔离粒度也会变——需裁决。
+- interwiki ~1000/轮：跨站查询结构使然，无放大。
+- touch 678/轮：设计内（缓存刷新），不动。
+- noreferences ~18 分钟是 **CPU 密集**（预载已批量，~52 请求），不占 API 预算，429 视角无需处理。
+
+**数据源（派生表遗漏风险，参照「信息框参数链接不进 links 表」机理）**
+
+- [ ] **re0_gallery**：`iterlanglinks` 走 langlinks 派生表（2026-08-08 脏数据实锤）→ 可能漏同步/错配 en 图库。修法：从 /图库页源码扫 `[[en:...]]`（page.text 反正要读），顺带免疫「摘链退出同步」语义的派生表失真。
+- category remove ×2 / template replace：依赖 categorylinks/templatelinks——#invoke 参数内的分类/调用不登记，但本站信息框参数不含分类、被替换模板均顶层调用，**风险低，暂不处理**。
+- redirect-do/br：redirect 表抽查与现实一致（pageid 8004 等），**风险低**。
+- interwiki（textlib 源码解析语言链接）/ replace 各 fix / re0_move（标题匹配）/ noreferences（源码）：均无派生表依赖。
+
 ### 鼠色猫语录迁移质量修复（2026-08-09 审计发现）
 
 **执行计划已独立成文：`docs/quotes-migration.md`**（范围决策、数据源、阶段划分、验收标准；2026-08-09 用户拍板全量入库 + LLM 补译）。以下保留审计发现备查。
