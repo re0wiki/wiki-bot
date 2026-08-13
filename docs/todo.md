@@ -13,7 +13,7 @@
 
 - [x] **transferbot 15.2 min（21.8%）、~2500-4000 请求/轮**：全 en 主空间逐页迭代 + 逐页 `targetpage.exists()` 单独查询。**已修（2026-08-13）**：`scripts/re0_transferbot.py` 标题集内存比对（~30 请求）+ 缺失页 50/批取内容 + fork 补丁同款页首/摘要，创建前 zh 侧批量复核防竞争；干跑 en 1852/zh 10105/缺失 0 与 8-08 审计稳态一致。
 - [x] **re0_redirect 16.6 min（23.8%）、~2000 请求/轮**：逐页 `Page(词干).exists()` 单独查询，且 `Re:...` 等带冒号标题大量误中词干正则。**已修（2026-08-13）**：词干收集后 prop=info 50/批批量查存在性（~50 请求，秒级完成），干跑 2140 词干 0 缺失与旧版稳态一致。
-- [ ] **replace fix ×11 合计 ~4.1 min（5.9%）、≈ 600 请求/轮**：replace.py 支持单次多 `-fix`（`fixes_set.append`），同 generator 的 fix 可合并为一次全扫，省 ~500。注意：各 fix generator 不同（base/more/`-catr:图库`），合并后取并集会扩大部分 fix 的扫描面；摘要与故障隔离粒度也会变——需裁决。
+- [x] ~~**replace fix ×11 合计 ~4.1 min（5.9%）、≈ 600 请求/轮**~~ —— 2026-08-13 用户裁决不处理（见下方「已评估、决定不做」）。
 - interwiki 5.0 min ~1000/轮：跨站查询结构使然，无放大。
 - touch 4.4 min 678/轮：设计内（缓存刷新），不动。
 - [x] ~~noreferences 17.8 min（47.4%）~~ **已修（2026-08-13）**：瓶颈不是 CPU 而是 `BaseBot.skip_page` 对每页调 `page.isDisambig()`（`use_disambigs=False`）读 `prop=pageprops`，默认预载不含 → 每页 1 次请求（cProfile 实测 218 页 124s 中 118s 在此）。fork 补丁：预载带 `pageprops=True` 随内容同批缓存（50/批）→ 主空间全扫 **25 s**。
@@ -98,6 +98,13 @@
 多余重定向无用但无害。
 
 ## 已评估、决定不做
+
+### replace fix 合并（2026-08-13）
+
+replace.py 支持单次多 `-fix`，11 个 fix 任务合并可省 ~3.5 min / ~500 请求每轮。
+优化收尾时单轮已降至 ~20 min / ~2-3k 请求，收益太小；且各 fix generator 不同
+（base/more/`-catr:图库`），合并取并集会扩大扫描面、摘要与故障隔离粒度变粗，
+保持现状。
 
 ### pywikibot 读路径会话自愈补丁（2026-08-13）
 
