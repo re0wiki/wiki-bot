@@ -97,7 +97,10 @@ def test_count_mismatch_tabber_still_mismatch_returns_none():
 
 # region find_en_title
 def test_find_en_title_basic():
-    assert g.find_en_title("正文\n[[en:Rem/Image Gallery]]\n[[de:...]]") == "Rem/Image Gallery"
+    assert (
+        g.find_en_title("正文\n[[en:Rem/Image Gallery]]\n[[de:...]]")
+        == "Rem/Image Gallery"
+    )
 
 
 def test_find_en_title_with_pipe_and_section():
