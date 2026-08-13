@@ -20,7 +20,7 @@
 
 **数据源（派生表遗漏风险，参照「信息框参数链接不进 links 表」机理）**
 
-- [ ] **re0_gallery**：`iterlanglinks` 走 langlinks 派生表（2026-08-08 脏数据实锤）→ 可能漏同步/错配 en 图库。修法：从 /图库页源码扫 `[[en:...]]`（page.text 反正要读），顺带免疫「摘链退出同步」语义的派生表失真。
+- [x] **re0_gallery**：`iterlanglinks` 走 langlinks 派生表（2026-08-08 脏数据实锤）→ 可能漏同步/错配 en 图库。**已修（2026-08-13）**：改从源码扫 `[[en:...]]`（`find_en_title`，单测覆盖内联冒号链接/空目标特例），「摘链退出同步」语义不变。
 - category remove ×2 / template replace：依赖 categorylinks/templatelinks——#invoke 参数内的分类/调用不登记，但本站信息框参数不含分类、被替换模板均顶层调用，**风险低，暂不处理**。
 - redirect-do/br：redirect 表抽查与现实一致（pageid 8004 等），**风险低**。
 - interwiki（textlib 源码解析语言链接）/ replace 各 fix / re0_move（标题匹配）/ noreferences（源码）：均无派生表依赖。
