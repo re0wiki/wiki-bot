@@ -40,7 +40,7 @@ _template_replacements = [
 
 jobs: list[Job] = [
     # 跨站同步
-    Job("transferbot", ["transferbot", "-lang:en", "-tolang:zh", "-start"]),
+    Job("transferbot", ["re0_transferbot"]),
     Job("gallery", ["re0_gallery", "-catr:图库"]),
     Job("image", ["re0_image"]),
     Job("interwiki", ["interwiki", "-quiet", "-async", "-localonly", *starts_more]),
