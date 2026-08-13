@@ -25,7 +25,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 
 | 文件 | 作用 |
 |---|---|
-| `main.py` | 循环任务入口。`python main.py <任务名或编号>...` 依次跑指定任务（可多个，编号随插入平移，名字稳定，`-h` 列全部），`-s` 模拟；不传参数 = 无限循环所有任务。任务失败（子进程非零退出）即以相同码退出等待人工修复，不继续后续任务 |
+| `main.py` | 循环任务入口。`python main.py <任务名或编号>...` 依次跑指定任务（可多个，编号随插入平移，名字稳定，`-h` 列全部），`-s` 模拟；不传参数 = 无限循环所有任务，**每轮结束休眠 1 小时**（`CYCLE_SLEEP`，2026-08-13 起，Cloudflare 累计量限流对策，见 docs/cloudflare-429.md）。任务失败（子进程非零退出）即以相同码退出等待人工修复，不继续后续任务 |
 | `jobs/jobs.py` | 任务列表（`Job(name, cmd)`，name 是稳定引用；fix 类任务名与 `-fix:` 参数一致），分 6 组：跨站同步 → 整理新搬运页 → 模板维护 → 重定向 → 语法规范化 → 内容规范化 → 杂项 |
 | `jobs/run_job.py` | 子进程包装：`build_cmd` 拼 `sys.executable pywikibot/pwb.py ...`（不用裸 `python`，PATH 上可能是无项目依赖的其他版本），自动加 `-always`（interwiki 加 `-auto -force`，transferbot 不加） |
 | `jobs/starts.py` | namespace → `-start:ns:!` 生成器参数。`ns_base`=主/project/template/category，`ns_more` 再加 module/mediawiki |
