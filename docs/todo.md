@@ -7,7 +7,7 @@
 
 ### jobs 性能与数据源审计（2026-08-13，随 re0_fixing_redirects 换装所做）
 
-换装后单轮请求估算 ~7-9k（原 ~17k+）；单轮时长 170 min → **69.6 min**（19:00→20:10 实测）。剩余按优先级：
+换装后单轮请求估算 ~7-9k（原 ~17k+）；单轮时长 170 min → 69.6 min → **37.6 min**（22:31→23:09 实测，-78%）。剩余按优先级：
 
 **性能（请求放大）**（耗时为 2026-08-13 两轮实测，commands.log 逐任务计时；括号内为换新脚本后单轮占比）
 
@@ -16,8 +16,8 @@
 - [ ] **replace fix ×11 合计 ~4.1 min（5.9%）、≈ 600 请求/轮**：replace.py 支持单次多 `-fix`（`fixes_set.append`），同 generator 的 fix 可合并为一次全扫，省 ~500。注意：各 fix generator 不同（base/more/`-catr:图库`），合并后取并集会扩大部分 fix 的扫描面；摘要与故障隔离粒度也会变——需裁决。
 - interwiki 5.0 min ~1000/轮：跨站查询结构使然，无放大。
 - touch 4.4 min 678/轮：设计内（缓存刷新），不动。
-- noreferences 17.9 min（25.7%）是 **CPU 密集**（预载已批量，~52 请求），不占 API 预算，429 视角无需处理；redirect/transferbot 修完后它将占循环时长 ~47%，届时若要压墙钟时间再做纯 CPU 优化。
-- 已修：re0_fixing_redirects 90.5→1.9 min；re0_gallery 7.1→1.3 min（iterlanglinks 本就是每页 1 次查询，换源码解析顺带消掉 ~130 请求/轮）。
+- noreferences 17.8 min（**47.4%**）是 **CPU 密集**（预载已批量，~52 请求），不占 API 预算，429 视角无需处理；它已占循环时长近半，若要继续压墙钟时间可做纯 CPU 优化（profiling 正则或降频）。
+- 已修：re0_fixing_redirects 90.5→1.2 min；re0_gallery 7.1→1.4 min（iterlanglinks 本就是每页 1 次查询，换源码解析顺带消掉 ~130 请求/轮）；re0_transferbot 15.8 min→8 s；re0_redirect 18.3 min→5 s；re0_image 3.0 min→21 s（并消除了 latest_file_info 逐页懒加载的 ~2N 隐藏请求）。
 
 **数据源（派生表遗漏风险，参照「信息框参数链接不进 links 表」机理）**
 

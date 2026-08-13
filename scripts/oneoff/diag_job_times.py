@@ -11,8 +11,13 @@ for line in lines:
     if m:
         events.append((datetime.fromisoformat(m.group(1)), m.group(2)))
 
-# 循环边界 = 最后一次 transferbot 起（其后是完整一轮），止于 touch-bot.log 最后写入
-start_idx = max(i for i, (t, c) in enumerate(events) if c == "transferbot")
+# 循环边界 = 最后一次「re0_transferbot 紧接 re0_gallery」（真循环起点，排除干跑），
+# 止于 touch-bot.log 最后写入
+start_idx = max(
+    i
+    for i in range(len(events) - 1)
+    if events[i][1] == "re0_transferbot" and events[i + 1][1] == "re0_gallery"
+)
 cycle = events[start_idx:]
 cycle_end = datetime.fromtimestamp(Path("logs/touch-bot.log").stat().st_mtime)
 
