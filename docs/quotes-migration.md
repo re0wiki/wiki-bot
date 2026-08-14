@@ -86,6 +86,8 @@ P1 与 P0 可并行；P3/P4/P5 相互独立，P0 完成后可任意顺序。
 
 **风险**：fxtwitter 对万级请求可能限流（断点续跑对冲）；round-trip 解析保真是删除旧表前的硬门槛；月表数量多（~150）但均为机械生成/注册。
 
+**切流（2026-08-14 完成）**：用户裁决——不建公共分表页，全量列表放各月表 /doc 子页；/all 系列 9 页重定向到主页面 `鼠色猫语录`（说明同步改写）；`Template:Q` invoke 目标切至 NekoQuote（210 /猫语 页抽查渲染正常）；建 `Category:模块:NekoQuote 查询结果为空`；旧族 68 页删除（32 数据表 + 主模块 + /docs + Tab/Author + 旧空结果分类；删除前核实直接引用仅 2 处 `{{Q}}` 转调——pywikibot `Page.delete()` 默认交互确认，非 TTY 下静默不删，须 `prompt=False`）。切流后验证：新旧模块 4 组关键词结果集一致（ref 脚注编号差异规范化后），猫语页/月表页渲染正常。
+
 ## 验收标准
 
 - 双向覆盖审计（logs/analyze_archive_coverage.py + reverse_coverage.py）零缺失
