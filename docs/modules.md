@@ -2,7 +2,7 @@
 
 2026-07-30 对 Module 命名空间 43 个页面（15 个功能模块 + 28 个鼠色猫语录数据表）的全量审查。
 
-**2026-08-14 重大变更**：语录模块重构为 `Module:NekoQuote` 月度分表架构（`Module:NekoQuote/YYYY-MM`，~162 张月表含空表占位），原 `Module:鼠色猫语录` 及 32 主题子表、Tab/Author、/all 系列分表页已全部删除（round-trip 校验 8097/8097 零缺失）；全量列表移至各月表 /doc 子页展示，/all 页重定向到主页面 `鼠色猫语录`；`{{Q}}` 关键词查询接口不变（210 个 /猫语 页无感）。wayback 全量推文（19,042 条唯一推）的合流合并在即。下文涉及的「鼠色猫语录」现行状态描述以本节为准，历史叙述保留备查。
+**2026-08-14 重大变更**：语录模块重构为 `Module:NekoQuote` 月度分表架构（`Module:NekoQuote/YYYY-MM`，**204 张月表 = 2010-01~2026-12 全连续**，81 有数据 + 123 空表占位——空表占位使用户裁决的结构统一：导航月签永不出现红链），原 `Module:鼠色猫语录` 及 32 主题子表、Tab/Author、/all 系列分表页已全部删除（round-trip 校验 8097/8097 零缺失）；全量列表移至各有数据月表 /doc 子页展示，/all 页重定向到主页面 `鼠色猫语录`；`{{Q}}` 关键词查询接口不变（210 个 /猫语 页无感）。**导航为 `Module:Tab/NekoQuote` 标题驱动**（从当前页标题解析年月：年签行恒显 2010~2026、当前年加粗——Anime_S1 同款 `'''2018'''` 纯文本，当前页是月表时追加本年 12 个月签；月签当前月靠 MediaWiki 自链接自动加粗；Template:Tab/NekoQuote 仅一行 invoke，无参数、无年签子模板——数据合流新增内容时导航零维护）。wayback 全量推文（19,042 条唯一推）的合流合并在即（**注意剔除 2046-08 脏 id**——CDX 里一条畸形快照雪花解出未来日期）。下文涉及的「鼠色猫语录」现行状态描述以本节为准，历史叙述保留备查。
 源码快照脚本 `scripts/dump_modules.py`（输出 `logs/modules/`），引用量与疑点验证 `scripts/oneoff/verify_module_findings.py`。
 
 **文档惯例**：Module 的 `/doc` 子页由 Scribunto 自动转置渲染在代码上方（与模板 `{{Documentation}}` 机制无关），所以 Lua 头注释无需写「文档见 /doc」之类的指针；模块文档直接写进 `/doc` 子页即可（先例 `Module:Kana2Romaji/doc`）。2026-07-31 起全站 40 个模块均有 /doc：功能模块按 Kana2Romaji/doc 体例（导航模板首行 + `;` 定义列表，无对应 `Template:Tab/*` 的内部模块省略导航行），27 个语录数据子表统一一行说明 + 指回主模块文档。**写 /doc 的坑**：正文里的 `-{...}-` 与 `[[en:...]]` 示例必须包 `<nowiki>`（否则被 LanguageConverter 吃掉 / 变成真跨语言链接），分类提及必须前导冒号（否则 doc 页自己入分类）；`Dev:` 只是 Scribunto `require` 的前缀、**不是链接前缀**——链 dev wiki 模块要写 `[[w:c:dev:Module:Arguments|Dev:Arguments]]`。
