@@ -41,7 +41,9 @@ if __name__ == "__main__":
     pwb.handle_args()  # -always 等忽略：不询问；-s 走下方分支
     en = pwb.Site("en", "re0")
     zh = pwb.Site()
-    en_titles = {normalize(p.title()) for p in en.allpages(namespace=0, filterredir=False)}
+    en_titles = {
+        normalize(p.title()) for p in en.allpages(namespace=0, filterredir=False)
+    }
     zh_titles = {normalize(p.title()) for p in zh.allpages(namespace=0)}
     missing = sorted(en_titles - zh_titles)
     pwb.info(f"en {len(en_titles)} 页，zh {len(zh_titles)} 页，缺失 {len(missing)} 页")
