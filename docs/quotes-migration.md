@@ -88,6 +88,8 @@ P1 与 P0 可并行；P3/P4/P5 相互独立，P0 完成后可任意顺序。
 
 **切流（2026-08-14 完成）**：用户裁决——不建公共分表页，全量列表放各月表 /doc 子页；/all 系列 9 页重定向到主页面 `鼠色猫语录`（说明同步改写）；`Template:Q` invoke 目标切至 NekoQuote（210 /猫语 页抽查渲染正常）；建 `Category:模块:NekoQuote 查询结果为空`；旧族 68 页删除（32 数据表 + 主模块 + /docs + Tab/Author + 旧空结果分类；删除前核实直接引用仅 2 处 `{{Q}}` 转调——pywikibot `Page.delete()` 默认交互确认，非 TTY 下静默不删，须 `prompt=False`）。切流后验证：新旧模块 4 组关键词结果集一致（ref 脚注编号差异规范化后），猫语页/月表页渲染正常。**导航架构（同日分层演进）**：初版 162 个月签平铺视觉过重 → 仿 Tab/Anime_S1 两行分层 → 年签子模板重复代码过多 → 定稿 **`Module:Tab/NekoQuote` 标题驱动**（页标题解析年月，年签行恒显 + 当前年加粗 + 本年月签行；复用 `Module:Tab._tab`；Template 仅一行无参 invoke）；配套建 113+10 张空月表使 2010-01~2026-12 全连续（共 204 张），导航永无红链、数据合流零维护。
 
+**合流（2026-08-15 完成主体）**：抓取两阶段管线（fx 快线 4 线程 6.8/s + wb 慢线多快照遍历；断点续跑防 Hermes 重启/中断）。**作者过滤意外立功**：CDX 19,042 唯一 id 中 ~10k 实为他人推被归档在 nezumiironyanko/status/ 路径下（fxtwitter 按 id 解析出真实作者，如 Rezero_official 981 条）——他本人在库推 ~8.8k。合流 **4,135 条新推**（id 去重既有 6,244），全库 12,232 条/162 张有内容月表；round-trip 校验既有 8,097 零缺失。**Fandom 垃圾过滤器**：t.co/a.co 短链剥除、youtu.be 机械展开完整 URL（封禁ID #855849 三连拦后全过）。**遗留**：2,021 条早期死推因 wayback 限流暂挂（`logs/p8_wb_pending.txt` + `p8_wb_retry.py`，冷却后重试）；提问推 273 条入 jq（近年推以实况连载为主、@问答少）；构建器数据源已切本地基线 `logs/p8/lua_base`（旧主题表删后 wiki 唯一副本即月表）。
+
 ## 验收标准
 
 - 双向覆盖审计（logs/analyze_archive_coverage.py + reverse_coverage.py）零缺失
