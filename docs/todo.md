@@ -12,7 +12,7 @@
 **仍开着的待办**：
 
 - [ ] **LLM 内容级去重**（P8 衍生）：既有条目未链推 id 但内容与 raw 推重复的（罗兹瓦尔表 ask 抄录那类）
-- [ ] **2026+ 新推持续收录自动化**（P8 衍生）：抓新推 → 入月表的常驻机制，方案未定
+- [ ] **2026+ 新推持续收录（已定方案：手动导出 + 一键管线）**：自动抓取通道全不可靠（fx 无时间线枚举、CDX 被动滞后、nitter 半死），2026-08-15 用户拍板走 EN Discord 转发频道定期手动导出。流程：DiscordChatExporter 导出频道（json 放一目录）→ `PYTHONPATH= .venv/Scripts/python.exe logs/p8_discord_merge.py <目录>` 一键完成解析→入库→翻译→归一→构建→校验→部署（幂等，可反复跑同一份导出）。建议频率：每月或有新内容时
 - [ ] **S3 实况解说回收（零の幻影 bilibili 专栏）**：长月 S3 实况推已删（播后删是惯例）。wiki Discord 转发频道已导出 3,663 条（2024-10~2025-10，533 条已删推回填 ✅）；频道外缺口走零の幻影 B 站专栏日译中爬取（2026-08-15 用户定暂不执行）
 - [ ] **P8 已删推缺口（核销，不再投入）**：fxtwitter + 官方 oembed 双通道 404 实证作者删除；wayback/archive.today 无正文；Discord 回填后余 ~1,490 条。留档 `logs/p8_wb_pending.txt` + `~/p8_pending_tweets.md` + `logs/p8_discord.json`
 
