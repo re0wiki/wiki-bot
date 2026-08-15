@@ -12,7 +12,6 @@
 **仍开着的待办**：
 
 - [ ] **LLM 内容级去重**（P8 衍生）：既有条目未链推 id 但内容与 raw 推重复的（罗兹瓦尔表 ask 抄录那类）
-- [ ] **2026+ 新推持续收录（已定方案：手动导出 + 一键管线）**：自动抓取通道全不可靠（fx 无时间线枚举、CDX 被动滞后、nitter 半死），2026-08-15 用户拍板走 EN Discord 转发频道定期手动导出。流程：**Discrub** 导出频道（JSON 分页文件放一目录；⚠️ 不要用 DiscordChatExporter 配用户 token，有封号问题）→ `PYTHONPATH= .venv/Scripts/python.exe logs/p8_discord_merge.py <目录>` 一键完成解析→入库→翻译→归一→构建→校验→部署（幂等，可反复跑同一份导出）。**完整 runbook：`docs/nekoquote-incremental.md`**。建议频率：每月或有新内容时
 - [ ] **P8 已删推缺口（核销，不再投入）**：fxtwitter + 官方 oembed 双通道 404 实证作者删除；wayback/archive.today 无正文；**EN Discord 导出实证 pending 主体是他删的转推（RT 1,422 条），本人正文损失极小**（两通道合计回填 537 条后余 2,016，多为 RT）。留档 `logs/p8_wb_pending.txt` + `~/p8_pending_tweets.md` + `logs/p8_discord.json` + Desktop tappei_tweets
 
 **来源存活审计（2026-08-09，logs/check_source_liveness.py + check_wayback.py，结果 logs/archive_audit/source_status.json / wayback_status.json）**：
