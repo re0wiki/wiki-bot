@@ -5,13 +5,13 @@
 
 ## 待处理
 
-### 鼠色猫语录迁移（P0–P7 已全部完成，2026-08-09 ~ 08-15）
+### 鼠色猫语录（P0–P8 + 去重全部完成，2026-08-09 ~ 08-16）
 
 **执行计划与全程记录：`docs/quotes-migration.md`**（含 P8 全量推文时间线）。存档页 31 页已于 P7 删除、`存档:` 前缀退役；语录库现为 `Module:NekoQuote` 月表架构（13,905 条 / 170 张有内容月表，全条目中文可读）。
 
-**仍开着的待办**：
+**仍开着的待办**：无。
 
-- [ ] **LLM 内容级去重**（P8 衍生）：既有条目未链推 id 但内容与 raw 推重复的（罗兹瓦尔表 ask 抄录那类）
+（LLM 内容级去重 2026-08-16 完成：shingle 预筛 188 候选 → 滤短文本噪声 169 → K3 逐对裁决 96 确认 → 合并执行：92 条 ask 孤儿并入对应推文条目（获精确日期+原推链接，回归真实月份，孤儿桶 195→78），冗余编者注删 1；保留项：零の幻影分析注 1（引用非重复）、双发推 1（同一回答发过两次，两次都留）、同问两答对 1。过程中的事故与修复见 quotes-migration.md。）
 - [ ] **P8 已删推缺口（核销，不再投入）**：fxtwitter + 官方 oembed 双通道 404 实证作者删除；wayback/archive.today 无正文；**EN Discord 导出实证 pending 主体是他删的转推（RT 1,422 条），本人正文损失极小**（两通道合计回填 537 条后余 2,016，多为 RT）。留档 `logs/p8_wb_pending.txt` + `~/p8_pending_tweets.md` + `logs/p8_discord.json` + Desktop tappei_tweets
 
 **来源存活审计（2026-08-09，logs/check_source_liveness.py + check_wayback.py，结果 logs/archive_audit/source_status.json / wayback_status.json）**：
