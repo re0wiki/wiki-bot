@@ -17,7 +17,6 @@ PSEUDO_PREFIXES = [
     "游戏",
     "音乐",
     "设定集、画集",
-    "存档",
 ]
 
 # generator_base/generator_more 是 jobs/starts.py 中 ns_base/ns_more 的副本：
