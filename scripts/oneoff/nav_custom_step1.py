@@ -21,7 +21,7 @@ site = pywikibot.Site("zh", "re0")
 
 # ---- 1. 解析导航源 ----
 src = pywikibot.Page(site, "Project:Wiki-navigation").text
-entries = []
+entries: list[dict[str, str]] = []
 for line in src.splitlines():
     if not line.startswith("*") or " " not in line:
         continue
@@ -37,7 +37,7 @@ for line in src.splitlines():
         target = target or None
     else:
         target, label = None, stem
-    entries.append({"line": line, "target": target, "label": label})
+    entries.append({"line": line, "target": target or "", "label": label})
 
 # 按 label 去重，检查 label->target 冲突
 by_label = defaultdict(set)

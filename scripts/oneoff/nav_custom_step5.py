@@ -8,10 +8,15 @@
 import json
 import re
 from pathlib import Path
+from typing import Any
 
 OUT = Path(".cache/nav_custom")
-m = json.loads((OUT / "map.json").read_text(encoding="utf-8"))
-proposals = json.loads((OUT / "key_proposals.json").read_text(encoding="utf-8"))
+m: dict[str, dict[str, Any]] = json.loads(
+    (OUT / "map.json").read_text(encoding="utf-8")
+)
+proposals: dict[str, dict[str, Any]] = json.loads(
+    (OUT / "key_proposals.json").read_text(encoding="utf-8")
+)
 
 # en 验证后的修正与补充（verified=True 表示 en 站有对应页）
 FIXES = {
@@ -58,7 +63,7 @@ FIXES = {
     "簡繁轉換表": ("Conversion Table", False),
 }
 
-final = {}
+final: dict[str, dict[str, Any]] = {}
 report_unverified = []
 report_nokey = []
 

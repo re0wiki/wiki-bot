@@ -8,10 +8,14 @@
 """
 
 import json
+from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 OUT = Path(".cache/nav_custom")
-final = json.loads((OUT / "final_map.json").read_text(encoding="utf-8"))
+final: dict[str, dict[str, Any]] = json.loads(
+    (OUT / "final_map.json").read_text(encoding="utf-8")
+)
 
 final["費瑟蘭家"]["key"] = "Custom-House Featherrun"
 final["嘟哇哇 戀愛年齡差"]["key"] = "Custom-Doowawa : Koi no toshi no sa"
@@ -44,9 +48,10 @@ bad = [v["key"] for v in final.values() if "/" in v["key"]]
 assert not bad
 
 # 汇总写入计划：唯一 key -> hans/hant
-from collections import defaultdict
 
-by_key = defaultdict(lambda: {"hans": set(), "hant": set(), "labels": []})
+by_key: dict[str, dict[str, Any]] = defaultdict(
+    lambda: {"hans": set(), "hant": set(), "labels": []}
+)
 for label, rec in final.items():
     k = rec["key"]
     by_key[k]["hans"].add(rec["hans"])

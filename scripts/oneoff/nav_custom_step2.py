@@ -8,12 +8,16 @@ uv run --no-project --with opencc-python-reimplemented python scripts/oneoff/nav
 
 import json
 import re
+from collections import Counter
 from pathlib import Path
+from typing import Any
 
 from opencc import OpenCC
 
 OUT = Path(".cache/nav_custom")
-labels = json.loads((OUT / "labels.json").read_text(encoding="utf-8"))
+labels: dict[str, dict[str, Any]] = json.loads(
+    (OUT / "labels.json").read_text(encoding="utf-8")
+)
 
 t2s = OpenCC("t2s")  # 繁 -> 简
 s2t = OpenCC("s2t")  # 简 -> 繁
@@ -30,7 +34,7 @@ def has_cjk(s):
     return bool(re.search(r"[一-鿿]", s))
 
 
-out = {}
+out: dict[str, dict[str, Any]] = {}
 for label, rec in labels.items():
     if label.startswith("Custom-"):
         ascii_key = label.removeprefix("Custom-")
@@ -83,7 +87,6 @@ for label, rec in labels.items():
 
 n_flag = sum(1 for e in out.values() if e["flags"])
 print("需迁移标签:", len(out), "| 有 flag:", n_flag)
-from collections import Counter
 
 c = Counter(
     f.split("——")[0].split(":")[0].split("(")[0]
