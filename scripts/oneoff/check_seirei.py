@@ -1,16 +1,20 @@
-"""一次性：确认 Template:Seirei 存在性与内容，及导航源中 {{Seirei}} 的来历。"""
+"""一次性：精简注释后复验模块展开输出。"""
+
+from pywikibot.data import api
 
 import pywikibot
 
 site = pywikibot.Site("zh", "re0")
-t = pywikibot.Page(site, "Template:Seirei")
-print("Template:Seirei exists:", t.exists())
-if t.exists():
-    print("---- content ----")
-    print(t.text)
-
-# Project 源中的相关行
-src = pywikibot.Page(site, "Project:Wiki-navigation").text
-for line in src.splitlines():
-    if "Seirei" in line or "精灵" in line:
-        print("src line:", repr(line))
+req = api.Request(
+    site=site,
+    parameters={
+        "action": "expandtemplates",
+        "text": "{{#invoke:Wiki-navigation|main}}",
+        "prop": "wikitext",
+    },
+)
+expanded = req.submit()["expandtemplates"]["wikitext"]
+lines = expanded.splitlines()
+print("lines:", len(lines))
+print("first:", repr(lines[1]))
+print("Seirei line:", [line for line in lines if "术语:精灵|" in line])
