@@ -23,7 +23,7 @@ def build_cmd(job: list[str], simulate: bool = False) -> list[str]:
     elif job[0] == "interwiki":
         cmd.append("-auto")
         cmd.append("-force")
-    elif job[0] != "transferbot":
+    else:
         cmd.append("-always")
     return cmd
 

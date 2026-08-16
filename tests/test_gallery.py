@@ -93,3 +93,36 @@ def test_count_mismatch_tabber_still_mismatch_returns_none():
     res = g.merge_galleries(zh, en)
     assert res.text is None and res.is_tabber
     assert "still mismatch" in res.message
+
+
+# region find_en_title
+def test_find_en_title_basic():
+    assert (
+        g.find_en_title("正文\n[[en:Rem/Image Gallery]]\n[[de:...]]")
+        == "Rem/Image Gallery"
+    )
+
+
+def test_find_en_title_with_pipe_and_section():
+    assert g.find_en_title("[[en:Rem#sec|label]]") == "Rem"
+
+
+def test_find_en_title_none_when_absent():
+    assert g.find_en_title("[[es:Rem]]") is None
+
+
+def test_find_en_title_ignores_inline_colon_link():
+    """[[:en:X]] 是内联跨站链接，不是语言链接。"""
+    assert g.find_en_title("参见[[:en:Rem]]") is None
+
+
+def test_find_en_title_ignores_empty_target():
+    """首页的 [[en:]] 空目标特例不匹配。"""
+    assert g.find_en_title("[[en:]]") is None
+
+
+def test_find_en_title_takes_first():
+    assert g.find_en_title("[[en:A]]\n[[en:B]]") == "A"
+
+
+# endregion

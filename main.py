@@ -1,7 +1,7 @@
 import argparse
-import itertools
 import logging
 import sys
+import time
 from subprocess import CalledProcessError
 
 from jobs.jobs import Job, jobs
@@ -53,15 +53,23 @@ def resolve(job_arg: str) -> Job:
     parser.error(f"未知任务: {job_arg}（可用名字见下方任务列表）")
 
 
+# 无限循环模式下每轮结束后的休眠时长（秒）。
+# Cloudflare 按多小时累计请求量限流（docs/cloudflare-429.md 2026-08-13 事件），
+# 轮间休眠直接削减日总请求量。
+CYCLE_SLEEP = 3600
+
 if __name__ == "__main__":
     args = parser.parse_args()
     try:
         if args.job:
-            selected = [resolve(name) for name in args.job]
+            for job in [resolve(name) for name in args.job]:
+                run_job(job.cmd, args.simulate)
         else:
-            selected = itertools.cycle(jobs)
-        for job in selected:
-            run_job(job.cmd, args.simulate)
+            while True:
+                for job in jobs:
+                    run_job(job.cmd, args.simulate)
+                logger.info("一轮完成，休眠 %d 秒", CYCLE_SLEEP)
+                time.sleep(CYCLE_SLEEP)
     except CalledProcessError as e:
         # 任务失败不继续：退出等待人工修复，避免循环故障期空转锤站
         logger.error("任务失败（exit %s），退出等待人工修复: %s", e.returncode, e.cmd)

@@ -22,6 +22,7 @@ for title in ("Template:Disambiguation", "Template:Disambiguation/doc"):
 # JSON 校验 + parse 验证
 doc = pywikibot.Page(site, "Template:Disambiguation/doc").text
 m = re.search(r"<templatedata>(.*?)</templatedata>", doc, re.DOTALL)
+assert m, "未找到 templatedata 块"
 td = json.loads(m.group(1))
 print(f"templatedata 键: {list(td.get('params', {}).keys())}")
 

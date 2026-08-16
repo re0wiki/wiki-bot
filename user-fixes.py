@@ -17,9 +17,6 @@ PSEUDO_PREFIXES = [
     "游戏",
     "音乐",
     "设定集、画集",
-    "声优",
-    "制作人员",
-    "存档",
 ]
 
 # generator_base/generator_more 是 jobs/starts.py 中 ns_base/ns_more 的副本：
@@ -151,7 +148,11 @@ user_fixes["para"] = base | {
         for o, n in [
             ("Name", "name"),
             ("Image", "image"),
-            ("Kanji", "name_ja_kanji"),
+            # 2026-08-11 改名：字段实为日文名原文（en 把假名也填进 Kanji），
+            # name_ja_kanji 名不副实 → name_ja；旧名自改名规则常驻
+            # （transferbot 每次搬运重新带入 Kanji，loop 顺带收历史残留）。
+            ("Kanji", "name_ja"),
+            ("name_ja_kanji", "name_ja"),
             ("Romaji", "name_ja_romaji"),
             ("Alias", "alias"),
             ("Nickname", "nickname"),
@@ -233,6 +234,16 @@ user_fixes["para"] = base | {
             ("title1", "name"),
             ("caption1", "Caption"),
         ]
+    ]
+    + [
+        # Infobox character 的 name_ja_romaji 已废弃（2026-08-11 起罗马字全部由
+        # Kana2Romaji 自动生成）：删除该模板内的残留行（含上面刚由 Romaji 归一的行，
+        # 即 transferbot 新搬运页带入的 en 手写值也会被清掉）。作用域用 (?!\{\{)
+        # 限定在 character 信息框内（不跨 {{ 与 }}），不波及其他信息框合法的同名字段。
+        (
+            r"(?ms)(\{\{Infobox character(?:(?!\{\{|\}\}).)*?)^\| *name_ja_romaji *= *[^\n]*\n?",
+            r"\1",
+        ),
     ],
 }
 # endregion
@@ -679,6 +690,7 @@ translation_manual = [  # 手动添加的替换组
     ("荷莉", "保莉"),
     ("混沌之炎", "卡欧斯福莱姆"),
     ("蕾姆", "雷姆"),
+    ("雷古勒斯", "雷格鲁斯"),  # p2o 覆盖不了格鲁→古勒字序调换（LLM 惯用转写，P3 54 处）
 ]
 
 user_fixes["translation"] = base | {

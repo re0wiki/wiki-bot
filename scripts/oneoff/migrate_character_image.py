@@ -96,12 +96,23 @@ def cmd_template_step1():
     def tr(text):
         for sec in "angc":
             param = "{{{" + "image_" + sec + "}}}"
-            old = param + "{{#tag:gallery|" + param + "}}" + "{{#tag:gallery|" + INVOKE % sec + "}}"
+            old = (
+                param
+                + "{{#tag:gallery|"
+                + param
+                + "}}"
+                + "{{#tag:gallery|"
+                + INVOKE % sec
+                + "}}"
+            )
             assert old in text, f"format pattern for {sec} not found"
             text = text.replace(old, param + "{{#tag:gallery|" + param + "}}")
         return text
 
-    edit_template(tr, "角色介绍图机制移除 step1：image_a/n/g/c 的 format 不再附带自动图库（default 保留，渲染不变）")
+    edit_template(
+        tr,
+        "角色介绍图机制移除 step1：image_a/n/g/c 的 format 不再附带自动图库（default 保留，渲染不变）",
+    )
 
 
 def cmd_template_step3():
@@ -118,7 +129,10 @@ def cmd_template_step3():
         text = text.replace(old_tab, "")
         return text
 
-    edit_template(tr, "移除角色介绍图自动列举机制：摘除 invoke 与 Tab/Character image（全站已改显式参数）")
+    edit_template(
+        tr,
+        "移除角色介绍图自动列举机制：摘除 invoke 与 Tab/Character image（全站已改显式参数）",
+    )
 
 
 def gallery_value(items):
@@ -139,7 +153,9 @@ def fill_page(title, dry=False):
         if sec not in targets:
             continue
         param = "image_" + sec
-        m = re.search(r"^\|[ \t]*" + param + r"[ \t]*=[ \t]*(.*?)[ \t]*$", text, re.M)
+        m = re.search(
+            r"^\|[ \t]*" + param + r"[ \t]*=[ \t]*(.*?)[ \t]*$", text, re.MULTILINE
+        )
         if m and m.group(1):
             print(f"  SKIP {title} {param}: 已有非空显式值（自动图在此段本就不渲染）")
             continue
@@ -148,8 +164,8 @@ def fill_page(title, dry=False):
             line_start = text.rfind("\n", 0, m.start()) + 1
             text = text[:line_start] + f"| {param} = {value}" + text[m.end() :]
         else:  # 无此参数行，插到 | image 行前，其次 | name 行后
-            anchor = re.search(r"^\|\s*image\s*=", text, re.M) or re.search(
-                r"^\|\s*name\s*=.*$", text, re.M
+            anchor = re.search(r"^\|\s*image\s*=", text, re.MULTILINE) or re.search(
+                r"^\|\s*name\s*=.*$", text, re.MULTILINE
             )
             assert anchor, f"{title}: 找不到插入锚点"
             if anchor.group(0).startswith("| name"):
@@ -191,15 +207,32 @@ def cmd_delete_assets():
         if p.title() not in {"Module:Character image/doc", TEMPLATE}
     ]
     assert not lingering, f"模块仍有引用: {lingering}"
-    for t in ["Module:Character image", "Module:Character image/doc", "Template:Tab/Character image"]:
+    for t in [
+        "Module:Character image",
+        "Module:Character image/doc",
+        "Template:Tab/Character image",
+    ]:
         p = pywikibot.Page(site, t)
-        p.delete(reason="[[Module:Character image]] 角色介绍图自动列举机制已移除", prompt=False)
+        p.delete(
+            reason="[[Module:Character image]] 角色介绍图自动列举机制已移除",
+            prompt=False,
+        )
         print(f"deleted {t}")
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
-    ap.add_argument("cmd", choices=["snapshot", "compare", "template-step1", "template-step3", "fill", "delete-assets"])
+    ap.add_argument(
+        "cmd",
+        choices=[
+            "snapshot",
+            "compare",
+            "template-step1",
+            "template-step3",
+            "fill",
+            "delete-assets",
+        ],
+    )
     ap.add_argument("args", nargs="*")
     ap.add_argument("--only")
     ap.add_argument("--dry", action="store_true")

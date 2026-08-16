@@ -32,11 +32,13 @@ assert site.user() == "IchiSanNi"
 
 p = pywikibot.Page(site, "User:IchiSanNi/沙盒")
 p.text = p.text + "\n追加内容\n"
-p.save(summary="编辑摘要")            # 手动编辑特定页面：不加 bot flag
-p.save(summary="编辑摘要", bot=True)  # 批量脚本：加 bot=True（或 p.put(...)）
+p.save(summary="编辑摘要", bot=False, minor=False)  # 手动编辑：bot/minor 都必须显式关
+p.save(summary="编辑摘要", bot=True)                # 批量脚本：加 bot=True（或 p.put(...)）
 ```
 
 - **bot flag 的取舍**：bot flag 会阻止常规通知机制（避免批量编辑刷屏）。跑批量脚本时用 `bot=True` 没问题；但手动编辑特定页面时，操作更接近需人工审查的常规编辑，**不要加 bot flag**。
+- **pywikibot ≥9.4 起 `save()` 默认 `bot=True, minor=True`**（None 选项已移除）——手动编辑不显式传 `bot=False, minor=False` 就会被标成 bot 小编辑。2026-08-09 实测踩过：6 个手动合并编辑全部带上 bot+minor 标记（该标记事后无法摘除，只能等滚出 recentchanges）。旧文档「裸 `save()` 不加 bot flag」的写法已失效。
+- 验证 bot flag 要查 `list=recentchanges`（rcprop=flags）；`usercontribs` 的 ucprop=flags **不返回 bot 键**（即使编辑带 bot flag），会漏报。
 - `botflag=` 参数已废弃，用 `bot=`；传了 botflag 只会触发 FutureWarning，不影响保存。
 - save 有内置异常保护；批量写建议 try `pywikibot.exceptions.PageSaveError`。
 
@@ -114,10 +116,19 @@ login_name = bp.login_name(username)  # → "IchiSanNi@pywikibot"
 - `Page.isRedirectPage()` 对 `#重定向 [[...]]` 的页面可能误报 `False`——信 wikitext 不信标志位。
 - **`embeddedin`/templatelinks = 0 不等于没人用**：`#tag:` 扩展内容和死模板 `<includeonly>` 里的调用不入 templatelinks。模板删除前审计流程（全站 dump 配方、分类法、删除清单）见 `docs/template-usage-audit.md`。
 - `RecentChangesPageGenerator` 返回有重复条目（同一编辑出现多次），统计时需去重。
+- `generator=allpages` 配 `rvprop=content` 会被 Fandom 静默丢弃大部分页面的 revisions（只回页面壳、无报错、无截断提示，实测 2227 页只取回 253 页源码）。全站取源码用两阶段：先 `list=allpages` 枚举标题，再 `titles=` 按 50 个/批取 content。
+- `titles=` 大批（50 个）请求偶发返回 **HTTP 400 空响应体**（非毒标题——二分后每个子批都 200；也非 URL 超长）。降批到 25 + 指数退避重试即可，全量 dump 1 万页级别稳定。
 - 主空间 `allpages` 按字母序，CJK 前缀排在英文之后——采样统计前缀分布必须扫全量。
 - 写沙盒后可用 `curl 'https://rezero.fandom.com/zh/api.php?action=query&prop=revisions&titles=...&rvprop=content&rvslots=main&format=json'` 匿名验证结果。
 - **限速（Fandom 已接入 Cloudflare）**：`user-config.py` 必须保持 `minthrottle >= 0.25`、`put_throttle >= 2`（当前 0.25/2）。读侧：单连接全速（RTT 锁死 ~3.8 req/s）3000 请求零 429，0.25 已处拐点、再低不会更快；写侧真正瓶颈是 MediaWiki 编辑限速（user 组 40 次/分，查 `userinfo?uiprop=ratelimits`），2s → 30 次/分。失速会被 Cloudflare 429 且 `Retry-After` 高达数千秒、pywikibot 无条件睡满（`maxthrottle` 管不住）。治理方式是不触发 429（配置限速），明确不给 fork 打 `retry_after` 钳制补丁。根因考据与「何时绕开 pywikibot」见 `docs/cloudflare-429.md`。
 - **批量编辑模式**（同一变换改多页）：优先 pywikibot（pagegenerators 扫描 → 本地分析出候选 → 循环 `save(bot=True)`）；裸 API 路线为备选：① 全量扫描（`list=allpages` + `prop=revisions` 取原文和 revid）→ ② 本地分析出候选清单 → ③ 循环编辑：login → csrf token → edit 带 `baserevid` 防冲突、`bot="1"` 抑制通知，写间隔 ≥1.5s（MediaWiki 编辑限速 user 组 40 次/分）。扫 28K+ 页用 `aplimit=max`（500）分批，勿逐页请求。
+
+## MediaWiki Conversiontable
+
+- 自定义转换规则只解析 `-{ ... }-` 块；块外的说明/HTML（例如整页外包 `<div class="as-is">`）不影响规则加载。
+- `//` 注释必须写在分号**前**：`foo=>bar //注释;`。若写成 `foo=>bar; //注释`，MediaWiki 按分号切段后会把注释当作下一条规则 key 的前缀，导致下一条规则静默失效（2026-08-11 在 Fandom MediaWiki 1.43.9 实测；对应核心代码 `LanguageConverter::parseCachedTable()`）。
+- 排查某条规则是否生效，可用只读 API 对任意片段直接解析：`action=parse&text=<片段>&title=User:IchiSanNi/Sandbox&prop=text&contentmodel=wikitext&variant=zh-tw`；这能排除条目页缓存因素。
+- 修正转换表后，新解析会立即使用新规则，但既有条目仍可能命中旧 parser cache（2026-08-11 实测：转换表 13:35 UTC 更新后任意片段已生效，而 `page_touched=12:18 UTC` 的条目仍返回旧 HTML）；对受影响的条目做 `?action=purge`（或等待缓存自然失效）。
 
 ## 验证凭据是否仍然有效
 

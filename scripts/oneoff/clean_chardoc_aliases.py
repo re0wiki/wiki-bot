@@ -25,6 +25,7 @@ assert n == 30, f"命中 {n} 个 aliases 块，预期 30"
 m = re.search(
     r"<templatedata>(.*?)</templatedata>", new_text, re.DOTALL | re.IGNORECASE
 )
+assert m, "未找到 templatedata 块"
 td = json.loads(m.group(1))
 assert not any("aliases" in v for v in td["params"].values()), "aliases 未摘净"
 assert len(td["params"]) == 42, f"参数数 {len(td['params'])}，预期 42（41+name_zh_tw）"

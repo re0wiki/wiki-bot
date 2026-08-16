@@ -29,6 +29,20 @@ NESTED_TEMPLATE_REGEX = re.compile(
 GALLERY_REGEX = re.compile(r"<gallery[^>]*>.*?</gallery>", re.DOTALL)
 # 只匹配字面 <tabber> 块（内层嵌套走 {{#tag:tabber}} 解析函数，不会误截）。
 TABBER_REGEX = re.compile(r"<tabber>.*?</tabber>", re.DOTALL)
+# 源码里的 [[en:...]] 语言链接。[[:en:X]]（冒号前缀的内联跨站链接）与
+# [[en:]]（首页空目标特例）均不匹配。
+EN_LINK_REGEX = re.compile(r"\[\[en:([^\]\|#]+)(?:#[^\]\|]*)?(?:\|[^\]]*)?\]\]")
+
+
+def find_en_title(text: str) -> str | None:
+    """从源码解析 [[en:...]] 语言链接（纯函数，可离线测试）。
+
+    不用 iterlanglinks——langlinks 是 Fandom 派生表，2026-08-08 观测过返回
+    源码史上不存在的值与漏报（AGENTS.md 坑节）；源码才是权威。「摘链退出
+    同步」语义不变：源码无 en 链接即返回 None。
+    """
+    m = EN_LINK_REGEX.search(text)
+    return m[1].strip() if m else None
 
 
 class MergeResult(NamedTuple):
@@ -101,12 +115,10 @@ class GalleryBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
         zh_raw_text = self.current_page.text
 
         # Get en text.
-        for link in self.current_page.iterlanglinks():
-            if link.site.code == "en":
-                en_raw_text = pwb.Page(link).text
-                break
-        else:
+        en_title = find_en_title(zh_raw_text)
+        if not en_title:
             return pwb.logging.info("No en page for %s.", self.current_page.title())
+        en_raw_text = pwb.Page(pwb.Site("en", "re0"), en_title).text
 
         result = merge_galleries(zh_raw_text, en_raw_text)
         if result.is_tabber:
@@ -132,7 +144,7 @@ class GalleryBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
 
         self.put_current(
             zh_text,
-            summary=f"Sync {'tabber' if result.is_tabber else 'galleries'} with {link}.",
+            summary=f"Sync {'tabber' if result.is_tabber else 'galleries'} with [[en:{en_title}]].",
         )
 
         return None

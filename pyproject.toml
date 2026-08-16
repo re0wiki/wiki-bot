@@ -11,9 +11,7 @@ dependencies = [
 
 [tool.ruff]
 # *.md：docs 内嵌代码块的注释对齐是手工排版的，不让 formatter 动。
-# scripts/oneoff 是已完成任务的一次性脚本归档（不再运行，同 logs/ 的性质），
-# 不要求其过 lint/format——否则每次归档新脚本都可能红 CI。
-extend-exclude = ['pywikibot', 'logs', '*.md', 'scripts/oneoff']
+extend-exclude = ['pywikibot', 'logs', '*.md']
 # watchdog 由 Hermes cron 用 runpy 跑在 Hermes 自带的 Python 3.11 下（不走本
 # 项目 3.14 venv），不能让它用上 PEP 758 的无括号 except（ruff 0.16+ 按
 # requires-python 3.14 会把括号脱掉，脚本在 3.11 下直接起不来）。
@@ -29,13 +27,12 @@ per-file-target-version = { "scripts/recent_changes_watchdog.py" = "py311" }
 
 # ty 无法静态解析 PEP 660 editable finder，需显式把 submodule 根目录加入搜索路径
 # （仅影响 import 解析）。exclude 控制检查范围：pywikibot 是上游代码，
-# logs/ 是本地一次性脚本（已 gitignore），scripts/oneoff 是已归档的一次性脚本，
-# 都不检查。
+# logs/ 是本地一次性脚本（已 gitignore），都不检查。
 [tool.ty.environment]
 extra-paths = ["./pywikibot", "./tests"]
 
 [tool.ty.src]
-exclude = ["pywikibot", "logs", "scripts/oneoff"]
+exclude = ["pywikibot", "logs"]
 
 [tool.uv]
 default-groups = "all"
@@ -44,30 +41,13 @@ default-groups = "all"
 pywikibot = { path = "pywikibot", editable = true }
 
 [dependency-groups]
+# pywikibot 的 extras 覆盖其 requirements.txt 全部可选依赖
+# （html=beautifulsoup4, http=fake-useragent, Google, Graphviz=pydot,
+# eventstreams=requests-sse, isbn=python-stdnum, memento, mwoauth, mysql,
+# wikitextparser, Tkinter=Pillow），随 submodule 更新自动跟随，无需手动同步。
 dev = [
-    "pywikibot",
+    "pywikibot[html,http,Google,Graphviz,eventstreams,isbn,memento,mwoauth,mysql,wikitextparser,Tkinter]",
     "pytest>=8.0.0",
     "ruff>=0.15.1",
     "ty>=0.0.17",
-]
-pwb = [
-    "beautifulsoup4>=4.14.3",
-    "fake-useragent>=2.2.0",
-    "googlesearch-python>=1.3.0",
-    "memento-client==0.6.1",
-    "mwoauth>=0.4.0",
-    "mwparserfromhell>=0.7.2",
-    "packaging>=25.0",
-    "pillow==12.3.0; python_full_version == '3.9.*' and platform_python_implementation == 'PyPy'",
-    "pillow==12.3.0; python_full_version == '3.10.*' and platform_python_implementation == 'PyPy'",
-    "pillow==12.3.0; python_full_version == '3.9.*' and platform_python_implementation == 'CPython'",
-    "pillow==12.3.0; python_full_version >= '3.11' and platform_python_implementation == 'PyPy'",
-    "pillow>=12.1.0 ; python_full_version >= '3.10' and platform_python_implementation == 'CPython'",
-    "pydot>=4.0.1",
-    "pyjwt!=2.10.0,!=2.10.1",
-    "pymysql>=1.1.2",
-    "python-stdnum>=2.2",
-    "requests>=2.32.3",
-    "requests-sse>=0.5.2",
-    "wikitextparser>=0.56.4",
 ]
