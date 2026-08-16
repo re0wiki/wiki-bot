@@ -105,6 +105,5 @@ jobs: list[Job] = [
     Job("noreferences", ["noreferences", "-quiet", *starts_base]),
     Job("fix:misc", ["replace", "-automaticsummary", "-fix:misc"]),
     # 杂项
-    Job("nav", ["re0_nav", "-page:MediaWiki:Wiki-navigation"]),
     Job("touch", ["touch", "-random:128"]),
 ]
