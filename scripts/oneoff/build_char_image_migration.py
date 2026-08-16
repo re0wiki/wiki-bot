@@ -18,12 +18,26 @@ fmts = ["gif", "png", "jpg", "jpeg", "webp"]
 subs = {
     "a": ["TV/OVA", "SP"],
     "c": [
-        "第1章", "第2章", "第3章", "第4章", "第5章", "第6章", "第7章", "第8章", "第9章",
-        "冰结之绊", "剑鬼恋歌",
+        "第1章",
+        "第2章",
+        "第3章",
+        "第4章",
+        "第5章",
+        "第6章",
+        "第7章",
+        "第8章",
+        "第9章",
+        "冰结之绊",
+        "剑鬼恋歌",
     ],
     "g": [
-        "INFINITY", "Death or Kiss", "Lost in Memories", "虚假的王选候补",
-        "禁书与谜之精灵", "公主连结", "素晴Fd",
+        "INFINITY",
+        "Death or Kiss",
+        "Lost in Memories",
+        "虚假的王选候补",
+        "禁书与谜之精灵",
+        "公主连结",
+        "素晴Fd",
     ],
     "n": ["大塚真一郎", "枫月诚", "イセ川ヤスタカ"],
 }
@@ -60,7 +74,7 @@ for p in pywikibot.Page(site, "Template:Infobox character").embeddedin(
             live[title][sec].append((existing[key], sub))
 
 # explicit image_a/n/g/c params on live pages
-param_pat = re.compile(r"^\|\s*(image_[acgn])\s*=\s*(.*?)\s*$", re.M)
+param_pat = re.compile(r"^\|\s*(image_[acgn])\s*=\s*(.*?)\s*$", re.MULTILINE)
 explicit = {}
 for title in live:
     text = pywikibot.Page(site, title).text
@@ -70,20 +84,31 @@ for title in live:
 
 # 补充清单（用户决策）
 supplement = {
-    "角色:佩特拉·莱特": {"g": [("佩特拉 游戏 虚假的王选候补角色介绍图.jpg", "虚假的王选候补")]},
-    "角色:安娜塔西亚·合辛": {"g": [("安娜塔西亚 游戏 虚假的王选候补角色介绍图.jpg", "虚假的王选候补")]},
+    "角色:佩特拉·莱特": {
+        "g": [("佩特拉 游戏 虚假的王选候补角色介绍图.jpg", "虚假的王选候补")]
+    },
+    "角色:安娜塔西亚·合辛": {
+        "g": [("安娜塔西亚 游戏 虚假的王选候补角色介绍图.jpg", "虚假的王选候补")]
+    },
     "角色:爱蜜莉雅": {"a": [("爱蜜莉雅 动画 たけはらみのる角色介绍图.png", "SP")]},
 }
 
 out = {
-    "live": {t: {s: v for s, v in sorted(ss.items())} for t, ss in sorted(live.items())},
+    "live": {
+        t: {s: v for s, v in sorted(ss.items())} for t, ss in sorted(live.items())
+    },
     "explicit": explicit,
     "supplement": supplement,
 }
 with open("logs/char_image_migration.json", "w", encoding="utf-8") as f:
     json.dump(out, f, ensure_ascii=False, indent=1)
 
-print("live pages:", len(live), "images:", sum(len(v) for ss in live.values() for v in ss.values()))
+print(
+    "live pages:",
+    len(live),
+    "images:",
+    sum(len(v) for ss in live.values() for v in ss.values()),
+)
 print("live pages with EXPLICIT image_[acgn] params:", len(explicit))
 for t, ps in sorted(explicit.items()):
     print("  ", t, {k: v[:60] for k, v in ps.items()})

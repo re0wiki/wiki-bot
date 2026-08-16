@@ -87,6 +87,7 @@ text = (
 )
 assert n == 9, f"doc 命中 {n} 处，预期 9（示例 3 + templatedata 键 3 + paramOrder 3）"
 m = re.search(r"<templatedata>(.*?)</templatedata>", text, re.DOTALL)
+assert m, "未找到 templatedata 块"
 td = json.loads(m.group(1))
 assert "voice_zh_cn" in td["params"] and "voice_zh-cn" not in td["params"]
 doc.text = text

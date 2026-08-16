@@ -191,6 +191,7 @@ for title, subs, summary in edits:
         if pat == "WHOLE_PAGE":
             new = repl
             continue
+        assert isinstance(pat, re.Pattern)
         repl = repl.replace("{NL}", nl)
         new, n = pat.subn(repl, new, count=count if count else 0)
         expected = count if count else None

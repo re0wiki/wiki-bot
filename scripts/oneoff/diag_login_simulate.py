@@ -14,14 +14,16 @@ site = pywikibot.Site("zh", "re0")
 try:
     site.login()
     print("simulate 下 login 成功, user =", site.user())
-except Exception as e:
+except Exception as e:  # noqa: BLE001 诊断脚本：成功/失败都是有价值输出
     print("simulate 下 login 失败:", type(e).__name__, str(e)[:120])
 
 # 匿名（新会话）50+ titles
 site2 = pywikibot.Site("zh", "re0")
 titles = "|".join(f"角色:菜月·昴{i}" for i in range(60))
 try:
-    r = site2.simple_request(action="query", prop="info", titles=titles, formatversion="2", format="json").submit()
+    r = site2.simple_request(
+        action="query", prop="info", titles=titles, formatversion="2", format="json"
+    ).submit()
     print("匿名 60 titles ->", len(r["query"]["pages"]))
-except Exception as e:
+except Exception as e:  # noqa: BLE001 诊断脚本：成功/失败都是有价值输出
     print("匿名 60 titles 失败:", type(e).__name__, str(e)[:120])

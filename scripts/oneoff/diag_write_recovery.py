@@ -29,5 +29,5 @@ p.text = f"写路径会话恢复测试 {time.strftime('%H:%M:%S')}\n"
 try:
     p.save(summary="写路径会话恢复测试", bot=False, minor=False)
     print("3. 沙盒编辑成功（写路径自愈确认）")
-except Exception as e:
+except Exception as e:  # noqa: BLE001 诊断脚本：成功/失败都是有价值输出
     print("3. 沙盒编辑失败:", type(e).__name__, str(e)[:150])
