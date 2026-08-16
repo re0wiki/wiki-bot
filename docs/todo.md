@@ -7,33 +7,9 @@
 
 ### 鼠色猫语录（P0–P8 + 去重全部完成，2026-08-09 ~ 08-16）
 
-**执行计划与全程记录：`docs/quotes-migration.md`**（含 P8 全量推文时间线）。存档页 31 页已于 P7 删除、`存档:` 前缀退役；语录库现为 `Module:NekoQuote` 月表架构（13,905 条 / 170 张有内容月表，全条目中文可读）。
+**执行计划与全程记录：`docs/quotes-migration.md`**（含 P8 全量推文时间线）。存档页 31 页已于 P7 删除、`存档:` 前缀退役；语录库现为 `Module:NekoQuote` 月表架构（13,878 条 / 170 张有内容月表，全条目中文可读）；实况查询页 `动画:第n集/猫语`×78 + 季页×4 已上线。
 
-**仍开着的待办**：无。
-
-（LLM 内容级去重 2026-08-16 完成：shingle 预筛 188 候选 → 滤短文本噪声 169 → K3 逐对裁决 96 确认 → 合并执行：92 条 ask 孤儿并入对应推文条目（获精确日期+原推链接，回归真实月份，孤儿桶 195→78），冗余编者注删 1；保留项：零の幻影分析注 1（引用非重复）、双发推 1（同一回答发过两次，两次都留）、同问两答对 1。过程中的事故与修复见 quotes-migration.md。）
-- [ ] **P8 已删推缺口（核销，不再投入）**：fxtwitter + 官方 oembed 双通道 404 实证作者删除；wayback/archive.today 无正文；**EN Discord 导出实证 pending 主体是他删的转推（RT 1,422 条），本人正文损失极小**（两通道合计回填 537 条后余 2,016，多为 RT）。留档 `logs/p8_wb_pending.txt` + `~/p8_pending_tweets.md` + `logs/p8_discord.json` + Desktop tappei_tweets
-
-**来源存活审计（2026-08-09，logs/check_source_liveness.py + check_wayback.py，结果 logs/archive_audit/source_status.json / wayback_status.json）**：
-
-- **原推 56/56 全部存活**（fxtwitter API 逐条验证、正文可机读）——生日问答类一手重核可行。注意存档页链的多是「接受提问的预告推」，问答本体是作者后续的引用回答推，重核时需按时间线抓全（fxtwitter 单条接口不含 thread）
-- **英肉 reddit 6 帖（去重）**：本机被反爬 403 无法直连验证，但 6/6 均有 Wayback 快照（79qvoo 经时间戳重定向确认）——内容可经 Wayback 取回
-- **ask.fm/nezumiironyanko/best**（早期ask 一手出处）：直连 SSL 失败，Wayback 2016-08 快照含日文 QA 正文——但只有单页快照，ask 分页的完整覆盖未知
-- **签名会一手 privatter：已失效且无 Wayback 快照**——wiki 存档里的日文 Collapse 原文已成孤本，补齐 js 字段（上方 B 项）优先级因此提高
-- **Nico 生放送**：nicovideo 直播页存活（内容不可回放）；naver 韩文 blog（第二版来源）直连存活但无 Wayback 快照；星空宅梦 tieba 记录帖 403 未知
-- **tieba 译文帖 29 个**：本机直连 403 反爬 + Wayback 基本无快照（仅 1/29 有）；**browser 工具 2026-08-09 实测可读**（p/4621079261、p/6423124322 全文+回复完整；偶发「百度安全验证」由用户手动清除后重试）——但百度有吞帖/吞回复史，即使帖在回复也可能不全；它们只是译文发布帖，一手出处是推特，优先级低
-- ~~**资源汇总讨论帖**~~（/f/p/4400000000000025340，动画实况解说与早期ask 标注的「原文存档」）：**2026-08-09 用户已人工查看，无需再抓**——有用内容即 `C:\Users\ccxxx\Desktop\长月qa原档备份` 那批文件 + reddit `r/Re_Zero/wiki/translation` 英译索引（后者 Wayback 快照在 logs/archive_audit/reddit_translation_index.html）
-- 巴哈姆特第22集译文帖 502 且无快照（S1/巴哈姆特其余只是译者署名链接，不影响考证）；pastebin 奥托2018英肉存活
-
-**原档备份与英文索引（2026-08-09 用户提供）**：`C:\Users\ccxxx\Desktop\长月qa原档备份`（资源汇总帖的存档内容；归档副本在同日由用户手动放至 OneDrive `文档\杂项\re0\长月qa原档备份`——re0-corpus 与 wiki 均不适合 xlsx，归宿已定）+ reddit `r/Re_Zero/wiki/translation` 英译索引（本机被反爬，Wayback 快照可用，logs/archive_audit/reddit_translation_index.html）。
-
-- `动画推特解说【全】rezeroneko.xlsx`：#rezeroneko 推文全量抓取（twint 格式：id/日期/正文/链接），3044 推、79 天、2016-04~2021-03，覆盖旧版/新编/OVA/第二季全跨度。**量化出的搬运遗漏**：旧版 2-6 集推文全在 xlsx（~334 推）而存档页整缺（存档自注「1-6已找不到」）；且各集译文均为选译（推数约为 bullet 数 2-3 倍，如 新编第1集 81 推→19 条）
-- `askfm 1.xlsx`：ask.fm QA 2571 条（2014-05~2015-10，清洗版含联动推链接）——模块早期ask 只有 639 条（存档自注「译者个人口味节选」）；`askfm备用.docx` 是同时段主页原始 dump（~14000 段，格式乱），`askfm 2xlsx.txt` 为 Q:/A: 纯文本
-- `Web连载网站上评论narou.xlsx`：なろう评论+作者回复 560 行——对应空存档页/空占位表，**是全新内容**
-- `2022_04_20_十周年问答.mp3`（88MB 录音）：wiki 无对应条目；reddit 索引有英文总结翻译（witchculttranslation.com 2022-08-02 文）
-- reddit 英译索引的 Tappei Q&A Posts（全部生日问答 + ask QA 系列 + Niconico QA）与 Thoughts on episodes（S1 13-25 集、新编 3-13 集+OVA、第二季 1-25 集英译）链接齐全——可选用于回填 es/eq/ea 字段
-
-**范围决策点（补全之外的扩项，各自独立）**：① 未翻译推文是否入库（js-only 条目 ~2000 条）还是只迁有中文的部分；② askfm 是否从 639 节选扩到全量；③ narou 评论 560 条是否建条目；④ 十周年问答是否建条目（录音转写 vs 从英文总结转译）；⑤ 是否回填英译字段。其中①影响 A 项工作量（只迁有中文的 ~950 条 vs 全量 3044 推）。
+**仍开着的待办**：无。周期性增量收录走 runbook `docs/nekoquote-incremental.md`（Discrub 导出 + 一键管线；S4 新集数的实况标记步骤也在其中）。
 
 ### 角色页日文名/罗马字的边角案例（2026-08-08 全角色审计 D 桶）
 
@@ -73,6 +49,10 @@
 多余重定向无用但无害。
 
 ## 已评估、决定不做
+
+### P8 已删推缺口补全（2026-08-15 核销）
+
+fxtwitter + 官方 oembed 双通道 404 实证作者删除；wayback/archive.today 无正文；EN Discord 导出实证 pending 主体是他删的转推（RT 1,422 条），本人正文损失极小（两通道合计回填 537 条后余 2,016，多为 RT）。留档 `logs/p8_wb_pending.txt` + `~/p8_pending_tweets.md` + `logs/p8_discord.json` + Desktop tappei_tweets。
 
 ### S3 实况零の幻影 B 站专栏抓取（2026-08-15）
 

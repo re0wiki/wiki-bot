@@ -28,6 +28,8 @@ PYTHONPATH= .venv/Scripts/python.exe logs/p8_discord_merge.py <导出目录>
 
 建议频率：每月一次，或明知有新内容（生日问答场次、动画播出期）时。
 
+**动画播出期追加步骤（实况集数标记）**：管线本身不带集数标记。新集播出后——① en 站对应 `Episode N` 页补了 Air Date 后重跑 `logs/p8_epcalendar.py`（覆盖 51-90 集，更新 `logs/p8_ep_calendar.json`）；② 重跑 `logs/p8_epmarks.py` 再生成 `logs/p8_ep_marks.json`（规则：#rezeroneko ∧ 播出窗口；映射文件由构建器 merge 期落地）；③ 照常构建部署；④ 新建对应 `动画:第n集/猫语`（格式 `{{Init}}\n{{Q|S4第n集}}`），季页无需动。
+
 ## 故障处理
 
 - **Kimi content_filter 误伤**（"high risk" 400）：管线已自动二分隔离并跳过该条，跑完后查 `logs/p8_zh_blocked.json`；用其他模型（Gemini）译出后，把译文写进 `logs/p8_zh.json` 对应 tid 的 `zh` 字段再重跑构建+部署。**日文原文若触发过滤，不要让它进 LLM 上下文**（2026-08-15 先例：原文隔离在 logs/blocked_jp.txt）。
