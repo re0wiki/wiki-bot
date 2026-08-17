@@ -19,8 +19,8 @@
 盘点脚本：`scripts/template_inventory.py`（只读；输出到 `logs/template_inventory.json`）。
 引用量用 `Page.embeddedin()` 逐模板统计（Fandom 不支持 `mostlinkedtemplates`）。
 
-- Template 命名空间共 227 页：55 顶层模板（**重定向已清零**）+ 172 子页（`Tab/*` 114 个、`/doc` 56 个、其他 2 个：`Quote/main`、`T/piece`）。
-- 文档覆盖（55 个顶层模板）：**55/55 全覆盖**（2026-07-29 最后 10 个补齐）。文档统一放在 `/doc` 子页（经 `{{Documentation}}` 渲染进模板页）——2026-07-28 已将全部内联形式（`{{Documentation|content=...}}` 8 个、`<noinclude>` 内联说明 1 个）迁入 `/doc`，今后新增模板文档一律用 `/doc` 子页，templatedata 也放 `/doc`（TemplateData 扩展会读，先例 `Blur/doc`）。
+- Template 命名空间共 221 页：49 顶层模板（**重定向已清零**）+ 172 子页（`Tab/*` 120 个、`/doc` 51 个、其他 2 个：`Quote/main`、`T/piece`；2026-08-17 复跑盘点更新）。
+- 文档覆盖（49 个顶层模板）：**49/49 全覆盖**（2026-07-29 最后 10 个补齐）。文档统一放在 `/doc` 子页（经 `{{Documentation}}` 渲染进模板页）——2026-07-28 已将全部内联形式（`{{Documentation|content=...}}` 8 个、`<noinclude>` 内联说明 1 个）迁入 `/doc`，今后新增模板文档一律用 `/doc` 子页，templatedata 也放 `/doc`（TemplateData 扩展会读，先例 `Blur/doc`）。
 - 分类：~~94 个顶层模板无分类~~（2026-07-26 已清零，顶层模板全部入树）。
 - 引用量：全命名空间**真零引用模板 32 个**（已全部处置，处置记录见 git 历史）。
 - **2026-08-09 收录范围对齐 en 站**：54 个 `声优:` + 8 个 `制作人员:` + `动画:异世界四重奏`（en 均无对应条目，原为跟随 es 的并集收录）及其 2 个 /猫语子页全部删除，56 处链入改指维基百科（zh>en>ja；`[[wikipedia:zh:X|..]]` 经 en.wikipedia 301 跳转，渲染为普通蓝链）。随之零引用的 `Infobox seiyu`/`Infobox staff`/`Twitter`/`MG`（含 /doc 共 8 页）与 5 个空分类（声优/声优猫语/制作人员/声优页面/制作人员页面）一并删除；两前缀自 Module:Title 与 user-fixes.py 同步取消登记，`Template:Tab/Content` 矩阵摘两列；指向它们的 184 个重定向留 redirect-br 自动清理。信息框由此减至 8 个（book/character/anime/music/bd/game/event/battle）。「唯一保留的非蛇形参数：Twitter 的 `#`」一条随 Twitter 删除成为历史。
@@ -56,9 +56,10 @@
 - **元模板分类**（2026-07-27 由「元模板/子模板」两分类合并而成）：`Category:元模板` = 被其他模板调用、不直接用于文章页的模板。判据是机制而非修辞——MediaWiki 模板只有宏展开，没有继承，「派生」（如 `Tab/LN` 预填参数调 `Tab`）与「组成」（如 `T` 调 `T/piece`）是同一种 transclusion，拆两类无可判定标准故合并。成员：`Tab`（noinclude 里声明「用于派生分页模板」+ 挂分类；原 `{{元模板标记}}` 全站仅此一处使用，已内联并删除该模板及旧名重定向 `Template:元模板`）、`T category`、`T/piece`、`Documentation`（`MW` 已于 2026-07-28 随 USERNAME 内联删除）。原 `Category:子模板` 已删除。
 - **单点使用模板已内联**（2026-07-28）：`Web Novel Chapter List`→小说：Web、`USERNAME`/`MW`→攻略指南（mediaWikiData span）、`Facebook`/`Instagram`→两个声优页（es 站搬运的西语文本保留，用户另行专项清理）；`DISPLAYTITLE`（唯一调用在重定向页 纱提拉 上、本就无意义，摘除）、`Example`（空模板，唯一「使用」是他人沙盒的空调用骨架）直接删。每页编辑前后 parse 对比渲染等价。存档 `logs/deleted_single_use_inline_2026-07-28.json`。en 仅 `Web Novel Chapter List` 有同名（1 引用、无 zh 对应名，未来搬运重引入时在 新搬运待整理 人工处理）。**内联取舍判据**：同页多次调用的组件（`Copy`×48、`T/piece`×20）与体系族成员（`Tab/*`）不内联——模板在这些场景是正确的抽象。
 - **Tab 挂载惯例**（2026-07-28 排查确立；审计 `scripts/oneoff/audit_tab_placement.py`、修复 `scripts/oneoff/fix_tab_placement.py`）：
-  - **每页只挂自己系列的一个 tab**，位置在 `{{To do}}` 行之后。跨章/跨季导航链接不算应挂——`Tab/Anime S2` 链接 `动画:第1集`（S2 导航到 S1 首集），但该页只挂 `Tab/Anime S1`。
+  - **每页只挂自己系列的一个 tab**，位置在 `{{To do}}` 行之后。跨章/跨季导航链接不算应挂——`Tab/Anime S2` 季行链接 `动画:第一季`，但该页只挂 `Tab/Anime S1`。
   - **Manga Arc Chapter/Volume tab 的双块结构**：块 0 = 章导航（粗体标记本章），块 1 = 本章各话/各卷列表（当前话/卷靠自链接自动粗体）；应挂页只取块 1。单块 tab（Synopsis、单作品）全部链接页都应挂。（2026-08-17 起 Volume 与 Chapter 同构，见下条。）
   - 2026-08-17 漫画卷 Tab 双层化：`Tab/Manga_Volume`（单块扁平 1-1…4-8，缺第4章 9~13 卷与整个第5章）拆为 `Tab/Manga Arc 1~5 Volume` 五个 per-arc 双块模板，34 个卷页全部换装/补挂（26 页替换、8 页新挂；第4章实际 13 卷、第5章 3 卷）。脚本 `scripts/oneoff/migrate_manga_volume_tab.py`。旧 `Tab/Manga_Volume` 随之零引用，当日删除。
+  - 2026-08-17 动画 Tab 季集整合 + 猫语补挂：扁平季导航 `Tab/Anime`（仅 4 季互链）退役——季条目与集条目同挂 per-season 双块模板 `Tab/Anime S1~S4`（季页由此获得集行直达）。季行 4 格全部改指季条目（原指首集），当前季格写 `[[动画:第一季|'''第一季''']]` 粗体链接——集页渲染为粗体蓝链可跳季条目，季页上靠 selflink 机制自动退化为粗体纯文本，无需特判；季标签统一中文数字「第一季」。猫语侧镜像：新建 `Tab/Anime S1~S4/Neko`（链接指 /猫语 对应页；S4/Neko 按 LN/Neko 先例只列已存在猫语页 67~78，主版 S4 列至 85），82 个集/季猫语页页首（`{{Init}}` 之后）补挂，`Tab/Anime/Neko` 一并删除。渲染经 parse API 逐型验证（集页/季页/猫语页）。
   - **Module/MediaWiki 页的 tab 挂在其 `/doc` 页**（Module 命名空间不渲染 wikitext，Gadget CSS 同理）——审计时这些是误报。
   - 2026-07-28 修复：Manga 系 7 个 tab（Arc 1~4 Chapter、Manga Volume、剑鬼恋歌 Chapter/Volume）历史上从未挂进任何漫画页，共补挂 194 页；另修 `Tab/Sword Demon Battle Ballad Act` 繁体死链（終幕→终幕）、`Tab/Ruby` 摘除已删 `R/ja` 导航项；`小说:…日报/KILL4` 原挂不存在的 `Tab/KILL`，换挂正确 tab；删除与 `Tab/The Great Spirit Puck's Side Story` 逐字节重复的零引用 `Tab/The Great Spirit Puck`。
   - 审计坑：`allpages(prefix="Tab/")` 返回的标题**已含** `Tab/` 前缀（别再拼一次，且 pywikibot 对不存在页面 `.text` 返回空串不报错——要 assert 防空转）；tab 内 `<!-- -->` 注释的链接不算应挂；分类链接要区分 `[[:分类:X]]` 冒号内联（导航链接，参与比对）与裸 `[[Category:X]]`（归类赋值，跳过），且链接标题要经 pywikibot 归一化再与携带页比对（`Tab/Content` 的分类矩阵全是冒号内联 + wikitable 在 `{{Tab}}` 块外）。上述惯例判例（导航块、Module/doc、注释、分类形式）已内置进审计脚本，输出仅剩真失配与红链（红链=未搬运内容或未建分类页，建页后补挂即可）。
