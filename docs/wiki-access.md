@@ -118,7 +118,7 @@ login_name = bp.login_name(username)  # → "IchiSanNi@pywikibot"
 - **`embeddedin`/templatelinks = 0 不等于没人用**：`#tag:` 扩展内容和死模板 `<includeonly>` 里的调用不入 templatelinks。模板删除前审计流程（全站 dump 配方、分类法、删除清单）见 `docs/template-usage-audit.md`。
 - `RecentChangesPageGenerator` 返回有重复条目（同一编辑出现多次），统计时需去重。
 - `generator=allpages` 配 `rvprop=content` 会被 Fandom 静默丢弃大部分页面的 revisions（只回页面壳、无报错、无截断提示，实测 2227 页只取回 253 页源码）。全站取源码用两阶段：先 `list=allpages` 枚举标题，再 `titles=` 按 50 个/批取 content。
-  - 2026-08-18 复测：经 `api.QueryGenerator`（pywikibot 内部处理 continue）同参数全量取回 10157/10157 页源码（与 `list=allpages` 标题集交叉验证零缺失）——该坑不是必现。但同任务手搓 continue 分页遇到过某批响应缺 `continue` 字段导致静默截断（764/2206）。结论：全量扫描用 QueryGenerator 或两阶段，并以「抓取页数 >= siteinfo articles 数」兜底断言截断（`scripts/audit_wikipedia_links.py` 有此断言）。
+  - 2026-08-18 复测：经 `api.QueryGenerator` 全量取回 10157/10157 页源码（与 `list=allpages` 标题集交叉验证零缺失）；同任务手搓 continue 分页（gaplimit=500 + content）则遇到某批响应缺 `continue` 字段静默截断（764/2206）。机制（`data/api/_generators.py`）：QueryGenerator 对 content 查询把批大小压到 `api_limit//10` 且 ≤250（匿名=50），上游注释明言 500/批 content 查询「sometimes result in server-side errors」——截断的触发条件是**响应体积**，不是分页协议；缺 continue 时 pywikibot 同样只能 break（协议无信号，任何客户端都检测不了）。结论：content 批查询手搓也压到 ≤50/批，并以「抓取页数 >= siteinfo articles 数」兜底断言截断（`scripts/audit_wikipedia_links.py` 有此断言）。
 - `titles=` 大批（50 个）请求偶发返回 **HTTP 400 空响应体**（非毒标题——二分后每个子批都 200；也非 URL 超长）。降批到 25 + 指数退避重试即可，全量 dump 1 万页级别稳定。
 - 主空间 `allpages` 按字母序，CJK 前缀排在英文之后——采样统计前缀分布必须扫全量。
 - 写沙盒后可用 `curl 'https://rezero.fandom.com/zh/api.php?action=query&prop=revisions&titles=...&rvprop=content&rvslots=main&format=json'` 匿名验证结果。
