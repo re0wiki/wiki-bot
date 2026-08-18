@@ -1,6 +1,6 @@
 """语录迁移管线：OpenCode Zen LLM 客户端（deepseek-v4-flash-free）。
 
-- key 来源：OPENCODE_API_KEY 环境变量，或 logs/api_keys.json 的 "opencode" 字段
+- key 来源：OPENCODE_API_KEY 环境变量，或 secrets.json 的 llm 字段
 - 429/5xx 指数退避（尊重 Retry-After），是 reasoning 模型，max_tokens 要留足
 - 注入 ja→zh 专有名词表（logs/name_table_ja2zh.json，logs/p0_build_name_table.py 生成）：
   目的不是规定用字，而是让弱模型识别专有名词、不把角色名当普通名词（パック→「包包」事故）
@@ -15,7 +15,7 @@ import requests
 
 ENDPOINT = "https://opencode.ai/zen/v1/chat/completions"
 MODEL = "deepseek-v4-flash-free"
-KEYS_FILE = Path(__file__).parent.parent / "logs" / "api_keys.json"
+KEYS_FILE = Path(__file__).parent.parent / "secrets.json"
 NAME_TABLE_FILE = Path(__file__).parent.parent / "logs" / "name_table_ja2zh.json"
 
 
@@ -50,7 +50,7 @@ SYSTEM_PROMPT_PLAIN = _build_system_prompt(with_name_table=False)
 def get_config(provider="opencode"):
     """返回 (base_url, api_key, model)。env OPENCODE_API_KEY 优先，只覆盖 opencode 的 key。"""
     cfg = (
-        json.loads(KEYS_FILE.read_text(encoding="utf-8")).get(provider, {})
+        json.loads(KEYS_FILE.read_text(encoding="utf-8")).get("llm", {}).get(provider, {})
         if KEYS_FILE.exists()
         else {}
     )

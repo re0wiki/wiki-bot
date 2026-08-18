@@ -5,7 +5,7 @@
 （src=dc_zh_fbk）→ nekoquote.chain 全链（翻译→归一→构建→校验→部署）→
 推进水位线。
 
-- token 读 discord-bot-token.txt（gitignored，bot 账号读频道合规；勿用用户 token）；
+- token 读 secrets.json 的 discord_bot_token（gitignored，bot 账号读频道合规；勿用用户 token）；
   文件缺失则任务跳过（退出码 0，不阻塞其他循环任务）
 - 本地基线缺失时自动从 wiki 重建（nekoquote.bootstrap）——新 clone 开箱即用
 - 幂等：推 id 级去重；水位线在全链成功后才推进
@@ -55,11 +55,11 @@ def fetch_new(token: str, after: str | None) -> list[dict]:
 
 def main() -> None:
     pwb.handle_args()  # 吞掉 pwb 全局参数（-always 等）
-    token_file = ROOT / "discord-bot-token.txt"
+    token_file = ROOT / "secrets.json"
     if not token_file.exists():
-        pwb.info("无 discord-bot-token.txt，语录同步任务跳过")
+        pwb.info("无 secrets.json，语录同步任务跳过")
         return
-    token = token_file.read_text(encoding="utf-8").strip()
+    token = json.loads(token_file.read_text(encoding="utf-8"))["discord_bot_token"].strip()
 
     if bootstrap.needed():
         pwb.info("本地语录基线缺失，从 wiki 重建…")

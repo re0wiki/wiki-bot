@@ -21,7 +21,7 @@
 - **用户配置文件**
     1. [user-config.py#L17](./user-config.py#L17)（账号名，默认 IchiSanNi）
     2. 同目录下创建 `user-password.py` 并填写，格式为 `('<UserName>', BotPassword('<BotName>', '<BotPassword>'))`
-- **语录同步**（可选，循环任务 `nekoquote` 用）：根目录创建 `discord-bot-token.txt`（Discord bot token，读取转发频道）；`logs/api_keys.json` 填 LLM key（`{"kimi": {"base_url": ..., "api_key": ..., "model": ...}}`，新推自动翻译用）。缺失时任务自动跳过 / 新推先以日文上线、配置后自动补译，不影响其他任务。
+- **语录同步**（可选，循环任务 `nekoquote` 用）：根目录创建 `secrets.json`，格式 `{"discord_bot_token": "...", "llm": {"kimi": {"base_url": ..., "api_key": ..., "model": ...}}}`（前者读转发频道，后者新推自动翻译）。缺失时任务自动跳过 / 新推先以日文上线、配置后自动补译，不影响其他任务。
 
 ## Usage
 
