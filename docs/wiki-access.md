@@ -84,6 +84,7 @@ site.expand_text("{{NUMBEROFPAGES}}", title="任意页名")
 ## 裸 requests + BotPassword（逃生舱的逃生舱，一般不推荐）
 
 优先库方式；simple_request 也解决不了的，再裸调 `https://rezero.fandom.com/zh/api.php`。
+裸调（curl / urllib / requests）**必须显式带 User-Agent**，否则 Fandom 直接 403（2026-08-18 实测 urllib 默认 UA 被拒，curl 加 `-A` 即通）。
 凭据解析（不读不打印内容，eval 提取 BotPassword 对象）：
 
 ```python
