@@ -1,4 +1,4 @@
-"""P8-C 构建器：现存表解析 → 时间戳推导 → 月表 emit + round-trip 校验。
+"""语录月表构建器：lua_base 解析 → 时间戳归月 → raw 推合流 → 月表 emit。
 
 字段保真策略：每条目字段保存 (name, quote, raw_content) 原样三元组，重放零变换；
 仅新推文条目用双引号 + 自有转义。
@@ -11,41 +11,6 @@ from pathlib import Path
 
 JST = timezone(timedelta(hours=9))
 EPOCH = 1288834974657
-
-TABLES = [
-    "佩特拉",
-    "加菲尔",
-    "奥托",
-    "威尔海姆",
-    "安娜塔西亚",
-    "由里乌斯",
-    "帕克",
-    "库珥修",
-    "普莉希拉",
-    "特蕾西亚",
-    "福尔图娜",
-    "约书亚",
-    "罗兹瓦尔",
-    "罗姆爷",
-    "艾姬多娜",
-    "艾尔莎",
-    "爱蜜莉雅",
-    "弗雷德莉卡",
-    "莱茵哈鲁特",
-    "菲莉丝",
-    "菲鲁特",
-    "蜜蜜",
-    "早期ask/2014-05~2014-08",
-    "早期ask/2014-09~2015-10",
-    "Nico生放送",
-    "动画实况解说/第一季旧版",
-    "动画实况解说/第一季新编集版",
-    "动画实况解说/OVA",
-    "动画实况解说/第二季",
-    "Web连载网站上评论",
-    "十周年问答",
-    "签名会",
-]
 
 ENTRY_RE = re.compile(r"\{\s*src\s*=.*?\n\s*\}", re.DOTALL)
 FIELD_RE = re.compile(r"(\w+)\s*=\s*(['\"])((?:\\.|(?!\2).)*?)\2", re.DOTALL)
@@ -263,7 +228,7 @@ return p
 
 
 def emit_main(months):
-    Path("logs/p8/main.lua").write_text(MAIN, encoding="utf-8")
+    Path("logs/nekoquote/main.lua").write_text(MAIN, encoding="utf-8")
 
 
 def strip_tco(s):
@@ -274,8 +239,8 @@ def strip_tco(s):
 
 
 EP_MARKS = (
-    json.loads(Path("logs/p8_ep_marks.json").read_text(encoding="utf-8"))
-    if Path("logs/p8_ep_marks.json").exists()
+    json.loads(Path("logs/nekoquote/ep_marks.json").read_text(encoding="utf-8"))
+    if Path("logs/nekoquote/ep_marks.json").exists()
     else {}
 )
 
@@ -296,11 +261,11 @@ def raw_tweet_entry(tid, rec, q_text):
 
 
 def merge_raw(buckets, existing_ids):
-    """合流新推（id 级去重）。返回新增条数。中文译文从 logs/p8_zh.json 回填（a/q 字段）。"""
-    tw = json.loads(Path("logs/p8_tweets.json").read_text(encoding="utf-8"))
+    """合流新推（id 级去重）。返回新增条数。中文译文从 logs/nekoquote/zh.json 回填（a/q 字段）。"""
+    tw = json.loads(Path("logs/nekoquote/tweets.json").read_text(encoding="utf-8"))
     zh_map = (
-        json.loads(Path("logs/p8_zh.json").read_text(encoding="utf-8"))
-        if Path("logs/p8_zh.json").exists()
+        json.loads(Path("logs/nekoquote/zh.json").read_text(encoding="utf-8"))
+        if Path("logs/nekoquote/zh.json").exists()
         else {}
     )
     n = 0
@@ -332,12 +297,12 @@ def merge_raw(buckets, existing_ids):
 
 
 def main():
-    # 数据源：本地基线 logs/p8/lua_base（旧主题表已在切流中删除，wiki 上的唯一副本就是月表）
+    # 数据源：本地基线 logs/nekoquote/lua_base（旧主题表已在切流中删除，wiki 上的唯一副本就是月表）
     buckets = {}
     problems = []
     existing_ids = set()
     total = 0
-    for f in sorted(Path("logs/p8/lua_base").glob("*.lua")):
+    for f in sorted(Path("logs/nekoquote/lua_base").glob("*.lua")):
         for fields, block in parse_table(f.read_text(encoding="utf-8")):
             total += 1
             src = fget(fields, "src") or ""
@@ -360,7 +325,7 @@ def main():
     n_raw = merge_raw(buckets, existing_ids)
     print(f"合流新推 {n_raw} 条")
 
-    outdir = Path("logs/p8/lua")
+    outdir = Path("logs/nekoquote/lua")
     outdir.mkdir(parents=True, exist_ok=True)
     for month, entries in sorted(buckets.items()):
         # 排序：有时间键的按时刻，无键的（日期精度）排当日最前
@@ -373,7 +338,7 @@ def main():
         )
         (outdir / f"{month}.lua").write_text(emit_table(entries), encoding="utf-8")
     emit_main(buckets.keys())
-    print(f"emit {len(buckets)} 张月表 → {outdir}，主模块 → logs/p8/main.lua")
+    print(f"emit {len(buckets)} 张月表 → {outdir}，主模块 → logs/nekoquote/main.lua")
 
 
 if __name__ == "__main__":

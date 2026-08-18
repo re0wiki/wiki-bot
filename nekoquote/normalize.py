@@ -1,4 +1,4 @@
-"""P8 译文归一：对 p8_zh.json 的 zh/qzh 值应用 translation fix 规则。"""
+"""译文归一：对 zh.json 的 zh/qzh 值应用 translation fix 规则（打在源数据上防重建回潮）。"""
 
 import importlib
 import json
@@ -9,7 +9,7 @@ from pathlib import Path
 fx = importlib.import_module("pywikibot.fixes")
 replacements = fx.__dict__["user_fixes"]["translation"]["replacements"]
 
-data = json.loads(Path("logs/p8_zh.json").read_text(encoding="utf-8"))
+data = json.loads(Path("logs/nekoquote/zh.json").read_text(encoding="utf-8"))
 hits = Counter()
 for rec in data.values():
     for k in ("zh", "qzh"):
@@ -23,7 +23,7 @@ for rec in data.values():
                 hits[f"{pattern}→{repl}"] += 1
                 new = new2
         rec[k] = new
-Path("logs/p8_zh.json").write_text(
+Path("logs/nekoquote/zh.json").write_text(
     json.dumps(data, ensure_ascii=False), encoding="utf-8"
 )
 print("归一命中:", sum(hits.values()))

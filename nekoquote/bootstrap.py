@@ -39,8 +39,8 @@ def run() -> None:
                 (BASE / f"{name}.lua").write_text(text, encoding="utf-8")
                 (live / f"{name}.lua").write_text(text, encoding="utf-8")
                 n += 1
-    for name in ("p8_tweets.json", "p8_zh.json", "p8_ep_marks.json"):
-        f = LOGS / name
+    for name in ("tweets.json", "zh.json", "ep_marks.json"):
+        f = LOGS / "nekoquote" / name
         if not f.exists():
             f.write_text("{}", encoding="utf-8")
     print(f"bootstrap：从 wiki 重建 {n} 张月表基线 ✓")

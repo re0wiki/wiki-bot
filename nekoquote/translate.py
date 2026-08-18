@@ -1,5 +1,5 @@
-"""P8 全量中文翻译：raw 推 ja→zh（K3，批量断点续跑）。
-产物 logs/p8_zh.json：{tid: {"zh": 推文译文, "qzh": 提问推译文(如有)}}。
+"""中文翻译：raw 推 ja→zh（Kimi K3，批量断点续跑）。
+产物 logs/nekoquote/zh.json：{tid: {"zh": 推文译文, "qzh": 提问推译文(如有)}}。无 key 时跳过（退出 0）。
 """
 
 import json
@@ -34,10 +34,10 @@ def snowflake_month(tid):
 
 # 既有 id 集合（与构建器同逻辑：lua_base src 里的链接）
 existing_ids = set()
-for f in sorted(Path("logs/p8/lua_base").glob("*.lua")):
+for f in sorted(Path("logs/nekoquote/lua_base").glob("*.lua")):
     existing_ids.update(STATUS_RE.findall(f.read_text(encoding="utf-8")))
 
-tw = json.loads(Path("logs/p8_tweets.json").read_text(encoding="utf-8"))
+tw = json.loads(Path("logs/nekoquote/tweets.json").read_text(encoding="utf-8"))
 merged = {}
 for tid, rec in tw.items():
     if rec.get("author") != "nezumiironyanko" or tid in existing_ids:
@@ -50,8 +50,8 @@ print(f"合流 raw 推 {len(merged)} 条")
 
 # 待译：推文正文（非空）+ 提问推正文
 done = (
-    json.loads(Path("logs/p8_zh.json").read_text(encoding="utf-8"))
-    if Path("logs/p8_zh.json").exists()
+    json.loads(Path("logs/nekoquote/zh.json").read_text(encoding="utf-8"))
+    if Path("logs/nekoquote/zh.json").exists()
     else {}
 )
 texts = {}  # 归一文本 -> None（去重池）
@@ -159,7 +159,7 @@ for bi, b in enumerate(batches):
         for tid, t in tid2text.items():
             if t in text_zh:
                 done.setdefault(tid, {})["zh"] = text_zh[t]
-        Path("logs/p8_zh.json").write_text(
+        Path("logs/nekoquote/zh.json").write_text(
             json.dumps(done, ensure_ascii=False), encoding="utf-8"
         )
         print(
@@ -172,7 +172,7 @@ for bi, b in enumerate(qbatches):
     got = run_batch(b, PROMPT_Q)
     for qid, zh in got.items():
         done.setdefault(qid, {})["qzh"] = zh
-    Path("logs/p8_zh.json").write_text(
+    Path("logs/nekoquote/zh.json").write_text(
         json.dumps(done, ensure_ascii=False), encoding="utf-8"
     )
     print(f"提问 {bi + 1}/{len(qbatches)} 批", flush=True)
@@ -180,10 +180,10 @@ for bi, b in enumerate(qbatches):
 for tid, t in tid2text.items():
     if t in text_zh:
         done.setdefault(tid, {})["zh"] = text_zh[t]
-Path("logs/p8_zh.json").write_text(
+Path("logs/nekoquote/zh.json").write_text(
     json.dumps(done, ensure_ascii=False), encoding="utf-8"
 )
-Path("logs/p8_zh_blocked.json").write_text(
+Path("logs/nekoquote/zh_blocked.json").write_text(
     json.dumps(BLOCKED, ensure_ascii=False, indent=1), encoding="utf-8"
 )
 print(

@@ -1,7 +1,7 @@
 """NekoQuote 语录增量同步：中文 wiki 服务器 FBK 转发频道 → 月表全链更新。
 
 数据流：Discord API 拉频道新消息（bot token，水位线增量）→ nekoquote.parse
-解析（FBK 组件布局/RT 剥除/机翻段切除）→ 新推入 logs/p8_tweets.json
+解析（FBK 组件布局/RT 剥除/机翻段切除）→ 新推入 logs/nekoquote/tweets.json
 （src=dc_zh_fbk）→ nekoquote.chain 全链（翻译→归一→构建→校验→部署）→
 推进水位线。
 
@@ -27,7 +27,7 @@ from nekoquote.chain import run_chain
 from nekoquote.parse import extract
 
 CHANNEL_ID = "1293525355663196243"  # 中文服务器 FBK 转发频道
-STATE = ROOT / "logs/nekoquote_sync.json"
+STATE = ROOT / "logs/nekoquote/sync_state.json"
 
 
 def api(path: str, token: str) -> list:
@@ -59,7 +59,9 @@ def main() -> None:
     if not token_file.exists():
         pwb.info("无 secrets.json，语录同步任务跳过")
         return
-    token = json.loads(token_file.read_text(encoding="utf-8"))["discord_bot_token"].strip()
+    token = json.loads(token_file.read_text(encoding="utf-8"))[
+        "discord_bot_token"
+    ].strip()
 
     if bootstrap.needed():
         pwb.info("本地语录基线缺失，从 wiki 重建…")
@@ -78,7 +80,7 @@ def main() -> None:
     pwb.info(f"新消息 {len(msgs)} 条")
 
     found = extract(msgs)
-    tw_path = ROOT / "logs/p8_tweets.json"
+    tw_path = ROOT / "logs/nekoquote/tweets.json"
     tw = json.loads(tw_path.read_text(encoding="utf-8"))
     new = {t: x for t, x in found.items() if t not in tw}
     if not new:

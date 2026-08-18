@@ -31,6 +31,6 @@ def run_chain(stages: tuple[str, ...] = STAGES) -> None:
         if r.returncode != 0:
             print(r.stderr[-800:])
             raise SystemExit(f"nekoquote.{s} 失败")
-    live = ROOT / "logs/p8/lua_live"
+    live = ROOT / "logs/nekoquote/lua_live"
     shutil.rmtree(live, ignore_errors=True)
-    shutil.copytree(ROOT / "logs/p8/lua", live)
+    shutil.copytree(ROOT / "logs/nekoquote/lua", live)

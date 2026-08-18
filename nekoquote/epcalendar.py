@@ -1,4 +1,4 @@
-"""拉 en 站 51-90 集首播日期 → logs/p8_ep_calendar.json。"""
+"""拉 en 站 51-90 集首播日期 → logs/nekoquote/ep_calendar.json。"""
 
 import json
 import re
@@ -23,6 +23,6 @@ for n in range(51, 91):
     cal[n] = date
     print(f"第{n}集: {date}")
 
-Path("logs/p8_ep_calendar.json").write_text(
+Path("logs/nekoquote/ep_calendar.json").write_text(
     json.dumps(cal, ensure_ascii=False, indent=1), encoding="utf-8"
 )

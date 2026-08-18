@@ -1,22 +1,21 @@
-"""语录迁移管线：OpenCode Zen LLM 客户端（deepseek-v4-flash-free）。
+"""语录管线 LLM 客户端（默认 Kimi K3，配置在 secrets.json 的 llm 字段）。
 
-- key 来源：OPENCODE_API_KEY 环境变量，或 secrets.json 的 llm 字段
-- 429/5xx 指数退避（尊重 Retry-After），是 reasoning 模型，max_tokens 要留足
-- 注入 ja→zh 专有名词表（logs/name_table_ja2zh.json，logs/p0_build_name_table.py 生成）：
-  目的不是规定用字，而是让弱模型识别专有名词、不把角色名当普通名词（パック→「包包」事故）
+- 429/5xx 指数退避（尊重 Retry-After）；reasoning 模型 max_tokens 恒 32768
+- 注入 ja→zh 专有名词表（logs/nekoquote/name_table_ja2zh.json，数据文件随基线走）：
+  目的不是规定用字，而是让模型识别专有名词、不把角色名当普通名词（パック→「包包」事故）
+- 历史：OpenCode deepseek-v4-flash-free 曾作免费通道，质量不达标已弃用
 """
 
 import json
-import os
 import time
 from pathlib import Path
 
 import requests
 
-ENDPOINT = "https://opencode.ai/zen/v1/chat/completions"
-MODEL = "deepseek-v4-flash-free"
 KEYS_FILE = Path(__file__).parent.parent / "secrets.json"
-NAME_TABLE_FILE = Path(__file__).parent.parent / "logs" / "name_table_ja2zh.json"
+NAME_TABLE_FILE = (
+    Path(__file__).parent.parent / "logs" / "nekoquote" / "name_table_ja2zh.json"
+)
 
 
 def _load_name_table():
@@ -47,22 +46,21 @@ SYSTEM_PROMPT = _build_system_prompt()
 SYSTEM_PROMPT_PLAIN = _build_system_prompt(with_name_table=False)
 
 
-def get_config(provider="opencode"):
-    """返回 (base_url, api_key, model)。env OPENCODE_API_KEY 优先，只覆盖 opencode 的 key。"""
+def get_config(provider="kimi"):
+    """返回 (base_url, api_key, model)，读 secrets.json 的 llm 字段。"""
     cfg = (
-        json.loads(KEYS_FILE.read_text(encoding="utf-8")).get("llm", {}).get(provider, {})
+        json.loads(KEYS_FILE.read_text(encoding="utf-8"))
+        .get("llm", {})
+        .get(provider, {})
         if KEYS_FILE.exists()
         else {}
     )
     base_url = cfg.get("base_url", "").rstrip("/")
     key = cfg.get("api_key")
-    if provider == "opencode":
-        key = os.environ.get("OPENCODE_API_KEY") or key
-    if not key:
-        raise FileNotFoundError(
-            f"无 LLM key 配置（{KEYS_FILE} 的 {provider} 字段或环境变量）"
-        )
-    return base_url, key, cfg.get("model", MODEL)
+    model = cfg.get("model")
+    if not (key and model):
+        raise FileNotFoundError(f"无 LLM 配置（{KEYS_FILE} 的 llm.{provider} 字段）")
+    return base_url, key, model
 
 
 def chat(
@@ -70,7 +68,7 @@ def chat(
     system=SYSTEM_PROMPT,
     max_tokens=4000,
     max_attempts=6,
-    provider="opencode",
+    provider="kimi",
     timeout=120,
 ):
     """带退避的 chat 调用；返回 content。失败到最后抛异常。"""
@@ -163,7 +161,7 @@ def _chat_openai(user_text, system, max_tokens, max_attempts, provider, timeout=
     raise AssertionError("unreachable")
 
 
-def translate_ja2zh(ja_text, provider="opencode"):
+def translate_ja2zh(ja_text, provider="kimi"):
     return chat(ja_text, provider=provider)
 
 
