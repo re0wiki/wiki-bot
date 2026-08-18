@@ -1,5 +1,7 @@
 # NekoQuote 增量收录 Runbook
 
+**2026-08-18 起主通道：循环任务 `nekoquote`（`scripts/re0_nekoquote.py`）全自动同步**——Discord bot token 拉中文服务器的 FBK 转发频道新消息（水位线 `logs/nekoquote_sync.json`，全链成功才推进），复用本文档的解析与管线，随 main.py 循环执行、无需人工。以下手动导出流程保留为备份/排障手段（注意 EN 频道同为 FBK 转发，与中文频道**不互为独立兜底**；FBK/nitter 是共同单点）。
+
 长月新推的持续收录流程（2026-08-15 定稿）。自动抓取通道全不可靠（fxtwitter 无时间线枚举、wayback CDX 被动滞后、nitter 半死），走英文社区 Discord 转发频道的**定期手动导出 + 一键管线**。
 
 ## 上游：EN Discord 转发频道
