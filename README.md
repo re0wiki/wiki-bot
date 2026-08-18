@@ -25,7 +25,7 @@
 ## Usage
 
 - 循环执行全部维护任务（常驻）：`python main.py`（加 `-s` 为模拟运行，不写 wiki）；执行任务：`python main.py <任务名或编号>...`（可传多个依次执行，`-h` 查看完整列表，任务名稳定、编号随插入平移）
-- 所有 pywikibot 自带脚本也可直接用：`python pywikibot/pwb.py <script> ...`，参见 [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
+- 所有 pywikibot 自带脚本也可直接用：`python pwb/pwb.py <script> ...`，参见 [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
 
 ## Status
 

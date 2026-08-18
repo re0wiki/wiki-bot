@@ -1,8 +1,7 @@
 """一次性：验证移动后 zh-hant 消息解析。"""
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 site = pywikibot.Site("zh", "re0")
 for key in (

@@ -13,10 +13,9 @@ pywikibot 自带 transferbot（-lang:en -tolang:zh -start）逐页迭代 en 主�
 视为已存在（原 exists() 语义）。
 """
 
-from pywikibot.tools import first_upper
-
 import pywikibot as pwb
 from pywikibot import config
+from pywikibot.tools import first_upper
 
 HEADER = "{{Init}}\n{{To do}}\n"
 FOOTER_CATEGORY = "\n[[Category:新搬运待整理]]"

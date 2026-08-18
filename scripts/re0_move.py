@@ -10,10 +10,11 @@
 
 import re
 
+import pywikibot as pwb
 import pywikibot.config
 from pywikibot.exceptions import Error as PwbError
 
-# translation_* / p2o / p2n 定义在 user-fixes.py，由 pywikibot/fixes.py 末尾
+# translation_* / p2o / p2n 定义在 user-fixes.py，由 pwb/pywikibot/fixes.py 末尾
 # exec 进自己的 globals，静态检查不可见但运行时可用。
 from pywikibot.fixes import (
     p2n,  # ty: ignore[unresolved-import]
@@ -22,8 +23,6 @@ from pywikibot.fixes import (
     translation_names,  # ty: ignore[unresolved-import]
 )
 from pywikibot.pagegenerators import GeneratorFactory
-
-import pywikibot as pwb
 
 RULES = [(re.compile(p2o(p), re.IGNORECASE), p2n(p)) for p in translation_names] + [
     (re.compile(o, re.IGNORECASE), n)

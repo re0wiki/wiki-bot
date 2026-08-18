@@ -19,13 +19,13 @@ pywikibot 自带 fixing_redirects 对每页每个链接逐条发 API 查询
 """
 
 import regex as re
+
+import pywikibot as pwb
+from pywikibot import config
 from pywikibot.exceptions import InvalidTitleError
 from pywikibot.pagegenerators import GeneratorFactory
 from pywikibot.textlib import isDisabled
 from pywikibot.tools import first_lower, first_upper
-
-import pywikibot as pwb
-from pywikibot import config
 
 SUMMARY = "机器人：修正重定向"
 

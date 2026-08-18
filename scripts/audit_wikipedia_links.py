@@ -9,9 +9,8 @@
 import re
 from collections import defaultdict
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 # [[wikipedia:en:X|Y]] / [[wikipedia:X]]（裸写 = en）/ [[wikipedia:zh:X]]
 LINK_RE = re.compile(r"\[\[wikipedia:(?P<body>[^\]|]*)(?:\|[^\]]*)?\]\]")

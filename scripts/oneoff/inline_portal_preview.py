@@ -9,9 +9,8 @@ Announcements、Latest Volume、Latest Volume/LN、Latest Volume/Manga、Social 
 
 import re
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 INLINE = [
     "Portal Left",

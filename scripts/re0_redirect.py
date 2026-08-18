@@ -13,11 +13,11 @@ pywikibot login() 有 cookie jar 即跳过重新认证），apihighlimits 的
 """
 
 import regex as re
-from pywikibot.pagegenerators import GeneratorFactory
-from pywikibot.tools import first_upper
 
 import pywikibot as pwb
 from pywikibot import config
+from pywikibot.pagegenerators import GeneratorFactory
+from pywikibot.tools import first_upper
 
 REGEX = re.compile(r".+?:(.+)")
 

@@ -13,9 +13,8 @@ import re
 
 os.environ.pop("PYTHONPATH", None)
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 site = pywikibot.Site("zh", "re0")
 

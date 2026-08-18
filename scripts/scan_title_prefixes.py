@@ -7,9 +7,8 @@ globals，静态检查不可见）。
 
 from collections import defaultdict
 
-from pywikibot.fixes import PSEUDO_PREFIXES  # ty: ignore[unresolved-import]
-
 import pywikibot
+from pywikibot.fixes import PSEUDO_PREFIXES  # ty: ignore[unresolved-import]
 
 site = pywikibot.Site("zh", "re0")
 

@@ -79,7 +79,7 @@ data = req.submit()   # dict
 site.expand_text("{{NUMBEROFPAGES}}", title="任意页名")
 ```
 
-对照表：MediaWiki API action ↔ pywikibot 方法见 `pywikibot/docs/mwapi.rst`。
+对照表：MediaWiki API action ↔ pywikibot 方法见 `pwb/pywikibot/docs/mwapi.rst`。
 
 ## 裸 requests + BotPassword（逃生舱的逃生舱，一般不推荐）
 

@@ -2,9 +2,8 @@
 
 import difflib
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 LUA = """-- 实时编译 [[Project:Wiki-navigation]] 为 [[MediaWiki:Wiki-navigation]] 所需的导航语法。
 -- 取代原 bot 定期编译任务（re0_nav.py）；MediaWiki:Wiki-navigation 内容为 {{#invoke:Wiki-navigation|main}}。

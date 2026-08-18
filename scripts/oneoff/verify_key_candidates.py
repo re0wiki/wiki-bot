@@ -1,8 +1,7 @@
 """一次性：为拿不准的拟名在 en 站测试多个候选，选有页面/重定向的。"""
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 CANDIDATES = {
     "聘可塔特": ["Picoutatte", "Pictat"],

@@ -1,8 +1,7 @@
 """一次性：验证 MediaWiki:Wiki-navigation 解析缓存对 Project:Wiki-navigation 的依赖登记。"""
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 site = pywikibot.Site("zh", "re0")
 req = api.Request(

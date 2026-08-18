@@ -52,7 +52,7 @@ Fandom 前端接 Cloudflare，按 **TLS 指纹 + 请求速率**限流。本文�
 ## 诊断流程
 
 1. 排除 UA 封禁：用 curl 分别带 pywikibot UA / 浏览器 UA / curl UA 打 api.php，全 200 则是行为限流。
-2. 归因先查自己：把 `user-config.py` 与 `pywikibot/config.py` 默认值做 diff——
+2. 归因先查自己：把 `user-config.py` 与 `pwb/pywikibot/config.py` 默认值做 diff——
    用户自定义值是首要嫌疑；过时的模板残留（如 `pickle_protocol=2`，上游已改 5）会静默覆盖新默认值，删掉。
 3. 用裸 requests +  pacing 实测 tolerated rate，再下定论。
 

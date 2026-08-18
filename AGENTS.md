@@ -16,9 +16,9 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 - 安装：`uv sync`（`default-groups = "all"`）。pywikibot 的全部可选依赖以 extras 形式声明在 dev 组（`pywikibot[html,http,...]`），覆盖其 requirements.txt，随 submodule 更新自动跟随。
 - 运行脚本：`PYTHONPATH= .venv/Scripts/python.exe <script>`（Windows 上 Hermes 会注入指向自身 venv 的 PYTHONPATH，必须清空，否则 import 错包）。
 - **pywikibot 是 git submodule**（fork：`github.com/re0wiki/pywikibot`，upstream 是 wikimedia/pywikibot）。克隆要 `--recurse-submodules`（否则 `uv sync` 会因路径缺失失败）。更新 submodule 后提交信息写 `chore: update pywikibot`。
-- pywikibot 通过 `[tool.uv.sources]` 以 **editable 方式从 submodule 路径装入 venv**（`{ path = "pywikibot", editable = true }`），submodule gitlink 是唯一版本锁，无需再同步 uv.lock 里的 commit。`pyproject.toml` 里的 `[tool.ty.environment] extra-paths = ["./pywikibot"]` 是必须的：ty 无法静态解析 PEP 660 editable finder，删掉会导致全项目 unresolved-import。
-- Lint：`ruff check` / `ruff format`（PATH 里没有 ruff 时用 `uv run ruff ...`，ty 同理；`pyproject.toml` 里 extend-exclude 了 pywikibot 子模块、logs/ 与 *.md（保留手工对齐的代码块注释），不要给它们 lint；`scripts/oneoff/` 归档脚本纳入正常检查，归档前需先过 lint/format/ty）。类型检查用 `ty`（`src.exclude` 排除 pywikibot 与 logs/，正常应为 0 诊断）。
-- 离线单测：`pytest tests/`（不触 wiki；覆盖译名表一致性、watchdog 纯函数）。注意 `python -m pytest` 会把仓库根注入 sys.path，导致根目录的 `pywikibot/` 目录以 namespace package 遮蔽已安装的包（同理，仓库根下 `python -c "import pywikibot"` 也是坏的）——tests/conftest.py 已处理。**临时探索脚本一律写成 .py 文件放 `scripts/` 下、从仓库根目录跑**（`PYTHONPATH= .venv/Scripts/python.exe scripts/_foo.py`，跑完即删），不要用 `python -c`：根目录 `-c` 会被 `pywikibot/` 目录遮蔽；从 `scripts/` 子目录跑则 pywikibot 找不到 `user-config.py`（cwd 不参与配置发现时按用户目录找）；手工清 sys.path 容易把同在仓库路径下的 venv site-packages 一并误删（2026-08-18 三连踩）。Wiki 侧改动验证方式仍是 `-s/--simulate` 干跑 + 上 wiki 查编辑结果。
+- pywikibot 通过 `[tool.uv.sources]` 以 **editable 方式从 submodule 路径装入 venv**（`{ path = "pwb", editable = true }`），submodule gitlink 是唯一版本锁，无需再同步 uv.lock 里的 commit。`pyproject.toml` 里的 `[tool.ty.environment] extra-paths = ["./pwb"]` 是必须的：ty 无法静态解析 PEP 660 editable finder，删掉会导致全项目 unresolved-import。
+- Lint：`ruff check` / `ruff format`（PATH 里没有 ruff 时用 `uv run ruff ...`，ty 同理；`pyproject.toml` 里 extend-exclude 了 pwb 子模块、logs/ 与 *.md（保留手工对齐的代码块注释），不要给它们 lint；`scripts/oneoff/` 归档脚本纳入正常检查，归档前需先过 lint/format/ty）。类型检查用 `ty`（`src.exclude` 排除 pwb 与 logs/，正常应为 0 诊断）。
+- 离线单测：`pytest tests/`（不触 wiki；覆盖译名表一致性、watchdog 纯函数；`PYWIKIBOT_DIR` 由 tests/conftest.py 设置）。**临时探索脚本写成 .py 放 `scripts/` 下、从仓库根目录跑**（`PYTHONPATH= .venv/Scripts/python.exe scripts/_foo.py`），跑完即删；从 `scripts/` 子目录跑则 pywikibot 找不到 `user-config.py`（cwd 不参与配置发现时按用户目录找）。根目录 `python -c "import pywikibot"` / `python -m pytest` 曾被根下的 `pywikibot/` submodule 目录以 namespace package 遮蔽——2026-08-18 目录改名 `pwb/` 已根治（conftest 的 sys.path hack 同日退役）。Wiki 侧改动验证方式仍是 `-s/--simulate` 干跑 + 上 wiki 查编辑结果。
 - Secrets：`user-password.py`（BotPasswords，gitignored，勿读勿提交）。
 
 ## 架构地图
@@ -27,7 +27,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 |---|---|
 | `main.py` | 循环任务入口。`python main.py <任务名或编号>...` 依次跑指定任务（可多个，编号随插入平移，名字稳定，`-h` 列全部），`-s` 模拟；不传参数 = 无限循环所有任务，**每轮结束休眠 1 小时**（`CYCLE_SLEEP`，2026-08-13 起，Cloudflare 累计量限流对策，见 docs/cloudflare-429.md）。任务失败（子进程非零退出）即以相同码退出等待人工修复，不继续后续任务 |
 | `jobs/jobs.py` | 任务列表（`Job(name, cmd)`，name 是稳定引用；fix 类任务名与 `-fix:` 参数一致），分 6 组：跨站同步 → 整理新搬运页 → 模板维护 → 重定向 → 语法规范化 → 内容规范化 → 杂项 |
-| `jobs/run_job.py` | 子进程包装：`build_cmd` 拼 `sys.executable pywikibot/pwb.py ...`（不用裸 `python`，PATH 上可能是无项目依赖的其他版本），自动加 `-always`（interwiki 加 `-auto -force`，transferbot 不加） |
+| `jobs/run_job.py` | 子进程包装：`build_cmd` 拼 `sys.executable pwb/pwb.py ...`（不用裸 `python`，PATH 上可能是无项目依赖的其他版本），自动加 `-always`（interwiki 加 `-auto -force`，transferbot 不加） |
 | `jobs/starts.py` | namespace → `-start:ns:!` 生成器参数。`ns_base`=主/project/template/category，`ns_more` 再加 module/mediawiki |
 | `user-config.py` | pywikibot 配置：family=re0, mylang=zh, 账号 IchiSanNi（只给 zh 配账号，外站匿名读——Fandom 现在跨站登录会互踢会话，见文件内注释） |
 | `user-fixes.py` | **核心资产**。自定义 fix 集：misc/date/anti-ve/para/gallery/heading/**translation**/HTML/syntax 等。`translation` 用「相似字符 → 正则」机制（`f()`/`p2o()`/`p2n()`）把几百个别名归一到标准译名 |
@@ -38,7 +38,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `docs/` | `todo.md`（跨任务待办与待决策项）、`wiki-access.md`（读写配方）、`cloudflare-429.md`（限流根因与对策）、`template-usage-audit.md`（零引用模板审计工作流）、`templates.md`（模板盘点数据与技术约定）、`modules.md`（Module/Lua 审查结论与约定）、`pywikibot-update.md`（submodule rebase 上游流程）、`pywikibot-scripts.md`（自带脚本选用速查）、`nekoquote-incremental.md`（NekoQuote 增量收录 runbook：Discrub 导出 + 一键管线） |
 | `families/re0_family.py` | re0 family 定义，12 个语言子站（de/en/es/fr/it/ko/nl/pl/pt-br/ru/uk/zh 都在 rezero.fandom.com，en 无路径前缀其余 `/<code>`）。注意 family 文件注释说 "do not commit" 但本项目故意提交了。另有 `w_family.py`（community.fandom.com，即 Fandom 中央站 `w:` 前缀），同理会故意提交 |
 | `tests/` | 离线单测（pytest，不触 wiki）：译名表一致性（RULES 与 re0_move 共享）、watchdog 纯函数、re0_gallery `merge_galleries`、re0_move `resolve_move`、re0_fixing_redirects 链接改写/链解析、run_job 命令拼装。模块经 `tests/repo_loader.py` 按路径加载（scripts/ 非包） |
-| `pywikibot/` | submodule，含 re0wiki 定制补丁（见下） |
+| `pwb/` | submodule（pywikibot fork；目录不叫 `pywikibot` 是为了避免根目录运行时以 namespace package 遮蔽已安装的包），含 re0wiki 定制补丁（见下） |
 
 pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template 等）的选用速查见 `docs/pywikibot-scripts.md`——能用现成脚本就别手写。
 

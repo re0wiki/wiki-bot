@@ -311,7 +311,7 @@ wheels = [
 
 [[package]]
 name = "pywikibot"
-source = { editable = "pywikibot" }
+source = { editable = "pwb" }
 dependencies = [
     { name = "mwparserfromhell" },
     { name = "packaging" },
@@ -581,7 +581,7 @@ requires-dist = [
 [package.metadata.requires-dev]
 dev = [
     { name = "pytest", specifier = ">=8.0.0" },
-    { name = "pywikibot", extras = ["html", "http", "google", "graphviz", "eventstreams", "isbn", "memento", "mwoauth", "mysql", "wikitextparser", "tkinter"], editable = "pywikibot" },
+    { name = "pywikibot", extras = ["html", "http", "google", "graphviz", "eventstreams", "isbn", "memento", "mwoauth", "mysql", "wikitextparser", "tkinter"], editable = "pwb" },
     { name = "ruff", specifier = ">=0.15.1" },
     { name = "ty", specifier = ">=0.0.17" },
 ]

@@ -1,8 +1,7 @@
 """nav Custom- 迁移：阶段2后验证 + purge MediaWiki:Wiki-navigation。"""
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 site = pywikibot.Site("zh", "re0")
 req = api.Request(

@@ -11,7 +11,10 @@ dependencies = [
 
 [tool.ruff]
 # *.md：docs 内嵌代码块的注释对齐是手工排版的，不让 formatter 动。
-extend-exclude = ['pywikibot', 'logs', '*.md']
+extend-exclude = ['pwb', 'logs', '*.md']
+# src 加 pwb：让 isort 的 first-party 探测能找到 pwb/pywikibot/（submodule
+# 改名前靠的是根目录 pywikibot/ 被探测到）。
+src = [".", "pwb"]
 # watchdog 由 Hermes cron 用 runpy 跑在 Hermes 自带的 Python 3.11 下（不走本
 # 项目 3.14 venv），不能让它用上 PEP 758 的无括号 except（ruff 0.16+ 按
 # requires-python 3.14 会把括号脱掉，脚本在 3.11 下直接起不来）。
@@ -19,7 +22,7 @@ per-file-target-version = { "scripts/recent_changes_watchdog.py" = "py311" }
 
 [tool.ruff.lint.per-file-ignores]
 # user-config.py 的名字由 pywikibot 注入；user-fixes.py 的 fixes 由
-# pywikibot/fixes.py exec 本文件时注入（见其文件末尾 _load_file）。
+# pwb/pywikibot/fixes.py exec 本文件时注入（见其文件末尾 _load_file）。
 "user-config.py" = ["F821"]
 "user-fixes.py" = ["F821"]
 # langs 等类属性字典是 pywikibot family 文件的既定写法。
@@ -29,16 +32,16 @@ per-file-target-version = { "scripts/recent_changes_watchdog.py" = "py311" }
 # （仅影响 import 解析）。exclude 控制检查范围：pywikibot 是上游代码，
 # logs/ 是本地一次性脚本（已 gitignore），都不检查。
 [tool.ty.environment]
-extra-paths = ["./pywikibot", "./tests"]
+extra-paths = ["./pwb", "./tests"]
 
 [tool.ty.src]
-exclude = ["pywikibot", "logs"]
+exclude = ["pwb", "logs"]
 
 [tool.uv]
 default-groups = "all"
 
 [tool.uv.sources]
-pywikibot = { path = "pywikibot", editable = true }
+pywikibot = { path = "pwb", editable = true }
 
 [dependency-groups]
 # pywikibot 的 extras 覆盖其 requirements.txt 全部可选依赖

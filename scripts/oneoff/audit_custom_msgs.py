@@ -4,9 +4,8 @@ import json
 import re
 from collections import defaultdict
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 site = pywikibot.Site("zh", "re0")
 

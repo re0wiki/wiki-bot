@@ -13,7 +13,7 @@ from repo_loader import load_module
 
 fx = importlib.import_module("pywikibot.fixes")
 
-# translation 机制定义在 user-fixes.py，由 pywikibot/fixes.py 末尾 exec 进
+# translation 机制定义在 user-fixes.py，由 pwb/pywikibot/fixes.py 末尾 exec 进
 # 自己的 globals，静态检查不可见，故经 __dict__ 取。
 p2o: Any = fx.__dict__["p2o"]
 p2n: Any = fx.__dict__["p2n"]

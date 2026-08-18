@@ -7,6 +7,7 @@ import sys
 import time
 
 import requests
+
 from pywikibot.login import BotPassword
 
 API = "https://rezero.fandom.com/zh/api.php"

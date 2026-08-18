@@ -1,11 +1,11 @@
 # pywikibot 自带脚本速查
 
-原则：**能直接用 `pywikibot/scripts/` 里的现成脚本就别手写**。手写只用于现成脚本确实覆盖不了的场景（如 `scripts/re0_*.py` 那 4 个）。
+原则：**能直接用 `pwb/pywikibot/scripts/` 里的现成脚本就别手写**。手写只用于现成脚本确实覆盖不了的场景（如 `scripts/re0_*.py` 那 4 个）。
 
 运行方式（仓库根目录）：
 
 ```bash
-PYTHONPATH= .venv/Scripts/python.exe pywikibot/pwb.py <script> [生成器] [脚本选项] [-simulate]
+PYTHONPATH= .venv/Scripts/python.exe pwb/pwb.py <script> [生成器] [脚本选项] [-simulate]
 ```
 
 - 干跑一律先加 `-simulate`；`-always` 跳过逐页确认（`run_job` 会自动补）。
@@ -76,7 +76,7 @@ PYTHONPATH= .venv/Scripts/python.exe pywikibot/pwb.py <script> [生成器] [脚�
 user-fixes.py 收录之前的一次性替换，历史上反复使用的完整形态：
 
 ```bash
-PYTHONPATH= .venv/Scripts/python.exe pywikibot/pwb.py replace -automaticsummary \
+PYTHONPATH= .venv/Scripts/python.exe pwb/pwb.py replace -automaticsummary \
   -exceptinside:'\[\[:?(zh|de|en|es|fr|it|nl|pl|pt-br|ru|uk|wp|wikipedia)\s?:[^\]]*\]\]' \
   -start::! -start:project:! -start:template:! -start:category:! -start:module:! -start:mediawiki:! \
   '旧文本' '新文本' -always
@@ -128,7 +128,7 @@ PYTHONPATH= .venv/Scripts/python.exe pywikibot/pwb.py replace -automaticsummary 
 
 ### 已踩过的坑（历史里的失败命令）
 
-- `python pywikibot/pwb.py main.py ...` 是错的——`main.py` 在仓库根，不是 pwb 脚本，直接 `python main.py`。
+- `python pwb/pwb.py main.py ...` 是错的——`main.py` 在仓库根，不是 pwb 脚本，直接 `python main.py`。
 - `-always-from:X`（参数粘连）、`imagetrasfer`（拼写）、`revert_bot`（下划线）、`-assubst`（应为 `-subst`）都是真实出现过的笔误，脚本只会报 unknown argument 或 script not found。
 - PowerShell 里 `-grep:"require('Module:Tab')"` 会被剥引号剥坏，要整体加引号并转义：`"-grep:require\('Module:Tab'\)"`。git-bash 里用单引号即可。
 - `category remove -from:Sandbox` 会把名为 Sandbox 的**分类**清空，操作前 `-simulate` 确认范围，必要时 `-nodelete`。

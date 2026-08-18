@@ -11,9 +11,8 @@ import json
 import sys
 from pathlib import Path
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 OUT = Path(".cache/nav_custom")
 plan = json.loads((OUT / "write_plan.json").read_text(encoding="utf-8"))
