@@ -37,7 +37,7 @@ uv sync                                                          # editable 重�
 PYTHONPATH= .venv/Scripts/python.exe scripts/verify_wiki_access.py   # 期望 ALL CHECKS PASSED
 ```
 
-冒烟测试：submodule 目录已改名 `pwb/`，仓库根下 `python -c "import pywikibot"` 可直接用（改名前会被 cwd 里的同名目录 shadow）；如设了 `PYWIKIBOT_NO_USER_CONFIG=1` 则更保险。
+冒烟测试可直接在仓库根跑 `python -c "import pywikibot"`；设 `PYWIKIBOT_NO_USER_CONFIG=1` 可跳过配置加载。
 
 ## 收尾
 

@@ -9,6 +9,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 - 判断标准是「知识从哪里来、在哪里验证」，不是「理论上能不能用在别处」：源自本仓库实践的 pywikibot / Fandom / Cloudflare 限流 / 模板审计等知识，即使看似通用，**也算本仓库知识**，进 `docs/`。（有过教训：曾被重新框架成「通用 Fandom 知识」存成 skill。）
 - 分工：把知识写进 `docs/` 是**主 agent**（有文件工具）的职责，任务收尾时主动做。回合结束后的后台 skill review（只有 memory/skill 工具的 fork agent）对本仓库知识应**直接放弃**（'Nothing to save'）——它碰不了仓库文件，不要建/改 skill，也不要把知识代为塞进 memory。
 - skill 只用于跨仓库/跨资源的流程（例如译名核验横跨 OCR 语料库与 gh issue）。新建 skill 前检查内容不与 `docs/` 重复。
+- **文档记录原则**：规则、原因、不变量进文档；**仓库自身的变更事件**（何时改了什么、谁改的）归 git log，不写编年史——文档里出现「2026-xx-xx 改了某文件」类句子即腐化信号。两类例外保留日期：对外部系统的实测观测（Fandom/Cloudflare 行为，日期=时效元数据）、wiki 侧决策与状态（wiki 没有决策日志，这里是唯一记录处）。
 
 ## 环境
 
@@ -18,7 +19,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 - **pywikibot 是 git submodule**（fork：`github.com/re0wiki/pywikibot`，upstream 是 wikimedia/pywikibot）。克隆要 `--recurse-submodules`（否则 `uv sync` 会因路径缺失失败）。更新 submodule 后提交信息写 `chore: update pywikibot`。
 - pywikibot 通过 `[tool.uv.sources]` 以 **editable 方式从 submodule 路径装入 venv**（`{ path = "pwb", editable = true }`），submodule gitlink 是唯一版本锁，无需再同步 uv.lock 里的 commit。`pyproject.toml` 里的 `[tool.ty.environment] extra-paths = ["./pwb"]` 是必须的：ty 无法静态解析 PEP 660 editable finder，删掉会导致全项目 unresolved-import。
 - Lint：`ruff check` / `ruff format`（PATH 里没有 ruff 时用 `uv run ruff ...`，ty 同理；`pyproject.toml` 里 extend-exclude 了 pwb 子模块、logs/ 与 *.md（保留手工对齐的代码块注释），不要给它们 lint；`scripts/oneoff/` 归档脚本纳入正常检查，归档前需先过 lint/format/ty）。类型检查用 `ty`（`src.exclude` 排除 pwb 与 logs/，正常应为 0 诊断）。
-- 离线单测：`pytest tests/`（不触 wiki；覆盖译名表一致性、watchdog 纯函数；`PYWIKIBOT_DIR` 由 tests/conftest.py 设置）。**临时探索脚本写成 .py 放 `scripts/` 下、从仓库根目录跑**（`PYTHONPATH= .venv/Scripts/python.exe scripts/_foo.py`），跑完即删；从 `scripts/` 子目录跑则 pywikibot 找不到 `user-config.py`（cwd 不参与配置发现时按用户目录找）。根目录 `python -c "import pywikibot"` / `python -m pytest` 曾被根下的 `pywikibot/` submodule 目录以 namespace package 遮蔽——2026-08-18 目录改名 `pwb/` 已根治（conftest 的 sys.path hack 同日退役）。Wiki 侧改动验证方式仍是 `-s/--simulate` 干跑 + 上 wiki 查编辑结果。
+- 离线单测：`pytest tests/`（不触 wiki；覆盖译名表一致性、watchdog 纯函数；`PYWIKIBOT_DIR` 由 tests/conftest.py 设置）。**临时探索脚本写成 .py 放 `scripts/` 下、从仓库根目录跑**（`PYTHONPATH= .venv/Scripts/python.exe scripts/_foo.py`），跑完即删；从 `scripts/` 子目录跑则 pywikibot 找不到 `user-config.py`（cwd 不参与配置发现时按用户目录找）。Wiki 侧改动验证方式仍是 `-s/--simulate` 干跑 + 上 wiki 查编辑结果。
 - Secrets：`user-password.py`（BotPasswords，gitignored，勿读勿提交）。
 
 ## 架构地图
