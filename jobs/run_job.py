@@ -17,7 +17,7 @@ def build_cmd(job: list[str], simulate: bool = False) -> list[str]:
     解释器用 sys.executable 而非裸 "python"：后者从 PATH 解析，在 venv 未
     激活的 shell 里可能是没有项目依赖（opencc 等）的其他 Python 版本。
     """
-    cmd = [sys.executable, "pywikibot/pwb.py", *job]
+    cmd = [sys.executable, "pwb/pwb.py", *job]
     if simulate:
         cmd.append("-simulate")
     elif job[0] == "interwiki":

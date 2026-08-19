@@ -28,5 +28,5 @@ jobs:
       - run: uv run ruff check
       - run: uv run ruff format --check
       - run: uv run ty check
-      # 离线单测；PYWIKIBOT_DIR 与 sys.path 陷阱由 tests/conftest.py 处理
+      # 离线单测；PYWIKIBOT_DIR 由 tests/conftest.py 设置
       - run: uv run pytest tests/ -q

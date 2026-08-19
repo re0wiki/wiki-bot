@@ -1,8 +1,7 @@
 """一次性：精简注释后复验模块展开输出。"""
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 site = pywikibot.Site("zh", "re0")
 req = api.Request(

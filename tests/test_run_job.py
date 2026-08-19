@@ -13,7 +13,7 @@ def test_cmd_uses_current_interpreter():
     """必须用 sys.executable：裸 "python" 从 PATH 解析，可能跑错版本。"""
     cmd = rj.build_cmd(["touch"])
     assert cmd[0] == sys.executable
-    assert cmd[1] == "pywikibot/pwb.py"
+    assert cmd[1] == "pwb/pwb.py"
     assert cmd[2] == "touch"
 
 

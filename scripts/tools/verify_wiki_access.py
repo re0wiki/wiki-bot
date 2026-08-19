@@ -5,9 +5,9 @@ Working dir: wiki-bot repo root.
 """
 
 import requests
-from pywikibot.login import BotPassword
 
 import pywikibot
+from pywikibot.login import BotPassword
 
 API = "https://rezero.fandom.com/zh/api.php"
 SANDBOX = "User:IchiSanNi/沙盒"

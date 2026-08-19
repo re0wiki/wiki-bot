@@ -20,7 +20,7 @@ PSEUDO_PREFIXES = [
 ]
 
 # generator_base/generator_more 是 jobs/starts.py 中 ns_base/ns_more 的副本：
-# 本文件由 pywikibot/fixes.py exec（无法 import 仓库包），两处事实源需手工同步。
+# 本文件由 pwb/pywikibot/fixes.py exec（无法 import 仓库包），两处事实源需手工同步。
 generator_base = [
     "-start::!",
     "-start:project:!",
@@ -742,4 +742,4 @@ _ = [  # 特判太麻烦的，不处理
 
 fixes: dict
 # noinspection PyUnboundLocalVariable
-fixes.update(user_fixes)  # ty: ignore[unresolved-reference]  # fixes 由 pywikibot/fixes.py exec 本文件时注入
+fixes.update(user_fixes)  # ty: ignore[unresolved-reference]  # fixes 由 pwb/pywikibot/fixes.py exec 本文件时注入

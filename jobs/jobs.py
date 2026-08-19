@@ -105,5 +105,6 @@ jobs: list[Job] = [
     Job("noreferences", ["noreferences", "-quiet", *starts_base]),
     Job("fix:misc", ["replace", "-automaticsummary", "-fix:misc"]),
     # 杂项
+    Job("nekoquote", ["re0_nekoquote"]),
     Job("touch", ["touch", "-random:128"]),
 ]

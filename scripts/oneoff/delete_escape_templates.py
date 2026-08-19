@@ -7,9 +7,8 @@ transclusion，模板是死代码；!! 无 magic word 但零引用，随族一�
 
 import json
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 site = pywikibot.Site("zh", "re0")
 site.login()

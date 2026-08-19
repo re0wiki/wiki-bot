@@ -3,9 +3,8 @@
 import json
 import os
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 site = pywikibot.Site("zh", "re0")
 site.login()

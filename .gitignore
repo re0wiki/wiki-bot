@@ -15,3 +15,4 @@ pywikibot*.lwp
 
 # 凭据（永不入库）
 user-password.py
+secrets.json

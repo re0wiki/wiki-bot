@@ -1,8 +1,7 @@
 """一次性：purge 首页，尝试刷新导航片段缓存。"""
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 site = pywikibot.Site("zh", "re0")
 site.login()

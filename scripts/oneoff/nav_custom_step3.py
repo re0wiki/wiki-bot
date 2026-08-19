@@ -10,9 +10,8 @@ import json
 import re
 from pathlib import Path
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 OUT = Path(".cache/nav_custom")
 candidates = json.loads((OUT / "candidates.json").read_text(encoding="utf-8"))

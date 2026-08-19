@@ -5,7 +5,7 @@
 ## 步骤
 
 ```bash
-cd pywikibot
+cd pwb
 git fetch upstream
 git branch backup/pre-rebase-$(git rev-parse --short main) main   # 安全网
 git rebase upstream/master main
@@ -23,9 +23,9 @@ git range-diff <old-base>..backup/pre-rebase-xxx upstream/master..main
 
 # 2. 定制点抽查（详见 AGENTS.md 定制清单）
 git diff upstream/master main --stat   # 应只碰 fixes/textlib/_filepage/noreferences 4 个文件
-grep '"keep"' pywikibot/fixes.py              # 4 处（HTML/syntax/isbn/specialpages）
-grep 'as-is' pywikibot/textlib.py
-grep 'format=original' pywikibot/page/_filepage.py
+grep '"keep"' pwb/pywikibot/fixes.py              # 4 处（HTML/syntax/isbn/specialpages）
+grep 'as-is' pwb/pywikibot/textlib.py
+grep 'format=original' pwb/pywikibot/page/_filepage.py
 grep '注释与外部链接' scripts/noreferences.py
 grep 'pageprops=True' scripts/noreferences.py
 ```
@@ -34,18 +34,18 @@ grep 'pageprops=True' scripts/noreferences.py
 
 ```bash
 uv sync                                                          # editable 重装
-PYTHONPATH= .venv/Scripts/python.exe scripts/verify_wiki_access.py   # 期望 ALL CHECKS PASSED
+PYTHONPATH= .venv/Scripts/python.exe scripts/tools/verify_wiki_access.py   # 期望 ALL CHECKS PASSED
 ```
 
-注意：不要在仓库根目录用 `python -c "import pywikibot"` 做冒烟测试——cwd 里的 `pywikibot/` 目录会被当作命名空间包 shadow 掉已安装的包（报 `module 'pywikibot' has no attribute '__version__'`）。换目录跑并设 `PYWIKIBOT_NO_USER_CONFIG=1`，或直接用仓库里的脚本。
+冒烟测试可直接在仓库根跑 `python -c "import pywikibot"`；设 `PYWIKIBOT_NO_USER_CONFIG=1` 可跳过配置加载。
 
 ## 收尾
 
 ```bash
-git -C pywikibot push --force-with-lease origin main   # rebase 必改写历史
+git -C pwb push --force-with-lease origin main   # rebase 必改写历史
 # 主仓：uv.lock 里 pywikibot 版本号也会变，一起提交
-git add pywikibot uv.lock
+git add pwb uv.lock
 git commit -m "chore: update pywikibot"
 ```
 
-确认线上正常后再删 backup 分支：`git -C pywikibot branch -D backup/pre-rebase-xxx`。
+确认线上正常后再删 backup 分支：`git -C pwb branch -D backup/pre-rebase-xxx`。

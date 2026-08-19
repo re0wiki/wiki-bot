@@ -10,9 +10,8 @@ import re
 from collections import defaultdict
 from pathlib import Path
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 OUT = Path(".cache/nav_custom")
 OUT.mkdir(parents=True, exist_ok=True)

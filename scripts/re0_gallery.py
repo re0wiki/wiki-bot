@@ -1,10 +1,10 @@
 from typing import NamedTuple
 
 import regex as re
-from pywikibot.cosmetic_changes import CosmeticChangesToolkit
-from pywikibot.pagegenerators import GeneratorFactory
 
 import pywikibot as pwb
+from pywikibot.cosmetic_changes import CosmeticChangesToolkit
+from pywikibot.pagegenerators import GeneratorFactory
 
 # 改编自 pywikibot textlib.NESTED_TEMPLATE_REGEX：去掉命名捕获组（findall 要
 # 取整体匹配串做模板备份/还原）与 unhandled_depth 分支。不换成 textlib 原版

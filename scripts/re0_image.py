@@ -10,10 +10,10 @@
 from os import path
 from tempfile import TemporaryDirectory
 
-import pywikibot.config
 from tqdm import tqdm
 
 import pywikibot as pwb
+import pywikibot.config
 
 
 def list_images(site) -> dict[str, str]:

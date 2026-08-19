@@ -6,9 +6,8 @@
 import json
 from pathlib import Path
 
-from pywikibot.data import api
-
 import pywikibot
+from pywikibot.data import api
 
 OUT = Path(".cache/nav_custom")
 m = json.loads((OUT / "map.json").read_text(encoding="utf-8"))

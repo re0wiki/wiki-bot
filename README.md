@@ -21,11 +21,12 @@
 - **用户配置文件**
     1. [user-config.py#L17](./user-config.py#L17)（账号名，默认 IchiSanNi）
     2. 同目录下创建 `user-password.py` 并填写，格式为 `('<UserName>', BotPassword('<BotName>', '<BotPassword>'))`
+- **语录同步**（可选，循环任务 `nekoquote` 用）：根目录创建 `secrets.json`，格式 `{"discord_bot_token": "...", "llm": {"kimi": {"base_url": ..., "api_key": ..., "model": ...}}}`（前者读转发频道，后者新推自动翻译）。缺失时任务自动跳过 / 新推先以日文上线、配置后自动补译，不影响其他任务。
 
 ## Usage
 
 - 循环执行全部维护任务（常驻）：`python main.py`（加 `-s` 为模拟运行，不写 wiki）；执行任务：`python main.py <任务名或编号>...`（可传多个依次执行，`-h` 查看完整列表，任务名稳定、编号随插入平移）
-- 所有 pywikibot 自带脚本也可直接用：`python pywikibot/pwb.py <script> ...`，参见 [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
+- 所有 pywikibot 自带脚本也可直接用：`python pwb/pwb.py <script> ...`，参见 [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
 
 ## Status
 
