@@ -37,9 +37,8 @@ import os
 import re
 import sys
 import time
-import urllib.error
-import urllib.parse
-import urllib.request
+
+import requests
 
 API = "https://rezero.fandom.com/zh/api.php"
 REPO_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -58,37 +57,32 @@ _last_call = 0.0
 
 def _get(params: dict, retries: int = 3) -> dict:
     global _last_call
-    url = API + "?" + urllib.parse.urlencode(params)
     for attempt in range(retries):
         wait = THROTTLE - (time.time() - _last_call)
         if wait > 0:
             time.sleep(wait)
         _last_call = time.time()
-        req = urllib.request.Request(url, headers={"User-Agent": UA})
         try:
-            with urllib.request.urlopen(req, timeout=60) as resp:
-                return json.load(resp)
-        except urllib.error.HTTPError as e:
-            if e.code in (429, 500, 502, 503, 504) and attempt < retries - 1:
-                retry_after = e.headers.get("Retry-After") if e.headers else None
-                try:
-                    delay = (
-                        float(retry_after)
-                        if retry_after is not None
-                        else 5 * (attempt + 1)
-                    )
-                except (TypeError, ValueError):
-                    delay = 5 * (attempt + 1)
-                time.sleep(
-                    min(delay, 65)
-                )  # Fandom 的 Retry-After 可达数千秒，封顶防卡死
-                continue
-            raise
-        except (urllib.error.URLError, TimeoutError):
+            resp = requests.get(
+                API, params=params, headers={"User-Agent": UA}, timeout=60
+            )
+        except requests.RequestException:
             if attempt < retries - 1:
                 time.sleep(5 * (attempt + 1))
                 continue
             raise
+        if resp.status_code in (429, 500, 502, 503, 504) and attempt < retries - 1:
+            retry_after = resp.headers.get("Retry-After")
+            try:
+                delay = (
+                    float(retry_after) if retry_after is not None else 5 * (attempt + 1)
+                )
+            except (TypeError, ValueError):
+                delay = 5 * (attempt + 1)
+            time.sleep(min(delay, 65))  # Fandom 的 Retry-After 可达数千秒，封顶防卡死
+            continue
+        resp.raise_for_status()
+        return resp.json()
     raise RuntimeError("unreachable")
 
 

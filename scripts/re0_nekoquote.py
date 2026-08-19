@@ -14,8 +14,9 @@
 
 import json
 import sys
-import urllib.request
 from pathlib import Path
+
+import requests
 
 import pywikibot as pwb
 
@@ -31,11 +32,13 @@ STATE = ROOT / "logs/nekoquote/sync_state.json"
 
 
 def api(path: str, token: str) -> list:
-    req = urllib.request.Request(
+    resp = requests.get(
         f"https://discord.com/api/v10{path}",
         headers={"Authorization": f"Bot {token}", "User-Agent": "wiki-bot"},
+        timeout=30,
     )
-    return json.loads(urllib.request.urlopen(req, timeout=30).read())
+    resp.raise_for_status()
+    return resp.json()
 
 
 def fetch_new(token: str, after: str | None) -> list[dict]:
