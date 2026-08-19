@@ -6,6 +6,7 @@
     PYTHONPATH= .venv/Scripts/python.exe scripts/tools/llm_translate.py refresh   # 重建选页队列（约 3 分钟，低频）
     PYTHONPATH= .venv/Scripts/python.exe scripts/tools/llm_translate.py prepare   # 取队首备料
     PYTHONPATH= .venv/Scripts/python.exe scripts/tools/llm_translate.py publish <slug>  # 校验并写入
+    PYTHONPATH= .venv/Scripts/python.exe scripts/tools/llm_translate.py skip <slug> [理由]  # agent 判断不宜翻译
 
 运行期数据全部在 logs/llm_translate/（gitignored）。
 """
@@ -231,7 +232,7 @@ def resolve_links(body):
 
 
 def translated_revid(zh_title):
-    """从 zh 历史摘要解析上次翻译对应的 en revid。"""
+    """从 zh 历史摘要解析上次翻译对应的 en revid（state 丢失时的恢复手段）。"""
     r = api(
         ZH_API,
         prop="revisions",
@@ -246,15 +247,54 @@ def translated_revid(zh_title):
     return None
 
 
+def en_revids(titles):
+    """批量取 en 页最新 revid（50/批，默认 rvlimit=1）。页面不存在时值为 None。"""
+    out = {}
+    titles = sorted(titles)
+    for i in range(0, len(titles), 50):
+        r = api(
+            EN_API, prop="revisions", titles="|".join(titles[i : i + 50]), rvprop="ids"
+        )
+        for p in r["query"]["pages"]:
+            out[p["title"]] = None if "missing" in p else p["revisions"][0]["revid"]
+    return out
+
+
+def revalidate_skips(state):
+    """en 相关跳过项（dict 形态）批量复查 en revid，变化则复活。返回复活页数。"""
+    entries = {t: e for t, e in state["skip"].items() if isinstance(e, dict)}
+    if not entries:
+        return 0
+    current = en_revids([e["en_title"] for e in entries.values()])
+    revived = 0
+    for title, e in list(entries.items()):
+        revid = current.get(e["en_title"])
+        if revid is not None and revid != e["en_revid"]:
+            del state["skip"][title]
+            revived += 1
+    return revived
+
+
 def cmd_prepare():
     queue = load_json(QUEUE, None)
     if queue is None:
         sys.exit("queue.json 不存在，先跑 refresh")
     state = load_json(STATE, {"skip": {}})
+    revived = revalidate_skips(state)
+    if revived:
+        print(f"en 更新复活: {revived} 页")
+    wip = sorted(WORK.glob("*.meta.json"))
+    if wip:
+        sys.exit(
+            f"已有待处理工作项: {[p.stem.rsplit('.', 2)[0] for p in wip]}，先翻译/发布/skip 再 prepare"
+        )
 
     for item in queue:
         title = item["title"]
-        if title in state["skip"]:
+        entry = state["skip"].get(title)
+        if isinstance(entry, str):  # 永久跳过（zh 原创等）
+            continue
+        if entry:  # en 相关跳过，revid 未变（变了已在上面复活）
             continue
         zh_text, zh_revid, _ = get_page(ZH_API, title)
         if zh_text is None:
@@ -267,15 +307,38 @@ def cmd_prepare():
         en_title = m.group(1).strip()
         en_text, en_revid, _ = get_page(EN_API, en_title)
         if en_text is None:
-            state["skip"][title] = f"en 页不存在: {en_title}"
+            state["skip"][title] = {
+                "reason": "en 页不存在",
+                "en_title": en_title,
+                "en_revid": None,
+            }
             continue
         if translated_revid(title) == en_revid:
-            state["skip"][title] = f"en 未变化 (revid {en_revid})"
+            state["skip"][title] = {
+                "reason": "已翻译，en 未变化",
+                "en_title": en_title,
+                "en_revid": en_revid,
+            }
             continue
 
         body = split_en_body(en_text)
+        if not any(
+            len(line) > 20 and not line.startswith("=") for line in body.splitlines()
+        ):
+            state["skip"][title] = {
+                "reason": "en 无实质内容（仅标题骨架）",
+                "en_title": en_title,
+                "en_revid": en_revid,
+            }
+            print(f"auto-skip: {title}（en 仅标题骨架）")
+            continue
         mapping, unresolved = resolve_links(body)
         head, zh_body, tail = split_zh_frame(zh_text)
+        zh_flags = [
+            name
+            for name, pat in [("infobox", r"\{\{Infobox"), ("gallery", r"<gallery")]
+            if re.search(pat, zh_body)
+        ]
 
         slug = slugify(title)
         WORK.mkdir(parents=True, exist_ok=True)
@@ -292,6 +355,7 @@ def cmd_prepare():
                 "head": head,
                 "tail": tail,
                 "zh_body_len": len(zh_body),
+                "zh_flags": zh_flags,
                 "link_map": mapping,
                 "unresolved_links": unresolved,
             },
@@ -304,6 +368,8 @@ def cmd_prepare():
         print(
             f"  zh body replaced: {len(zh_body)} chars（人工内容请先过目 {WORK / f'{slug}.zh.txt'}）"
         )
+        if zh_flags:
+            print(f"  ⚠ zh 现文含 {zh_flags}——考虑只局部修补 prose 而非整页替换")
         return
     save_json(STATE, state)
     print("队列已空")
@@ -376,21 +442,48 @@ def cmd_publish(slug):
     page.text = new_text
     page.save(summary=f"{SUMMARY_PREFIX}{meta['en_revid']}", bot=True, minor=False)
     print(f"saved: {meta['title']} (en:{meta['en_title']} revid {meta['en_revid']})")
+    state = load_json(STATE, {"skip": {}})
+    state["skip"][meta["title"]] = {
+        "reason": "已翻译，en 未变化",
+        "en_title": meta["en_title"],
+        "en_revid": meta["en_revid"],
+    }
+    save_json(STATE, state)
     for f in WORK.glob(f"{slug}.*"):
         f.unlink()
+
+
+def cmd_skip(slug, reason):
+    """agent 判断不宜翻译时调用：按当前 en revid 记入跳过，en 更新后自动复活。"""
+    meta = load_json(WORK / f"{slug}.meta.json", None)
+    if meta is None:
+        sys.exit(f"找不到 {slug}.meta.json")
+    state = load_json(STATE, {"skip": {}})
+    state["skip"][meta["title"]] = {
+        "reason": reason,
+        "en_title": meta["en_title"],
+        "en_revid": meta["en_revid"],
+    }
+    save_json(STATE, state)
+    for f in WORK.glob(f"{slug}.*"):
+        f.unlink()
+    print(f"skipped: {meta['title']}（{reason}，en revid {meta['en_revid']}）")
 
 
 def cmd_status():
     queue = load_json(QUEUE, [])
     state = load_json(STATE, {"skip": {}})
     wip = sorted(p.stem.rsplit(".", 2)[0] for p in WORK.glob("*.meta.json"))
-    print(f"queue: {len(queue)}, skip: {len(state['skip'])}, wip: {wip}")
+    perm = sum(1 for e in state["skip"].values() if isinstance(e, str))
+    temp = sum(1 for e in state["skip"].values() if isinstance(e, dict))
+    print(f"queue: {len(queue)}, skip: {perm} 永久 + {temp} en 跟踪, wip: {wip}")
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("cmd", choices=["refresh", "prepare", "publish", "status"])
+    ap.add_argument("cmd", choices=["refresh", "prepare", "publish", "skip", "status"])
     ap.add_argument("slug", nargs="?")
+    ap.add_argument("reason", nargs="?", default="en 无实质内容")
     args = ap.parse_args()
     if args.cmd == "refresh":
         cmd_refresh()
@@ -400,5 +493,9 @@ if __name__ == "__main__":
         if not args.slug:
             ap.error("publish 需要 slug 参数")
         cmd_publish(args.slug)
+    elif args.cmd == "skip":
+        if not args.slug:
+            ap.error("skip 需要 slug 参数")
+        cmd_skip(args.slug, args.reason)
     else:
         cmd_status()
