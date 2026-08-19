@@ -72,6 +72,8 @@ prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 
 
 Hermes cron 每日跑一页（agent 会话内执行 prepare → 翻译 → publish）。提速=调 cron 频率或每次页数。
 
+publish 成功时输出 `NOTIFY: [[zh 条目]] <时长>无人类编辑，已由 Bot 根据 [[en:条目]] 自动更新 <url>` 固定格式行，由 cron agent 原样转发到 Discord `#wiki编辑事务【qq互联】`（与自动巡查同频道，方式同 watchdog：主 profile `hermes send -t discord:<频道ID>`）；skip 与局部修补不推送。
+
 ## 当前限制
 
 - 一期只覆盖**正文以 prose+标题为主的页面**（/梗概 等，恰是冷队列主体）。含 en 信息框的主页面（角色/书籍等）需要参数级翻译与模板映射，后续按页面类型扩展。
