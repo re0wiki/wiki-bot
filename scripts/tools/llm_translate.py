@@ -399,6 +399,17 @@ def extract_templates(text):
     return {m.group(1).strip() for m in TEMPLATE_NAME.finditer(text)}
 
 
+def mark_todo(line):
+    """页首 To do 注入 K3 标注：裸模板直接改写；已有参数的合并保留原说明。"""
+    s = line.strip()
+    if s == "{{To do}}":
+        return TODO_MARKED
+    m = re.fullmatch(r"\{\{To do\|(.+)\}\}", s)
+    if m and "K3 翻译" not in m.group(1):
+        return "{{To do|" + m.group(1) + "；由 K3 翻译自英文站，待校对润色}}"
+    return line
+
+
 def cmd_publish(slug):
     meta = load_json(WORK / f"{slug}.meta.json", None)
     if meta is None:
@@ -441,14 +452,17 @@ def cmd_publish(slug):
             f"zh 页在 prepare 后有新编辑（{meta['zh_revid']} -> {zh_revid}），中止"
         )
 
-    # 拼装：页首（注入 To do 参数）+ 译文 + 页尾语言链接
-    head = [
-        TODO_MARKED if line.strip() == "{{To do}}" else line for line in meta["head"]
-    ]
+    # 拼装：页首（To do 注入 K3 标注）+ 译文 + 页尾语言链接
+    head = [mark_todo(line) for line in meta["head"]]
     parts = ["\n".join(head), "", out]
     if meta["tail"]:
         parts += ["\n".join(meta["tail"])]
     new_text = "\n".join(parts).rstrip() + "\n"
+
+    # 摘要附冷度，向其他编辑者说明自动翻译的原因
+    days = (datetime.now(UTC) - datetime.fromisoformat(meta["cold"])).days
+    dur = f"{days / 365:.1f}年" if days >= 365 else f"{max(days // 30, 1)}个月"
+    summary = f"{SUMMARY_PREFIX}{meta['en_revid']}（{dur}无人类编辑）"
 
     import pywikibot
 
@@ -458,7 +472,7 @@ def cmd_publish(slug):
     page = pywikibot.Page(site, meta["title"])
     page.text = new_text
     # 翻译不是需抑制通知的批量编辑，不加 bot flag
-    page.save(summary=f"{SUMMARY_PREFIX}{meta['en_revid']}", bot=False, minor=False)
+    page.save(summary=summary, bot=False, minor=False)
     print(f"saved: {meta['title']} (en:{meta['en_title']} revid {meta['en_revid']})")
     state = load_json(STATE, {"skip": {}})
     state["skip"][meta["title"]] = {
