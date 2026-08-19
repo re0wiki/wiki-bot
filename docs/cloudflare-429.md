@@ -66,10 +66,10 @@ Fandom 前端接 Cloudflare，按 **TLS 指纹 + 请求速率**限流。本文�
 - 写：间隔 ~5s，BotPassword 登录会话 → 293 次编辑零 429（2026-07）。
 - UA 无关：pywikibot UA / 浏览器 UA / curl UA 对照测试全 200。
 - 事故前配置 `minthrottle=0, put_throttle=0`：~7-8 req/s 读，约 4500 次请求 / 10 分钟后触发 429。
-- 复测（2026-07，探测脚本 `scripts/probe_read_rate.py` / `probe_write_rate.py`）：
+- 复测（2026-07，探测脚本 `scripts/oneoff/probe_read_rate.py` / `probe_write_rate.py`）：
   - 读：`list=allpages` GET，间隔 0.35s / 0.25s / 0.20s 各 300 请求（~3.8 req/s 持续 4.5 分钟）→ 零 429。
   - 写：沙盒连续小编辑，间隔 2s×10 + 1s×10 → 零 429（样本小，故配置取 2s 而非 1s）。
-- 边界探测（2026-07，`scripts/probe_read_boundary.py` / `probe_write_boundary.py`）：
+- 边界探测（2026-07，`scripts/oneoff/probe_read_boundary.py` / `probe_write_boundary.py`）：
   - 读：间隔 0.15s → 0.10s → 0.05s → 0.02s → **全速** 逐级加压，共 3000 请求 / 14 分钟
     → **零 429**。单连接被 RTT（~0.26s）锁死在 ~3.8 req/s，根本达不到 Cloudflare 触发点。
     推论：`minthrottle ≤ 0.25` 后继续调低**不会再变快**（周期 = max(minthrottle, RTT)），
@@ -131,7 +131,7 @@ MediaWiki 对**所有适用组**的窗口分别计数、任一超限即拒绝（
 - interwiki 跨 12 个语言站：每个 `Site` 有**独立** Throttle，`minthrottle` 不跨站协调；
   但 interwiki 没有读线程（无 Thread 调用），跨站查询是单线程顺序的，
   合计速率仍被 RTT 锁死在 ~3.8 req/s。`-async` 只影响保存。
-- 实证（`scripts/probe_async_concurrency.py`）：主线程全速预载 2000 页 +
+- 实证（`scripts/oneoff/probe_async_concurrency.py`）：主线程全速预载 2000 页 +
   80 次异步沙盒写并发交叠，结束 `retry_after=0`，零 429。
 - 推论：旧事故的 ~7-8 req/s 很可能就是 `minthrottle=0, put_throttle=0` 时代
   `-async` 让读、写两条线同时无限制发请求的叠加产物。
@@ -173,10 +173,10 @@ maxthrottle = 60    # 常规延迟硬顶（管不住 retry_after，见上）
 | pywikibot 未封装的功能 | `site.simple_request`（复用已认证会话与限速） |
 | 仅当 pywikibot 本身故障，或脚本无法加载仓库 `user-config.py`（在仓库外跑、无配置限速保护） | 才裸 `requests`，且写间隔 ≥0.5s |
 
-裸 `requests` 的 BotPassword 登录完整流程见 `scripts/verify_wiki_access.py`；
+裸 `requests` 的 BotPassword 登录完整流程见 `scripts/tools/verify_wiki_access.py`；
 **login POST 也必须走带 429 退避的重试封装**，不能裸发。
 
 ## 验证
 
-`scripts/test_pwb_throttle.py`：100 次读 + 1 次沙盒写走 pywikibot，验证配置下零 429，
+`scripts/tools/test_pwb_throttle.py`：100 次读 + 1 次沙盒写走 pywikibot，验证配置下零 429，
 并断言 `Throttle.get_delay()` 反映配置值。期望输出 `ALL CHECKS PASSED`。

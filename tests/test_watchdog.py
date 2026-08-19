@@ -1,8 +1,8 @@
-"""scripts/recent_changes_watchdog.py 的纯函数测试（不触碰 wiki）。"""
+"""scripts/tools/recent_changes_watchdog.py 的纯函数测试（不触碰 wiki）。"""
 
 from repo_loader import load_module
 
-wd = load_module("rc_watchdog", "scripts/recent_changes_watchdog.py")
+wd = load_module("rc_watchdog", "scripts/tools/recent_changes_watchdog.py")
 
 
 def _change(rcid, user, title, revid, old_revid, type_="edit"):
