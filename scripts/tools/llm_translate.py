@@ -37,7 +37,9 @@ SUMMARY_PREFIX = "K3翻译: revid "
 S = requests.Session()
 
 # en 源码行首/行尾的机械剥离
-TEMPLATE_LINE = re.compile(r"^\{\{[^{}]*\}\}\s*$")
+# 单行模板须容忍嵌套花括号（如 {{To do|…（{{#invoke:interwiki|get_en}}）…}}），
+# 用 [^{}]* 会把这类行漏判为非模板——页首剥离会静默丢弃它们
+TEMPLATE_LINE = re.compile(r"^\{\{.*\}\}\s*$")
 CATEGORY_LINE = re.compile(r"^\[\[Category:[^\]]*\]\]\s*$", re.IGNORECASE)
 LANGLINK_LINE = re.compile(r"^\[\[[a-z][a-z-]*:[^\]]*\]\]\s*$")
 # 内链 / 模板提取（校验用）
@@ -399,15 +401,25 @@ def extract_templates(text):
     return {m.group(1).strip() for m in TEMPLATE_NAME.finditer(text)}
 
 
+# 参数含这些子串的 To do 标注，其任务本身就是「重翻/校对翻译」，K3 翻译即完成 → 替换而非合并
+TODO_FULFILLED = ("本页翻译结果不准确", "AI翻译")
+
+
 def mark_todo(line):
-    """页首 To do 注入 K3 标注：裸模板直接改写；已有参数的合并保留原说明。"""
+    """页首 To do 注入 K3 标注。
+
+    裸模板 → 替换为 K3 标注；参数是翻译任务类旧标注 → 替换（任务已完成）；
+    其他参数 → 合并保留原说明；已含 K3 标注 → 不动（幂等）。
+    """
     s = line.strip()
-    if s == "{{To do}}":
+    if re.fullmatch(r"\{\{\s*To do\s*\}\}", s):
         return TODO_MARKED
-    m = re.fullmatch(r"\{\{To do\|(.+)\}\}", s)
-    if m and "K3 翻译" not in m.group(1):
-        return "{{To do|" + m.group(1) + "；由 K3 翻译自英文站，待校对润色}}"
-    return line
+    m = re.fullmatch(r"\{\{\s*To do\s*\|(.+)\}\}", s)
+    if not m or "K3 翻译" in m.group(1):
+        return line
+    if any(k in m.group(1) for k in TODO_FULFILLED):
+        return TODO_MARKED
+    return "{{To do|" + m.group(1) + "；由 K3 翻译自英文站，待校对润色}}"
 
 
 def cmd_publish(slug):

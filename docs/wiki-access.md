@@ -108,7 +108,7 @@ login_name = bp.login_name(username)  # → "IchiSanNi@pywikibot"
 
 ## 实测结论与坑
 
-- 搜索"菜月昴"能命中 `角色:菜月·昴` 等页（Fandom 搜索对别名友好），但 `intitle:` 语法无效；`insource:` 也不支持（`site.search('insource:"Init"')` 返回 0 但字符串其实遍地都是）。信任任何搜索语法前先用已知真/已知假查询 sanity check。
+- 搜索"菜月昴"能命中 `角色:菜月·昴` 等页（Fandom 搜索对别名友好），但 `intitle:` 语法无效；`insource:` 也不支持（`site.search('insource:"Init"')` 返回 0 但字符串其实遍地都是）。信任任何搜索语法前先用已知真/已知假查询 sanity check。2026-08-19 再踩：`insource:/\{\{To do\|/` 返回 0 而源码扫描实测 107 页带参数——且当时手里就有已知真样本（13 卷刚写入的 `{{To do|由 K3 翻译…}}`）却没拿它验证查询。**查模板/文本用法的权威方式只有扫源码**（categorymembers/allpages 枚举 + `rvprop=content` ≤50/批），搜索语法返回 0 一律视为「查询不可信」而非「不存在」。
 - Fandom API **不支持** `list=mostlinkedtemplates`；查模板引用量改用 `Page.embeddedin(total=N)` 逐个查。
 - `api.QueryGenerator` 带 `generator=` 时**逐页 yield page dict**（不是 `{"query": {"pages": {...}}}` 包裹结构）；不带 generator 时才是整包响应。解析前先确认用的是哪种形态。
 - `allcategories` 不支持 `acsort` 参数，返回条目也没有 `size` 键；分类规模用 `Category.categoryinfo`。
