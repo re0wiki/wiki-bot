@@ -1,21 +1,16 @@
 """round-trip 校验：月表 ⊇ lua_base——既有条目零丢失零变形；多出部分 = raw 新推。"""
 
-import re
 from collections import Counter
 from pathlib import Path
 
 import pywikibot
-
-ENTRY_RE = re.compile(r"\{\s*src\s*=.*?\n\s*\}", re.DOTALL)
-FIELD_RE = re.compile(r"(\w+)\s*=\s*(['\"])((?:\\.|(?!\2).)*?)\2", re.DOTALL)
+from nekoquote.build import ENTRY_RE, FIELD_RE, field_triple
 
 
 def entries_of(lua):
     out = []
     for bm in ENTRY_RE.finditer(lua):
-        fields = tuple(
-            (f.group(1), f.group(2), f.group(3)) for f in FIELD_RE.finditer(bm.group(0))
-        )
+        fields = tuple(field_triple(f) for f in FIELD_RE.finditer(bm.group(0)))
         out.append(fields)
     return out
 

@@ -13,7 +13,19 @@ JST = timezone(timedelta(hours=9))
 EPOCH = 1288834974657
 
 ENTRY_RE = re.compile(r"\{\s*src\s*=.*?\n\s*\}", re.DOTALL)
-FIELD_RE = re.compile(r"(\w+)\s*=\s*(['\"])((?:\\.|(?!\2).)*?)\2", re.DOTALL)
+# 教科书式无歧义串模式：双/单引号两分支，内容类各自排除引号与反斜杠（CodeQL py/redos）
+FIELD_RE = re.compile(
+    r"(\w+)\s*=\s*(?:\"((?:\\.|[^\"\\])*)\"|'((?:\\.|[^'\\])*)')", re.DOTALL
+)
+
+
+def field_triple(m):
+    """FIELD_RE 匹配 → (name, quote, raw_content)。双引号分支命中 group(2)，单引号 group(3)。"""
+    if m.group(2) is not None:
+        return m.group(1), '"', m.group(2)
+    return m.group(1), "'", m.group(3)
+
+
 STATUS_RE = re.compile(r"(?:twitter|x)\.com/nezumiironyanko/status/(\d+)")
 DATE_ISO = re.compile(r"(\d{4})-(\d{2})-(\d{2})")
 DATE_CN = re.compile(r"(\d{4})\.(\d{1,2})\.(\d{1,2})")
@@ -28,9 +40,7 @@ def parse_table(lua):
     """返回 [(fields=[(name,quote,raw)], block_text)]。"""
     out = []
     for bm in ENTRY_RE.finditer(lua):
-        fields = [
-            (f.group(1), f.group(2), f.group(3)) for f in FIELD_RE.finditer(bm.group(0))
-        ]
+        fields = [field_triple(f) for f in FIELD_RE.finditer(bm.group(0))]
         out.append((fields, bm.group(0)))
     return out
 
