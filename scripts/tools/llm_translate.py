@@ -16,6 +16,7 @@ import json
 import re
 import sys
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 import requests
@@ -159,6 +160,20 @@ def cmd_refresh():
         if (i + 1) % 50 == 0:
             print(f"orphans: {i + 1}/{len(orphans)}")
 
+    # 已翻译页按翻译时间计冷度：翻译即同步了 en 最新人工改动，视为热页，
+    # 避免反复追踪 en 微小更新而挤占从未翻过的远古条目
+    state = load_json(STATE, {"skip": {}})
+    translated_at = {
+        t: e["translated_at"]
+        for t, e in state["skip"].items()
+        if isinstance(e, dict) and e.get("translated_at")
+    }
+    for q in queue:
+        if q["title"] in translated_at:
+            q["cold"] = translated_at[q["title"]]
+    if translated_at:
+        print(f"translated pages re-dated: {len(translated_at)}")
+
     queue.sort(key=lambda q: q["cold"])
     save_json(QUEUE, queue)
     print(
@@ -231,20 +246,20 @@ def resolve_links(body):
     return mapping, sorted(set(unresolved))
 
 
-def translated_revid(zh_title):
-    """从 zh 历史摘要解析上次翻译对应的 en revid（state 丢失时的恢复手段）。"""
+def translated_rev(zh_title):
+    """从 zh 历史摘要解析上次翻译对应的 (en revid, 翻译时间)（state 丢失时的恢复手段）。"""
     r = api(
         ZH_API,
         prop="revisions",
         titles=zh_title,
-        rvprop="ids|comment|user",
+        rvprop="ids|comment|user|timestamp",
         rvlimit="50",
     )
     for rev in r["query"]["pages"][0].get("revisions", []):
         m = SUMMARY_REVID.search(rev.get("comment", ""))
         if m:
-            return int(m.group(1))
-    return None
+            return int(m.group(1)), rev["timestamp"]
+    return None, None
 
 
 def en_revids(titles):
@@ -313,11 +328,13 @@ def cmd_prepare():
                 "en_revid": None,
             }
             continue
-        if translated_revid(title) == en_revid:
+        tr_revid, tr_ts = translated_rev(title)
+        if tr_revid == en_revid:
             state["skip"][title] = {
                 "reason": "已翻译，en 未变化",
                 "en_title": en_title,
                 "en_revid": en_revid,
+                "translated_at": tr_ts,
             }
             continue
 
@@ -440,13 +457,15 @@ def cmd_publish(slug):
     assert site.user() == BOT
     page = pywikibot.Page(site, meta["title"])
     page.text = new_text
-    page.save(summary=f"{SUMMARY_PREFIX}{meta['en_revid']}", bot=True, minor=False)
+    # 翻译不是需抑制通知的批量编辑，不加 bot flag
+    page.save(summary=f"{SUMMARY_PREFIX}{meta['en_revid']}", bot=False, minor=False)
     print(f"saved: {meta['title']} (en:{meta['en_title']} revid {meta['en_revid']})")
     state = load_json(STATE, {"skip": {}})
     state["skip"][meta["title"]] = {
         "reason": "已翻译，en 未变化",
         "en_title": meta["en_title"],
         "en_revid": meta["en_revid"],
+        "translated_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
     save_json(STATE, state)
     for f in WORK.glob(f"{slug}.*"):
