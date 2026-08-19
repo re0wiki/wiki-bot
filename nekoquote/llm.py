@@ -1,9 +1,9 @@
 """语录管线 LLM 客户端（默认 Kimi K3，配置在 secrets.json 的 llm 字段）。
 
 - 429/5xx 指数退避（尊重 Retry-After）；reasoning 模型 max_tokens 恒 32768
-- 注入 ja→zh 专有名词表（logs/nekoquote/name_table_ja2zh.json，数据文件随基线走）：
-  目的不是规定用字，而是让模型识别专有名词、不把角色名当普通名词（パック→「包包」事故）
-- 历史：OpenCode deepseek-v4-flash-free 曾作免费通道，质量不达标已弃用
+- 历史：早期给弱模型（OpenCode deepseek-v4-flash-free，质量不达标已弃用）配的
+  ja→zh 名词表注入已随 K3 切换移除——译名由确定性后处理（nekoquote.normalize
+  套 user-fixes 译名规则）兜底，比 prompt 注入可靠
 """
 
 import json
@@ -13,37 +13,16 @@ from pathlib import Path
 import requests
 
 KEYS_FILE = Path(__file__).parent.parent / "secrets.json"
-NAME_TABLE_FILE = (
-    Path(__file__).parent.parent / "logs" / "nekoquote" / "name_table_ja2zh.json"
-)
 
 
-def _load_name_table():
-    if NAME_TABLE_FILE.exists():
-        return json.loads(NAME_TABLE_FILE.read_text(encoding="utf-8"))
-    return {}
+SYSTEM_PROMPT = """你是 Re:Zero（Re:从零开始的异世界生活）的日译中译者。
+把作者长月达平（推特 @nezumiironyanko）的推文翻译成简体中文。
 
-
-def _build_system_prompt(with_name_table=True):
-    table_block = ""
-    if with_name_table:
-        pairs = "、".join(f"{ja}={zh}" for ja, zh in _load_name_table().items())
-        table_block = f"""
-以下是作品中专有名词的日中对译表。这些词是角色名/作品术语，**绝不是普通名词**；
-原文出现时必须识别为专有名词并使用对应中文名（如 パック 是精灵「帕克」，不是「包包」）：
-{pairs}
-"""
-    return f"""你是 Re:Zero（Re:从零开始的异世界生活）的日译中译者。
-把作者长月达平（推特 @nezumiironyanko）在动画播出时发的实况解说推文翻译成简体中文。
-{table_block}
 要求：
 - 忠实原文，保留作者口语化的吐槽语气，不增不减
 - 推文末尾的 #rezeroneko 标签忽略不译
+- 角色名/术语用通行译名（译名归一另有确定性的后处理规则兜底）
 - 只输出译文本身：不要原文、不要解释、不要注音、不要引号包裹"""
-
-
-SYSTEM_PROMPT = _build_system_prompt()
-SYSTEM_PROMPT_PLAIN = _build_system_prompt(with_name_table=False)
 
 
 def get_config(provider="kimi"):
