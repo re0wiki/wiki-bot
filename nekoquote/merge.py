@@ -9,6 +9,7 @@ import json
 import sys
 from pathlib import Path
 
+from . import DATA
 from .chain import run_chain
 from .parse import extract
 
@@ -26,7 +27,7 @@ def main() -> None:
     found = extract(msgs)
     print(f"长月本人推文 {len(found)}（非 RT）")
 
-    tw_path = Path("logs/nekoquote/tweets.json")
+    tw_path = DATA / "tweets.json"
     tw = json.loads(tw_path.read_text(encoding="utf-8"))
     new = {t: x for t, x in found.items() if t not in tw}
     print(f"库外新推 {len(new)}")
@@ -37,7 +38,7 @@ def main() -> None:
         tw[tid] = {"text": text, "author": "nezumiironyanko", "src": "dc_manual"}
     tw_path.write_text(json.dumps(tw, ensure_ascii=False), encoding="utf-8")
 
-    pend_path = Path("logs/nekoquote/wb_pending.txt")
+    pend_path = DATA / "wb_pending.txt"
     if pend_path.exists():
         pending = set(pend_path.read_text(encoding="utf-8").split())
         still = pending - set(new)

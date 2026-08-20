@@ -4,12 +4,13 @@ import importlib
 import json
 import re
 from collections import Counter
-from pathlib import Path
+
+from . import DATA
 
 fx = importlib.import_module("pywikibot.fixes")
 replacements = fx.__dict__["user_fixes"]["translation"]["replacements"]
 
-data = json.loads(Path("logs/nekoquote/zh.json").read_text(encoding="utf-8"))
+data = json.loads((DATA / "zh.json").read_text(encoding="utf-8"))
 hits = Counter()
 for rec in data.values():
     for k in ("zh", "qzh"):
@@ -23,9 +24,7 @@ for rec in data.values():
                 hits[f"{pattern}→{repl}"] += 1
                 new = new2
         rec[k] = new
-Path("logs/nekoquote/zh.json").write_text(
-    json.dumps(data, ensure_ascii=False), encoding="utf-8"
-)
+(DATA / "zh.json").write_text(json.dumps(data, ensure_ascii=False), encoding="utf-8")
 print("归一命中:", sum(hits.values()))
 for k, c in hits.most_common(20):
     print(f"  {c}× {k[:90]}")

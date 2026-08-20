@@ -7,7 +7,8 @@
 import json
 import re
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
+
+from . import DATA
 
 JST = timezone(timedelta(hours=9))
 EPOCH = 1288834974657
@@ -238,7 +239,7 @@ return p
 
 
 def emit_main(months):
-    Path("logs/nekoquote/main.lua").write_text(MAIN, encoding="utf-8")
+    (DATA / "main.lua").write_text(MAIN, encoding="utf-8")
 
 
 def strip_tco(s):
@@ -249,8 +250,8 @@ def strip_tco(s):
 
 
 EP_MARKS = (
-    json.loads(Path("logs/nekoquote/ep_marks.json").read_text(encoding="utf-8"))
-    if Path("logs/nekoquote/ep_marks.json").exists()
+    json.loads((DATA / "ep_marks.json").read_text(encoding="utf-8"))
+    if (DATA / "ep_marks.json").exists()
     else {}
 )
 
@@ -271,11 +272,11 @@ def raw_tweet_entry(tid, rec, q_text):
 
 
 def merge_raw(buckets, existing_ids):
-    """合流新推（id 级去重）。返回新增条数。中文译文从 logs/nekoquote/zh.json 回填（a/q 字段）。"""
-    tw = json.loads(Path("logs/nekoquote/tweets.json").read_text(encoding="utf-8"))
+    """合流新推（id 级去重）。返回新增条数。中文译文从 zh.json 回填（a/q 字段）。"""
+    tw = json.loads((DATA / "tweets.json").read_text(encoding="utf-8"))
     zh_map = (
-        json.loads(Path("logs/nekoquote/zh.json").read_text(encoding="utf-8"))
-        if Path("logs/nekoquote/zh.json").exists()
+        json.loads((DATA / "zh.json").read_text(encoding="utf-8"))
+        if (DATA / "zh.json").exists()
         else {}
     )
     n = 0
@@ -307,12 +308,12 @@ def merge_raw(buckets, existing_ids):
 
 
 def main():
-    # 数据源：本地基线 logs/nekoquote/lua_base（旧主题表已在切流中删除，wiki 上的唯一副本就是月表）
+    # 数据源：本地基线 lua_base（旧主题表已在切流中删除，wiki 上的唯一副本就是月表）
     buckets = {}
     problems = []
     existing_ids = set()
     total = 0
-    for f in sorted(Path("logs/nekoquote/lua_base").glob("*.lua")):
+    for f in sorted((DATA / "lua_base").glob("*.lua")):
         for fields, block in parse_table(f.read_text(encoding="utf-8")):
             total += 1
             src = fget(fields, "src") or ""
@@ -335,7 +336,7 @@ def main():
     n_raw = merge_raw(buckets, existing_ids)
     print(f"合流新推 {n_raw} 条")
 
-    outdir = Path("logs/nekoquote/lua")
+    outdir = DATA / "lua"
     outdir.mkdir(parents=True, exist_ok=True)
     for month, entries in sorted(buckets.items()):
         # 排序：有时间键的按时刻，无键的（日期精度）排当日最前
@@ -348,7 +349,7 @@ def main():
         )
         (outdir / f"{month}.lua").write_text(emit_table(entries), encoding="utf-8")
     emit_main(buckets.keys())
-    print(f"emit {len(buckets)} 张月表 → {outdir}，主模块 → logs/nekoquote/main.lua")
+    print(f"emit {len(buckets)} 张月表 → {outdir}，主模块 → {DATA / 'main.lua'}")
 
 
 if __name__ == "__main__":
