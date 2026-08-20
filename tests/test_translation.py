@@ -73,3 +73,15 @@ def test_get_repl_func_preserves_traditional_standard():
     pat = re.compile("碧翠[丝絲]")
     assert pat.sub(func, "碧翠絲") == "碧翠絲"
     assert pat.sub(func, "碧翠丝") == "碧翠丝"
+
+
+def test_nekoquote_aliases_normalize():
+    """回归：语录管线引入的译名变体归一（斯巴鲁/路易/碧翠子/记忆回廊/地狱狙击）。"""
+    assert normalize("斯巴鲁") == "昴"
+    assert normalize("菜月·斯巴鲁") == "菜月·昴"
+    assert normalize("路易·阿内芙") == "鲁伊·阿内芙"
+    assert normalize("碧翠子") == "贝亚子"
+    assert normalize("贝阿子") == "贝亚子"
+    assert normalize("貝亞子") == "贝亚子"
+    assert normalize("记忆回廊") == "记忆的回廊"
+    assert normalize("地狱狙击") == "地狱·狙击"
