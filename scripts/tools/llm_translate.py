@@ -18,6 +18,7 @@ import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.parse import quote
 
 import requests
 
@@ -486,6 +487,11 @@ def cmd_publish(slug):
     # 翻译不是需抑制通知的批量编辑，不加 bot flag
     page.save(summary=summary, bot=False, minor=False)
     print(f"saved: {meta['title']} (en:{meta['en_title']} revid {meta['en_revid']})")
+    url = f"https://rezero.fandom.com/zh/wiki/{quote(meta['title'], safe='/:')}"
+    print(
+        f"NOTIFY: [[{meta['title']}]] {dur}无人类编辑，"
+        f"已由 Bot 根据 [[en:{meta['en_title']}]] 自动更新 {url}"
+    )
     state = load_json(STATE, {"skip": {}})
     state["skip"][meta["title"]] = {
         "reason": "已翻译，en 未变化",

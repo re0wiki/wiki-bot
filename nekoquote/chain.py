@@ -8,9 +8,10 @@ import os
 import shutil
 import subprocess
 import sys
-from pathlib import Path
 
-ROOT = Path(__file__).resolve().parent.parent
+from . import DATA
+
+ROOT = DATA.parent.parent
 STAGES = ("translate", "normalize", "build", "verify_rt", "deploy")
 
 
@@ -31,6 +32,6 @@ def run_chain(stages: tuple[str, ...] = STAGES) -> None:
         if r.returncode != 0:
             print(r.stderr[-800:])
             raise SystemExit(f"nekoquote.{s} 失败")
-    live = ROOT / "logs/nekoquote/lua_live"
+    live = DATA / "lua_live"
     shutil.rmtree(live, ignore_errors=True)
-    shutil.copytree(ROOT / "logs/nekoquote/lua", live)
+    shutil.copytree(DATA / "lua", live)

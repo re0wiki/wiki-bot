@@ -1,4 +1,4 @@
-"""生成实况标记映射 logs/nekoquote/ep_marks.json（tid → 标记）。
+"""生成实况标记映射 ep_marks.json（tid → 标记）。
 规则（用户裁决）：以长月自己的 #rezeroneko 为准，不增不减。
 - 首播窗口：en 日历播出日 12:00 JST +42h，带 tag → S3第N集/S4第N集
 - 再放送窗口：2024-11-27/12-04→51（再编集前后编），12-11→52、12-18→53、12-25→54、
@@ -9,12 +9,13 @@
 
 import json
 from datetime import datetime, timedelta, timezone
-from pathlib import Path
+
+from . import DATA
 
 JST = timezone(timedelta(hours=9))
 EPOCH = 1288834974657
 
-cal_path = Path("logs/nekoquote/ep_calendar.json")
+cal_path = DATA / "ep_calendar.json"
 if not cal_path.exists():
     # 新 clone 基线不含日历；既有条目标记已在 src 里，新集标记待 runbook 步骤重建日历
     print("无播出日历，跳过（不改动现有 marks）")
@@ -50,7 +51,7 @@ def snow(tid):
     return datetime.fromtimestamp(((int(tid) >> 22) + EPOCH) / 1000, tz=JST)
 
 
-tw = json.loads(Path("logs/nekoquote/tweets.json").read_text(encoding="utf-8"))
+tw = json.loads((DATA / "tweets.json").read_text(encoding="utf-8"))
 marks = {}
 for tid, rec in tw.items():
     if rec.get("author") != "nezumiironyanko":
@@ -71,7 +72,7 @@ for tid, rec in tw.items():
     if ep:
         marks[tid] = f"S{3 if ep <= 66 else 4}第{ep}集"
 
-Path("logs/nekoquote/ep_marks.json").write_text(
+(DATA / "ep_marks.json").write_text(
     json.dumps(marks, ensure_ascii=False), encoding="utf-8"
 )
 from collections import Counter

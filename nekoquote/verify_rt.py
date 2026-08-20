@@ -1,10 +1,11 @@
 """round-trip 校验：月表 ⊇ lua_base——既有条目零丢失零变形；多出部分 = raw 新推。"""
 
 from collections import Counter
-from pathlib import Path
 
 import pywikibot
-from nekoquote.build import ENTRY_RE, FIELD_RE, field_triple
+
+from . import DATA
+from .build import ENTRY_RE, FIELD_RE, field_triple
 
 
 def entries_of(lua):
@@ -19,11 +20,11 @@ site = pywikibot.Site("zh", "re0")
 site.login()
 
 src_counter = Counter()
-for f in Path("logs/nekoquote/lua_base").glob("*.lua"):
+for f in (DATA / "lua_base").glob("*.lua"):
     src_counter.update(entries_of(f.read_text(encoding="utf-8")))
 
 dst_counter = Counter()
-for f in Path("logs/nekoquote/lua").glob("*.lua"):
+for f in (DATA / "lua").glob("*.lua"):
     dst_counter.update(entries_of(f.read_text(encoding="utf-8")))
 
 print(f"基线 {sum(src_counter.values())}，月表 {sum(dst_counter.values())}")

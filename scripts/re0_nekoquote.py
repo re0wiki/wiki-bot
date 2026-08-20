@@ -1,7 +1,7 @@
 """NekoQuote 语录增量同步：中文 wiki 服务器 FBK 转发频道 → 月表全链更新。
 
 数据流：Discord API 拉频道新消息（bot token，水位线增量）→ nekoquote.parse
-解析（FBK 组件布局/RT 剥除/机翻段切除）→ 新推入 logs/nekoquote/tweets.json
+解析（FBK 组件布局/RT 剥除/机翻段切除）→ 新推入 tweets.json
 （src=dc_zh_fbk）→ nekoquote.chain 全链（翻译→归一→构建→校验→部署）→
 推进水位线。
 
@@ -23,12 +23,12 @@ import pywikibot as pwb
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from nekoquote import bootstrap
+from nekoquote import DATA, bootstrap
 from nekoquote.chain import run_chain
 from nekoquote.parse import extract
 
 CHANNEL_ID = "1293525355663196243"  # 中文服务器 FBK 转发频道
-STATE = ROOT / "logs/nekoquote/sync_state.json"
+STATE = DATA / "sync_state.json"
 
 
 def api(path: str, token: str) -> list:
@@ -83,7 +83,7 @@ def main() -> None:
     pwb.info(f"新消息 {len(msgs)} 条")
 
     found = extract(msgs)
-    tw_path = ROOT / "logs/nekoquote/tweets.json"
+    tw_path = DATA / "tweets.json"
     tw = json.loads(tw_path.read_text(encoding="utf-8"))
     new = {t: x for t, x in found.items() if t not in tw}
     if not new:

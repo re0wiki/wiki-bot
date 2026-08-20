@@ -7,12 +7,12 @@ raw 推文条目——tweets.json 从空起步，既有条目的推 id 都在 sr
 """
 
 from datetime import UTC, datetime
-from pathlib import Path
 
 import pywikibot
 
-LOGS = Path("logs")
-BASE = LOGS / "p8/lua_base"
+from . import DATA
+
+BASE = DATA / "lua_base"
 
 
 def needed() -> bool:
@@ -22,7 +22,7 @@ def needed() -> bool:
 def run() -> None:
     site = pywikibot.Site("zh", "re0")  # 只读，无需登录
     BASE.mkdir(parents=True, exist_ok=True)
-    live = LOGS / "p8/lua_live"
+    live = DATA / "lua_live"
     live.mkdir(parents=True, exist_ok=True)
     now = datetime.now(UTC)
     n = 0
@@ -40,7 +40,7 @@ def run() -> None:
                 (live / f"{name}.lua").write_text(text, encoding="utf-8")
                 n += 1
     for name in ("tweets.json", "zh.json", "ep_marks.json"):
-        f = LOGS / "nekoquote" / name
+        f = DATA / name
         if not f.exists():
             f.write_text("{}", encoding="utf-8")
     print(f"bootstrap：从 wiki 重建 {n} 张月表基线 ✓")
