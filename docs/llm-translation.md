@@ -60,7 +60,7 @@ prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 
 
 - 输出只有**正文**：页首页尾由 publish 拼装，en 侧的分类/语言链接/页首模板已剥离，不要补回。
 - 内链用 meta 的 `link_map` 写 `[[zh 最终目标|显示文字]]`；文件链接目标原样、说明文字翻译；publish 会校验链接白名单与模板集合。
-- **zh 现文已含结构化内容时（meta `zh_flags` 有 infobox/gallery）不整页替换**：zh 侧结构（已填好的信息框、图库）往往优于 en 转换结果，只人工局部修补 prose 部分（普通编辑，bot=False minor=True），然后 `skip` 记入 en 跟踪。
+- **zh 现文已含结构化内容时（meta `zh_flags` 有 infobox/gallery）不整页替换**：zh 侧结构（已填好的信息框、图库）往往优于 en 转换结果。但「已是中文」不等于「无需处理」——须**对照 en 找增量**：en 多出的实质信息（infobox 空缺字段、封面/发售日期/出处说明、缺失段落）与 zh 的英文残留都要补上（普通编辑，bot=False minor=False，摘要注明 en revid），然后 `skip` 记入 en 跟踪；仅当 en 无增量且无英文残留时才不编辑直接 skip。增量同步做了实际编辑的同样发 Discord 通知。（2026-08-20 教训：佩特拉页 zh 已是中文但 en 多出发售日期/封面/收录出处，被「只查英文残留」的旧规则误判 skip。）
 - 译名表查无的专名追加到 `logs/llm_translate/nouns.jsonl`（page/term/origin/note 一行一条）。
 
 ## 状态与产出
@@ -72,7 +72,7 @@ prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 
 
 Hermes cron 每日跑一页（agent 会话内执行 prepare → 翻译 → publish）。提速=调 cron 频率或每次页数。
 
-publish 成功时输出 `NOTIFY: [[zh 条目]] <时长>无人类编辑，已由 Bot 根据 [[en:条目]] 自动更新 <url>` 固定格式行，由 cron agent 原样转发到 Discord `#wiki编辑事务【qq互联】`（与自动巡查同频道，方式同 watchdog：主 profile `hermes send -t discord:<频道ID>`）；skip 与局部修补不推送。
+publish 成功时输出 `NOTIFY: [[zh 条目]] <时长>无人类编辑，已由 Bot 根据 [[en:条目]] 自动更新 <url>` 固定格式行，由 cron agent 原样转发到 Discord `#wiki编辑事务【qq互联】`（与自动巡查同频道，方式同 watchdog：主 profile `hermes send -t discord:<频道ID>`）；增量同步路径做了实际编辑的也推送（措辞「已根据 en 同步补充信息」）；无增量的 skip 不推送。
 
 ## 当前限制
 
