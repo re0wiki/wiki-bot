@@ -1,6 +1,6 @@
 # pywikibot 自带脚本速查
 
-原则：**能直接用 `pwb/pywikibot/scripts/` 里的现成脚本就别手写**。手写只用于现成脚本确实覆盖不了的场景（如 `scripts/re0_*.py` 那 4 个）。
+原则：**能直接用 `pwb/pywikibot/scripts/` 里的现成脚本就别手写**。手写只用于现成脚本确实覆盖不了的场景（如 `scripts/re0_*.py` 那几个）。
 
 运行方式（仓库根目录）：
 
@@ -136,5 +136,5 @@ uv run python pwb/pwb.py replace -automaticsummary \
 ## 注意
 
 - replace 系脚本（replace/cosmetic_changes/noreferences 等走 textlib 的）都尊重 fork 加的 `<div class="as-is">` 保护标签，不想被 bot 动的内容包进这个 div。
-- `run_job` 子进程输出乱码是 `encoding="mbcs"` 的锅，排查先看 AGENTS.md「坑」。
+- `run_job` 子进程输出乱码的排查看 AGENTS.md「坑」节（PYTHONIOENCODING 条目）。
 - 写入红线不变：测试只用 `User:IchiSanNi/沙盒`，批量写入需用户明确指示，绝不写 zh 以外语言站。
