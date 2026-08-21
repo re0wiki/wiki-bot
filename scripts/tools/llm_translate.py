@@ -3,10 +3,10 @@
 设计文档：docs/llm-translation.md。翻译本身由 agent 完成，不在本脚本内。
 
 用法（仓库根目录）：
-    PYTHONPATH= .venv/Scripts/python.exe scripts/tools/llm_translate.py refresh   # 重建选页队列（约 3 分钟，低频）
-    PYTHONPATH= .venv/Scripts/python.exe scripts/tools/llm_translate.py prepare   # 取队首备料
-    PYTHONPATH= .venv/Scripts/python.exe scripts/tools/llm_translate.py publish <slug>  # 校验并写入
-    PYTHONPATH= .venv/Scripts/python.exe scripts/tools/llm_translate.py skip <slug> [理由]  # agent 判断不宜翻译
+    uv run python scripts/tools/llm_translate.py refresh   # 重建选页队列（约 3 分钟，低频）
+    uv run python scripts/tools/llm_translate.py prepare   # 取队首备料
+    uv run python scripts/tools/llm_translate.py publish <slug>  # 校验并写入
+    uv run python scripts/tools/llm_translate.py skip <slug> [理由]  # agent 判断不宜翻译
 
 运行期数据全部在 logs/llm_translate/（gitignored）。
 """

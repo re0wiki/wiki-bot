@@ -5,7 +5,7 @@
 运行方式（仓库根目录）：
 
 ```bash
-PYTHONPATH= .venv/Scripts/python.exe pwb/pwb.py <script> [生成器] [脚本选项] [-simulate]
+uv run python pwb/pwb.py <script> [生成器] [脚本选项] [-simulate]
 ```
 
 - 干跑一律先加 `-simulate`；`-always` 跳过逐页确认（`run_job` 会自动补）。
@@ -76,7 +76,7 @@ PYTHONPATH= .venv/Scripts/python.exe pwb/pwb.py <script> [生成器] [脚本选�
 user-fixes.py 收录之前的一次性替换，历史上反复使用的完整形态：
 
 ```bash
-PYTHONPATH= .venv/Scripts/python.exe pwb/pwb.py replace -automaticsummary \
+uv run python pwb/pwb.py replace -automaticsummary \
   -exceptinside:'\[\[:?(zh|de|en|es|fr|it|nl|pl|pt-br|ru|uk|wp|wikipedia)\s?:[^\]]*\]\]' \
   -start::! -start:project:! -start:template:! -start:category:! -start:module:! -start:mediawiki:! \
   '旧文本' '新文本' -always

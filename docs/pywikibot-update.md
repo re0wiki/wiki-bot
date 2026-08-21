@@ -34,10 +34,10 @@ grep 'pageprops=True' scripts/noreferences.py
 
 ```bash
 uv sync                                                          # editable 重装
-PYTHONPATH= .venv/Scripts/python.exe scripts/tools/verify_wiki_access.py   # 期望 ALL CHECKS PASSED
+uv run python scripts/tools/verify_wiki_access.py   # 期望 ALL CHECKS PASSED
 ```
 
-冒烟测试可直接在仓库根跑 `python -c "import pywikibot"`；设 `PYWIKIBOT_NO_USER_CONFIG=1` 可跳过配置加载。
+冒烟测试可直接在仓库根跑 `uv run python -c "import pywikibot"`；设 `PYWIKIBOT_NO_USER_CONFIG=1` 可跳过配置加载。
 
 ## 收尾
 
