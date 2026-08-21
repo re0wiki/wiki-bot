@@ -6,8 +6,8 @@
 Sean Chiplock）保持原样。
 
 用法（仓库根目录）：
-    PYTHONPATH= .venv/Scripts/python.exe scripts/oneoff/fix_wikipedia_zh_links.py        # 干跑
-    PYTHONPATH= .venv/Scripts/python.exe scripts/oneoff/fix_wikipedia_zh_links.py --apply
+    uv run python scripts/oneoff/fix_wikipedia_zh_links.py        # 干跑
+    uv run python scripts/oneoff/fix_wikipedia_zh_links.py --apply
 """
 
 import argparse
