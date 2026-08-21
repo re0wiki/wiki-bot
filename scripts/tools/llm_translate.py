@@ -200,12 +200,13 @@ def cmd_refresh():
         if (i + 1) % 50 == 0:
             print(f"orphans: {i + 1}/{len(orphans)}")
 
-    # 已打标页按标记时间计冷度：标记意味着「截至该时间 zh 与 en 已确认同步」，视为热页，
-    # 避免反复追踪 en 微小更新而挤占从未翻过的远古条目
+    # 已打标页的标记时间参与冷度取 max：打标（编辑或 skip）意味着「截至该时间
+    # zh 与 en 已确认同步」，视为热页排队尾，避免反复追踪 en 微小更新而挤占
+    # 从未翻过的远古条目
     markers = scan_markers([q["title"] for q in queue])
     for q in queue:
         if q["title"] in markers:
-            q["cold"] = markers[q["title"]][2]
+            q["cold"] = max(q["cold"], markers[q["title"]][2])
     if markers:
         print(f"marked pages re-dated: {len(markers)}")
 
@@ -375,8 +376,9 @@ def cmd_prepare():
             print(f"auto-skip: {title}（en 页不存在）")
             continue
         if marker and marker.group(1) != "no-en" and marker.group(2) == str(en_revid):
-            if item["cold"] != marker.group(3):  # 懒修复：已同步页冷度 = 标记时间
-                item["cold"] = marker.group(3)
+            new_cold = max(item["cold"], marker.group(3))  # 懒修复：标记时间参与取 max
+            if item["cold"] != new_cold:
+                item["cold"] = new_cold
                 queue_dirty = True
             continue  # 已同步且 en 未变化；revid 变化即自然落入处理（追更复活）
         body = split_en_body(en_text)
