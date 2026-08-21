@@ -8,6 +8,7 @@
     uv run python scripts/tools/llm_translate.py summary <slug>  # 打印编辑应用的标准摘要
     uv run python scripts/tools/llm_translate.py done <slug> [理由]  # 核验 wiki 编辑、落盘
     uv run python scripts/tools/llm_translate.py skip <slug> [理由]  # 无需编辑/不宜处理
+    uv run python scripts/tools/llm_translate.py backlog   # 机翻待校对积压检查（>=5 退出码 3）
 
 agent 一律直接编辑 zh 页（保结构由 agent 负责），本脚本对 wiki 只读：
 done 以 prepare 时的 zh 现文为基线做事后机械核验，通过才记状态。
@@ -38,6 +39,8 @@ BOT = "IchiSanNi"
 CATEGORY = "Category:待修撰"
 # 管线处理过的条目必挂的分类（人类校对后手动摘除；再次处理会重新挂上）
 PROOFREAD_CAT = "Category:机翻待校对"
+# 机翻待校对积压上限：达到即暂停处理新页（等人类校对摘分类），由 backlog 子命令判定
+BACKLOG_LIMIT = 5
 TODO_MARKED = "{{To do|由 K3 翻译自英文站，待校对润色}}"
 SUMMARY_PREFIX = "K3: revid "
 
@@ -577,6 +580,30 @@ def cmd_skip(slug, reason):
     print(f"skipped: {meta['title']}（{reason}，en revid {meta['en_revid']}）")
 
 
+def cmd_backlog():
+    """机翻待校对积压检查：打印条目数；积压（>= BACKLOG_LIMIT）时退出码 3。
+
+    cron wrapper 据此在 script 段输出 {"wakeAgent": false} 静默跳过本 tick
+    （等人类校对摘除分类后自动恢复）。
+    """
+    n, cont = 0, {}
+    while True:
+        r = api(
+            ZH_API,
+            list="categorymembers",
+            cmtitle=PROOFREAD_CAT,
+            cmlimit="500",
+            **cont,
+        )
+        n += len(r["query"]["categorymembers"])
+        if "continue" not in r:
+            break
+        cont = r["continue"]
+    print(f"backlog: {n}/{BACKLOG_LIMIT}")
+    if n >= BACKLOG_LIMIT:
+        sys.exit(3)
+
+
 def cmd_status():
     queue = load_json(QUEUE, [])
     state = load_json(STATE, {"skip": {}})
@@ -590,7 +617,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "cmd",
-        choices=["refresh", "prepare", "summary", "done", "skip", "status"],
+        choices=["refresh", "prepare", "summary", "done", "skip", "backlog", "status"],
     )
     ap.add_argument("slug", nargs="?")
     ap.add_argument("reason", nargs="?")
@@ -599,6 +626,8 @@ if __name__ == "__main__":
         cmd_refresh()
     elif args.cmd == "prepare":
         cmd_prepare()
+    elif args.cmd == "backlog":
+        cmd_backlog()
     elif args.cmd == "status":
         cmd_status()
     else:
