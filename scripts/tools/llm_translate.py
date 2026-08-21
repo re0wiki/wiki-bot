@@ -36,6 +36,8 @@ ZH_API = "https://rezero.fandom.com/zh/api.php"
 EN_API = "https://rezero.fandom.com/api.php"
 BOT = "IchiSanNi"
 CATEGORY = "Category:待修撰"
+# 管线处理过的条目必挂的分类（人类校对后手动摘除；再次处理会重新挂上）
+PROOFREAD_CAT = "Category:机翻待校对"
 TODO_MARKED = "{{To do|由 K3 翻译自英文站，待校对润色}}"
 SUMMARY_PREFIX = "K3: revid "
 
@@ -465,7 +467,8 @@ def cmd_done(slug, reason):
     - 最新编辑是本账号且摘要为匹配 en_revid 的标准 `K3: revid` 行；
     - 页首模板块除 To do 标注规则外逐行不变，页尾语言链接块不变；
     - 正文内链目标（按 页面/文件/分类/语言链接 分类）与模板调用
-      不超出 link_map ∪ 未解析名 ∪ en 源 ∪ zh 现文的白名单。
+      不超出 link_map ∪ 未解析名 ∪ en 源 ∪ zh 现文的白名单；
+    - 正文末尾挂了 [[Category:机翻待校对]]（人类校对后手动摘除）。
     全部通过才记状态（processed_at 取编辑时间）并输出 NOTIFY 行。
     """
     meta = load_json(WORK / f"{slug}.meta.json", None)
@@ -513,7 +516,7 @@ def cmd_done(slug, reason):
 
     old_links, en_links = link_targets(old_body), link_targets(en_body)
     allowed = {
-        "cat": {t for t in old_links if classify(t) == "cat"},
+        "cat": {t for t in old_links if classify(t) == "cat"} | {PROOFREAD_CAT},
         "file": {t for t in old_links | en_links if classify(t) == "file"},
         "lang": {t for t in old_links if classify(t) == "lang"},
         "page": (
@@ -522,9 +525,12 @@ def cmd_done(slug, reason):
             | set(meta["unresolved_links"])
         ),
     }
-    bad = sorted(t for t in link_targets(new_body) if t not in allowed[classify(t)])
+    new_links = link_targets(new_body)
+    bad = sorted(t for t in new_links if t not in allowed[classify(t)])
     if bad:
         sys.exit("内链校验失败: " + ", ".join(bad))
+    if PROOFREAD_CAT not in {t for t in new_links if classify(t) == "cat"}:
+        sys.exit(f"缺 [[{PROOFREAD_CAT}]]（管线处理过的条目必挂，加在正文末尾）")
     tpl_ok = extract_templates(en_body) | extract_templates(old_body)
     tpl_bad = extract_templates(new_body) - tpl_ok
     if tpl_bad:
