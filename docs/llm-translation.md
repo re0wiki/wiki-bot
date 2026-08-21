@@ -70,7 +70,7 @@ prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 
 
 ## 运行形态
 
-Hermes cron 每日跑一页（agent 会话内执行 prepare → 翻译 → publish）。提速=调 cron 频率或每次页数。
+Hermes cron 每日跑一页，watchdog 同款「script + agent」两段式：cron 的 script 段（profile `scripts/llm_translate_daily.py` wrapper → 仓库脚本）每 tick 先跑机械准备——**queue.json 超 7 天未更新自动 refresh**（约 3 分钟纯 API，零 token；失败沿用旧队列下 tick 重试）+ prepare 备料，stdout 注入 agent prompt；agent 只做翻译与发布。提速=调 cron 频率或每次页数。
 
 publish 成功时输出 `NOTIFY: [[zh 条目]] <时长>无人类编辑，已由 Bot 根据 [[en:条目]] 自动更新 <url>` 固定格式行，由 cron agent 原样转发到 Discord `#wiki编辑事务【qq互联】`（与自动巡查同频道，方式同 watchdog：主 profile `hermes send -t discord:<频道ID>`）；增量同步路径做了实际编辑的也推送（措辞「已根据 en 同步补充信息」）；无增量的 skip 不推送。
 
