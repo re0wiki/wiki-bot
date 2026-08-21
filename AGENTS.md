@@ -15,7 +15,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 
 - **Python 3.14**（`.python-version`，`pyproject.toml` 要求 `>=3.14`），uv 管理，有 `uv.lock`。
 - 安装：`uv sync`（`default-groups = "all"`）。pywikibot 的全部可选依赖以 extras 形式声明在 dev 组（`pywikibot[html,http,...]`），覆盖其 requirements.txt，随 submodule 更新自动跟随。
-- 运行脚本：`PYTHONPATH= .venv/Scripts/python.exe <script>`（Windows 上 Hermes 会注入指向自身 venv 的 PYTHONPATH，必须清空，否则 import 错包）。
+- 运行脚本：`PYTHONPATH= .venv/Scripts/python.exe <script>`。解释器必须显式给 `.venv` 路径——Hermes 终端 PATH 上的裸 `python` 解析到 Hermes 自身 venv（3.11、无项目依赖）。`PYTHONPATH= ` 前缀是防御性保留：Hermes 曾注入指向自身 venv 的 PYTHONPATH 并泄进 `uv venv` 新建环境导致 import 错包，2026-08-21 在 Hermes v0.20.4 实测已不再注入（终端环境 PYTHONPATH 为空、新 venv sys.path 干净），但前缀零成本，保留以防回归。
 - **pywikibot 是 git submodule**（fork：`github.com/re0wiki/pywikibot`，upstream 是 wikimedia/pywikibot）。克隆要 `--recurse-submodules`（否则 `uv sync` 会因路径缺失失败）。更新 submodule 后提交信息写 `chore: update pywikibot`。
 - pywikibot 通过 `[tool.uv.sources]` 以 **editable 方式从 submodule 路径装入 venv**（`{ path = "pwb", editable = true }`），submodule gitlink 是唯一版本锁，无需再同步 uv.lock 里的 commit。`pyproject.toml` 里的 `[tool.ty.environment] extra-paths = ["./pwb"]` 是必须的：ty 无法静态解析 PEP 660 editable finder，删掉会导致全项目 unresolved-import。
 - Lint：`ruff check` / `ruff format`（PATH 里没有 ruff 时用 `uv run ruff ...`，ty 同理；`pyproject.toml` 里 extend-exclude 了 pwb 子模块、logs/ 与 *.md（保留手工对齐的代码块注释），不要给它们 lint；`scripts/oneoff/` 归档脚本纳入正常检查，归档前需先过 lint/format/ty）。类型检查用 `ty`（`src.exclude` 排除 pwb 与 logs/，正常应为 0 诊断）。
