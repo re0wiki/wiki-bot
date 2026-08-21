@@ -5,13 +5,12 @@
 用法（仓库根目录）：
     uv run python scripts/tools/llm_translate.py refresh   # 重建选页队列（约 3 分钟，低频）
     uv run python scripts/tools/llm_translate.py prepare   # 取队首备料
-    uv run python scripts/tools/llm_translate.py summary <slug>  # 打印原地编辑应用的标准摘要
-    uv run python scripts/tools/llm_translate.py done <slug> [理由]  # 统一收尾：校验、落盘
+    uv run python scripts/tools/llm_translate.py summary <slug>  # 打印编辑应用的标准摘要
+    uv run python scripts/tools/llm_translate.py done <slug> [理由]  # 核验 wiki 编辑、落盘
     uv run python scripts/tools/llm_translate.py skip <slug> [理由]  # 无需编辑/不宜处理
 
-编辑技术二选一（状态语义相同，done 统一收尾）：默认产出 <slug>.body.zh.txt 由 done
-校验后写入；zh 已有结构化内容时原地编辑 zh 页（摘要用 summary 的输出），done 校验
-wiki 侧后落盘。
+agent 一律直接编辑 zh 页（保结构由 agent 负责），本脚本对 wiki 只读：
+done 以 prepare 时的 zh 现文为基线做事后机械核验，通过才记状态。
 
 运行期数据全部在 logs/llm_translate/（gitignored）。
 """
@@ -454,107 +453,29 @@ def mark_todo(line):
 
 
 def cmd_done(slug, reason):
-    """一页处理完成，统一收尾。
+    """一页处理完成：机械核验 agent 的 wiki 编辑后落盘。
 
-    编辑技术二选一，状态语义相同（相同摘要前缀、相同 state 形态、均输出 NOTIFY 行）：
-    - 有 <slug>.body.zh.txt（agent 产出整页译文）：结构校验 + 人编冲突检查后拼装写入 wiki；
-    - 无（agent 已原地编辑 zh 页）：机械校验 wiki 最新编辑为匹配标准摘要的本账号编辑。
+    核验（均以 prepare 时的 zh 现文为基线）：
+    - 最新编辑是本账号且摘要为匹配 en_revid 的标准 `K3: revid` 行；
+    - 页首模板块除 To do 标注规则外逐行不变，页尾语言链接块不变；
+    - 正文内链目标（按 页面/文件/分类/语言链接 分类）与模板调用
+      不超出 link_map ∪ 未解析名 ∪ en 源 ∪ zh 现文的白名单。
+    全部通过才记状态（translated_at 取编辑时间）并输出 NOTIFY 行。
     """
     meta = load_json(WORK / f"{slug}.meta.json", None)
     if meta is None:
         sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
-    out_path = WORK / f"{slug}.body.zh.txt"
-    if out_path.exists():
-        _done_full(slug, meta, out_path)
-    else:
-        _done_in_place(slug, meta, reason)
-
-
-def _done_full(slug, meta, out_path):
-    out = out_path.read_text(encoding="utf-8").strip() + "\n"
-    en_body = (WORK / f"{slug}.body.en.txt").read_text(encoding="utf-8")
-
-    # 护栏 1：结构不变量
-    allowed_links = set(meta["link_map"].values()) | set(meta["unresolved_links"])
-    allowed_links |= {
-        m.group(1).strip()
-        for m in WIKILINK.finditer(en_body)
-        if re.match(r"(?i)(File|Image):", m.group(1))
-    }
-    bad_links = []
-    for m in WIKILINK.finditer(out):
-        t = m.group(1).strip()
-        if re.match(r"(?i)Category:", t):
-            bad_links.append(f"{t}（分类不应出现在正文）")
-        elif re.match(r"(?i)(File|Image):", t):
-            if t not in allowed_links:
-                bad_links.append(t)
-        elif re.match(r"[a-z][a-z-]*:", t):
-            bad_links.append(f"{t}（语言链接不应出现在正文）")
-        elif t not in allowed_links:
-            bad_links.append(t)
-    if bad_links:
-        sys.exit("内链校验失败: " + ", ".join(bad_links))
-    tpl_en, tpl_out = extract_templates(en_body), extract_templates(out)
-    if tpl_en != tpl_out:
-        sys.exit(f"模板校验失败: en={sorted(tpl_en)} out={sorted(tpl_out)}")
-
-    # 护栏 2：人编冲突（prepare 之后 zh 页被任何人动过）
-    _, zh_revid, _ = get_page(ZH_API, meta["title"])
-    if zh_revid != meta["zh_revid"]:
-        sys.exit(
-            f"zh 页在 prepare 后有新编辑（{meta['zh_revid']} -> {zh_revid}），中止"
-        )
-
-    # 拼装：页首（To do 注入 K3 标注）+ 译文 + 页尾语言链接
-    head = [mark_todo(line) for line in meta["head"]]
-    parts = ["\n".join(head), "", out]
-    if meta["tail"]:
-        parts += ["\n".join(meta["tail"])]
-    new_text = "\n".join(parts).rstrip() + "\n"
-
-    import pywikibot
-
-    site = pywikibot.Site("zh", "re0")
-    site.login()
-    assert site.user() == BOT
-    page = pywikibot.Page(site, meta["title"])
-    page.text = new_text
-    # 管线编辑不是需抑制通知的批量编辑，不加 bot flag
-    page.save(summary=std_summary(meta), bot=False, minor=False)
-    print(f"saved: {meta['title']} (en:{meta['en_title']} revid {meta['en_revid']})")
-    state = load_json(STATE, {"skip": {}})
-    state["skip"][meta["title"]] = {
-        "reason": "已处理，en 未变化",
-        "en_title": meta["en_title"],
-        "en_revid": meta["en_revid"],
-        "translated_at": datetime.now(UTC).isoformat(timespec="seconds"),
-    }
-    save_json(STATE, state)
-    clean_work(slug)
-    print(notify_line(meta))
-
-
-def cmd_summary(slug):
-    """打印原地编辑应使用的标准摘要（可被 processed_rev 识别）。"""
-    meta = load_json(WORK / f"{slug}.meta.json", None)
-    if meta is None:
-        sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
-    print(std_summary(meta))
-
-
-def _done_in_place(slug, meta, reason):
-    """原地编辑分支：机械校验 wiki 最新编辑为匹配标准摘要的本账号编辑后落盘。"""
     r = api(
         ZH_API,
         prop="revisions",
         titles=meta["title"],
-        rvprop="ids|comment|user|timestamp",
+        rvprop="ids|comment|user|timestamp|content",
+        rvslots="main",
         rvlimit="1",
     )
     rev = r["query"]["pages"][0]["revisions"][0]
     if rev["revid"] == meta["zh_revid"]:
-        sys.exit("zh 页自 prepare 以来无新编辑——先完成原地编辑再 done")
+        sys.exit("zh 页自 prepare 以来无新编辑——先完成编辑再 done")
     m = SUMMARY_REVID.search(rev.get("comment", ""))
     if not (rev.get("user") == BOT and m and int(m.group(1)) == meta["en_revid"]):
         sys.exit(
@@ -562,6 +483,47 @@ def _done_in_place(slug, meta, reason):
             f"（实际：{rev.get('user')} / {rev.get('comment')!r}），"
             "请用 summary 子命令生成的标准摘要重新编辑"
         )
+
+    zh_old = (WORK / f"{slug}.zh.txt").read_text(encoding="utf-8")
+    en_body = (WORK / f"{slug}.body.en.txt").read_text(encoding="utf-8")
+    old_head, old_body, old_tail = split_zh_frame(zh_old)
+    new_head, new_body, new_tail = split_zh_frame(rev["slots"]["main"]["content"])
+    if new_head != [mark_todo(line) for line in old_head]:
+        sys.exit("页首模板块被改动（唯一允许的改动是按规则给 To do 加标注）")
+    if new_tail != old_tail:
+        sys.exit("页尾语言链接块被改动")
+
+    def link_targets(text):
+        return {m.group(1).strip() for m in WIKILINK.finditer(text)}
+
+    def classify(t):
+        if re.match(r"(?i)Category:", t):
+            return "cat"
+        if re.match(r"(?i)(File|Image):", t):
+            return "file"
+        if re.match(r"[a-z][a-z-]*:", t):
+            return "lang"
+        return "page"
+
+    old_links, en_links = link_targets(old_body), link_targets(en_body)
+    allowed = {
+        "cat": {t for t in old_links if classify(t) == "cat"},
+        "file": {t for t in old_links | en_links if classify(t) == "file"},
+        "lang": {t for t in old_links if classify(t) == "lang"},
+        "page": (
+            {t for t in old_links if classify(t) == "page"}
+            | set(meta["link_map"].values())
+            | set(meta["unresolved_links"])
+        ),
+    }
+    bad = sorted(t for t in link_targets(new_body) if t not in allowed[classify(t)])
+    if bad:
+        sys.exit("内链校验失败: " + ", ".join(bad))
+    tpl_ok = extract_templates(en_body) | extract_templates(old_body)
+    tpl_bad = extract_templates(new_body) - tpl_ok
+    if tpl_bad:
+        sys.exit(f"模板校验失败: 新增 {sorted(tpl_bad)}")
+
     state = load_json(STATE, {"skip": {}})
     state["skip"][meta["title"]] = {
         "reason": reason,
@@ -573,6 +535,14 @@ def _done_in_place(slug, meta, reason):
     clean_work(slug)
     print(f"done: {meta['title']}（{reason}，en revid {meta['en_revid']}）")
     print(notify_line(meta))
+
+
+def cmd_summary(slug):
+    """打印编辑应使用的标准摘要（可被 processed_rev 识别）。"""
+    meta = load_json(WORK / f"{slug}.meta.json", None)
+    if meta is None:
+        sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
+    print(std_summary(meta))
 
 
 def cmd_skip(slug, reason):
@@ -624,6 +594,6 @@ if __name__ == "__main__":
         if args.cmd == "summary":
             cmd_summary(args.slug)
         elif args.cmd == "done":
-            cmd_done(args.slug, args.reason or "已处理（原地编辑）")
+            cmd_done(args.slug, args.reason or "已处理，en 未变化")
         else:
             cmd_skip(args.slug, args.reason or "en 无实质内容")

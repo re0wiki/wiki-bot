@@ -8,13 +8,13 @@ zh 站大部分条目处于未翻译/机翻/过时状态（全站 1657 页挂 `C
 机械环节全部在 `scripts/tools/llm_translate.py`，LLM 只做一件事：翻译 prose。
 
 ```
-refresh（重建选页队列）→ prepare（取队首、备料）→ agent 处理 → done（校验、写入/落盘）
+refresh（重建选页队列）→ prepare（取队首、备料）→ agent 直接编辑 zh 页 → done（核验、落盘）
 ```
 
 - **refresh**：重建 `logs/llm_translate/queue.json`（全量扫描，约 3 分钟，低频跑）。
 - **prepare**：取队列最冷的一页，拉 en 源码+revid、zh 现文，解析内链映射，落工作文件到 `logs/llm_translate/work/`。
-- **agent**：处理正文。编辑技术二选一（状态语义相同，见「agent 翻译规则」）：产出 `*.body.zh.txt`（整页译文，只含正文），或原地编辑 zh 页。
-- **done**：统一收尾——有译文文件则结构不变量校验 + 人编冲突检查 → 拼装页首页尾 → pywikibot 写入；无则机械校验 wiki 最新编辑为匹配标准摘要的本账号编辑。均落盘相同状态并输出 NOTIFY 行。
+- **agent**：对照 en 源码直接编辑 zh 页（pywikibot 普通编辑），保结构由 agent 负责；摘要用 `summary` 子命令生成的标准行。
+- **done**：对 wiki 只读——以 prepare 时的 zh 现文为基线做事后机械核验（摘要/页首/页尾/内链/模板白名单），通过才落盘状态并输出 NOTIFY 行；脚本本身不写 wiki。
 
 ## 选页：编辑者冷度
 
@@ -38,32 +38,32 @@ refresh（重建选页队列）→ prepare（取队首、备料）→ agent 处�
 - **en 跟踪跳过**（dict 条目，记 `en_title` + `en_revid`）：已处理（done）且 en 未变化、en 无实质内容、en 页不存在。prepare 开头批量复查这些条目的 en 当前 revid（50/批），**revid 变化即自动复活**重入队列——追更路径由此承载，不被 skip 堵死。做过实际编辑的条目一律带 `translated_at`，refresh 据此把冷度重定为处理时间；未做编辑的 skip（en 无增量等）不带，冷度不变。「en 仅标题骨架」（剥离后正文无一超过 20 字符的非标题行）由 prepare 机械判定自动记入；其他不宜翻译的情形由 agent 用 `skip <slug> [理由]` 记入。prepare 有 wip 守卫：`work/` 里已有未完成项时拒绝再备新页。
 - state.json 丢失的恢复：prepare 对不在 state 里的页会解析 zh 历史摘要里的 `K3: revid N`（兼容历史前缀 `K3翻译: revid N`）与 en 当前 revid 比对，一致则补记跳过，不会重复处理。
 
-## 页面拼装
+## 页面构成规则（agent 编辑时遵守，done 逐项核验）
 
-done 的译文文件分支只替换**正文**，页首页尾从 zh 现文机械提取保留：
+agent 直接产出整页新源码。页首页尾以 zh 现文为准机械保留，done 以 prepare 基线逐行比对：
 
-- 页首：`{{Init}}`、`{{To do}}`、`{{Tab/...}}` 等行首模板块原样保留（单行模板判定须容忍嵌套花括号——`{{To do|…（{{#invoke:interwiki|get_en}}）…}}` 这类行用 `[^{}]*` 会漏判成正文而被静默丢弃）。`{{To do}}` 标注分三类处理（2026-08-19 源码普查：裸 1550 页、带参数 107 页）：裸模板 → 替换为 `{{To do|由 K3 翻译自英文站，待校对润色}}`；参数本身是**翻译任务类旧标注**（「本页翻译结果不准确…重新翻译」74 页、「AI翻译，待校对」等——K3 翻译即完成其任务）→ 同样替换为 K3 标注；**其他参数**（如「列表格式待整理」「内容待补充」）→ 合并为 `原说明；由 K3 翻译自英文站，待校对润色`，保留人工标注；已含 K3 标注的不动（幂等）。`Template:To do` 的 `{{{1}}}` 会渲染在页首 indicator 里。
-- 正文：en 源码剥离 en 侧页首模板（如 `{{Parent Tab}}`）、页尾 `[[Category:...]]` 与语言链接后，交由 LLM 翻译。
-- 页尾：zh 现文的语言链接块原样保留（en 侧的分类与语言链接直接丢弃——分类由 Module:Init 按前缀/后缀自动打，语言链接以 zh 为准）。
+- 页首：`{{Init}}`、`{{To do}}`、`{{Tab/...}}` 等行首模板块原样保留，**唯一允许的改动**是给 `{{To do}}` 注入 K3 标注（2026-08-19 源码普查：裸 1550 页、带参数 107 页）：裸模板 → 替换为 `{{To do|由 K3 翻译自英文站，待校对润色}}`；参数本身是**翻译任务类旧标注**（「本页翻译结果不准确…重新翻译」74 页、「AI翻译，待校对」等——K3 翻译即完成其任务）→ 同样替换为 K3 标注；**其他参数**（如「列表格式待整理」「内容待补充」）→ 合并为 `原说明；由 K3 翻译自英文站，待校对润色`，保留人工标注；已含 K3 标注的不动（幂等）。`Template:To do` 的 `{{{1}}}` 会渲染在页首 indicator 里。
+- 正文：见「agent 翻译规则」。en 侧页首模板（如 `{{Parent Tab}}`）、页尾 `[[Category:...]]` 与语言链接不带入——分类由 Module:Init 按前缀/后缀自动打，语言链接以 zh 为准。
+- 页尾：zh 现文的语言链接块逐行原样保留。
 
 ## 内链处理
 
-prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 标题 → zh 同名页 → 跟随重定向，即 transferbot 搬运 + re0_move 移动留重定向的链路），以映射表形式给 LLM。LLM 写 `[[zh 最终目标|显示文字]]`。解析失败的（en 有而 zh 无对应页）保留 en 原名并在报告中列出。done 校验输出中的内链目标必须全部在映射值集合内（文件链接除外，目标原样保留、说明文字翻译）。
+prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 标题 → zh 同名页 → 跟随重定向，即 transferbot 搬运 + re0_move 移动留重定向的链路），以映射表形式给 LLM。LLM 写 `[[zh 最终目标|显示文字]]`。解析失败的（en 有而 zh 无对应页）保留 en 原名并在报告中列出。done 核验新正文的内链目标 ⊆ link_map 映射值 ∪ 未解析名 ∪ zh 现文已有目标（文件链接另含 en 源出现的文件目标；文件目标原样保留、说明文字翻译）。
 
-## 护栏（均为机械检查，不靠 LLM 自检）
+## 护栏（done 的事后机械核验，不靠 LLM 自检）
 
-1. **结构不变量**（译文文件分支）：输出正文的内链目标集合 ⊆ 映射值 ∪ 文件目标；正文模板调用集合与 en 源一致（梗概类页面正文正常无模板）。
-2. **人编冲突**：done 写入前比对 zh 当前 revid 与 prepare 时记录值，不一致即中止（prepare 后有人动过这页，含任何账号）。
-3. **原地编辑核验**（原地编辑分支）：wiki 最新编辑必须是本账号、摘要匹配 `K3: revid <en_revid>` 标准格式，否则拒绝落盘。
-4. **失败响亮**：校验不过不写 wiki/不落盘，非零退出，工作文件保留供排查。
+1. **摘要核验**：zh 页最新编辑必须是本账号、摘要匹配 `K3: revid <en_revid>` 标准格式（revid 与 meta 一致），否则拒绝落盘——防止「没编辑就记完成」与摘要漂移。
+2. **框架不变量**：页首模板块（仅 To do 标注可按规则变化）与页尾语言链接块，以 prepare 时的 zh 现文为基线逐行比对。
+3. **白名单**：正文内链目标（按 页面/文件/分类/语言链接 分类）⊆ link_map ∪ 未解析名 ∪ zh 现文已有目标（文件另含 en 源出现的）；正文模板调用 ⊆ en 源 ∪ zh 现文。
+4. **失败响亮**：核验不过不落盘，非零退出，工作文件保留供排查；wiki 上的编辑由 agent 修正（重编 wiki）后重新 done。
 
 ## agent 翻译规则
 
-编辑技术二选一，`done` 统一收尾，**状态语义完全相同**（相同摘要前缀、相同 state 形态、en 更新都复活、冷度都按处理时间重定）：
-
-- **默认：产出 `<slug>.body.zh.txt`（整页正文译文）**，done 做结构校验后拼装写入。输出只有**正文**：页首页尾由 done 拼装，en 侧的分类/语言链接/页首模板已剥离，不要补回。
-- **zh 现文已含结构化内容时（meta `zh_flags` 有 infobox/gallery）改为原地编辑**：zh 侧结构（已填好的信息框、图库）往往优于 en 转换结果，予以保留——对照 en 找增量：en 多出的实质信息（infobox 空缺字段、封面/发售日期/出处说明、缺失段落）与 zh 的英文残留/中英混杂都要补上。这与中文量无关：哪怕 zh 只剩骨架、实际等于重翻全部 prose，也原地编辑保留 zh 结构，不产译文文件（其模板集合校验也容不下 zh 侧结构模板）。编辑用普通编辑（bot=False minor=False），摘要必须用 `summary <slug>` 子命令输出的标准行原样填写；然后 `done <slug> [理由]` 落盘（原地编辑核验分支）。此路径不写 `*.body.zh.txt`。
-- 内链用 meta 的 `link_map` 写 `[[zh 最终目标|显示文字]]`；文件链接目标原样、说明文字翻译；done 会校验链接白名单与模板集合。
+- **直接编辑 zh 页**（pywikibot 普通编辑，bot=False minor=False），产出整页新源码；编辑前以重读的最新源码为基础（prepare 后若有人类编辑，将其改动融入处理，不要覆盖）。摘要必须用 `summary <slug>` 子命令输出的标准行原样填写。完成后 `done <slug> [理由]` 落盘。
+- 页首/页尾按「页面构成规则」保留；正文对照 en 源码处理：
+  - zh 无结构：整页翻译。标题层级保留、文字译中文、引号用「」、人名用 wiki 通行译名。
+  - zh 已有结构化内容（meta `zh_flags` 有 infobox/gallery）：保留 zh 结构（已填好的信息框/图库往往优于 en 转换结果），对照 en 找增量——en 多出的实质信息（infobox 空缺字段、封面/发售日期/出处说明、缺失段落）与 zh 的英文残留/中英混杂都要补上。这与中文量无关：哪怕 zh 只剩骨架、实际等于重翻全部 prose，也保留 zh 结构。
+- 内链用 meta 的 `link_map` 写 `[[zh 最终目标|显示文字]]`；文件链接目标原样、说明文字翻译。
 - 仅当 en 无增量且 zh 无英文残留时才不编辑，直接 `skip`。
 - 译名表查无的专名追加到 `logs/llm_translate/nouns.jsonl`（page/term/origin/note 一行一条）。
 
@@ -76,9 +76,9 @@ prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 
 
 ## 运行形态
 
-Hermes cron 驱动，watchdog 同款「script + agent」两段式：cron 的 script 段（profile `scripts/llm_translate_daily.py` wrapper → 仓库脚本）每 tick 先跑机械准备——**queue.json 超 7 天未更新自动 refresh**（约 3 分钟纯 API，零 token；失败沿用旧队列下 tick 重试）+ prepare 备料，stdout 注入 agent prompt；agent 只做处理与收尾。频率与每次页数随 token 预算调整（改 cron schedule 或 prompt 循环次数），token 富余时也可手动触发（`cronjob run`）或直接在会话里走 prepare → 处理 → done 流程。
+Hermes cron 驱动，watchdog 同款「script + agent」两段式：cron 的 script 段（profile `scripts/llm_translate_daily.py` wrapper → 仓库脚本）每 tick 先跑机械准备——**queue.json 超 7 天未更新自动 refresh**（约 3 分钟纯 API，零 token；失败沿用旧队列下 tick 重试）+ prepare 备料，stdout 注入 agent prompt；agent 只做编辑与收尾。频率与每次页数随 token 预算调整（改 cron schedule 或 prompt 循环次数），token 富余时也可手动触发（`cronjob run`）或直接在会话里走 prepare → 编辑 → done 流程。
 
-done 成功时输出 `NOTIFY: [[zh 条目]] <时长>无人类编辑，已由 Bot 根据 [[en:条目]] 自动更新 <url>` 固定格式行（两种编辑技术相同），由 cron agent 原样转发到 Discord `#wiki编辑事务【qq互联】`（与自动巡查同频道，方式同 watchdog：主 profile `hermes send -t discord:<频道ID>`）；无编辑的 skip 不推送。
+done 成功时输出 `NOTIFY: [[zh 条目]] <时长>无人类编辑，已由 Bot 根据 [[en:条目]] 自动更新 <url>` 固定格式行，由 cron agent 原样转发到 Discord `#wiki编辑事务【qq互联】`（与自动巡查同频道，方式同 watchdog：主 profile `hermes send -t discord:<频道ID>`）；无编辑的 skip 不推送。
 
 ## 当前限制
 
