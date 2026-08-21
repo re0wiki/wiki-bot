@@ -41,7 +41,6 @@ CATEGORY = "Category:待修撰"
 PROOFREAD_CAT = "Category:机翻待校对"
 # 机翻待校对积压上限：达到即暂停处理新页（等人类校对摘分类），由 backlog 子命令判定
 BACKLOG_LIMIT = 5
-TODO_MARKED = "{{To do|由 K3 翻译自英文站，待校对润色}}"
 SUMMARY_PREFIX = "K3: revid "
 
 S = requests.Session()
@@ -442,25 +441,31 @@ def extract_templates(text):
     return {m.group(1).strip() for m in TEMPLATE_NAME.finditer(text)}
 
 
-# 参数含这些子串的 To do 标注，其任务本身就是「重翻/校对翻译」，K3 翻译即完成 → 替换而非合并
+# 参数含这些子串的 To do 标注，其任务本身就是「重翻/校对翻译」，管线处理即完成 → 清理
 TODO_FULFILLED = ("本页翻译结果不准确", "AI翻译")
+# 历史 K3 标注（机翻标记已改由 Category:机翻待校对 承载，页首不再注入）
+K3_MARK = "由 K3 翻译自英文站，待校对润色"
 
 
-def mark_todo(line):
-    """页首 To do 注入 K3 标注。
+def strip_todo(line):
+    """页首 To do 清理：机翻标记由分类承载后，参数中的翻译类标注一律移除。
 
-    裸模板 → 替换为 K3 标注；参数是翻译任务类旧标注 → 替换（任务已完成）；
-    其他参数 → 合并保留原说明；已含 K3 标注 → 不动（幂等）。
+    按「；」分段丢弃 K3 标注段与翻译任务类旧标注段；清空则还原裸模板；
+    其他参数（人工标注的无关任务）原样保留。
     """
-    s = line.strip()
-    if re.fullmatch(r"\{\{\s*To do\s*\}\}", s):
-        return TODO_MARKED
-    m = re.fullmatch(r"\{\{\s*To do\s*\|(.+)\}\}", s)
-    if not m or "K3 翻译" in m.group(1):
+    m = re.fullmatch(r"\{\{\s*To do\s*\|(.+)\}\}", line.strip())
+    if not m:
         return line
-    if any(k in m.group(1) for k in TODO_FULFILLED):
-        return TODO_MARKED
-    return "{{To do|" + m.group(1) + "；由 K3 翻译自英文站，待校对润色}}"
+    kept = [
+        seg
+        for seg in m.group(1).split("；")
+        if K3_MARK not in seg and not any(k in seg for k in TODO_FULFILLED)
+    ]
+    if kept == [m.group(1)]:
+        return line
+    if not kept:
+        return "{{To do}}"
+    return "{{To do|" + "；".join(kept) + "}}"
 
 
 def cmd_done(slug, reason):
@@ -468,7 +473,7 @@ def cmd_done(slug, reason):
 
     核验（均以 prepare 时的 zh 现文为基线）：
     - 最新编辑是本账号且摘要为匹配 en_revid 的标准 `K3: revid` 行；
-    - 页首模板块除 To do 标注规则外逐行不变，页尾语言链接块不变；
+    - 页首模板块除 To do 翻译类标注清理外逐行不变，页尾语言链接块不变；
     - 正文内链目标（按 页面/文件/分类/语言链接 分类）与模板调用
       不超出 link_map ∪ 未解析名 ∪ en 源 ∪ zh 现文的白名单；
     - 正文末尾挂了 [[Category:机翻待校对]]（人类校对后手动摘除）。
@@ -500,8 +505,8 @@ def cmd_done(slug, reason):
     en_body = (WORK / f"{slug}.body.en.txt").read_text(encoding="utf-8")
     old_head, old_body, old_tail = split_zh_frame(zh_old)
     new_head, new_body, new_tail = split_zh_frame(rev["slots"]["main"]["content"])
-    if new_head != [mark_todo(line) for line in old_head]:
-        sys.exit("页首模板块被改动（唯一允许的改动是按规则给 To do 加标注）")
+    if new_head != [strip_todo(line) for line in old_head]:
+        sys.exit("页首模板块被改动（唯一允许的改动是按规则清理 To do 的翻译类标注）")
     if new_tail != old_tail:
         sys.exit("页尾语言链接块被改动")
 
