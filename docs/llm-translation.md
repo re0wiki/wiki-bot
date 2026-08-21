@@ -11,8 +11,8 @@ zh 站大部分条目处于未翻译/机翻/过时状态（全站 1657 页挂 `C
 refresh（重建选页队列）→ prepare（取队首、备料）→ agent 直接编辑 zh 页 → done（核验）
 ```
 
-- **refresh**：重建 `logs/llm_translate/queue.json`（全量扫描 + 标记扫描重定冷度，约 5 分钟，低频跑）。
-- **prepare**：取队列最冷的一页，拉 en 源码+revid、zh 现文，解析内链映射，落工作文件到 `logs/llm_translate/work/`；途中对机械可判定的页面（无 en 链接 / en 页不存在 / en 仅标题骨架）自动打标记跳过。
+- **refresh**：重建 `.cache/llm_translate/queue.json`（全量扫描 + 标记扫描重定冷度，约 5 分钟，低频跑）。
+- **prepare**：取队列最冷的一页，拉 en 源码+revid、zh 现文，解析内链映射，落工作文件到 `.cache/llm_translate/work/`；途中对机械可判定的页面（无 en 链接 / en 页不存在 / en 仅标题骨架）自动打标记跳过。
 - **agent**：对照 en 源码直接编辑 zh 页（pywikibot 普通编辑），保结构由 agent 负责；摘要与同步标记用 `stamp` 子命令生成的标准行。
 - **done**：对 wiki 只读——以 prepare 时的 zh 现文为基线做事后机械核验（标记/页首/页尾/内链/模板/分类），通过即输出 NOTIFY 行。脚本对 wiki 的唯一写入是 skip/auto-skip 的机械打标记。
 
@@ -70,14 +70,14 @@ prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 
   - zh 已有结构化内容（meta `zh_flags` 有 infobox/gallery）：保留 zh 结构（已填好的信息框/图库往往优于 en 转换结果），对照 en 找增量——en 多出的实质信息（infobox 空缺字段、封面/发售日期/出处说明、缺失段落）与 zh 的英文残留/中英混杂都要补上。这与中文量无关：哪怕 zh 只剩骨架、实际等于重翻全部 prose，也保留 zh 结构。
 - 内链用 meta 的 `link_map` 写 `[[zh 最终目标|显示文字]]`；文件链接目标原样、说明文字翻译。
 - 仅当 en 无增量且 zh 无英文残留时才不编辑，直接 `skip`。
-- 译名表查无的专名追加到 `logs/llm_translate/nouns.jsonl`（page/term/origin/note 一行一条）。
+- 译名表查无的专名追加到 `.cache/llm_translate/nouns.jsonl`（page/term/origin/note 一行一条）。
 
 （2026-08-20 教训：佩特拉页 zh 已是中文但 en 多出发售日期/封面/收录出处，被「只查英文残留」的旧规则误判 skip。）
 
 ## 状态与产出
 
 - 处理状态由**条目源码末尾的同步标记**承载（见「同步标记」节），无本地状态文件——不丢、随页面走、格式可演进。编辑摘要（`K3: revid <en_revid>（…）`）只是人类可读的说明，不参与机器判定。
-- `logs/llm_translate/`（gitignored）：`queue.json`（选页队列）、`work/`（进行中的工作文件）、`nouns.jsonl`（**未登记专名清单**——LLM 翻译时遇到译名表查无的专名逐条追加，攒一批后人工裁决登记进 `user-fixes.py`，由 fix:translation 全站归一；不主动推送）。
+- `.cache/llm_translate/`（gitignored）：`queue.json`（选页队列）、`work/`（进行中的工作文件）、`nouns.jsonl`（**未登记专名清单**——LLM 翻译时遇到译名表查无的专名逐条追加，攒一批后人工裁决登记进 `user-fixes.py`，由 fix:translation 全站归一；不主动推送）。
 
 ## 运行形态
 

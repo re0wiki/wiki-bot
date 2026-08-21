@@ -16,7 +16,7 @@
 编辑（done）与跳过（skip/auto-skip）统一以标记落账——不怕本地状态丢失，格式变更
 只是普通编辑。本脚本对 wiki 的写入只有一处：skip/auto-skip 的机械打标记。
 
-运行期数据全部在 logs/llm_translate/（gitignored）。
+运行期数据全部在 .cache/llm_translate/（gitignored，跨运行状态——非 scratch）。
 """
 
 import argparse
@@ -31,7 +31,7 @@ from urllib.parse import quote
 import requests
 
 ROOT = Path(__file__).resolve().parent.parent.parent
-DATA = ROOT / "logs" / "llm_translate"
+DATA = ROOT / ".cache" / "llm_translate"
 WORK = DATA / "work"
 QUEUE = DATA / "queue.json"
 
