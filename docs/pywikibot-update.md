@@ -1,6 +1,6 @@
 # pywikibot submodule 更新流程
 
-把 fork（`re0wiki/pywikibot` 的 `main`）rebase 到 upstream 最新版的完整流程。定制提交清单见 AGENTS.md「pywikibot fork 的定制」节。
+把 fork（`re0wiki/pywikibot` 的 `main`）rebase 到 upstream 最新版的完整流程。**定制提交清单的唯一权威是 AGENTS.md「pywikibot fork 的定制」节**——本文不重复列举文件名与抽查命令（曾经列举过，漂移后比 AGENTS.md 落后数个补丁才被发觉）。
 
 ## 步骤
 
@@ -11,7 +11,7 @@ git branch backup/pre-rebase-$(git rev-parse --short main) main   # 安全网
 git rebase upstream/master main
 ```
 
-- 冲突通常很少：定制只碰 4 个文件（fixes.py / textlib.py / _filepage.py / noreferences.py），上游很少动这些区域。
+- 冲突通常很少：定制集中在上游很少改动的区域。定制涉及的文件以 AGENTS.md 清单为准；若清单里的文件在上游侧有新提交，rebase 时重点核对该定制是否仍成立（语义冲突不一定产生文本冲突）。
 - `GIT_EDITOR=true git rebase --continue` 避免弹编辑器。
 
 ## 验证（比冲突解决更重要）
@@ -21,14 +21,12 @@ git rebase upstream/master main
 #    标记 ! 的一般只是上下文漂移（上游改了邻近行），确认 + 行内容没变即可
 git range-diff <old-base>..backup/pre-rebase-xxx upstream/master..main
 
-# 2. 定制点抽查（详见 AGENTS.md 定制清单）
-git diff upstream/master main --stat   # 应只碰 fixes/textlib/_filepage/noreferences 4 个文件
-grep '"keep"' pwb/pywikibot/fixes.py              # 4 处（HTML/syntax/isbn/specialpages）
-grep 'as-is' pwb/pywikibot/textlib.py
-grep 'format=original' pwb/pywikibot/page/_filepage.py
-grep '注释与外部链接' scripts/noreferences.py
-grep 'pageprops=True' scripts/noreferences.py
+# 2. 提交级与文件级核对：定制提交数、触及文件应与 AGENTS.md 清单一一对应
+git log upstream/master..main --oneline
+git diff upstream/master...main --stat
 ```
+
+再按 AGENTS.md 清单逐条抽查定制点仍在（每条定制都写了标志代码，如 keep 标签、`format=original` 等，grep 即可）。
 
 主仓验证：
 
