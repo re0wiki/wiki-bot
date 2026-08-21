@@ -30,7 +30,7 @@ refresh（重建选页队列）→ prepare（取队首、备料）→ agent 翻�
 | 6-12个月 | 347 | 20.9%（含 192 搬运页） |
 | >1年 | 396 | 23.9% |
 
-第一阶段工作面 = >1 年的 396 页。节奏从**每天 1 页**起步，抽查确认质量后再提速。
+第一阶段工作面 = >1 年的 396 页。
 
 跳过规则分两档：
 
@@ -70,7 +70,7 @@ prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 
 
 ## 运行形态
 
-Hermes cron 每日跑一页，watchdog 同款「script + agent」两段式：cron 的 script 段（profile `scripts/llm_translate_daily.py` wrapper → 仓库脚本）每 tick 先跑机械准备——**queue.json 超 7 天未更新自动 refresh**（约 3 分钟纯 API，零 token；失败沿用旧队列下 tick 重试）+ prepare 备料，stdout 注入 agent prompt；agent 只做翻译与发布。提速=调 cron 频率或每次页数。
+Hermes cron 驱动，watchdog 同款「script + agent」两段式：cron 的 script 段（profile `scripts/llm_translate_daily.py` wrapper → 仓库脚本）每 tick 先跑机械准备——**queue.json 超 7 天未更新自动 refresh**（约 3 分钟纯 API，零 token；失败沿用旧队列下 tick 重试）+ prepare 备料，stdout 注入 agent prompt；agent 只做翻译与发布。频率与每次页数随 token 预算调整（改 cron schedule 或 prompt 循环次数），token 富余时也可手动触发（`cronjob run`）或直接在会话里走 prepare → 翻译 → publish 流程。
 
 publish 成功时输出 `NOTIFY: [[zh 条目]] <时长>无人类编辑，已由 Bot 根据 [[en:条目]] 自动更新 <url>` 固定格式行，由 cron agent 原样转发到 Discord `#wiki编辑事务【qq互联】`（与自动巡查同频道，方式同 watchdog：主 profile `hermes send -t discord:<频道ID>`）；增量同步路径做了实际编辑的也推送（措辞「已根据 en 同步补充信息」）；无增量的 skip 不推送。
 
