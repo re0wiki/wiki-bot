@@ -101,6 +101,10 @@ def save_json(path, data):
     path.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+def now_iso():
+    return datetime.now(UTC).isoformat(timespec="seconds")
+
+
 # ---------------------------------------------------------------- refresh
 
 
@@ -168,19 +172,19 @@ def cmd_refresh():
         if (i + 1) % 50 == 0:
             print(f"orphans: {i + 1}/{len(orphans)}")
 
-    # 已翻译页按翻译时间计冷度：翻译即同步了 en 最新人工改动，视为热页，
-    # 避免反复追踪 en 微小更新而挤占从未翻过的远古条目
+    # 已处理页按处理/确认时间计冷度：处理或 skip 都意味着「截至该时间 zh 与 en
+    # 已确认同步」，视为热页，避免反复追踪 en 微小更新而挤占从未翻过的远古条目
     state = load_json(STATE, {"skip": {}})
-    translated_at = {
-        t: e["translated_at"]
+    processed = {
+        t: e["processed_at"]
         for t, e in state["skip"].items()
-        if isinstance(e, dict) and e.get("translated_at")
+        if isinstance(e, dict) and e.get("processed_at")
     }
     for q in queue:
-        if q["title"] in translated_at:
-            q["cold"] = translated_at[q["title"]]
-    if translated_at:
-        print(f"translated pages re-dated: {len(translated_at)}")
+        if q["title"] in processed:
+            q["cold"] = processed[q["title"]]
+    if processed:
+        print(f"processed pages re-dated: {len(processed)}")
 
     queue.sort(key=lambda q: q["cold"])
     save_json(QUEUE, queue)
@@ -334,6 +338,7 @@ def cmd_prepare():
                 "reason": "en 页不存在",
                 "en_title": en_title,
                 "en_revid": None,
+                "processed_at": now_iso(),
             }
             continue
         tr_revid, tr_ts = processed_rev(title)
@@ -342,7 +347,7 @@ def cmd_prepare():
                 "reason": "已处理，en 未变化",
                 "en_title": en_title,
                 "en_revid": en_revid,
-                "translated_at": tr_ts,
+                "processed_at": tr_ts,
             }
             continue
 
@@ -354,6 +359,7 @@ def cmd_prepare():
                 "reason": "en 无实质内容（仅标题骨架）",
                 "en_title": en_title,
                 "en_revid": en_revid,
+                "processed_at": now_iso(),
             }
             print(f"auto-skip: {title}（en 仅标题骨架）")
             continue
@@ -460,7 +466,7 @@ def cmd_done(slug, reason):
     - 页首模板块除 To do 标注规则外逐行不变，页尾语言链接块不变；
     - 正文内链目标（按 页面/文件/分类/语言链接 分类）与模板调用
       不超出 link_map ∪ 未解析名 ∪ en 源 ∪ zh 现文的白名单。
-    全部通过才记状态（translated_at 取编辑时间）并输出 NOTIFY 行。
+    全部通过才记状态（processed_at 取编辑时间）并输出 NOTIFY 行。
     """
     meta = load_json(WORK / f"{slug}.meta.json", None)
     if meta is None:
@@ -529,7 +535,7 @@ def cmd_done(slug, reason):
         "reason": reason,
         "en_title": meta["en_title"],
         "en_revid": meta["en_revid"],
-        "translated_at": rev["timestamp"],
+        "processed_at": rev["timestamp"],
     }
     save_json(STATE, state)
     clean_work(slug)
@@ -546,9 +552,9 @@ def cmd_summary(slug):
 
 
 def cmd_skip(slug, reason):
-    """无需编辑（en 无增量等）或不宜处理时调用：按当前 en revid 记入跳过，en 更新后自动复活。
+    """无需额外编辑（en 无增量等）或不宜处理时调用：按当前 en revid 记入跳过，en 更新后自动复活。
 
-    不记 translated_at（未做编辑，冷度不变）；做了编辑的走 done。
+    与 done 一样记 processed_at：skip 同样确认了「截至此时 zh 与 en 同步」，冷度统一刷新。
     """
     meta = load_json(WORK / f"{slug}.meta.json", None)
     if meta is None:
@@ -558,6 +564,7 @@ def cmd_skip(slug, reason):
         "reason": reason,
         "en_title": meta["en_title"],
         "en_revid": meta["en_revid"],
+        "processed_at": now_iso(),
     }
     save_json(STATE, state)
     clean_work(slug)
