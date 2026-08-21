@@ -84,6 +84,7 @@ p.save(summary="...", bot=False, minor=False)  # 手动编辑（save 默认 bot=
 - `_filepage.py`：下载 URL 加 `&format=original`，否则 Fandom API 返回 webp。同时必须去掉上游的 suffix 调整：它从 URL 路径取扩展名，而 Fandom URL 以 `/revision/latest` 结尾（无扩展名），留着会把下载文件的真扩展名剥掉（Wikimedia 的 URL 路径以文件名结尾，所以上游留着没事）。
 - `noreferences.py`：zh 参考资料段标题加「注释与外部链接」；预载带 `pageprops`——`skip_page` 对每页调 `isDisambig()`（`use_disambigs=False`）读 `prop=pageprops`，默认预载不含它导致每页一次查询（全扫 ~18 min），带上后随内容同批缓存（~25 s）。背景：本站按对齐 en 的策略不加 `__DISAMBIG__`（en 不加，zh 单加会破坏 interwiki；用户尝试给 en 加被回退），该检查恒为空——故选零成本的语义保留方案而非改 `use_disambigs=None` 的假设性跳过。
 - `scripts/redirect.py`：`fix_moved_broken_redirects` 加移动日志环检测（`seen` 集合沿递归传递）——上游对 `moved_target()` 链的递归无环检测，A↔B 往返移动且两页均不存在时无限递归直至 RecursionError。
+- `scripts/listpages.py`：`-notitle`（含 `-format:` 空值）抑制标题后 `treat()` 不再 pop 空 `output_list`——上游 bug：非 preloading 且无 `-tofile` 时逐页 `pop()`，首页即 IndexError 崩溃。
 
 ## 译名维护工作流（最常见的改动）
 
