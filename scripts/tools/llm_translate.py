@@ -309,6 +309,28 @@ def stamp_page(title, kind, reason):
     page.save(summary=f"K3 同步标记：{reason}", bot=False, minor=False)
 
 
+def real_colds(titles):
+    """批量计算实际冷度（每页最近一次非 IchiSanNi 编辑的时间）。
+
+    rvlimit=20 内找首个非 bot 修订；若近 20 版全是 bot 编辑则取第 20 版时间
+    （是真实冷度的上界——偏暖估计只会让我们更保守，安全方向）。
+    """
+    out = {}
+    for i in range(0, len(titles), 50):
+        r = api(
+            ZH_API,
+            prop="revisions",
+            titles="|".join(titles[i : i + 50]),
+            rvprop="ids|timestamp|user",
+            rvlimit="20",
+        )
+        for p in r["query"]["pages"]:
+            revs = p.get("revisions", [])
+            cold = next((rv["timestamp"] for rv in revs if rv.get("user") != BOT), None)
+            out[p["title"]] = cold or (revs[-1]["timestamp"] if revs else None)
+    return out
+
+
 def cmd_prepare():
     queue = load_json(QUEUE, None)
     if queue is None:
@@ -319,7 +341,19 @@ def cmd_prepare():
             f"已有待处理工作项: {[p.stem.rsplit('.', 2)[0] for p in wip]}，先处理再 prepare"
         )
 
-    for item in queue:
+    # walk：跳过已打标页；对未处理候选取实际冷度，陈旧冷度单调偏低（时间只往前走），
+    # 故扫到「下一条陈旧冷度 ≥ 当前最优实际冷度」即可确定真队首；算出的实际冷度
+    # 写回 queue.json 懒修复排序（每周全量 refresh 仍保留，处理分类新增等）
+    best = (
+        None  # (real_cold, title, zh_text, zh_revid, en_title, en_text, en_revid, body)
+    )
+    queue_dirty = False
+    i = 0
+    while i < len(queue):
+        item = queue[i]
+        if best and item["cold"] >= best[0]:
+            break
+        i += 1
         title = item["title"]
         zh_text, zh_revid, _ = get_page(ZH_API, title)
         if zh_text is None:
@@ -341,6 +375,9 @@ def cmd_prepare():
             print(f"auto-skip: {title}（en 页不存在）")
             continue
         if marker and marker.group(1) != "no-en" and marker.group(2) == str(en_revid):
+            if item["cold"] != marker.group(3):  # 懒修复：已同步页冷度 = 标记时间
+                item["cold"] = marker.group(3)
+                queue_dirty = True
             continue  # 已同步且 en 未变化；revid 变化即自然落入处理（追更复活）
         body = split_en_body(en_text)
         if not any(
@@ -349,45 +386,58 @@ def cmd_prepare():
             stamp_page(title, f"revid {en_revid}", "en 无实质内容（仅标题骨架）")
             print(f"auto-skip: {title}（en 仅标题骨架）")
             continue
-        mapping, unresolved = resolve_links(body)
-        head, zh_body, tail = split_zh_frame(zh_text)
-        zh_flags = [
-            name
-            for name, pat in [("infobox", r"\{\{Infobox"), ("gallery", r"<gallery")]
-            if re.search(pat, zh_body)
-        ]
+        rc = real_colds([title])[title] or item["cold"]
+        if rc != item["cold"]:
+            item["cold"] = rc
+            queue_dirty = True
+        if best is None or rc < best[0]:
+            best = (rc, title, zh_text, zh_revid, en_title, en_text, en_revid, body)
 
-        slug = slugify(title)
-        WORK.mkdir(parents=True, exist_ok=True)
-        (WORK / f"{slug}.body.en.txt").write_text(body, encoding="utf-8")
-        (WORK / f"{slug}.zh.txt").write_text(zh_text, encoding="utf-8")
-        save_json(
-            WORK / f"{slug}.meta.json",
-            {
-                "title": title,
-                "en_title": en_title,
-                "en_revid": en_revid,
-                "zh_revid": zh_revid,
-                "cold": item["cold"],
-                "head": head,
-                "tail": tail,
-                "zh_body_len": len(zh_body),
-                "zh_flags": zh_flags,
-                "link_map": mapping,
-                "unresolved_links": unresolved,
-            },
-        )
-        print(f"prepared: {title} (cold {item['cold'][:10]}, en revid {en_revid})")
-        print(
-            f"  en body: {len(body)} chars, links: {len(mapping)} resolved, {len(unresolved)} unresolved"
-        )
-        print(
-            f"  zh body replaced: {len(zh_body)} chars（人工内容请先过目 {WORK / f'{slug}.zh.txt'}）"
-        )
-        if zh_flags:
-            print(f"  ⚠ zh 现文含 {zh_flags}——保留结构，对照 en 补增量")
+    if queue_dirty:
+        queue.sort(key=lambda q: q["cold"])
+        save_json(QUEUE, queue)
+    if best is None:
+        print("队列已空")
         return
-    print("队列已空")
+    cold, title, zh_text, zh_revid, en_title, en_text, en_revid, body = best
+
+    mapping, unresolved = resolve_links(body)
+    head, zh_body, tail = split_zh_frame(zh_text)
+    zh_flags = [
+        name
+        for name, pat in [("infobox", r"\{\{Infobox"), ("gallery", r"<gallery")]
+        if re.search(pat, zh_body)
+    ]
+
+    slug = slugify(title)
+    WORK.mkdir(parents=True, exist_ok=True)
+    (WORK / f"{slug}.body.en.txt").write_text(body, encoding="utf-8")
+    (WORK / f"{slug}.zh.txt").write_text(zh_text, encoding="utf-8")
+    save_json(
+        WORK / f"{slug}.meta.json",
+        {
+            "title": title,
+            "en_title": en_title,
+            "en_revid": en_revid,
+            "zh_revid": zh_revid,
+            "cold": cold,
+            "head": head,
+            "tail": tail,
+            "zh_body_len": len(zh_body),
+            "zh_flags": zh_flags,
+            "link_map": mapping,
+            "unresolved_links": unresolved,
+        },
+    )
+    print(f"prepared: {title} (cold {cold[:10]}, en revid {en_revid})")
+    print(
+        f"  en body: {len(body)} chars, links: {len(mapping)} resolved, {len(unresolved)} unresolved"
+    )
+    print(
+        f"  zh body replaced: {len(zh_body)} chars（人工内容请先过目 {WORK / f'{slug}.zh.txt'}）"
+    )
+    if zh_flags:
+        print(f"  ⚠ zh 现文含 {zh_flags}——保留结构，对照 en 补增量")
 
 
 # ---------------------------------------------------------------- done
