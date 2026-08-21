@@ -5,10 +5,13 @@
 用法（仓库根目录）：
     uv run python scripts/tools/llm_translate.py refresh   # 重建选页队列（约 3 分钟，低频）
     uv run python scripts/tools/llm_translate.py prepare   # 取队首备料
-    uv run python scripts/tools/llm_translate.py publish <slug>  # 校验并写入（全量翻译路径）
-    uv run python scripts/tools/llm_translate.py summary <slug>  # 打印增量同步编辑的标准摘要
-    uv run python scripts/tools/llm_translate.py synced <slug> [理由]  # 增量同步完成后落盘
+    uv run python scripts/tools/llm_translate.py summary <slug>  # 打印原地编辑应用的标准摘要
+    uv run python scripts/tools/llm_translate.py done <slug> [理由]  # 统一收尾：校验、落盘
     uv run python scripts/tools/llm_translate.py skip <slug> [理由]  # 无需编辑/不宜处理
+
+编辑技术二选一（状态语义相同，done 统一收尾）：默认产出 <slug>.body.zh.txt 由 done
+校验后写入；zh 已有结构化内容时原地编辑 zh 页（摘要用 summary 的输出），done 校验
+wiki 侧后落盘。
 
 运行期数据全部在 logs/llm_translate/（gitignored）。
 """
@@ -35,8 +38,7 @@ EN_API = "https://rezero.fandom.com/api.php"
 BOT = "IchiSanNi"
 CATEGORY = "Category:待修撰"
 TODO_MARKED = "{{To do|由 K3 翻译自英文站，待校对润色}}"
-SUMMARY_PREFIX = "K3翻译: revid "
-SYNC_PREFIX = "K3同步: revid "
+SUMMARY_PREFIX = "K3: revid "
 
 S = requests.Session()
 
@@ -50,7 +52,8 @@ LANGLINK_LINE = re.compile(r"^\[\[[a-z][a-z-]*:[^\]]*\]\]\s*$")
 WIKILINK = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]*)?\]\]")
 TEMPLATE_NAME = re.compile(r"\{\{([^{}|]+)")
 EN_LINK = re.compile(r"\[\[en:([^\]|]+)")
-SUMMARY_REVID = re.compile(r"K3(?:翻译|同步): revid (\d+)")
+# 兼容历史前缀 K3翻译:（2026-08 前半的 publish 摘要）
+SUMMARY_REVID = re.compile(r"K3(?:翻译)?: revid (\d+)")
 
 
 def api(base, **params):
@@ -252,11 +255,8 @@ def resolve_links(body):
     return mapping, sorted(set(unresolved))
 
 
-def translated_rev(zh_title):
-    """从 zh 历史摘要解析上次翻译/同步对应的 (en revid, 时间)（state 丢失时的恢复手段）。
-
-    K3翻译（publish 全量）与 K3同步（synced 增量）两种标准摘要均可识别。
-    """
+def processed_rev(zh_title):
+    """从 zh 历史摘要解析上次处理对应的 (en revid, 时间)（state 丢失时的恢复手段）。"""
     r = api(
         ZH_API,
         prop="revisions",
@@ -337,10 +337,10 @@ def cmd_prepare():
                 "en_revid": None,
             }
             continue
-        tr_revid, tr_ts = translated_rev(title)
+        tr_revid, tr_ts = processed_rev(title)
         if tr_revid == en_revid:
             state["skip"][title] = {
-                "reason": "已翻译，en 未变化",
+                "reason": "已处理，en 未变化",
                 "en_title": en_title,
                 "en_revid": en_revid,
                 "translated_at": tr_ts,
@@ -401,13 +401,26 @@ def cmd_prepare():
     print("队列已空")
 
 
-# ---------------------------------------------------------------- publish
+# ---------------------------------------------------------------- done
 
 
 def cold_dur(meta):
     """冷度时长字符串（摘要用，向其他编辑者说明自动处理该页的原因）。"""
     days = (datetime.now(UTC) - datetime.fromisoformat(meta["cold"])).days
     return f"{days / 365:.1f}年" if days >= 365 else f"{max(days // 30, 1)}个月"
+
+
+def std_summary(meta):
+    """标准编辑摘要（done 写入与 summary 子命令共用，前缀可被 processed_rev 识别）。"""
+    return f"{SUMMARY_PREFIX}{meta['en_revid']}（{cold_dur(meta)}无人类编辑）"
+
+
+def notify_line(meta):
+    url = f"https://rezero.fandom.com/zh/wiki/{quote(meta['title'], safe='/:')}"
+    return (
+        f"NOTIFY: [[{meta['title']}]] {cold_dur(meta)}无人类编辑，"
+        f"已由 Bot 根据 [[en:{meta['en_title']}]] 自动更新 {url}"
+    )
 
 
 def clean_work(slug):
@@ -440,13 +453,24 @@ def mark_todo(line):
     return "{{To do|" + m.group(1) + "；由 K3 翻译自英文站，待校对润色}}"
 
 
-def cmd_publish(slug):
+def cmd_done(slug, reason):
+    """一页处理完成，统一收尾。
+
+    编辑技术二选一，状态语义相同（相同摘要前缀、相同 state 形态、均输出 NOTIFY 行）：
+    - 有 <slug>.body.zh.txt（agent 产出整页译文）：结构校验 + 人编冲突检查后拼装写入 wiki；
+    - 无（agent 已原地编辑 zh 页）：机械校验 wiki 最新编辑为匹配标准摘要的本账号编辑。
+    """
     meta = load_json(WORK / f"{slug}.meta.json", None)
     if meta is None:
         sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
     out_path = WORK / f"{slug}.body.zh.txt"
-    if not out_path.exists():
-        sys.exit(f"找不到译文 {out_path}")
+    if out_path.exists():
+        _done_full(slug, meta, out_path)
+    else:
+        _done_in_place(slug, meta, reason)
+
+
+def _done_full(slug, meta, out_path):
     out = out_path.read_text(encoding="utf-8").strip() + "\n"
     en_body = (WORK / f"{slug}.body.en.txt").read_text(encoding="utf-8")
 
@@ -489,9 +513,6 @@ def cmd_publish(slug):
         parts += ["\n".join(meta["tail"])]
     new_text = "\n".join(parts).rstrip() + "\n"
 
-    # 摘要附冷度，向其他编辑者说明自动翻译的原因
-    summary = f"{SUMMARY_PREFIX}{meta['en_revid']}（{cold_dur(meta)}无人类编辑）"
-
     import pywikibot
 
     site = pywikibot.Site("zh", "re0")
@@ -499,42 +520,31 @@ def cmd_publish(slug):
     assert site.user() == BOT
     page = pywikibot.Page(site, meta["title"])
     page.text = new_text
-    # 翻译不是需抑制通知的批量编辑，不加 bot flag
-    page.save(summary=summary, bot=False, minor=False)
+    # 管线编辑不是需抑制通知的批量编辑，不加 bot flag
+    page.save(summary=std_summary(meta), bot=False, minor=False)
     print(f"saved: {meta['title']} (en:{meta['en_title']} revid {meta['en_revid']})")
-    url = f"https://rezero.fandom.com/zh/wiki/{quote(meta['title'], safe='/:')}"
-    print(
-        f"NOTIFY: [[{meta['title']}]] {cold_dur(meta)}无人类编辑，"
-        f"已由 Bot 根据 [[en:{meta['en_title']}]] 自动更新 {url}"
-    )
     state = load_json(STATE, {"skip": {}})
     state["skip"][meta["title"]] = {
-        "reason": "已翻译，en 未变化",
+        "reason": "已处理，en 未变化",
         "en_title": meta["en_title"],
         "en_revid": meta["en_revid"],
         "translated_at": datetime.now(UTC).isoformat(timespec="seconds"),
     }
     save_json(STATE, state)
     clean_work(slug)
+    print(notify_line(meta))
 
 
 def cmd_summary(slug):
-    """打印增量同步编辑应使用的标准摘要（K3同步 前缀，可被 translated_rev 识别）。"""
+    """打印原地编辑应使用的标准摘要（可被 processed_rev 识别）。"""
     meta = load_json(WORK / f"{slug}.meta.json", None)
     if meta is None:
         sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
-    print(f"{SYNC_PREFIX}{meta['en_revid']}（{cold_dur(meta)}无人类编辑）")
+    print(std_summary(meta))
 
 
-def cmd_synced(slug, reason):
-    """增量同步（原地编辑）完成后落盘：机械校验 wiki 上确有匹配的 K3同步 编辑。
-
-    与 publish 记入完全相同的状态形态（en_title + en_revid + translated_at）：
-    两条路径只是编辑技术不同，状态语义一致——en 更新都会复活，冷度都按同步时间重定。
-    """
-    meta = load_json(WORK / f"{slug}.meta.json", None)
-    if meta is None:
-        sys.exit(f"找不到 {slug}.meta.json")
+def _done_in_place(slug, meta, reason):
+    """原地编辑分支：机械校验 wiki 最新编辑为匹配标准摘要的本账号编辑后落盘。"""
     r = api(
         ZH_API,
         prop="revisions",
@@ -544,11 +554,11 @@ def cmd_synced(slug, reason):
     )
     rev = r["query"]["pages"][0]["revisions"][0]
     if rev["revid"] == meta["zh_revid"]:
-        sys.exit("zh 页自 prepare 以来无新编辑——先完成增量同步编辑再 synced")
+        sys.exit("zh 页自 prepare 以来无新编辑——先完成原地编辑再 done")
     m = SUMMARY_REVID.search(rev.get("comment", ""))
     if not (rev.get("user") == BOT and m and int(m.group(1)) == meta["en_revid"]):
         sys.exit(
-            f"最新编辑非匹配的 {SYNC_PREFIX}{meta['en_revid']} 摘要"
+            f"最新编辑非匹配的 {std_summary(meta)} 摘要"
             f"（实际：{rev.get('user')} / {rev.get('comment')!r}），"
             "请用 summary 子命令生成的标准摘要重新编辑"
         )
@@ -561,13 +571,14 @@ def cmd_synced(slug, reason):
     }
     save_json(STATE, state)
     clean_work(slug)
-    print(f"synced: {meta['title']}（{reason}，en revid {meta['en_revid']}）")
+    print(f"done: {meta['title']}（{reason}，en revid {meta['en_revid']}）")
+    print(notify_line(meta))
 
 
 def cmd_skip(slug, reason):
     """无需编辑（en 无增量等）或不宜处理时调用：按当前 en revid 记入跳过，en 更新后自动复活。
 
-    不记 translated_at（未做编辑，冷度不变）；做了编辑的走 synced。
+    不记 translated_at（未做编辑，冷度不变）；做了编辑的走 done。
     """
     meta = load_json(WORK / f"{slug}.meta.json", None)
     if meta is None:
@@ -596,15 +607,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "cmd",
-        choices=[
-            "refresh",
-            "prepare",
-            "publish",
-            "summary",
-            "synced",
-            "skip",
-            "status",
-        ],
+        choices=["refresh", "prepare", "summary", "done", "skip", "status"],
     )
     ap.add_argument("slug", nargs="?")
     ap.add_argument("reason", nargs="?")
@@ -618,11 +621,9 @@ if __name__ == "__main__":
     else:
         if not args.slug:
             ap.error(f"{args.cmd} 需要 slug 参数")
-        if args.cmd == "publish":
-            cmd_publish(args.slug)
-        elif args.cmd == "summary":
+        if args.cmd == "summary":
             cmd_summary(args.slug)
-        elif args.cmd == "synced":
-            cmd_synced(args.slug, args.reason or "已增量同步")
+        elif args.cmd == "done":
+            cmd_done(args.slug, args.reason or "已处理（原地编辑）")
         else:
             cmd_skip(args.slug, args.reason or "en 无实质内容")
