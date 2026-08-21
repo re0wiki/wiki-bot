@@ -24,7 +24,7 @@ refresh（重建选页队列）→ prepare（取队首、备料）→ agent 直�
 - 创建时间（搬运页的内容新鲜度即搬运日）；
 - 已打标页的标记时间（编辑或 skip 打标都意味着「截至该时间 zh 与 en 已确认同步」，skip 即确认 en 无增量/无内容可搬）。
 
-按冷度升序处理：最近有人类活动或刚被管线处理的页自然排队尾，避免与活跃编辑者（如 2026 年中活跃的 Nekomeow151）撞车，也避免反复追踪 en 微小更新而挤占从未翻过的远古条目。管线编辑**不带 bot flag**（非需抑制通知的批量编辑），摘要用 `stamp` 子命令生成的标准行 `K3: revid <en_revid>（<时长>无人类编辑）`——纯人类可读信息（向其他编辑者说明 bot 处理该页的原因），机器校验只看源码标记。
+按冷度升序处理：最近有人类活动或刚被管线处理的页自然排队尾，避免与活跃编辑者（如 2026 年中活跃的 Nekomeow151）撞车，也避免反复追踪 en 微小更新而挤占从未翻过的远古条目。
 
 2026-08-19 全量统计（`list=allrevisions` 排除 IchiSanNi 流式扫描 + 搬运页创建时间补正）：
 
@@ -38,7 +38,13 @@ refresh（重建选页队列）→ prepare（取队首、备料）→ agent 直�
 
 第一阶段工作面 = >1 年的 396 页。
 
-**prepare 的队首实际冷度校正**（queue.json 一周一建，冷度在间隔期内会陈旧）：walk 按陈旧顺序扫，对每个未处理候选取**实际冷度**（最近修订流里首个非 IchiSanNi 编辑的时间，rvlimit=20 足够；近 20 版全是 bot 则取第 20 版时间——偏暖的上界估计，安全方向）。陈旧冷度单调偏低（时间只往前走），故扫到「下一条陈旧冷度 ≥ 当前最优候选实际冷度」即确定真队首；人类活动稀疏时每 tick 只多查一两页。算出的实际冷度与已同步页的标记时间顺手写回 queue.json 懒修复排序。效果：refresh 间隔期内被人类编辑的队首页会立即让位给真正更冷的页，不再等下周 refresh——「避让活跃人类编辑者」从周级精度变为 tick 级。
+**prepare 的队首实际冷度校正**：queue.json 一周一建，间隔期内冷度会陈旧，walk 顺带校正：
+
+- 对每个未处理候选取**实际冷度**：最近修订流里首个非 IchiSanNi 编辑的时间（rvlimit=20；近 20 版全是 bot 则取第 20 版时间——偏暖的上界估计，安全方向）。
+- 陈旧冷度单调偏低（时间只往前走），故扫到「下一条陈旧冷度 ≥ 当前最优候选实际冷度」即确定真队首；人类活动稀疏时每 tick 只多查一两页。
+- 算出的实际冷度与已同步页的标记时间顺手写回 queue.json，懒修复排序。
+
+效果：refresh 间隔期内被人类编辑的队首页立即让位，避让活跃编辑者从周级精度变为 tick 级。
 
 ## 同步标记（唯一状态载体）
 
@@ -47,19 +53,28 @@ refresh（重建选页队列）→ prepare（取队首、备料）→ agent 直�
 - `<!-- K3: revid <en_revid>; <ISO 时间> -->`：已同步到 en 该版本（含「en 仅标题骨架」「en 无增量」等无内容可搬的确认；revid 为 `-` 表示 en 页当时不存在）。
 - `<!-- K3: no-en; <ISO 时间> -->`：zh 源码无 `[[en:...]]` 链接（zh 原创页，如 角色:沃尔夫）。
 
-prepare 的 walk 逐页读 zh 源码解析标记（源码本来必读）：标记与当前 en revid 一致 → 跳过；**revid 变化即自动复活**重入处理（追更路径由此承载）；no-en 页后来加了 en 链接 → 自然落入处理。机械可判定的三种跳过（无 en 链接 / en 页不存在 / en 仅标题骨架——剥离后正文无一超过 20 字符的非标题行）由 prepare 直接打标记；「en 无增量」由 agent 判断后 `skip <slug> [理由]` 打标记。prepare 有 wip 守卫：`work/` 里已有未完成项时拒绝再备新页。
+prepare 的 walk 逐页读 zh 源码解析标记（源码本来必读）：
+
+- 标记 revid 与 en 当前一致 → 跳过；**不一致即自动复活**重入处理（追更路径由此承载）。
+- no-en 标记但源码已有 en 链接 → 落入正常处理。
+- 无标记 → 处理；其中机械可判定的三种情况由 prepare 直接打标记跳过：无 en 链接、en 页不存在（标记 revid 为 `-`）、en 仅标题骨架（剥离后正文无一超过 20 字符的非标题行）。「en 无增量」由 agent 判断后 `skip <slug> [理由]` 打标记。
+
+prepare 有 wip 守卫：`work/` 里已有未完成项时拒绝再备新页。
 
 ## 页面构成规则（agent 编辑时遵守，done 逐项核验）
 
 agent 直接产出整页新源码。页首页尾以 zh 现文为准机械保留，done 以 prepare 基线逐行比对：
 
 - 页首：`{{Init}}`、`{{To do}}`、`{{Tab/...}}` 等行首模板块原样保留，**唯一允许的改动**是清理 `{{To do}}` 参数中的翻译类标注（机翻标记已改由 `[[Category:机翻待校对]]` 承载）：K3 标注段（历史遗留）与翻译任务类旧标注段（「本页翻译结果不准确…重新翻译」、「AI翻译，待校对」等——管线处理即完成其任务）按「；」分段丢弃，清空则还原裸 `{{To do}}`；**其他参数**（如「列表格式待整理」「内容待补充」）原样保留。裸 `{{To do}}` 不动（其 `Category:待修撰` 归入是队列数据源）。
-- 正文：见「agent 翻译规则」。en 侧页首模板（如 `{{Parent Tab}}`）、页尾 `[[Category:...]]` 与语言链接不带入——分类由 Module:Init 按前缀/后缀自动打，语言链接以 zh 为准。**正文末尾必须挂 `[[Category:机翻待校对]]`**（管线处理标记，位置与既有正文分类一致：有分类段则并入，否则在语言链接块前独立成段）——人类校对后手动摘除；已被摘除的页面若被管线再次处理（en 有新内容 = 新机翻内容）会重新挂上，语义正确。**分类之后放一行同步标记注释**（`stamp` 子命令输出的第二行，原位替换已有标记）。
+- 正文：翻译规则见下节。
+  - en 侧页首模板（如 `{{Parent Tab}}`）、页尾 `[[Category:...]]` 与语言链接不带入——分类由 Module:Init 按前缀/后缀自动打，语言链接以 zh 为准。
+  - **末尾必须挂 `[[Category:机翻待校对]]`**：有分类段则并入，否则在语言链接块前独立成段。人类校对后手动摘除；若管线再次处理（en 有新内容 = 新机翻内容）会重新挂上。
+  - **分类之后放一行同步标记注释**（`stamp` 子命令输出的第二行，原位替换已有标记）。
 - 页尾：zh 现文的语言链接块逐行原样保留（标记在语言链接块之前，不属页尾）。
 
 ## 内链处理
 
-prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 标题 → zh 同名页 → 跟随重定向，即 transferbot 搬运 + re0_move 移动留重定向的链路），以映射表形式给 LLM。LLM 写 `[[zh 最终目标|显示文字]]`。解析失败的（en 有而 zh 无对应页）保留 en 原名并在报告中列出。done 核验新正文的内链目标 ⊆ link_map 映射值 ∪ 未解析名 ∪ zh 现文已有目标（文件链接另含 en 源出现的文件目标；文件目标原样保留、说明文字翻译）。
+prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 标题 → zh 同名页 → 跟随重定向，即 transferbot 搬运 + re0_move 移动留重定向的链路），以映射表形式给 LLM。LLM 写 `[[zh 最终目标|显示文字]]`；解析失败的（en 有而 zh 无对应页）保留 en 原名并在报告中列出。done 侧的白名单核验见「护栏」。
 
 ## 护栏（done 的事后机械核验，不靠 LLM 自检）
 
@@ -87,7 +102,13 @@ prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 
 
 ## 运行形态
 
-Hermes cron 驱动，watchdog 同款「script + agent」两段式：cron 的 script 段（profile `scripts/llm_translate_daily.py` wrapper → 仓库脚本）每 tick 先跑机械准备——**积压闸门：`Category:机翻待校对` 条目数 ≥ 5 时 wrapper 只输出 `{"wakeAgent": false}`，cron 跳过 agent 段、本 tick 静默**（等人类校对摘除分类后自动恢复；阈值是仓库脚本的 `BACKLOG_LIMIT`，由 `backlog` 子命令判定）——然后 **queue.json 超 7 天未更新自动 refresh**（约 5 分钟纯 API，零 token；失败沿用旧队列下 tick 重试）+ prepare 备料，stdout 注入 agent prompt；agent 只做编辑与收尾。频率与每次页数随 token 预算调整（改 cron schedule 或 prompt 循环次数），token 富余时也可手动触发（`cronjob run`）或直接在会话里走 prepare → 编辑 → done 流程。
+Hermes cron 驱动，watchdog 同款「script + agent」两段式。cron 的 script 段（profile `scripts/llm_translate_daily.py` wrapper → 仓库脚本）每 tick 依次：
+
+1. **积压闸门**：`Category:机翻待校对` 条目数 ≥ 5（仓库脚本的 `BACKLOG_LIMIT`，由 `backlog` 子命令判定）时只输出 `{"wakeAgent": false}`，cron 跳过 agent 段、本 tick 静默——等人类校对摘除分类后自动恢复。
+2. **refresh**：queue.json 超 7 天未更新才跑（约 5 分钟纯 API，零 token；失败沿用旧队列，下 tick 重试）。
+3. **prepare**：备料，stdout 注入 agent prompt。
+
+agent 只做编辑与收尾。频率与每次页数随 token 预算调整（改 cron schedule 或 prompt 循环次数），token 富余时也可手动触发（`cronjob run`）或直接在会话里走 prepare → 编辑 → done 流程。
 
 done 成功时输出 `NOTIFY: [[zh 条目]] <时长>无人类编辑，已由 Bot 根据 [[en:条目]] 自动更新 <url>` 固定格式行，由 cron agent 原样转发到 Discord `#wiki编辑事务【qq互联】`（与自动巡查同频道，方式同 watchdog：主 profile `hermes send -t discord:<频道ID>`）；无编辑的 skip 不推送。
 
