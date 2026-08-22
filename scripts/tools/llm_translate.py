@@ -11,8 +11,8 @@
     uv run python scripts/tools/llm_translate.py backlog   # 机翻待校对积压检查（>=5 退出码 3）
 
 同步状态的唯一载体是条目源码末尾的 HTML 注释标记：
-    <!-- K3: revid <en_revid>; <ISO 时间> -->   （已同步到 en 该版本；- 表示 en 页不存在）
-    <!-- K3: no-en; <ISO 时间> -->               （无 en 链接的 zh 原创页）
+    <!-- K3: revid <en_revid>; <ISO 时间> -->   （已同步到 en 该版本）
+revid 为 - 表示无 en 源（zh 源码无 en 链接，或 en 页不存在）。旧格式 no-en 视同 -。
 编辑（done）与跳过（skip/auto-skip）统一以标记落账——不怕本地状态丢失，格式变更
 只是普通编辑。本脚本对 wiki 的写入只有一处：skip/auto-skip 的机械打标记。
 
@@ -58,9 +58,16 @@ WIKILINK = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]*)?\]\]")
 TEMPLATE_NAME = re.compile(r"\{\{([^{}|]+)")
 EN_LINK = re.compile(r"\[\[en:([^\]|]+)")
 # 同步状态标记（条目源码末尾的 HTML 注释，唯一状态载体）：
-# <!-- K3: revid <N|->; <ISO 时间> -->（已同步到 en 版本 N，- 表示 en 页不存在）
-# <!-- K3: no-en; <ISO 时间> -->（无 en 链接的 zh 原创页）
+# <!-- K3: revid <N|->; <ISO 时间> -->（已同步到 en 版本 N；- 表示无 en 源）。
+# 旧格式 no-en 仍识别，视同 revid -，随页面下次编辑自然换掉
 MARKER_RE = re.compile(r"<!--\s*K3: (no-en|revid (\d+|-)); (\S+) -->")
+
+
+def marker_revid(marker):
+    """标记的 en revid 字符串；无标记返回 None，旧格式 no-en 归一为 '-'。"""
+    if marker is None:
+        return None
+    return marker.group(2) if marker.group(1) != "no-en" else "-"
 
 
 def api(base, **params):
@@ -344,22 +351,23 @@ def evaluate_candidate(item):
     if zh_text is None:
         return None
     marker = MARKER_RE.search(zh_text)
+    mrev = marker_revid(marker)
     m = EN_LINK.search(zh_text)
-    if not m:
-        if marker and marker.group(1) == "no-en":
-            return None
-        stamp_page(title, "no-en", "无 en 链接（zh 原创）")
-        print(f"auto-skip: {title}（无 en 链接，zh 原创）")
-        return None
-    en_title = m.group(1).strip()
-    en_text, en_revid, _ = get_page(EN_API, en_title)
+    en_title = m.group(1).strip() if m else None
+    en_text = en_revid = None
+    if en_title:
+        en_text, en_revid, _ = get_page(EN_API, en_title)
     if en_text is None:
-        if marker and marker.group(2) == "-":
+        # 无 en 源（zh 源码无 en 链接，或 en 页不存在）：revid 视为 -。
+        # 复活统一走 revid 不一致——zh 原创页后来加了 en 链接、
+        # 悬空链接的 en 页被创建，都是实际 revid 与标记的 - 不等
+        if mrev == "-":
             return None
-        stamp_page(title, "revid -", "en 页不存在")
-        print(f"auto-skip: {title}（en 页不存在）")
+        reason = "en 页不存在" if en_title else "无 en 链接（zh 原创）"
+        stamp_page(title, "revid -", reason)
+        print(f"auto-skip: {title}（{reason}）")
         return None
-    if marker and marker.group(1) != "no-en" and marker.group(2) == str(en_revid):
+    if marker is not None and mrev == str(en_revid):
         item["cold"] = max(item["cold"], marker.group(3))  # 懒修复：标记时间参与取 max
         return None  # 已同步且 en 未变化；revid 变化即自然落入处理（追更复活）
     body = split_en_body(en_text)
