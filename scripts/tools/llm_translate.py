@@ -332,77 +332,45 @@ def real_colds(titles):
     return out
 
 
-def cmd_prepare():
-    queue = load_json(QUEUE, None)
-    if queue is None:
-        sys.exit("queue.json 不存在，先跑 refresh")
-    wip = sorted(WORK.glob("*.meta.json"))
-    if wip:
-        sys.exit(
-            f"已有待处理工作项: {[p.stem.rsplit('.', 2)[0] for p in wip]}，先处理再 prepare"
-        )
+def evaluate_candidate(item):
+    """评估单个队列项：返回候选元组或 None（auto-skip/已同步），可能懒修复 item["cold"]。"""
+    title = item["title"]
+    zh_text, zh_revid, _ = get_page(ZH_API, title)
+    if zh_text is None:
+        return None
+    marker = MARKER_RE.search(zh_text)
+    m = EN_LINK.search(zh_text)
+    if not m:
+        if marker and marker.group(1) == "no-en":
+            return None
+        stamp_page(title, "no-en", "无 en 链接（zh 原创）")
+        print(f"auto-skip: {title}（无 en 链接，zh 原创）")
+        return None
+    en_title = m.group(1).strip()
+    en_text, en_revid, _ = get_page(EN_API, en_title)
+    if en_text is None:
+        if marker and marker.group(2) == "-":
+            return None
+        stamp_page(title, "revid -", "en 页不存在")
+        print(f"auto-skip: {title}（en 页不存在）")
+        return None
+    if marker and marker.group(1) != "no-en" and marker.group(2) == str(en_revid):
+        item["cold"] = max(item["cold"], marker.group(3))  # 懒修复：标记时间参与取 max
+        return None  # 已同步且 en 未变化；revid 变化即自然落入处理（追更复活）
+    body = split_en_body(en_text)
+    if not any(
+        len(line) > 20 and not line.startswith("=") for line in body.splitlines()
+    ):
+        stamp_page(title, f"revid {en_revid}", "en 无实质内容（仅标题骨架）")
+        print(f"auto-skip: {title}（en 仅标题骨架）")
+        return None
+    item["cold"] = real_colds([title])[title] or item["cold"]
+    return (item["cold"], title, zh_text, zh_revid, en_title, en_revid, body)
 
-    # walk：跳过已打标页；对未处理候选取实际冷度，陈旧冷度单调偏低（时间只往前走），
-    # 故扫到「下一条陈旧冷度 ≥ 当前最优实际冷度」即可确定真队首；算出的实际冷度
-    # 写回 queue.json 懒修复排序（每周全量 refresh 仍保留，处理分类新增等）
-    best = (
-        None  # (real_cold, title, zh_text, zh_revid, en_title, en_text, en_revid, body)
-    )
-    queue_dirty = False
-    i = 0
-    while i < len(queue):
-        item = queue[i]
-        if best and item["cold"] >= best[0]:
-            break
-        i += 1
-        title = item["title"]
-        zh_text, zh_revid, _ = get_page(ZH_API, title)
-        if zh_text is None:
-            continue
-        marker = MARKER_RE.search(zh_text)
-        m = EN_LINK.search(zh_text)
-        if not m:
-            if marker and marker.group(1) == "no-en":
-                continue
-            stamp_page(title, "no-en", "无 en 链接（zh 原创）")
-            print(f"auto-skip: {title}（无 en 链接，zh 原创）")
-            continue
-        en_title = m.group(1).strip()
-        en_text, en_revid, _ = get_page(EN_API, en_title)
-        if en_text is None:
-            if marker and marker.group(2) == "-":
-                continue
-            stamp_page(title, "revid -", "en 页不存在")
-            print(f"auto-skip: {title}（en 页不存在）")
-            continue
-        if marker and marker.group(1) != "no-en" and marker.group(2) == str(en_revid):
-            new_cold = max(item["cold"], marker.group(3))  # 懒修复：标记时间参与取 max
-            if item["cold"] != new_cold:
-                item["cold"] = new_cold
-                queue_dirty = True
-            continue  # 已同步且 en 未变化；revid 变化即自然落入处理（追更复活）
-        body = split_en_body(en_text)
-        if not any(
-            len(line) > 20 and not line.startswith("=") for line in body.splitlines()
-        ):
-            stamp_page(title, f"revid {en_revid}", "en 无实质内容（仅标题骨架）")
-            print(f"auto-skip: {title}（en 仅标题骨架）")
-            continue
-        rc = real_colds([title])[title] or item["cold"]
-        if rc != item["cold"]:
-            item["cold"] = rc
-            queue_dirty = True
-        if best is None or rc < best[0]:
-            best = (rc, title, zh_text, zh_revid, en_title, en_text, en_revid, body)
 
-    if queue_dirty:
-        queue.sort(key=lambda q: q["cold"])
-        save_json(QUEUE, queue)
-    if best is None:
-        print("队列已空")
-        return
-    cold, title, zh_text, zh_revid, en_title, en_text, en_revid, body = best
-
+def write_work_files(best):
+    """把队首候选的备料写进 work 目录（en 正文 / zh 现文 / meta），并打印摘要。"""
+    cold, title, zh_text, zh_revid, en_title, en_revid, body = best
     mapping, unresolved = resolve_links(body)
     head, zh_body, tail = split_zh_frame(zh_text)
     zh_flags = [
@@ -440,6 +408,42 @@ def cmd_prepare():
     )
     if zh_flags:
         print(f"  ⚠ zh 现文含 {zh_flags}——保留结构，对照 en 补增量")
+
+
+def cmd_prepare():
+    queue = load_json(QUEUE, None)
+    if queue is None:
+        sys.exit("queue.json 不存在，先跑 refresh")
+    wip = sorted(WORK.glob("*.meta.json"))
+    if wip:
+        sys.exit(
+            f"已有待处理工作项: {[p.stem.rsplit('.', 2)[0] for p in wip]}，先处理再 prepare"
+        )
+
+    # walk：跳过已打标页；对未处理候选取实际冷度，陈旧冷度单调偏低（时间只往前走），
+    # 故扫到「下一条陈旧冷度 ≥ 当前最优实际冷度」即可确定真队首；算出的实际冷度
+    # 写回 queue.json 懒修复排序（每周全量 refresh 仍保留，处理分类新增等）
+    best = None  # (real_cold, title, zh_text, zh_revid, en_title, en_revid, body)
+    queue_dirty = False
+    i = 0
+    while i < len(queue):
+        item = queue[i]
+        if best and item["cold"] >= best[0]:
+            break
+        i += 1
+        old_cold = item["cold"]
+        cand = evaluate_candidate(item)
+        queue_dirty |= item["cold"] != old_cold
+        if cand and (best is None or cand[0] < best[0]):
+            best = cand
+
+    if queue_dirty:
+        queue.sort(key=lambda q: q["cold"])
+        save_json(QUEUE, queue)
+    if best is None:
+        print("队列已空")
+        return
+    write_work_files(best)
 
 
 # ---------------------------------------------------------------- done
