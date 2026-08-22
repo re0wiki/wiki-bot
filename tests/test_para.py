@@ -145,12 +145,27 @@ def test_cram_idempotent():
 
 
 def test_cram_unknown_language_skipped():
-    # 语言表外的语言（印尼语）→ 整参数保守跳过
+    # 语言表外的标注（区域/形态标注如 PAL）→ 整参数保守跳过
     src = (
         "{{Infobox book\n"
-        "| date_ja = January 24, 2014 (Japanese)<br>August 2024 (Indonesian)\n}}\n"
+        "| date_ja = January 24, 2014 (Japanese)<br>August 2024 (PAL)\n}}\n"
     )
     assert apply_para(src) == src
+
+
+def test_cram_language_aliases():
+    # Indonesian 与简写/笔误别名（JP/Japenese/Potuguese/Portuguese-BR 均 en 实测）
+    src = (
+        "{{Infobox book\n"
+        "| date_ja = 2014-01-24 (JP)<br>2021-05-05 (Indonesian)"
+        "<br>2018-04-01 (Spanish)\n"
+        "| pages_ja = 292 (Japenese)<br>280 (Potuguese)<br>300 (Portuguese-BR)\n}}\n"
+    )
+    assert apply_para(src) == (
+        "{{Infobox book\n"
+        "| date_ja = 2014-01-24\n| date_id = 2021-05-05\n| date_es = 2018-04-01\n"
+        "| pages_ja = 292\n| pages_pt = 280\n| pages_pt_br = 300\n}}\n"
+    )
 
 
 def test_cram_non_language_annotations_untouched():

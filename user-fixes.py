@@ -159,21 +159,27 @@ user_fixes["anti-ve"] = {
 
 # region para
 # 多语言堆积拆分的语言表：en 括注 → zh 参数后缀。
-# 与 Module:Infobox book 的 languages 表同集（两个事实源，改动需同步）；
-# 集合外的语言（印尼语/德语等）模板不支持，遇到即整参数保守跳过。
+# 与 Module:Infobox book 的 languages 表同集（两个事实源，改动需同步）。
+# 简写/笔写别名（JP/Japenese/Potuguese 均为 en 实测值）归并到对应语言；
+# 集合外的标注（PAL/English/Physical/CN 等区域或形态标注）非语言，整参数保守跳过。
 CRAM_LANGS = {
     "Japanese": "ja",
+    "JP": "ja",
+    "Japenese": "ja",  # en 拼写笔误实测值
     "Simplified Chinese": "zh_hans",
     "Traditional Chinese": "zh_hant",
     "English": "en",
     "Korean": "ko",
     "Polish": "pl",
     "Portuguese": "pt",
+    "Potuguese": "pt",  # en 拼写笔误实测值
+    "Portuguese-BR": "pt_br",
     "French": "fr",
     "Italian": "it",
     "Vietnamese": "vi",
     "Russian": "ru",
     "Spanish": "es",
+    "Indonesian": "id",
 }
 CRAM_LINE = re.compile(
     r"^\|[ \t]*(pages|date|isbn)_ja[ \t]*=[ \t]*(\S[^\n]*?)[ \t]*$", re.IGNORECASE
@@ -217,8 +223,10 @@ def split_crammed_params(m: re.Match) -> str:
             or not segs
             or len(segs) != len(parts)
             or any(lang not in CRAM_LANGS for _, lang in segs)
-            or not any(lang == "Japanese" for _, lang in segs)
-            or len({lang for _, lang in segs}) != len(segs)  # 同语言多段（分册）留人工
+            # 基底参数的值来源（Japanese 及其别名）
+            or "ja" not in {CRAM_LANGS[lang] for _, lang in segs}
+            # 同语言多段（分册/别名混写）留人工——按归一后的后缀判重
+            or len({CRAM_LANGS[lang] for _, lang in segs}) != len(segs)
         ):
             out.append(line)
             continue
