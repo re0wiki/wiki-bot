@@ -135,6 +135,6 @@ uv run python pwb/pwb.py replace -automaticsummary \
 
 ## 注意
 
-- replace 系脚本（replace/cosmetic_changes/noreferences 等走 textlib 的）都尊重 fork 加的 `<div class="as-is">` 保护标签，不想被 bot 动的内容包进这个 div。
+- replace 系脚本（replace/cosmetic_changes/noreferences 等走 textlib 的）都尊重 fork 加的 `as-is` 注释对保护（`<!--as-is-->…<!--/as-is-->`），不想被 bot 动的内容包进这对注释（行内内容整词包裹即可）。
 - `run_job` 子进程输出乱码的排查看 AGENTS.md「坑」节（PYTHONIOENCODING 条目）。
 - 写入红线不变：测试只用 `User:IchiSanNi/沙盒`，批量写入需用户明确指示，绝不写 zh 以外语言站。
