@@ -301,7 +301,7 @@ def add_marker(text, marker):
     return "\n".join(body + [marker] + ([""] if tail else []) + tail) + "\n"
 
 
-def stamp_page(title, kind, reason):
+def stamp_page(title, revid, reason):
     """机械打同步标记（skip/auto-skip 的唯一 wiki 写入）。"""
     import pywikibot
 
@@ -309,7 +309,7 @@ def stamp_page(title, kind, reason):
     site.login()
     assert site.user() == BOT
     page = pywikibot.Page(site, title)
-    page.text = add_marker(page.text, f"<!-- K3: {kind}; {now_iso()} -->")
+    page.text = add_marker(page.text, f"<!-- K3: revid {revid}; {now_iso()} -->")
     # 标记改动读者不可见，但属低频单页编辑，与管线一致不带 bot flag
     page.save(summary=f"K3 同步标记：{reason}", bot=False, minor=False)
 
@@ -356,7 +356,7 @@ def evaluate_candidate(item):
         if mrev == "-":
             return None
         reason = "en 页不存在" if en_title else "无 en 链接（zh 原创）"
-        stamp_page(title, "revid -", reason)
+        stamp_page(title, "-", reason)
         print(f"auto-skip: {title}（{reason}）")
         return None
     if marker is not None and mrev == str(en_revid):
@@ -366,7 +366,7 @@ def evaluate_candidate(item):
     if not any(
         len(line) > 20 and not line.startswith("=") for line in body.splitlines()
     ):
-        stamp_page(title, f"revid {en_revid}", "en 无实质内容（仅标题骨架）")
+        stamp_page(title, en_revid, "en 无实质内容（仅标题骨架）")
         print(f"auto-skip: {title}（en 仅标题骨架）")
         return None
     item["cold"] = real_colds([title])[title] or item["cold"]
@@ -482,16 +482,15 @@ def extract_templates(text):
     return {m.group(1).strip() for m in TEMPLATE_NAME.finditer(text)}
 
 
-# 参数含这些子串的 To do 标注，其任务本身就是「重翻/校对翻译」，管线处理即完成 → 清理
-TODO_FULFILLED = ("本页翻译结果不准确", "AI翻译")
-# 历史 K3 标注（机翻标记已改由 Category:机翻待校对 承载，页首不再注入）
-K3_MARK = "由 K3 翻译自英文站，待校对润色"
+# 参数含这些子串的 To do 标注属翻译类（重翻/校对任务标注、K3 标注），
+# 管线处理即完成、机翻标记由 Category:机翻待校对 承载 → 清理
+TODO_FULFILLED = ("本页翻译结果不准确", "AI翻译", "由 K3 翻译自英文站，待校对润色")
 
 
 def strip_todo(line):
     """页首 To do 清理：机翻标记由分类承载后，参数中的翻译类标注一律移除。
 
-    按「；」分段丢弃 K3 标注段与翻译任务类旧标注段；清空则还原裸模板；
+    按「；」分段丢弃翻译类标注段；清空则还原裸模板；
     其他参数（人工标注的无关任务）原样保留。
     """
     m = re.fullmatch(r"\{\{\s*To do\s*\|(.+)\}\}", line.strip())
@@ -500,7 +499,7 @@ def strip_todo(line):
     kept = [
         seg
         for seg in m.group(1).split("；")
-        if K3_MARK not in seg and not any(k in seg for k in TODO_FULFILLED)
+        if not any(k in seg for k in TODO_FULFILLED)
     ]
     if kept == [m.group(1)]:
         return line
@@ -611,7 +610,7 @@ def cmd_skip(slug, reason):
     meta = load_json(WORK / f"{slug}.meta.json", None)
     if meta is None:
         sys.exit(f"找不到 {slug}.meta.json")
-    stamp_page(meta["title"], f"revid {meta['en_revid']}", reason)
+    stamp_page(meta["title"], meta["en_revid"], reason)
     clean_work(slug)
     print(f"skipped: {meta['title']}（{reason}，en revid {meta['en_revid']}）")
 
