@@ -1,14 +1,22 @@
-"""LLM 翻译管线的机械部分：选页、备料、校验、发布。
+"""LLM 翻译管线的机械部分：选页、备料、核验、打标记。
 
 设计文档：docs/llm-translation.md。翻译本身由 agent 完成，不在本脚本内。
 
 用法（仓库根目录）：
-    PYTHONPATH= .venv/Scripts/python.exe scripts/tools/llm_translate.py refresh   # 重建选页队列（约 3 分钟，低频）
-    PYTHONPATH= .venv/Scripts/python.exe scripts/tools/llm_translate.py prepare   # 取队首备料
-    PYTHONPATH= .venv/Scripts/python.exe scripts/tools/llm_translate.py publish <slug>  # 校验并写入
-    PYTHONPATH= .venv/Scripts/python.exe scripts/tools/llm_translate.py skip <slug> [理由]  # agent 判断不宜翻译
+    uv run python scripts/tools/llm_translate.py refresh   # 重建选页队列（约 5 分钟，低频）
+    uv run python scripts/tools/llm_translate.py prepare   # 取队首备料
+    uv run python scripts/tools/llm_translate.py stamp <slug>  # 打印编辑应用的标准摘要与同步标记
+    uv run python scripts/tools/llm_translate.py done <slug> [理由]  # 核验 wiki 编辑
+    uv run python scripts/tools/llm_translate.py skip <slug> [理由]  # 无需内容编辑（打标记）
+    uv run python scripts/tools/llm_translate.py backlog   # 机翻待校对积压检查（>=5 退出码 3）
 
-运行期数据全部在 logs/llm_translate/（gitignored）。
+同步状态的唯一载体是条目源码末尾的 HTML 注释标记：
+    <!-- K3: revid <en_revid>; <ISO 时间> -->   （已同步到 en 该版本；- 表示 en 页不存在）
+    <!-- K3: no-en; <ISO 时间> -->               （无 en 链接的 zh 原创页）
+编辑（done）与跳过（skip/auto-skip）统一以标记落账——不怕本地状态丢失，格式变更
+只是普通编辑。本脚本对 wiki 的写入只有一处：skip/auto-skip 的机械打标记。
+
+运行期数据全部在 .cache/llm_translate/（gitignored，跨运行状态——非 scratch）。
 """
 
 import argparse
@@ -23,17 +31,19 @@ from urllib.parse import quote
 import requests
 
 ROOT = Path(__file__).resolve().parent.parent.parent
-DATA = ROOT / "logs" / "llm_translate"
+DATA = ROOT / ".cache" / "llm_translate"
 WORK = DATA / "work"
 QUEUE = DATA / "queue.json"
-STATE = DATA / "state.json"
 
 ZH_API = "https://rezero.fandom.com/zh/api.php"
 EN_API = "https://rezero.fandom.com/api.php"
 BOT = "IchiSanNi"
 CATEGORY = "Category:待修撰"
-TODO_MARKED = "{{To do|由 K3 翻译自英文站，待校对润色}}"
-SUMMARY_PREFIX = "K3翻译: revid "
+# 管线处理过的条目必挂的分类（人类校对后手动摘除；再次处理会重新挂上）
+PROOFREAD_CAT = "Category:机翻待校对"
+# 机翻待校对积压上限：达到即暂停处理新页（等人类校对摘分类），由 backlog 子命令判定
+BACKLOG_LIMIT = 5
+SUMMARY_PREFIX = "K3: revid "
 
 S = requests.Session()
 
@@ -47,7 +57,10 @@ LANGLINK_LINE = re.compile(r"^\[\[[a-z][a-z-]*:[^\]]*\]\]\s*$")
 WIKILINK = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]*)?\]\]")
 TEMPLATE_NAME = re.compile(r"\{\{([^{}|]+)")
 EN_LINK = re.compile(r"\[\[en:([^\]|]+)")
-SUMMARY_REVID = re.compile(r"K3翻译: revid (\d+)")
+# 同步状态标记（条目源码末尾的 HTML 注释，唯一状态载体）：
+# <!-- K3: revid <N|->; <ISO 时间> -->（已同步到 en 版本 N，- 表示 en 页不存在）
+# <!-- K3: no-en; <ISO 时间> -->（无 en 链接的 zh 原创页）
+MARKER_RE = re.compile(r"<!--\s*K3: (no-en|revid (\d+|-)); (\S+) -->")
 
 
 def api(base, **params):
@@ -96,6 +109,10 @@ def save_json(path, data):
     path.write_text(json.dumps(data, ensure_ascii=False, indent=1), encoding="utf-8")
 
 
+def now_iso():
+    return datetime.now(UTC).isoformat(timespec="seconds")
+
+
 # ---------------------------------------------------------------- refresh
 
 
@@ -114,6 +131,26 @@ def category_members():
         if "continue" not in r:
             return members
         cont = r["continue"]
+
+
+def scan_markers(titles):
+    """批量抓 zh 源码解析同步标记 → {title: (kind, revid, ts)}（20/批防响应过大）。"""
+    out = {}
+    for i in range(0, len(titles), 20):
+        r = api(
+            ZH_API,
+            prop="revisions",
+            titles="|".join(titles[i : i + 20]),
+            rvprop="content",
+            rvslots="main",
+        )
+        for p in r["query"]["pages"]:
+            if "missing" in p:
+                continue
+            m = MARKER_RE.search(p["revisions"][0]["slots"]["main"]["content"])
+            if m:
+                out[p["title"]] = (m.group(1), m.group(2), m.group(3))
+    return out
 
 
 def cmd_refresh():
@@ -163,19 +200,15 @@ def cmd_refresh():
         if (i + 1) % 50 == 0:
             print(f"orphans: {i + 1}/{len(orphans)}")
 
-    # 已翻译页按翻译时间计冷度：翻译即同步了 en 最新人工改动，视为热页，
-    # 避免反复追踪 en 微小更新而挤占从未翻过的远古条目
-    state = load_json(STATE, {"skip": {}})
-    translated_at = {
-        t: e["translated_at"]
-        for t, e in state["skip"].items()
-        if isinstance(e, dict) and e.get("translated_at")
-    }
+    # 已打标页的标记时间参与冷度取 max：打标（编辑或 skip）意味着「截至该时间
+    # zh 与 en 已确认同步」，视为热页排队尾，避免反复追踪 en 微小更新而挤占
+    # 从未翻过的远古条目
+    markers = scan_markers([q["title"] for q in queue])
     for q in queue:
-        if q["title"] in translated_at:
-            q["cold"] = translated_at[q["title"]]
-    if translated_at:
-        print(f"translated pages re-dated: {len(translated_at)}")
+        if q["title"] in markers:
+            q["cold"] = max(q["cold"], markers[q["title"]][2])
+    if markers:
+        print(f"marked pages re-dated: {len(markers)}")
 
     queue.sort(key=lambda q: q["cold"])
     save_json(QUEUE, queue)
@@ -249,304 +282,388 @@ def resolve_links(body):
     return mapping, sorted(set(unresolved))
 
 
-def translated_rev(zh_title):
-    """从 zh 历史摘要解析上次翻译对应的 (en revid, 翻译时间)（state 丢失时的恢复手段）。"""
-    r = api(
-        ZH_API,
-        prop="revisions",
-        titles=zh_title,
-        rvprop="ids|comment|user|timestamp",
-        rvlimit="50",
-    )
-    for rev in r["query"]["pages"][0].get("revisions", []):
-        m = SUMMARY_REVID.search(rev.get("comment", ""))
-        if m:
-            return int(m.group(1)), rev["timestamp"]
-    return None, None
+def add_marker(text, marker):
+    """在正文末尾（语言链接块之前）放置同步标记；已有标记则原位替换。"""
+    if MARKER_RE.search(text):
+        return MARKER_RE.sub(marker, text)
+    lines = text.splitlines()
+    i = len(lines)
+    while i > 0 and (LANGLINK_LINE.match(lines[i - 1]) or not lines[i - 1].strip()):
+        i -= 1
+    body = lines[:i]
+    while body and not body[-1].strip():
+        body.pop()
+    tail = [line for line in lines[i:] if line.strip()]
+    return "\n".join(body + [marker] + ([""] if tail else []) + tail) + "\n"
 
 
-def en_revids(titles):
-    """批量取 en 页最新 revid（50/批，默认 rvlimit=1）。页面不存在时值为 None。"""
+def stamp_page(title, kind, reason):
+    """机械打同步标记（skip/auto-skip 的唯一 wiki 写入）。"""
+    import pywikibot
+
+    site = pywikibot.Site("zh", "re0")
+    site.login()
+    assert site.user() == BOT
+    page = pywikibot.Page(site, title)
+    page.text = add_marker(page.text, f"<!-- K3: {kind}; {now_iso()} -->")
+    # 标记改动读者不可见，但属低频单页编辑，与管线一致不带 bot flag
+    page.save(summary=f"K3 同步标记：{reason}", bot=False, minor=False)
+
+
+def real_colds(titles):
+    """批量计算实际冷度（每页最近一次非 IchiSanNi 编辑的时间）。
+
+    rvlimit=20 内找首个非 bot 修订；若近 20 版全是 bot 编辑则取第 20 版时间
+    （是真实冷度的上界——偏暖估计只会让我们更保守，安全方向）。
+    """
     out = {}
-    titles = sorted(titles)
     for i in range(0, len(titles), 50):
         r = api(
-            EN_API, prop="revisions", titles="|".join(titles[i : i + 50]), rvprop="ids"
+            ZH_API,
+            prop="revisions",
+            titles="|".join(titles[i : i + 50]),
+            rvprop="ids|timestamp|user",
+            rvlimit="20",
         )
         for p in r["query"]["pages"]:
-            out[p["title"]] = None if "missing" in p else p["revisions"][0]["revid"]
+            revs = p.get("revisions", [])
+            cold = next((rv["timestamp"] for rv in revs if rv.get("user") != BOT), None)
+            out[p["title"]] = cold or (revs[-1]["timestamp"] if revs else None)
     return out
 
 
-def revalidate_skips(state):
-    """en 相关跳过项（dict 形态）批量复查 en revid，变化则复活。返回复活页数。"""
-    entries = {t: e for t, e in state["skip"].items() if isinstance(e, dict)}
-    if not entries:
-        return 0
-    current = en_revids([e["en_title"] for e in entries.values()])
-    revived = 0
-    for title, e in list(entries.items()):
-        revid = current.get(e["en_title"])
-        if revid is not None and revid != e["en_revid"]:
-            del state["skip"][title]
-            revived += 1
-    return revived
+def evaluate_candidate(item):
+    """评估单个队列项：返回候选元组或 None（auto-skip/已同步），可能懒修复 item["cold"]。"""
+    title = item["title"]
+    zh_text, zh_revid, _ = get_page(ZH_API, title)
+    if zh_text is None:
+        return None
+    marker = MARKER_RE.search(zh_text)
+    m = EN_LINK.search(zh_text)
+    if not m:
+        if marker and marker.group(1) == "no-en":
+            return None
+        stamp_page(title, "no-en", "无 en 链接（zh 原创）")
+        print(f"auto-skip: {title}（无 en 链接，zh 原创）")
+        return None
+    en_title = m.group(1).strip()
+    en_text, en_revid, _ = get_page(EN_API, en_title)
+    if en_text is None:
+        if marker and marker.group(2) == "-":
+            return None
+        stamp_page(title, "revid -", "en 页不存在")
+        print(f"auto-skip: {title}（en 页不存在）")
+        return None
+    if marker and marker.group(1) != "no-en" and marker.group(2) == str(en_revid):
+        item["cold"] = max(item["cold"], marker.group(3))  # 懒修复：标记时间参与取 max
+        return None  # 已同步且 en 未变化；revid 变化即自然落入处理（追更复活）
+    body = split_en_body(en_text)
+    if not any(
+        len(line) > 20 and not line.startswith("=") for line in body.splitlines()
+    ):
+        stamp_page(title, f"revid {en_revid}", "en 无实质内容（仅标题骨架）")
+        print(f"auto-skip: {title}（en 仅标题骨架）")
+        return None
+    item["cold"] = real_colds([title])[title] or item["cold"]
+    return (item["cold"], title, zh_text, zh_revid, en_title, en_revid, body)
+
+
+def write_work_files(best):
+    """把队首候选的备料写进 work 目录（en 正文 / zh 现文 / meta），并打印摘要。"""
+    cold, title, zh_text, zh_revid, en_title, en_revid, body = best
+    mapping, unresolved = resolve_links(body)
+    head, zh_body, tail = split_zh_frame(zh_text)
+    zh_flags = [
+        name
+        for name, pat in [("infobox", r"\{\{Infobox"), ("gallery", r"<gallery")]
+        if re.search(pat, zh_body)
+    ]
+
+    slug = slugify(title)
+    WORK.mkdir(parents=True, exist_ok=True)
+    (WORK / f"{slug}.body.en.txt").write_text(body, encoding="utf-8")
+    (WORK / f"{slug}.zh.txt").write_text(zh_text, encoding="utf-8")
+    save_json(
+        WORK / f"{slug}.meta.json",
+        {
+            "title": title,
+            "en_title": en_title,
+            "en_revid": en_revid,
+            "zh_revid": zh_revid,
+            "cold": cold,
+            "head": head,
+            "tail": tail,
+            "zh_body_len": len(zh_body),
+            "zh_flags": zh_flags,
+            "link_map": mapping,
+            "unresolved_links": unresolved,
+        },
+    )
+    print(f"prepared: {title} (cold {cold[:10]}, en revid {en_revid})")
+    print(
+        f"  en body: {len(body)} chars, links: {len(mapping)} resolved, {len(unresolved)} unresolved"
+    )
+    print(
+        f"  zh body replaced: {len(zh_body)} chars（人工内容请先过目 {WORK / f'{slug}.zh.txt'}）"
+    )
+    if zh_flags:
+        print(f"  ⚠ zh 现文含 {zh_flags}——保留结构，对照 en 补增量")
 
 
 def cmd_prepare():
     queue = load_json(QUEUE, None)
     if queue is None:
         sys.exit("queue.json 不存在，先跑 refresh")
-    state = load_json(STATE, {"skip": {}})
-    revived = revalidate_skips(state)
-    if revived:
-        print(f"en 更新复活: {revived} 页")
     wip = sorted(WORK.glob("*.meta.json"))
     if wip:
         sys.exit(
-            f"已有待处理工作项: {[p.stem.rsplit('.', 2)[0] for p in wip]}，先翻译/发布/skip 再 prepare"
+            f"已有待处理工作项: {[p.stem.rsplit('.', 2)[0] for p in wip]}，先处理再 prepare"
         )
 
-    for item in queue:
-        title = item["title"]
-        entry = state["skip"].get(title)
-        if isinstance(entry, str):  # 永久跳过（zh 原创等）
-            continue
-        if entry:  # en 相关跳过，revid 未变（变了已在上面复活）
-            continue
-        zh_text, zh_revid, _ = get_page(ZH_API, title)
-        if zh_text is None:
-            state["skip"][title] = "zh 页不存在"
-            continue
-        m = EN_LINK.search(zh_text)
-        if not m:
-            state["skip"][title] = "无 en 链接（zh 原创）"
-            continue
-        en_title = m.group(1).strip()
-        en_text, en_revid, _ = get_page(EN_API, en_title)
-        if en_text is None:
-            state["skip"][title] = {
-                "reason": "en 页不存在",
-                "en_title": en_title,
-                "en_revid": None,
-            }
-            continue
-        tr_revid, tr_ts = translated_rev(title)
-        if tr_revid == en_revid:
-            state["skip"][title] = {
-                "reason": "已翻译，en 未变化",
-                "en_title": en_title,
-                "en_revid": en_revid,
-                "translated_at": tr_ts,
-            }
-            continue
+    # walk：跳过已打标页；对未处理候选取实际冷度，陈旧冷度单调偏低（时间只往前走），
+    # 故扫到「下一条陈旧冷度 ≥ 当前最优实际冷度」即可确定真队首；算出的实际冷度
+    # 写回 queue.json 懒修复排序（每周全量 refresh 仍保留，处理分类新增等）
+    best = None  # (real_cold, title, zh_text, zh_revid, en_title, en_revid, body)
+    queue_dirty = False
+    i = 0
+    while i < len(queue):
+        item = queue[i]
+        if best and item["cold"] >= best[0]:
+            break
+        i += 1
+        old_cold = item["cold"]
+        cand = evaluate_candidate(item)
+        queue_dirty |= item["cold"] != old_cold
+        if cand and (best is None or cand[0] < best[0]):
+            best = cand
 
-        body = split_en_body(en_text)
-        if not any(
-            len(line) > 20 and not line.startswith("=") for line in body.splitlines()
-        ):
-            state["skip"][title] = {
-                "reason": "en 无实质内容（仅标题骨架）",
-                "en_title": en_title,
-                "en_revid": en_revid,
-            }
-            print(f"auto-skip: {title}（en 仅标题骨架）")
-            continue
-        mapping, unresolved = resolve_links(body)
-        head, zh_body, tail = split_zh_frame(zh_text)
-        zh_flags = [
-            name
-            for name, pat in [("infobox", r"\{\{Infobox"), ("gallery", r"<gallery")]
-            if re.search(pat, zh_body)
-        ]
-
-        slug = slugify(title)
-        WORK.mkdir(parents=True, exist_ok=True)
-        (WORK / f"{slug}.body.en.txt").write_text(body, encoding="utf-8")
-        (WORK / f"{slug}.zh.txt").write_text(zh_text, encoding="utf-8")
-        save_json(
-            WORK / f"{slug}.meta.json",
-            {
-                "title": title,
-                "en_title": en_title,
-                "en_revid": en_revid,
-                "zh_revid": zh_revid,
-                "cold": item["cold"],
-                "head": head,
-                "tail": tail,
-                "zh_body_len": len(zh_body),
-                "zh_flags": zh_flags,
-                "link_map": mapping,
-                "unresolved_links": unresolved,
-            },
-        )
-        save_json(STATE, state)
-        print(f"prepared: {title} (cold {item['cold'][:10]}, en revid {en_revid})")
-        print(
-            f"  en body: {len(body)} chars, links: {len(mapping)} resolved, {len(unresolved)} unresolved"
-        )
-        print(
-            f"  zh body replaced: {len(zh_body)} chars（人工内容请先过目 {WORK / f'{slug}.zh.txt'}）"
-        )
-        if zh_flags:
-            print(f"  ⚠ zh 现文含 {zh_flags}——考虑只局部修补 prose 而非整页替换")
+    if queue_dirty:
+        queue.sort(key=lambda q: q["cold"])
+        save_json(QUEUE, queue)
+    if best is None:
+        print("队列已空")
         return
-    save_json(STATE, state)
-    print("队列已空")
+    write_work_files(best)
 
 
-# ---------------------------------------------------------------- publish
+# ---------------------------------------------------------------- done
+
+
+def cold_dur(meta):
+    """冷度时长字符串（摘要用，向其他编辑者说明自动处理该页的原因）。"""
+    days = (datetime.now(UTC) - datetime.fromisoformat(meta["cold"])).days
+    return f"{days / 365:.1f}年" if days >= 365 else f"{max(days // 30, 1)}个月"
+
+
+def std_summary(meta):
+    """标准编辑摘要（纯人类可读信息；机器校验只看源码里的同步标记）。"""
+    return f"{SUMMARY_PREFIX}{meta['en_revid']}（{cold_dur(meta)}无人类编辑）"
+
+
+def notify_line(meta):
+    url = f"https://rezero.fandom.com/zh/wiki/{quote(meta['title'], safe='/:')}"
+    return (
+        f"NOTIFY: [[{meta['title']}]] {cold_dur(meta)}无人类编辑，"
+        f"已由 Bot 根据 [[en:{meta['en_title']}]] 自动更新 {url}"
+    )
+
+
+def clean_work(slug):
+    for f in WORK.glob(f"{slug}.*"):
+        f.unlink()
 
 
 def extract_templates(text):
     return {m.group(1).strip() for m in TEMPLATE_NAME.finditer(text)}
 
 
-# 参数含这些子串的 To do 标注，其任务本身就是「重翻/校对翻译」，K3 翻译即完成 → 替换而非合并
+# 参数含这些子串的 To do 标注，其任务本身就是「重翻/校对翻译」，管线处理即完成 → 清理
 TODO_FULFILLED = ("本页翻译结果不准确", "AI翻译")
+# 历史 K3 标注（机翻标记已改由 Category:机翻待校对 承载，页首不再注入）
+K3_MARK = "由 K3 翻译自英文站，待校对润色"
 
 
-def mark_todo(line):
-    """页首 To do 注入 K3 标注。
+def strip_todo(line):
+    """页首 To do 清理：机翻标记由分类承载后，参数中的翻译类标注一律移除。
 
-    裸模板 → 替换为 K3 标注；参数是翻译任务类旧标注 → 替换（任务已完成）；
-    其他参数 → 合并保留原说明；已含 K3 标注 → 不动（幂等）。
+    按「；」分段丢弃 K3 标注段与翻译任务类旧标注段；清空则还原裸模板；
+    其他参数（人工标注的无关任务）原样保留。
     """
-    s = line.strip()
-    if re.fullmatch(r"\{\{\s*To do\s*\}\}", s):
-        return TODO_MARKED
-    m = re.fullmatch(r"\{\{\s*To do\s*\|(.+)\}\}", s)
-    if not m or "K3 翻译" in m.group(1):
+    m = re.fullmatch(r"\{\{\s*To do\s*\|(.+)\}\}", line.strip())
+    if not m:
         return line
-    if any(k in m.group(1) for k in TODO_FULFILLED):
-        return TODO_MARKED
-    return "{{To do|" + m.group(1) + "；由 K3 翻译自英文站，待校对润色}}"
+    kept = [
+        seg
+        for seg in m.group(1).split("；")
+        if K3_MARK not in seg and not any(k in seg for k in TODO_FULFILLED)
+    ]
+    if kept == [m.group(1)]:
+        return line
+    if not kept:
+        return "{{To do}}"
+    return "{{To do|" + "；".join(kept) + "}}"
 
 
-def cmd_publish(slug):
+def cmd_done(slug):
+    """一页处理完成：机械核验 agent 的 wiki 编辑。
+
+    核验（均以 prepare 时的 zh 现文为基线）：
+    - 最新编辑是本账号，源码含且仅含一个同步标记且 revid 与 meta 一致；
+    - 页首模板块除 To do 翻译类标注清理外逐行不变，页尾语言链接块不变；
+    - 正文内链目标（按 页面/文件/分类/语言链接 分类）与模板调用
+      不超出 link_map ∪ 未解析名 ∪ en 源 ∪ zh 现文的白名单；
+    - 正文末尾挂了 [[Category:机翻待校对]]（人类校对后手动摘除）。
+    状态由源码标记承载，通过即输出 NOTIFY 行，无本地落盘。
+    """
     meta = load_json(WORK / f"{slug}.meta.json", None)
     if meta is None:
         sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
-    out_path = WORK / f"{slug}.body.zh.txt"
-    if not out_path.exists():
-        sys.exit(f"找不到译文 {out_path}")
-    out = out_path.read_text(encoding="utf-8").strip() + "\n"
-    en_body = (WORK / f"{slug}.body.en.txt").read_text(encoding="utf-8")
-
-    # 护栏 1：结构不变量
-    allowed_links = set(meta["link_map"].values()) | set(meta["unresolved_links"])
-    allowed_links |= {
-        m.group(1).strip()
-        for m in WIKILINK.finditer(en_body)
-        if re.match(r"(?i)(File|Image):", m.group(1))
-    }
-    bad_links = []
-    for m in WIKILINK.finditer(out):
-        t = m.group(1).strip()
-        if re.match(r"(?i)Category:", t):
-            bad_links.append(f"{t}（分类不应出现在正文）")
-        elif re.match(r"(?i)(File|Image):", t):
-            if t not in allowed_links:
-                bad_links.append(t)
-        elif re.match(r"[a-z][a-z-]*:", t):
-            bad_links.append(f"{t}（语言链接不应出现在正文）")
-        elif t not in allowed_links:
-            bad_links.append(t)
-    if bad_links:
-        sys.exit("内链校验失败: " + ", ".join(bad_links))
-    tpl_en, tpl_out = extract_templates(en_body), extract_templates(out)
-    if tpl_en != tpl_out:
-        sys.exit(f"模板校验失败: en={sorted(tpl_en)} out={sorted(tpl_out)}")
-
-    # 护栏 2：人编冲突（prepare 之后 zh 页被任何人动过）
-    _, zh_revid, _ = get_page(ZH_API, meta["title"])
-    if zh_revid != meta["zh_revid"]:
-        sys.exit(
-            f"zh 页在 prepare 后有新编辑（{meta['zh_revid']} -> {zh_revid}），中止"
-        )
-
-    # 拼装：页首（To do 注入 K3 标注）+ 译文 + 页尾语言链接
-    head = [mark_todo(line) for line in meta["head"]]
-    parts = ["\n".join(head), "", out]
-    if meta["tail"]:
-        parts += ["\n".join(meta["tail"])]
-    new_text = "\n".join(parts).rstrip() + "\n"
-
-    # 摘要附冷度，向其他编辑者说明自动翻译的原因
-    days = (datetime.now(UTC) - datetime.fromisoformat(meta["cold"])).days
-    dur = f"{days / 365:.1f}年" if days >= 365 else f"{max(days // 30, 1)}个月"
-    summary = f"{SUMMARY_PREFIX}{meta['en_revid']}（{dur}无人类编辑）"
-
-    import pywikibot
-
-    site = pywikibot.Site("zh", "re0")
-    site.login()
-    assert site.user() == BOT
-    page = pywikibot.Page(site, meta["title"])
-    page.text = new_text
-    # 翻译不是需抑制通知的批量编辑，不加 bot flag
-    page.save(summary=summary, bot=False, minor=False)
-    print(f"saved: {meta['title']} (en:{meta['en_title']} revid {meta['en_revid']})")
-    url = f"https://rezero.fandom.com/zh/wiki/{quote(meta['title'], safe='/:')}"
-    print(
-        f"NOTIFY: [[{meta['title']}]] {dur}无人类编辑，"
-        f"已由 Bot 根据 [[en:{meta['en_title']}]] 自动更新 {url}"
+    r = api(
+        ZH_API,
+        prop="revisions",
+        titles=meta["title"],
+        rvprop="ids|comment|user|timestamp|content",
+        rvslots="main",
+        rvlimit="1",
     )
-    state = load_json(STATE, {"skip": {}})
-    state["skip"][meta["title"]] = {
-        "reason": "已翻译，en 未变化",
-        "en_title": meta["en_title"],
-        "en_revid": meta["en_revid"],
-        "translated_at": datetime.now(UTC).isoformat(timespec="seconds"),
+    rev = r["query"]["pages"][0]["revisions"][0]
+    if rev["revid"] == meta["zh_revid"]:
+        sys.exit("zh 页自 prepare 以来无新编辑——先完成编辑再 done")
+    if rev.get("user") != BOT:
+        sys.exit(f"最新编辑非本账号（{rev.get('user')}）——人工编辑冲突，中止")
+    want = str(meta["en_revid"])
+    markers = MARKER_RE.findall(rev["slots"]["main"]["content"])
+    if len(markers) != 1 or markers[0][1] != want:
+        sys.exit(
+            f"同步标记缺失或不匹配（期望 <!-- K3: revid {want}; ... -->，"
+            f"实际 {[m[0] for m in markers]!r}）——"
+            "把 stamp 子命令输出的标记行加入正文末尾再保存"
+        )
+    new_text = MARKER_RE.sub("", rev["slots"]["main"]["content"])
+
+    zh_old = (WORK / f"{slug}.zh.txt").read_text(encoding="utf-8")
+    en_body = (WORK / f"{slug}.body.en.txt").read_text(encoding="utf-8")
+    old_head, old_body, old_tail = split_zh_frame(zh_old)
+    new_head, new_body, new_tail = split_zh_frame(new_text)
+    if new_head != [strip_todo(line) for line in old_head]:
+        sys.exit("页首模板块被改动（唯一允许的改动是按规则清理 To do 的翻译类标注）")
+    if new_tail != old_tail:
+        sys.exit("页尾语言链接块被改动")
+
+    def link_targets(text):
+        return {m.group(1).strip() for m in WIKILINK.finditer(text)}
+
+    def classify(t):
+        if re.match(r"(?i)Category:", t):
+            return "cat"
+        if re.match(r"(?i)(File|Image):", t):
+            return "file"
+        if re.match(r"[a-z][a-z-]*:", t):
+            return "lang"
+        return "page"
+
+    old_links, en_links = link_targets(old_body), link_targets(en_body)
+    allowed = {
+        "cat": {t for t in old_links if classify(t) == "cat"} | {PROOFREAD_CAT},
+        "file": {t for t in old_links | en_links if classify(t) == "file"},
+        "lang": {t for t in old_links if classify(t) == "lang"},
+        "page": (
+            {t for t in old_links if classify(t) == "page"}
+            | set(meta["link_map"].values())
+            | set(meta["unresolved_links"])
+        ),
     }
-    save_json(STATE, state)
-    for f in WORK.glob(f"{slug}.*"):
-        f.unlink()
+    new_links = link_targets(new_body)
+    bad = sorted(t for t in new_links if t not in allowed[classify(t)])
+    if bad:
+        sys.exit("内链校验失败: " + ", ".join(bad))
+    if PROOFREAD_CAT not in {t for t in new_links if classify(t) == "cat"}:
+        sys.exit(f"缺 [[{PROOFREAD_CAT}]]（管线处理过的条目必挂，加在正文末尾）")
+    tpl_ok = extract_templates(en_body) | extract_templates(old_body)
+    tpl_bad = extract_templates(new_body) - tpl_ok
+    if tpl_bad:
+        sys.exit(f"模板校验失败: 新增 {sorted(tpl_bad)}")
+
+    clean_work(slug)
+    print(f"done: {meta['title']}（en revid {meta['en_revid']}）")
+    print(notify_line(meta))
+
+
+def cmd_stamp(slug):
+    """打印编辑应使用的标准摘要（人类可读）与同步标记（正文末尾，done 核验后者）。"""
+    meta = load_json(WORK / f"{slug}.meta.json", None)
+    if meta is None:
+        sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
+    print(std_summary(meta))
+    print(f"<!-- K3: revid {meta['en_revid']}; {now_iso()} -->")
 
 
 def cmd_skip(slug, reason):
-    """agent 判断不宜翻译时调用：按当前 en revid 记入跳过，en 更新后自动复活。"""
+    """无需内容编辑（en 无增量等）：机械打上同步标记（revid = prepare 时的 en 版本）。
+
+    与 done 统一以源码标记落账——skip 同样确认了「截至此时 zh 与 en 同步」。
+    """
     meta = load_json(WORK / f"{slug}.meta.json", None)
     if meta is None:
         sys.exit(f"找不到 {slug}.meta.json")
-    state = load_json(STATE, {"skip": {}})
-    state["skip"][meta["title"]] = {
-        "reason": reason,
-        "en_title": meta["en_title"],
-        "en_revid": meta["en_revid"],
-    }
-    save_json(STATE, state)
-    for f in WORK.glob(f"{slug}.*"):
-        f.unlink()
+    stamp_page(meta["title"], f"revid {meta['en_revid']}", reason)
+    clean_work(slug)
     print(f"skipped: {meta['title']}（{reason}，en revid {meta['en_revid']}）")
+
+
+def cmd_backlog():
+    """机翻待校对积压检查：打印条目数；积压（>= BACKLOG_LIMIT）时退出码 3。
+
+    cron wrapper 据此在 script 段输出 {"wakeAgent": false} 静默跳过本 tick
+    （等人类校对摘除分类后自动恢复）。
+    """
+    n, cont = 0, {}
+    while True:
+        r = api(
+            ZH_API,
+            list="categorymembers",
+            cmtitle=PROOFREAD_CAT,
+            cmlimit="500",
+            **cont,
+        )
+        n += len(r["query"]["categorymembers"])
+        if "continue" not in r:
+            break
+        cont = r["continue"]
+    print(f"backlog: {n}/{BACKLOG_LIMIT}")
+    if n >= BACKLOG_LIMIT:
+        sys.exit(3)
 
 
 def cmd_status():
     queue = load_json(QUEUE, [])
-    state = load_json(STATE, {"skip": {}})
     wip = sorted(p.stem.rsplit(".", 2)[0] for p in WORK.glob("*.meta.json"))
-    perm = sum(1 for e in state["skip"].values() if isinstance(e, str))
-    temp = sum(1 for e in state["skip"].values() if isinstance(e, dict))
-    print(f"queue: {len(queue)}, skip: {perm} 永久 + {temp} en 跟踪, wip: {wip}")
+    print(f"queue: {len(queue)}, wip: {wip}（同步状态见各页源码标记）")
 
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
-    ap.add_argument("cmd", choices=["refresh", "prepare", "publish", "skip", "status"])
+    ap.add_argument(
+        "cmd",
+        choices=["refresh", "prepare", "stamp", "done", "skip", "backlog", "status"],
+    )
     ap.add_argument("slug", nargs="?")
-    ap.add_argument("reason", nargs="?", default="en 无实质内容")
+    ap.add_argument("reason", nargs="?")
     args = ap.parse_args()
     if args.cmd == "refresh":
         cmd_refresh()
     elif args.cmd == "prepare":
         cmd_prepare()
-    elif args.cmd == "publish":
-        if not args.slug:
-            ap.error("publish 需要 slug 参数")
-        cmd_publish(args.slug)
-    elif args.cmd == "skip":
-        if not args.slug:
-            ap.error("skip 需要 slug 参数")
-        cmd_skip(args.slug, args.reason)
-    else:
+    elif args.cmd == "backlog":
+        cmd_backlog()
+    elif args.cmd == "status":
         cmd_status()
+    else:
+        if not args.slug:
+            ap.error(f"{args.cmd} 需要 slug 参数")
+        if args.cmd == "stamp":
+            cmd_stamp(args.slug)
+        elif args.cmd == "done":
+            cmd_done(args.slug)
+        else:
+            cmd_skip(args.slug, args.reason or "en 无增量")

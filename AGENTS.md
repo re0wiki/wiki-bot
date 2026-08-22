@@ -15,11 +15,11 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 
 - **Python 3.14**（`.python-version`，`pyproject.toml` 要求 `>=3.14`），uv 管理，有 `uv.lock`。
 - 安装：`uv sync`（`default-groups = "all"`）。pywikibot 的全部可选依赖以 extras 形式声明在 dev 组（`pywikibot[html,http,...]`），覆盖其 requirements.txt，随 submodule 更新自动跟随。
-- 运行脚本：`PYTHONPATH= .venv/Scripts/python.exe <script>`（Windows 上 Hermes 会注入指向自身 venv 的 PYTHONPATH，必须清空，否则 import 错包）。
+- 运行脚本：`uv run python <script>`（仓库根目录）。uv 按 cwd 的 pyproject.toml 定位项目 `.venv`，天然绕过 PATH 上 Hermes 自身 venv 的裸 `python`（3.11、无项目依赖），且每次运行顺带校验环境与 uv.lock 同步（开销可忽略，`--no-sync` 可跳过）。
 - **pywikibot 是 git submodule**（fork：`github.com/re0wiki/pywikibot`，upstream 是 wikimedia/pywikibot）。克隆要 `--recurse-submodules`（否则 `uv sync` 会因路径缺失失败）。更新 submodule 后提交信息写 `chore: update pywikibot`。
 - pywikibot 通过 `[tool.uv.sources]` 以 **editable 方式从 submodule 路径装入 venv**（`{ path = "pwb", editable = true }`），submodule gitlink 是唯一版本锁，无需再同步 uv.lock 里的 commit。`pyproject.toml` 里的 `[tool.ty.environment] extra-paths = ["./pwb"]` 是必须的：ty 无法静态解析 PEP 660 editable finder，删掉会导致全项目 unresolved-import。
 - Lint：`ruff check` / `ruff format`（PATH 里没有 ruff 时用 `uv run ruff ...`，ty 同理；`pyproject.toml` 里 extend-exclude 了 pwb 子模块、logs/ 与 *.md（保留手工对齐的代码块注释），不要给它们 lint；`scripts/oneoff/` 归档脚本纳入正常检查，归档前需先过 lint/format/ty）。类型检查用 `ty`（`src.exclude` 排除 pwb 与 logs/，正常应为 0 诊断）。
-- 离线单测：`pytest tests/`（不触 wiki；覆盖译名表一致性、watchdog 纯函数；`PYWIKIBOT_DIR` 由 tests/conftest.py 设置）。**临时探索脚本写成 .py 放 `logs/`（scratch，gitignored）、从仓库根目录跑**（`PYTHONPATH= .venv/Scripts/python.exe logs/_foo.py`），跑完即删；docs 只写结论不引用其路径。从子目录跑则 pywikibot 找不到 `user-config.py`（cwd 不参与配置发现时按用户目录找）。Wiki 侧改动验证方式仍是 `-s/--simulate` 干跑 + 上 wiki 查编辑结果。
+- 离线单测：`pytest tests/`（不触 wiki；覆盖译名表一致性、watchdog 纯函数；`PYWIKIBOT_DIR` 由 tests/conftest.py 设置）。**临时探索脚本写成 .py 放 `logs/`（scratch，gitignored）、从仓库根目录跑**（`uv run python logs/_foo.py`），跑完即删；docs 只写结论不引用其路径。从子目录跑则 pywikibot 找不到 `user-config.py`（cwd 不参与配置发现时按用户目录找）。Wiki 侧改动验证方式仍是 `-s/--simulate` 干跑 + 上 wiki 查编辑结果。
 - Secrets：`user-password.py`（BotPasswords，gitignored，勿读勿提交）。
 
 ## 架构地图
@@ -84,6 +84,8 @@ p.save(summary="...", bot=False, minor=False)  # 手动编辑（save 默认 bot=
 - `_filepage.py`：下载 URL 加 `&format=original`，否则 Fandom API 返回 webp。同时必须去掉上游的 suffix 调整：它从 URL 路径取扩展名，而 Fandom URL 以 `/revision/latest` 结尾（无扩展名），留着会把下载文件的真扩展名剥掉（Wikimedia 的 URL 路径以文件名结尾，所以上游留着没事）。
 - `noreferences.py`：zh 参考资料段标题加「注释与外部链接」；预载带 `pageprops`——`skip_page` 对每页调 `isDisambig()`（`use_disambigs=False`）读 `prop=pageprops`，默认预载不含它导致每页一次查询（全扫 ~18 min），带上后随内容同批缓存（~25 s）。背景：本站按对齐 en 的策略不加 `__DISAMBIG__`（en 不加，zh 单加会破坏 interwiki；用户尝试给 en 加被回退），该检查恒为空——故选零成本的语义保留方案而非改 `use_disambigs=None` 的假设性跳过。
 - `scripts/redirect.py`：`fix_moved_broken_redirects` 加移动日志环检测（`seen` 集合沿递归传递）——上游对 `moved_target()` 链的递归无环检测，A↔B 往返移动且两页均不存在时无限递归直至 RecursionError。
+- `scripts/listpages.py`：`-notitle`（含 `-format:` 空值）抑制标题后 `treat()` 不再 pop 空 `output_list`——上游 bug：非 preloading 且无 `-tofile` 时逐页 `pop()`，首页即 IndexError 崩溃。
+- `pagegenerators/_factory.py`：恢复多个 `-start` 的并集语义。上游 fa0c6f6c7（T425882，11.3 引入 `-until`）把 `-start` 改为惰性合并进单个 `_allpages_args`，导致多个 `-start` 只有第一个命名空间生效（jobs 的 `starts.py` 全依赖多 `-start`）。补丁在再遇 `-start` 时把挂起的参数实例化为独立 allpages 生成器，`-start`+`-until` 配对行为不变。
 
 ## 译名维护工作流（最常见的改动）
 
@@ -95,7 +97,7 @@ p.save(summary="...", bot=False, minor=False)  # 手动编辑（save 默认 bot=
 ## 坑
 
 - **Fandom 派生表（langlinks 等）的读取可能与页面源码不一致，且与 HTTP 缓存无关**（api.php 响应头 `no-store`、无 Age/X-Cache，已实证排除 CDN 缓存）。2026-08-08 观测：langlinks 对希洛洛返回过源码史上从未存在的值（Toneriko，115 个修订逐版验证源码始终是 Tonerico）、对菜月父母返回过「无 en 链接」（实际 2021-02 起就有，当天两页零编辑），数小时后零编辑自愈——指向 Fandom 基础设施侧的派生表重建/迁移，外部无法定位。**审计「页面有没有某链接/某分类」一律扫源码（rvprop=content），不依赖 langlinks/categories 等派生表**。
-- **Lua 信息框参数里的 `[[链接]]` 不进 links 表**（2026-08-13 实证：动画:第79集 等 4 页，源码有 `| previous = [[X]]` 而 prop=links 无，页面数天至数月未编辑）。#invoke 参数文本不经过链接登记——`linkedPages()`/`prop=links`/`linkshere` 对这类链接系统性漏报，依赖它们的工具（如上游 fixing_redirects）会永远漏改。链接审计/改写必须扫源码。其余任务已审计无此险（同日）：category remove/template replace（被操作对象均顶层调用）、redirect-do/br（redirect 表抽查一致）、interwiki/replace 各 fix/re0_move/noreferences（均源码驱动）。
+- **信息框参数里的 `[[链接]]` 不进 links 表**（2026-08-13 实证：动画:第79集 等 4 页，源码有 `| previous = [[X]]` 而 prop=links 无；2026-08-21 沙盒复证实证：新保存页面仅含 portable `<infobox>` 参数链接，等 60s 排除 job queue 延迟后 links 表仍为空）。机制是 portable infobox 扩展渲染参数值时不登记链接，与 #invoke 无关——`{{Init}}` 等 #invoke **输出**里的链接正常登记（同日实证：动画:第50集 links 表含 Init/Tab 模板族输出的子页链接，其 infobox 参数链接 小说:15卷 亦由模板输出带入）。`linkedPages()`/`prop=links`/`linkshere` 对 infobox 参数链接系统性漏报，依赖它们的工具（如上游 fixing_redirects）会永远漏改。链接审计/改写必须扫源码。其余任务已审计无此险（2026-08-13）：category remove/template replace（被操作对象均顶层调用）、redirect-do/br（redirect 表抽查一致）、interwiki/replace 各 fix/re0_move/noreferences（均源码驱动）。
 - **Fandom 登录会话对读路径不可靠**（2026-08-13 实证）：cookie jar 会话会被同账号的跨语言站流量服务端作废（互踢，见 user-config.py 注释），而 pywikibot `login()` 有 jar 即跳过重新认证——于是依赖 apihighlimits 的 500 titles/批 prop 查询会间歇 `toomanyvalues: limit is 50`（同一 jar 连跪数次、显式重新登录后秒恢复）。pywikibot 发现会话匿名时会打 `Logged in as 'IP' instead of '...'. Forcing re-login` 自愈，但可能发生在失败之后。规则：**读路径一律匿名可达**——列表查询（allpages/allimages 的 limit 参数匿名上限即 500）或 ≤50 titles/批的 prop 查询；批量存在性判断用「全量标题集内存比对」（~21 次列表请求）而非逐批 prop=info（50/批更多请求且 500/批不稳）。**写路径无需防御**（同日沙盒实证）：save 的 userinfo 检查会发现匿名会话并 Forcing re-login 自愈；兜底失败形态是响亮异常（badtoken/permission）→ 非零退出停机，不存在静默损坏。且互踢本身不稳定（同日 en 登录未再踢掉 zh 会话），被踢频率低于预期。
 - MediaWiki API `formatversion=2` 下 recentchanges 的 `bot`/`new`/`minor` 键**恒存在**（值为 true/false），过滤必须判断值而不是键存在性——`"bot" not in c` 会把所有编辑都滤掉。
 - `run_job` 给子进程注入 `PYTHONIOENCODING=utf-8`，管道输出按 UTF-8 解码——不再依赖 mbcs/系统 ANSI 代码页（历史上 `67fd586` 用 mbcs 治 GBK 乱码，2026-07 改为源头强制 UTF-8）。循环模式子进程继承控制台走 WriteConsoleW 宽字符 API，显示不受此变量影响。（`shell=True` 已去除——它 2026-01 加入时是裸 `python` 解释器解析错误的 workaround，`sys.executable` 绝对路径后动机已消。）

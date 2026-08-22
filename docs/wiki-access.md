@@ -135,7 +135,7 @@ login_name = bp.login_name(username)  # → "IchiSanNi@pywikibot"
 ## 验证凭据是否仍然有效
 
 ```bash
-PYTHONPATH= .venv/Scripts/python.exe scripts/tools/verify_wiki_access.py
+uv run python scripts/tools/verify_wiki_access.py
 ```
 
 只读不写，同时验证 pywikibot 库和裸 API 两条路径，期望输出 `ALL CHECKS PASSED`。
