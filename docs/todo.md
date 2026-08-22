@@ -5,7 +5,9 @@
 
 ## 待处理
 
-暂无。
+### Module:Infobox book 语言家族扩展（印尼语/德语等）
+
+fix:para 的多语言堆积拆分只产出 Module `languages` 表内的 12 种语言后缀；en 侧已出现 Indonesian（漫画第2章各卷、小说:1卷）、PAL 区（游戏:虚假的王选候补）、JP 简写（设定集、画集:Re:zeropedia）等表外标注，这些参数的堆积行被保守跳过。要收录就往 Module 的 `languages` 表加条目（标签如「印尼语」）+ `user-fixes.py` 的 `CRAM_LANGS` 同步加映射（两个事实源，注释已互指）。
 
 ## 已决策
 

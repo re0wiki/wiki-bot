@@ -94,8 +94,40 @@ user_fixes["misc"] = base | {
 
 
 # region date
+MONTHS = (
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+)
+MONTH_NUM = {m.lower(): i + 1 for i, m in enumerate(MONTHS)}
+
+
 def match_to_yyyymmdd(month: int, match: re.Match) -> str:
     return f"{match.group(2)}-{str(month).zfill(2)}-{match.group(1).zfill(2)}"
+
+
+def normalize_date_value(value: str) -> str:
+    """单个日期值归一：Month D, YYYY → YYYY-MM-DD；Month YYYY → YYYY-MM；其余原样。"""
+    m = re.fullmatch(
+        rf"({'|'.join(MONTHS)})\s*(\d+)\s*[，,]\s*(\d+)", value, re.IGNORECASE
+    )
+    if m:
+        return f"{m.group(3)}-{MONTH_NUM[m.group(1).lower()]:02d}-{int(m.group(2)):02d}"
+    m = re.fullmatch(
+        rf"({'|'.join(MONTHS)})\s*[，,]?\s*(\d{{4}})", value, re.IGNORECASE
+    )
+    if m:
+        return f"{m.group(2)}-{MONTH_NUM[m.group(1).lower()]:02d}"
+    return value
 
 
 user_fixes["date"] = base | {
@@ -106,22 +138,7 @@ user_fixes["date"] = base | {
             # avoid late binding of i
             partial(match_to_yyyymmdd, i + 1),
         )
-        for i, month in enumerate(
-            (
-                "January",
-                "February",
-                "March",
-                "April",
-                "May",
-                "June",
-                "July",
-                "August",
-                "September",
-                "October",
-                "November",
-                "December",
-            )
-        )
+        for i, month in enumerate(MONTHS)
     ],
 }
 # endregion
@@ -141,6 +158,86 @@ user_fixes["anti-ve"] = {
 # endregion
 
 # region para
+# 多语言堆积拆分的语言表：en 括注 → zh 参数后缀。
+# 与 Module:Infobox book 的 languages 表同集（两个事实源，改动需同步）；
+# 集合外的语言（印尼语/德语等）模板不支持，遇到即整参数保守跳过。
+CRAM_LANGS = {
+    "Japanese": "ja",
+    "Simplified Chinese": "zh_hans",
+    "Traditional Chinese": "zh_hant",
+    "English": "en",
+    "Korean": "ko",
+    "Polish": "pl",
+    "Portuguese": "pt",
+    "French": "fr",
+    "Italian": "it",
+    "Vietnamese": "vi",
+    "Russian": "ru",
+    "Spanish": "es",
+}
+CRAM_LINE = re.compile(
+    r"^\|[ \t]*(pages|date|isbn)_ja[ \t]*=[ \t]*(\S[^\n]*?)[ \t]*$", re.IGNORECASE
+)
+CRAM_SEGMENT = re.compile(r"^(.*?)[ \t]*\(([^()]*)\)$")
+
+
+def split_crammed_params(m: re.Match) -> str:
+    """信息框多语言堆积参数拆分：`值 (语言)<br>值 (语言)…` → per-语言参数行。
+
+    保守判据（不满足即原样返回，留人工）：
+    - 每段都带已知语言括注（排除 (Termination)/(BD)/(TV size) 等同形异义）；
+    - 含 Japanese 段（拆分后基底参数 pages_ja 等的值来源）；
+    - 同语言不重复出现（分册等多段形态留人工）。
+    目标参数在模板内已存在时跳过该段（保留人工值，防重复行）。
+    含嵌套模板的模板体不被作用域正则匹配（保守跳过）。
+    """
+    head, body, tail_nl = m.group(1), m.group(2), m.group(3)
+    # 只拆 Infobox book（唯一有多语言参数家族的模板，Module:Infobox book）；
+    # game/bd/music 的同名参数无 per-语言渲染，拆了是死参数。
+    # en 原名模板（新搬运页）本规则不匹配——template 任务先归一名，下轮收敛。
+    if head[2:].split("|", 1)[0].strip().lower() != "infobox book":
+        return m.group(0)
+    lines = body.split("\n") if body else []
+    existing = set()
+    for line in lines:
+        pm = re.match(r"^\|[ \t]*([a-z_]+)[ \t]*=", line, re.IGNORECASE)
+        if pm:
+            existing.add(pm.group(1).lower())
+    out, changed = [], False
+    for line in lines:
+        pm = CRAM_LINE.match(line)
+        parts = re.split(r"<br\s*/?>", pm.group(2)) if pm else []
+        segs = [
+            (m2.group(1).strip(), m2.group(2).strip())
+            for s in parts
+            if (m2 := CRAM_SEGMENT.match(s.strip()))
+        ]
+        if (
+            not pm
+            or not segs
+            or len(segs) != len(parts)
+            or any(lang not in CRAM_LANGS for _, lang in segs)
+            or not any(lang == "Japanese" for _, lang in segs)
+            or len({lang for _, lang in segs}) != len(segs)  # 同语言多段（分册）留人工
+        ):
+            out.append(line)
+            continue
+        changed = True
+        family = pm.group(1).lower()
+        existing.discard(f"{family}_ja")  # 基底行被本拆分替换，不算重复
+        for value, lang in segs:
+            param = f"{family}_{CRAM_LANGS[lang]}"
+            if param in existing:
+                continue
+            if family == "date":
+                value = normalize_date_value(value)
+            out.append(f"| {param} = {value}")
+            existing.add(param)
+    if not changed:
+        return m.group(0)
+    return head + ("\n" + "\n".join(out) if out else "") + tail_nl + "}}"
+
+
 user_fixes["para"] = base | {
     "generator": generator_more,
     "replacements": [
@@ -250,6 +347,13 @@ user_fixes["para"] = base | {
         (
             r"(?m)^[ \t]*\|[ \t]*(?:previous|next)[ \t]*=[^\n]*?(\}\})?[ \t]*\r?\n",
             lambda m: "}}\n" if m.group(1) else "",
+        ),
+        # 多语言堆积参数拆分（放列表最后，在上方参数名归一之后跑）：
+        # en 把各语言塞在单行参数里（值 (语言)<br>值 (语言)…），
+        # zh 用 per-语言参数家族（pages_*/date_*/isbn_*，Module:Infobox book）。
+        (
+            r"(?ms)^(\{\{[^\n{}]*?)\n((?:(?!\{\{|\}\}).)*?)(\n?)\}\}$",
+            split_crammed_params,
         ),
     ],
 }
