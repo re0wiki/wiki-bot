@@ -153,6 +153,21 @@ def scan_markers(titles):
     return out
 
 
+def creation_ts(title):
+    """创建时间（无人类编辑的 bot 搬运页的冷度）。"""
+    r = api(
+        ZH_API,
+        prop="revisions",
+        titles=title,
+        rvdir="newer",
+        rvlimit="1",
+        rvprop="ids|timestamp|user",
+    )
+    rev = r["query"]["pages"][0]["revisions"][0]
+    assert rev.get("user") == BOT, f"{title} 无人类编辑但创建者是 {rev.get('user')}"
+    return rev["timestamp"]
+
+
 def cmd_refresh():
     members = category_members()
     print(f"members: {len(members)}")
@@ -186,17 +201,7 @@ def cmd_refresh():
             queue.append({"title": t, "cold": latest[t]})
     orphans = [t for t in members if t not in latest]
     for i, t in enumerate(orphans):
-        r = api(
-            ZH_API,
-            prop="revisions",
-            titles=t,
-            rvdir="newer",
-            rvlimit="1",
-            rvprop="ids|timestamp|user",
-        )
-        rev = r["query"]["pages"][0]["revisions"][0]
-        assert rev.get("user") == BOT, f"{t} 无人类编辑但创建者是 {rev.get('user')}"
-        queue.append({"title": t, "cold": rev["timestamp"]})
+        queue.append({"title": t, "cold": creation_ts(t)})
         if (i + 1) % 50 == 0:
             print(f"orphans: {i + 1}/{len(orphans)}")
 
@@ -311,24 +316,24 @@ def stamp_page(title, kind, reason):
 
 
 def real_colds(titles):
-    """批量计算实际冷度（每页最近一次非 IchiSanNi 编辑的时间）。
+    """逐页计算实际冷度（每页最近一次非 IchiSanNi 编辑的时间），与 refresh 同规则。
 
-    rvlimit=20 内找首个非 bot 修订；若近 20 版全是 bot 编辑则取第 20 版时间
-    （是真实冷度的上界——偏暖估计只会让我们更保守，安全方向）。
+    rvexcludeuser 由 API 侧精确排除 bot（连编多少次都不失真）；
+    无人类编辑的搬运页取创建时间。
+    （rvexcludeuser 仅限单页查询，故逐页请求——调用点本就每候选一次。）
     """
     out = {}
-    for i in range(0, len(titles), 50):
+    for t in titles:
         r = api(
             ZH_API,
             prop="revisions",
-            titles="|".join(titles[i : i + 50]),
+            titles=t,
             rvprop="ids|timestamp|user",
-            rvlimit="20",
+            rvexcludeuser=BOT,
+            rvlimit="1",
         )
-        for p in r["query"]["pages"]:
-            revs = p.get("revisions", [])
-            cold = next((rv["timestamp"] for rv in revs if rv.get("user") != BOT), None)
-            out[p["title"]] = cold or (revs[-1]["timestamp"] if revs else None)
+        revs = r["query"]["pages"][0].get("revisions", [])
+        out[t] = revs[0]["timestamp"] if revs else creation_ts(t)
     return out
 
 
