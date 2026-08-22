@@ -203,8 +203,6 @@ user_fixes["para"] = base | {
             ("Ending", "ending"),
             # bd
             ("Number", "number"),
-            ("Previous", "previous"),
-            ("Next", "next"),
             # music
             ("Singer", "singer"),
             ("Composition", "composition"),
@@ -243,6 +241,15 @@ user_fixes["para"] = base | {
         (
             r"(?ms)(\{\{Infobox character(?:(?!\{\{|\}\}).)*?)^\| *name_ja_romaji *= *[^\n]*\n?",
             r"\1",
+        ),
+        # previous/next 参数删除：en 搬运残留，系列跳转由 Tab/* 承担，信息框一律
+        # 不保留（见 docs/templates.md）；常驻以防 transferbot 复发（nocase 覆盖
+        # Previous/Next 大小写变体）。
+        # = 两侧用 [ \t]* 不用 \s*（\s 吃换行会把下一行吞成值）；
+        # 值常以模板闭合 }} 结尾（该参数通常是信息框最后一行），须保留。
+        (
+            r"(?m)^[ \t]*\|[ \t]*(?:previous|next)[ \t]*=[^\n]*?(\}\})?[ \t]*\r?\n",
+            lambda m: "}}\n" if m.group(1) else "",
         ),
     ],
 }
