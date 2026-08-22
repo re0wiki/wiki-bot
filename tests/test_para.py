@@ -30,13 +30,13 @@ def test_closing_braces_preserved():
 
 
 def test_empty_value_attached_braces():
-    # 动画:第85集 / 动画:第四季圆盘5卷 的实存形态：| next =}}
+    # 形态：空值且与模板闭合同行（| next =}}）
     src = "{{Infobox bd\n| name = X\n| next =}}\n"
     assert apply_para(src) == "{{Infobox bd\n| name = X\n}}\n"
 
 
 def test_empty_value_then_next_param_not_swallowed():
-    # 佩特拉 page5 型（en 侧实存）：|Next = 空值独占一行，下一行是其他参数
+    # 空值独占一行时不得吞掉下一行参数
     src = "{{Infobox book\n| next = \n| cover = X\n}}\n"
     assert apply_para(src) == "{{Infobox book\n| cover = X\n}}\n"
 

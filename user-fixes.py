@@ -243,8 +243,8 @@ user_fixes["para"] = base | {
             r"\1",
         ),
         # previous/next 参数删除：en 搬运残留，系列跳转由 Tab/* 承担，信息框一律
-        # 不保留（bd 例外已于 2026-08-22 撤销，见 docs/templates.md）；常驻以防
-        # transferbot 复发（上方 Previous/Next 改名条目同时退役，nocase 直接覆盖）。
+        # 不保留（见 docs/templates.md）；常驻以防 transferbot 复发（nocase 覆盖
+        # Previous/Next 大小写变体）。
         # = 两侧用 [ \t]* 不用 \s*（\s 吃换行会把下一行吞成值）；
         # 值常以模板闭合 }} 结尾（该参数通常是信息框最后一行），须保留。
         (
