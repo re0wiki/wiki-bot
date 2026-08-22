@@ -50,8 +50,7 @@ uv run python scripts/tools/series_nav_audit.py
 5. en 合并/拆分调整 → 跟随：拆分组核验见工具第 2 项，Tab 同步改链。
 6. 复跑审计工具至未覆盖清零。
 
-## en 侧数据怪癖（实测）
+## en 侧数据特点（实测）
 
-- en 的 prev/next 偶有异常值（如某页 next 指向角色页），以常识判断，不盲跟。
 - en 会事后合并/拆分章节（曾拆分后合并的章，其 Part 页变重定向），
   redirects=1 归一后以现结构为准。
