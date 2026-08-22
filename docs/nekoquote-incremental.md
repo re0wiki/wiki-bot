@@ -40,8 +40,6 @@ cd wiki-bot 仓库根
 
 ## 数据流备查
 
-原档备份：长月 QA 原档（xlsx/mp3/docx 等）在用户 OneDrive `文档\杂项\re0\长月qa原档备份`（工作副本在桌面同名目录），不入 git。
-
 ```
 EN Discord 导出（Discrub JSON）
   → p8_discord_merge.py：extract → p8_tweets.json（src=dc_en/dc_en_fbk）
