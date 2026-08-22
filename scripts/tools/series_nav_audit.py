@@ -130,8 +130,8 @@ def scan_zh(site):
     return pages, en2zh, split_groups
 
 
-def check_coverage(zh_site, en_site, pages, en2zh):
-    """检查 1：en prev/next 目标的 Tab 覆盖。返回 (covered, layered, na, uncovered)。"""
+def collect_checks(en_site, pages, en2zh):
+    """从 en 页源码提取 prev/next 目标，逐条反查 zh 对应页。"""
     en_content, en_redir, en_missing = batch_query(en_site, set(en2zh))
 
     def resolve(t):
@@ -166,15 +166,19 @@ def check_coverage(zh_site, en_site, pages, en2zh):
     unresolved = {
         c["en_target"] for c in checks if c["zh_target"] is None and not c["en_redlink"]
     }
-    if unresolved:
-        _, redir2, missing2 = batch_query(en_site, unresolved)
-        en_missing |= missing2
-        for c in checks:
-            if c["zh_target"] is None and c["en_target"] in redir2:
-                c["zh_target"] = en2zh_r.get(redir2[c["en_target"]])
-                c["en_redlink"] = redir2[c["en_target"]] in en_missing
+    if not unresolved:
+        return checks
+    _, redir2, missing2 = batch_query(en_site, unresolved)
+    en_missing |= missing2
+    for c in checks:
+        if c["zh_target"] is None and c["en_target"] in redir2:
+            c["zh_target"] = en2zh_r.get(redir2[c["en_target"]])
+            c["en_redlink"] = redir2[c["en_target"]] in en_missing
+    return checks
 
-    # 全部 Tab 模板的链接集（zh 重定向归一）
+
+def load_tab_links(zh_site, pages):
+    """全部 Tab 模板的链接集（zh 重定向归一到最终目标）。"""
     all_tabs = set().union(*(i["tabs"] for i in pages.values())) if pages else set()
     tab_src, _, _ = batch_query(zh_site, {f"Template:Tab/{t}" for t in all_tabs})
     tab_links = {}
@@ -189,6 +193,11 @@ def check_coverage(zh_site, en_site, pages, en2zh):
     _, zh_redir, _ = batch_query(zh_site, all_link_targets - set(pages.keys()))
     for t, links in tab_links.items():
         tab_links[t] = {zh_redir.get(x, x) for x in links}
+    return tab_links
+
+
+def classify_checks(pages, checks, tab_links):
+    """逐条判定：直接覆盖 / 分层覆盖（两跳）/ N/A / 未覆盖。"""
 
     def direct(page):
         tabs = pages[page]["tabs"]
@@ -217,29 +226,34 @@ def check_coverage(zh_site, en_site, pages, en2zh):
             uncovered.append((c, "页面无 Tab"))
         elif c["zh_target"] in direct(c["zh_page"]):
             covered.append(c)
+        elif via := layered_via(c["zh_page"], c["zh_target"]):
+            layered.append((c, via))
         else:
-            via = layered_via(c["zh_page"], c["zh_target"])
-            if via:
-                layered.append((c, via))
-            else:
-                uncovered.append((c, "目标不在 Tab 链接集（含两跳）"))
-    return covered, layered, na, uncovered, len(checks)
+            uncovered.append((c, "目标不在 Tab 链接集（含两跳）"))
+    return covered, layered, na, uncovered
 
 
-def check_splits(en_site, pages, split_groups):
-    """检查 2：zh 拆分页与 en Part 结构对应。返回失配清单。"""
-    zh_en = {t: i["en"] for t, i in pages.items() if i["en"]}
-    # 单成员组且 en 链接非 Part 页 → 后缀属作品名（如 蜜月背后篇），非拆分
-    real_groups = {}
-    for base, members in split_groups.items():
-        if len(members) > 1 or RE_PART.match(
-            zh_en.get(next(iter(members.values())), "")
-        ):
-            real_groups[base] = members
+def check_coverage(zh_site, en_site, pages, en2zh):
+    """检查 1：en prev/next 目标的 Tab 覆盖。返回 (covered, layered, na, uncovered, 总数)。"""
+    checks = collect_checks(en_site, pages, en2zh)
+    tab_links = load_tab_links(zh_site, pages)
+    return (*classify_checks(pages, checks, tab_links), len(checks))
 
-    probe = set()
+
+def real_split_groups(split_groups, zh_en):
+    """过滤假阳性：单成员组且 en 链接非 Part 页 → 后缀属作品名（如 蜜月背后篇）。"""
+    return {
+        base: members
+        for base, members in split_groups.items()
+        if len(members) > 1
+        or RE_PART.match(zh_en.get(next(iter(members.values())), ""))
+    }
+
+
+def resolve_en_bases(groups, zh_en):
+    """每组词干的 en 基名（裸页 en 链接优先，否则取成员链接去 Part 后缀）。"""
     group_en_base = {}
-    for base, members in real_groups.items():
+    for base, members in groups.items():
         en_base = zh_en.get(base)
         if not en_base:
             for zh_t in members.values():
@@ -248,44 +262,61 @@ def check_splits(en_site, pages, split_groups):
                     en_base = m.group(1)
                     break
         group_en_base[base] = en_base
+    return group_en_base
+
+
+def member_problems(zh_t, suffix, zh_en, en_parts):
+    """单个拆分页成员的序号/链接核对。"""
+    link = zh_en.get(zh_t)
+    if not link:
+        return [f"{zh_t} 无 en 链接"]
+    m = RE_PART.match(link)
+    if not m:
+        return [f"{zh_t} 的 en 链接 {link!r} 不是 Part 页"]
+    expect, part_no = SUFFIX_ORDER[suffix], int(m.group(2))
+    if expect > 0 and part_no != expect:
+        return [f"{zh_t} -> Part {part_no}，期望 Part {expect}"]
+    if expect == -1 and en_parts and part_no != max(en_parts):
+        return [f"{zh_t} -> Part {part_no}，期望末位 Part {max(en_parts)}"]
+    return []
+
+
+def group_problems(base, members, en_base, en_existing, zh_en):
+    """单组词干的全部失配问题。"""
+    if not en_base:
+        return ["整组无 en 链接"]
+    en_parts = sorted(i for i in (1, 2, 3, 4) if f"{en_base} Part {i}" in en_existing)
+    problems = []
+    if not en_parts:
+        problems.append(f"en 无 Part 页，zh 却拆成 {len(members)} 篇")
+    elif len(members) != len(en_parts):
+        problems.append(f"zh 拆 {len(members)} 篇 ≠ en 拆 {len(en_parts)} 篇")
+    for suffix, zh_t in sorted(members.items()):
+        problems.extend(member_problems(zh_t, suffix, zh_en, en_parts))
+    return problems
+
+
+def check_splits(en_site, pages, split_groups):
+    """检查 2：zh 拆分页与 en Part 结构对应。返回 (失配清单, 组数)。"""
+    zh_en = {t: i["en"] for t, i in pages.items() if i["en"]}
+    groups = real_split_groups(split_groups, zh_en)
+    group_en_base = resolve_en_bases(groups, zh_en)
+
+    probe = set()
+    for en_base in group_en_base.values():
         if en_base:
             probe.add(en_base)
             probe.update(f"{en_base} Part {i}" for i in (1, 2, 3, 4))
     en_existing = exists_batch(en_site, probe)
 
     mismatches = []
-    for base, members in sorted(real_groups.items()):
-        en_base = group_en_base[base]
-        problems = []
-        if not en_base:
-            problems.append("整组无 en 链接")
-        else:
-            en_parts = sorted(
-                i for i in (1, 2, 3, 4) if f"{en_base} Part {i}" in en_existing
-            )
-            if not en_parts:
-                problems.append(f"en 无 Part 页，zh 却拆成 {len(members)} 篇")
-            elif len(members) != len(en_parts):
-                problems.append(f"zh 拆 {len(members)} 篇 ≠ en 拆 {len(en_parts)} 篇")
-            for suffix, zh_t in sorted(members.items()):
-                link = zh_en.get(zh_t)
-                if not link:
-                    problems.append(f"{zh_t} 无 en 链接")
-                    continue
-                m = RE_PART.match(link)
-                if not m:
-                    problems.append(f"{zh_t} 的 en 链接 {link!r} 不是 Part 页")
-                    continue
-                expect, part_no = SUFFIX_ORDER[suffix], int(m.group(2))
-                if expect > 0 and part_no != expect:
-                    problems.append(f"{zh_t} -> Part {part_no}，期望 Part {expect}")
-                if expect == -1 and en_parts and part_no != max(en_parts):
-                    problems.append(
-                        f"{zh_t} -> Part {part_no}，期望末位 Part {max(en_parts)}"
-                    )
+    for base, members in sorted(groups.items()):
+        problems = group_problems(
+            base, members, group_en_base[base], en_existing, zh_en
+        )
         if problems:
             mismatches.append((base, problems))
-    return mismatches, len(real_groups)
+    return mismatches, len(groups)
 
 
 def main():
