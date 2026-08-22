@@ -12,7 +12,7 @@
 
 同步状态的唯一载体是条目源码末尾的 HTML 注释标记：
     <!-- K3: revid <en_revid>; <ISO 时间> -->   （已同步到 en 该版本）
-revid 为 - 表示无 en 源（zh 源码无 en 链接，或 en 页不存在）。旧格式 no-en 视同 -。
+revid 为 - 表示无 en 源（zh 源码无 en 链接，或 en 页不存在）。
 编辑（done）与跳过（skip/auto-skip）统一以标记落账——不怕本地状态丢失，格式变更
 只是普通编辑。本脚本对 wiki 的写入只有一处：skip/auto-skip 的机械打标记。
 
@@ -58,16 +58,8 @@ WIKILINK = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]*)?\]\]")
 TEMPLATE_NAME = re.compile(r"\{\{([^{}|]+)")
 EN_LINK = re.compile(r"\[\[en:([^\]|]+)")
 # 同步状态标记（条目源码末尾的 HTML 注释，唯一状态载体）：
-# <!-- K3: revid <N|->; <ISO 时间> -->（已同步到 en 版本 N；- 表示无 en 源）。
-# 旧格式 no-en 仍识别，视同 revid -，随页面下次编辑自然换掉
-MARKER_RE = re.compile(r"<!--\s*K3: (no-en|revid (\d+|-)); (\S+) -->")
-
-
-def marker_revid(marker):
-    """标记的 en revid 字符串；无标记返回 None，旧格式 no-en 归一为 '-'。"""
-    if marker is None:
-        return None
-    return marker.group(2) if marker.group(1) != "no-en" else "-"
+# <!-- K3: revid <N|->; <ISO 时间> -->（已同步到 en 版本 N；- 表示无 en 源）
+MARKER_RE = re.compile(r"<!--\s*K3: revid (\d+|-); (\S+) -->")
 
 
 def api(base, **params):
@@ -141,7 +133,7 @@ def category_members():
 
 
 def scan_markers(titles):
-    """批量抓 zh 源码解析同步标记 → {title: (kind, revid, ts)}（20/批防响应过大）。"""
+    """批量抓 zh 源码解析同步标记 → {title: 标记时间}（20/批防响应过大）。"""
     out = {}
     for i in range(0, len(titles), 20):
         r = api(
@@ -156,7 +148,7 @@ def scan_markers(titles):
                 continue
             m = MARKER_RE.search(p["revisions"][0]["slots"]["main"]["content"])
             if m:
-                out[p["title"]] = (m.group(1), m.group(2), m.group(3))
+                out[p["title"]] = m.group(2)
     return out
 
 
@@ -218,7 +210,7 @@ def cmd_refresh():
     markers = scan_markers([q["title"] for q in queue])
     for q in queue:
         if q["title"] in markers:
-            q["cold"] = max(q["cold"], markers[q["title"]][2])
+            q["cold"] = max(q["cold"], markers[q["title"]])
     if markers:
         print(f"marked pages re-dated: {len(markers)}")
 
@@ -351,7 +343,7 @@ def evaluate_candidate(item):
     if zh_text is None:
         return None
     marker = MARKER_RE.search(zh_text)
-    mrev = marker_revid(marker)
+    mrev = marker.group(1) if marker else None
     m = EN_LINK.search(zh_text)
     en_title = m.group(1).strip() if m else None
     en_text = en_revid = None
@@ -368,7 +360,7 @@ def evaluate_candidate(item):
         print(f"auto-skip: {title}（{reason}）")
         return None
     if marker is not None and mrev == str(en_revid):
-        item["cold"] = max(item["cold"], marker.group(3))  # 懒修复：标记时间参与取 max
+        item["cold"] = max(item["cold"], marker.group(2))  # 懒修复：标记时间参与取 max
         return None  # 已同步且 en 未变化；revid 变化即自然落入处理（追更复活）
     body = split_en_body(en_text)
     if not any(
@@ -546,10 +538,10 @@ def cmd_done(slug):
         sys.exit(f"最新编辑非本账号（{rev.get('user')}）——人工编辑冲突，中止")
     want = str(meta["en_revid"])
     markers = MARKER_RE.findall(rev["slots"]["main"]["content"])
-    if len(markers) != 1 or markers[0][1] != want:
+    if len(markers) != 1 or markers[0][0] != want:
         sys.exit(
             f"同步标记缺失或不匹配（期望 <!-- K3: revid {want}; ... -->，"
-            f"实际 {[m[0] for m in markers]!r}）——"
+            f"实际 {[f'revid {m[0]}' for m in markers]!r}）——"
             "把 stamp 子命令输出的标记行加入正文末尾再保存"
         )
     new_text = MARKER_RE.sub("", rev["slots"]["main"]["content"])
