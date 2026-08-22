@@ -37,7 +37,7 @@ p.save(summary="编辑摘要", bot=True)                # 批量脚本：加 bot
 ```
 
 - **bot flag 的取舍**：bot flag 会阻止常规通知机制（避免批量编辑刷屏）。跑批量脚本时用 `bot=True` 没问题；但手动编辑特定页面时，操作更接近需人工审查的常规编辑，**不要加 bot flag**。
-- **pywikibot ≥9.4 起 `save()` 默认 `bot=True, minor=True`**（None 选项已移除）——手动编辑不显式传 `bot=False, minor=False` 就会被标成 bot 小编辑。2026-08-09 实测踩过：6 个手动合并编辑全部带上 bot+minor 标记（该标记事后无法摘除，只能等滚出 recentchanges）。旧文档「裸 `save()` 不加 bot flag」的写法已失效。
+- **pywikibot ≥9.4 起 `save()` 默认 `bot=True, minor=True`**（None 选项已移除）——手动编辑不显式传 `bot=False, minor=False` 就会被标成 bot 小编辑，且 bot/minor 标记事后无法摘除（只能等滚出 recentchanges）。
 - 验证 bot flag 要查 `list=recentchanges`（rcprop=flags）；`usercontribs` 的 ucprop=flags **不返回 bot 键**（即使编辑带 bot flag），会漏报。
 - `botflag=` 参数已废弃，用 `bot=`；传了 botflag 只会触发 FutureWarning，不影响保存。
 - save 有内置异常保护；批量写建议 try `pywikibot.exceptions.PageSaveError`。
@@ -101,8 +101,7 @@ login_name = bp.login_name(username)  # → "IchiSanNi@pywikibot"
 ```
 
 流程：GET login token → POST login（lgname/lgpassword/lgtoken）→ GET csrf token → POST edit
-（token=csrf, bot="1"）。login token 和 csrf token 分两次取（历史上 Fandom 一起取会缺 token；
-2026-07 实测批量取已能完整返回，pywikibot ≥11.4 也有缺 key 自动补取机制，但分两次取无副作用，保留此惯例）。
+（token=csrf, bot="1"）。login token 和 csrf token 分两次取（批量取实测可用，但分开无副作用，保持惯例）。
 加 `formatversion=2` 可让响应没有数字键，解析更干净。完整可跑代码见 `scripts/tools/verify_wiki_access.py`。
 **login POST 也必须走带 429 退避的重试封装**，不能裸发——否则一被限速连登录都过不去（实测踩过）。
 
