@@ -100,7 +100,7 @@ prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 
 - 页首/页尾按「页面构成规则」保留；**正文以 `{slug}.conv.txt` 半成品骨架为基础**（结构转换与字段合并已由 prepare 机械完成，见「机械转换层」节）——agent 只做翻译：
   - prose 段落、参数里的英文散文值、内链显示文字、未归一的标题（映射表外的如 `Chapters`）；引号用「」，人名/专名用 wiki 通行译名（残留别名由主循环 fix:translation 兜底）；
   - 骨架里含中文的 zh 策展内容（信息框合并保留的字段等）原样不动；
-  - `{slug}.body.en.txt`（en 正文原文）与 `{slug}.zh.txt`（zh 现文）是参考资料——骨架与 en 原文有出入时以 en 原文为准核对语义。
+  - `{slug}.body.en.txt` 是骨架的生成源（en 原文，拿不准骨架某处转换是否正确时对照它），`{slug}.zh.txt` 是 prepare 时的 zh 现文（查看被保留策展内容的上下文时看它）——两者仅供核对。
 - 仅当 en 无增量且 zh 无英文残留时才不编辑，直接 `skip`——「en 无增量」要对照 en 全文判定（含发售日期/封面/出处等字段），zh 已是中文不代表无增量。
 - 译名表查无的专名追加到 `.cache/llm_translate/nouns.jsonl`（page/term/origin/note 一行一条）。
 
