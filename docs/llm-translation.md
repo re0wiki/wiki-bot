@@ -8,13 +8,25 @@ zh 站大部分条目处于未翻译/机翻/过时状态（全站 1657 页挂 `C
 机械环节全部在 `scripts/tools/llm_translate.py`，LLM 只做一件事：翻译 prose。
 
 ```
-refresh（重建选页队列）→ prepare（取队首、备料）→ agent 直接编辑 zh 页 → done（核验）
+refresh（重建选页队列）→ prepare（取队首、机械转换备料）→ agent 直接编辑 zh 页 → done（核验）
 ```
 
 - **refresh**：重建 `.cache/llm_translate/queue.json`（全量扫描 + 标记扫描重定冷度，约 5 分钟，低频跑）。
-- **prepare**：取队列最冷的一页，拉 en 源码+revid、zh 现文，解析内链映射，落工作文件到 `.cache/llm_translate/work/`；途中对机械可判定的页面（无 en 源 / en 仅标题骨架）自动打标记跳过。
-- **agent**：对照 en 源码直接编辑 zh 页（pywikibot 普通编辑），保结构由 agent 负责；摘要与同步标记用 `stamp` 子命令生成的标准行。
-- **done**：对 wiki 只读——以 prepare 时的 zh 现文为基线做事后机械核验（标记/页首/页尾/内链/模板/分类），通过即输出 NOTIFY 行。脚本对 wiki 的唯一写入是 skip/auto-skip 的机械打标记。
+- **prepare**：取队列最冷的一页，拉 en 源码+revid、zh 现文，**本地机械转换**（en→zh 骨架，见「机械转换层」节），落工作文件到 `.cache/llm_translate/work/`；途中对机械可判定的页面（无 en 源 / en 仅标题骨架）自动打标记跳过。
+- **agent**：以骨架为基础直接编辑 zh 页（pywikibot 普通编辑），只翻 prose；摘要与同步标记用 `stamp` 子命令生成的标准行。
+- **done**：对 wiki 只读——以 prepare 时的 zh 现文与骨架为基线做事后机械核验（标记/页首/页尾/内链/模板/分类），通过即输出 NOTIFY 行。脚本对 wiki 的唯一写入是 skip/auto-skip 的机械打标记。
+
+## 机械转换层（prepare 的 en→zh 骨架生成）
+
+`convert_en_body` 把 en 正文离线转成 zh 半成品骨架，本地复刻 replace.py 的应用路径（fix 表规则不经 wiki、不碰沙盒）：
+
+1. 模板名映射（`jobs/jobs.py` 的 `_template_replacements`，唯一事实源）；
+2. 标题等号内侧空格归一（en 多写 `==X==`，wiki 侧本由 cosmetic_changes 顺带做）；
+3. fix 表规则依次应用：para（参数名归一 + 多语言堆积拆分）→ heading（标题归一）→ date（日期 ISO 化）→ misc（间隔号/引号等）→ anti-ve（prose `<br>` 转段落；模板内受例外保护）；
+4. 内链目标替换：resolve_links 映射（en 标题 → zh 同名页 → 跟随重定向）把 `[[X]]` 改写为 `[[zh 最终目标|X]]`，显示文字留 agent 翻译；解析失败（en 有 zh 无）保留 en 原名并列进报告；
+5. **信息框字段级合并**（`merge_structure`，zh 策展内容不丢）：zh 同名参数值含中文（已策展）→ 保留 zh 行，英文残留/空值 → 用 en 转换值；zh 独有参数行（isbn_ko/painter/voice_zh_* 等）块尾保留；zh 有 image_a/n/g/c 分媒介图库时丢弃 en 的单 image 参数；previous/next 与 character 的 name_ja_romaji（fix:para 删除对象）永不带回；zh 独有的整个信息框（en 无对应）整块前置保留。
+
+译名归一不在转换层——LLM 按译名表翻译，残留别名由主循环的 fix:translation 对成稿机械兜底。
 
 ## 选页：编辑者冷度
 
@@ -72,22 +84,22 @@ agent 直接产出整页新源码。页首页尾以 zh 现文为准机械保留�
 
 ## 内链处理
 
-prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 标题 → zh 同名页 → 跟随重定向，即 transferbot 搬运 + re0_move 移动留重定向的链路），以映射表形式给 LLM。LLM 写 `[[zh 最终目标|显示文字]]`；解析失败的（en 有而 zh 无对应页）保留 en 原名并在报告中列出。done 侧的白名单核验见「护栏」。
+prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 标题 → zh 同名页 → 跟随重定向，即 transferbot 搬运 + re0_move 移动留重定向的链路），并在骨架里机械改写为 `[[zh 最终目标|原显示文字]]`——agent 只翻译显示文字，不碰目标。解析失败的（en 有而 zh 无对应页）保留 en 原名并在报告中列出。done 侧的白名单核验见「护栏」。
 
 ## 护栏（done 的事后机械核验，不靠 LLM 自检）
 
 1. **标记核验**：zh 页最新编辑必须是本账号，且源码含且仅含一个同步标记、revid 与 meta 的 en_revid 一致——防止「没编辑就记完成」与标记漂移。
 2. **框架不变量**：页首模板块（仅 To do 翻译类标注可按规则清理）与页尾语言链接块，以 prepare 时的 zh 现文为基线逐行比对（核验前先从新源码摘除标记行）。
-3. **白名单**：正文内链目标（按 页面/文件/分类/语言链接 分类）⊆ link_map ∪ 未解析名 ∪ zh 现文已有目标（文件另含 en 源出现的，分类另含机翻待校对）；正文模板调用 ⊆ en 源 ∪ zh 现文。另核验 `[[Category:机翻待校对]]` 必挂（漏挂拒绝）。
+3. **白名单**：正文内链目标（按 页面/文件/分类/语言链接 分类）⊆ link_map ∪ 未解析名 ∪ zh 现文已有目标（文件另含骨架出现的，分类另含机翻待校对）；正文模板调用 ⊆ conv 骨架 ∪ zh 现文。另核验 `[[Category:机翻待校对]]` 必挂（漏挂拒绝）。
 4. **失败响亮**：核验不过非零退出，工作文件保留供排查；wiki 上的编辑由 agent 修正（重编 wiki）后重新 done。
 
 ## agent 翻译规则
 
 - **直接编辑 zh 页**（pywikibot 普通编辑，bot=False minor=False），产出整页新源码；编辑前以重读的最新源码为基础（prepare 后若有人类编辑，将其改动融入处理，不要覆盖）。摘要与同步标记用 `stamp <slug>` 子命令输出的两行原样使用（第一行填摘要，第二行放正文末尾、原位替换已有标记）。完成后 `done <slug>` 核验。
-- 页首/页尾按「页面构成规则」保留；正文对照 en 源码处理：
-  - zh 无结构：整页翻译。标题层级保留、文字译中文、引号用「」、人名用 wiki 通行译名。
-  - zh 已有结构化内容（meta `zh_flags` 有 infobox/gallery）：保留 zh 结构（已填好的信息框/图库往往优于 en 转换结果），对照 en 找增量——en 多出的实质信息（infobox 空缺字段、封面/发售日期/出处说明、缺失段落）与 zh 的英文残留/中英混杂都要补上。这与中文量无关：哪怕 zh 只剩骨架、实际等于重翻全部 prose，也保留 zh 结构。
-- 内链用 meta 的 `link_map` 写 `[[zh 最终目标|显示文字]]`；文件链接目标原样、说明文字翻译。
+- 页首/页尾按「页面构成规则」保留；**正文以 `{slug}.conv.txt` 半成品骨架为基础**（结构转换与字段合并已由 prepare 机械完成，见「机械转换层」节）——agent 只做翻译：
+  - prose 段落、参数里的英文散文值、内链显示文字、未归一的标题（映射表外的如 `Chapters`）；引号用「」，人名/专名用 wiki 通行译名（残留别名由主循环 fix:translation 兜底）；
+  - 骨架里含中文的 zh 策展内容（信息框合并保留的字段等）原样不动；
+  - `{slug}.body.en.txt`（en 正文原文）与 `{slug}.zh.txt`（zh 现文）是参考资料——骨架与 en 原文有出入时以 en 原文为准核对语义。
 - 仅当 en 无增量且 zh 无英文残留时才不编辑，直接 `skip`——「en 无增量」要对照 en 全文判定（含发售日期/封面/出处等字段），zh 已是中文不代表无增量。
 - 译名表查无的专名追加到 `.cache/llm_translate/nouns.jsonl`（page/term/origin/note 一行一条）。
 
@@ -110,5 +122,6 @@ done 成功时输出 `NOTIFY: [[zh 条目]] <时长>无人类编辑，已由 Bot
 
 ## 当前限制
 
-- 一期只覆盖**正文以 prose+标题为主的页面**（/梗概 等，恰是冷队列主体）。含 en 信息框的主页面（角色/书籍等）需要参数级翻译与模板映射，后续按页面类型扩展。
 - en 正文里的模板调用（罕见）原样保留，由既有 jobs 的模板替换接管。
+- 映射表外的 en 模板参数名（如实测发现的 `Affinity`，zh 无对应字段）原样透传进骨架，由 agent 按语义合并或丢弃；高频出现再登记进 fix:para。
+- 多语言堆积拆分遇保守判据（表外标注/分册/嵌套模板）跳过，对应参数保持堆积形态留 agent/人工。
