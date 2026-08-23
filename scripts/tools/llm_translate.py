@@ -454,17 +454,27 @@ def merge_structure(conv, zh_text):
     return conv
 
 
+def cosmetic(text, title):
+    """cosmetic_changes 的本地复用：与循环任务同套件同语义（标题空格/列表空格/
+    空段清理等），替代自造正则。toolkit 需 Page 对象（取 site/title/namespace，
+    惰性构造不拉取内容）；title 须为真实页名（cleanUpLinks 的自链接判定用）。"""
+    import pywikibot
+    from pywikibot.cosmetic_changes import CANCEL, CosmeticChangesToolkit
+
+    page = pywikibot.Page(_zh_site(), title)
+    out = CosmeticChangesToolkit(page, ignore=CANCEL.METHOD).change(text)
+    return out or text  # 无变化时返回 False
+
+
 CONVERT_FIXES = ("para", "heading", "date", "misc", "anti-ve")
 
 
-def convert_en_body(body, zh_text, mapping):
+def convert_en_body(body, zh_text, mapping, title):
     """en 正文 → zh 半成品骨架：模板名/参数/标题/日期/格式归一 + 内链目标替换
     + 与 zh 现文的信息框字段级合并。译名归一不在此处——主循环的 fix:translation
     对最终成稿机械兜底。"""
     conv = convert_template_names(body)
-    # 标题等号内侧空格归一（en 多写 ==X==，fix:heading 要求 == X == 才匹配；
-    # wiki 侧本由 cosmetic_changes 顺带做，离线单遍需要自己做）
-    conv = re.sub(r"(?m)^(=+)[ \t]*(\S.*?)[ \t]*\1[ \t]*$", r"\1 \2 \1", conv)
+    conv = cosmetic(conv, title)  # 标题空格归一由 cleanUpSectionHeaders 承担
     fixes = _uf().user_fixes
     for name in CONVERT_FIXES:
         conv = apply_fix(conv, fixes[name])
@@ -563,7 +573,7 @@ def write_work_files(best):
     """把队首候选的备料写进 work 目录（en 正文 / zh 现文 / conv 骨架 / meta），并打印摘要。"""
     cold, title, zh_text, zh_revid, en_title, en_revid, body = best
     mapping, unresolved = resolve_links(body)
-    conv = convert_en_body(body, zh_text, mapping)
+    conv = convert_en_body(body, zh_text, mapping, title)
     head, zh_body, tail = split_zh_frame(zh_text)
 
     slug = slugify(title)

@@ -22,9 +22,9 @@ refresh（重建选页队列）→ prepare（取队首、机械转换备料）�
 
 1. `split_en_body` 剥离 en 框架：页首模板行、页尾分类/语言链接、页尾 `==Navigation==` 导航区（navbox 全在 template-remove 清单，zh 系列导航由 Tab/* 承担）；
 2. 模板名映射（`jobs/jobs.py` 的 `_template_replacements`，唯一事实源）；
-3. 标题等号内侧空格归一（en 多写 `==X==`，wiki 侧本由 cosmetic_changes 顺带做）；
+3. `cosmetic_changes` 本地复用（`CosmeticChangesToolkit` 以真实页名的惰性 Page 构造，不拉取内容）：标题等号内侧空格归一（`cleanUpSectionHeaders`，fix:heading 的前置）、列表空格、空段清理等，与循环任务同套件同语义（`ignore=METHOD`）；
 4. fix 表规则依次应用：para（参数名归一 + 多语言堆积拆分）→ heading（标题归一）→ date（日期 ISO 化）→ misc（间隔号/引号等）→ anti-ve（prose `<br>` 转段落；模板内受例外保护）；
-5. 内链目标替换：resolve_links 映射（en 标题 → zh 同名页 → 跟随重定向）把 `[[X]]` 改写为 `[[zh 最终目标|X]]`，显示文字留 agent 翻译；解析失败（en 有 zh 无）保留 en 原名并列进报告；
+5. 内链目标替换：resolve_links 映射（en 标题 → zh 同名页 → 跟随重定向——与 fixing-redirects 同链路等效，此处离线单遍完成）把 `[[X]]` 改写为 `[[zh 最终目标|X]]`，显示文字留 agent 翻译；解析失败（en 有 zh 无）保留 en 原名并列进报告；
 6. **信息框字段级合并**（`merge_structure`，zh 策展内容不丢）：zh 同名参数值含中文（已策展）→ 保留 zh 行，英文残留/空值 → 用 en 转换值；zh 独有参数行（isbn_ko/painter/voice_zh_* 等）块尾保留；zh 有 image_a/n/g/c 分媒介图库时丢弃 en 的单 image 参数；previous/next 与 character 的 name_ja_romaji（fix:para 删除对象）永不带回；zh 独有的整个信息框（en 无对应）整块前置保留。
 
 译名归一不在转换层——LLM 按译名表翻译，残留别名由主循环的 fix:translation 对成稿机械兜底。

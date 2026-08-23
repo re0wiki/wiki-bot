@@ -122,7 +122,7 @@ def test_convert_en_body_end_to_end():
         "Puck": "角色:帕克",
         "Natsuki Subaru": "角色:菜月·昴",
     }
-    out = lt.convert_en_body(body, zh_text, mapping)
+    out = lt.convert_en_body(body, zh_text, mapping, "小说:1卷")
     assert "{{Infobox book" in out  # 模板名归一
     assert "| name = Re:Zero Light Novel Volume 1" in out  # 参数名归一
     assert "| pages_ja = 292\n| pages_ko = 312" in out  # 堆积拆分
