@@ -11,7 +11,7 @@
     uv run python scripts/tools/llm_translate.py backlog   # 机翻待校对积压检查（>=5 退出码 3）
 
 同步状态的唯一载体是条目源码末尾的 HTML 注释标记：
-    <!-- K3: revid <en_revid>; <ISO 时间> -->   （已同步到 en 该版本）
+    <!-- LLM: revid <en_revid>; <ISO 时间> -->   （已同步到 en 该版本）
 revid 为 - 表示无 en 源（zh 源码无 en 链接，或 en 页不存在）。
 编辑（done）与跳过（skip/auto-skip）统一以标记落账——不怕本地状态丢失，格式变更
 只是普通编辑。本脚本对 wiki 的写入只有一处：skip/auto-skip 的机械打标记。
@@ -43,7 +43,9 @@ CATEGORY = "Category:待修撰"
 PROOFREAD_CAT = "Category:机翻待校对"
 # 机翻待校对积压上限：达到即暂停处理新页（等人类校对摘分类），由 backlog 子命令判定
 BACKLOG_LIMIT = 5
-SUMMARY_PREFIX = "K3: revid "
+# 标记名不随模型变；翻译用的模型型号记录在编辑摘要（人类可读、可扫描归因），
+# 换模型只改这里
+SUMMARY_PREFIX = "LLM(K3): revid "
 
 S = requests.Session()
 
@@ -60,8 +62,9 @@ WIKILINK = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]*)?\]\]")
 TEMPLATE_NAME = re.compile(r"\{\{([^{}|]+)")
 EN_LINK = re.compile(r"\[\[en:([^\]|]+)")
 # 同步状态标记（条目源码末尾的 HTML 注释，唯一状态载体）：
-# <!-- K3: revid <N|->; <ISO 时间> -->（已同步到 en 版本 N；- 表示无 en 源）
-MARKER_RE = re.compile(r"<!--\s*K3: revid (\d+|-); (\S+) -->")
+# <!-- LLM: revid <N|->; <ISO 时间> -->（已同步到 en 版本 N；- 表示无 en 源）
+# K3 为旧格式标记，仍识别，下次处理时原位换新
+MARKER_RE = re.compile(r"<!--\s*(?:LLM|K3): revid (\d+|-); (\S+) -->")
 
 
 def api(base, **params):
@@ -514,9 +517,11 @@ def stamp_page(title, revid, reason):
     page = pywikibot.Page(site, title)
     text = page.text
     assert not REDIRECT_LINE.match(text), f"{title} 是重定向页，不打同步标记"
-    page.text = add_marker(text, f"<!-- K3: revid {revid}; {now_iso()} -->")
+    page.text = add_marker(text, f"<!-- LLM: revid {revid}; {now_iso()} -->")
     # 标记改动读者不可见，但属低频单页编辑，与管线一致不带 bot flag
-    page.save(summary=f"K3 同步标记：{reason}", bot=False, minor=False)
+    page.save(
+        summary=f"{SUMMARY_PREFIX}{revid} 同步标记：{reason}", bot=False, minor=False
+    )
 
 
 def real_colds(titles):
@@ -752,7 +757,7 @@ def cmd_done(slug):
     markers = MARKER_RE.findall(rev["slots"]["main"]["content"])
     if len(markers) != 1 or markers[0][0] != want:
         sys.exit(
-            f"同步标记缺失或不匹配（期望 <!-- K3: revid {want}; ... -->，"
+            f"同步标记缺失或不匹配（期望 <!-- LLM: revid {want}; ... -->，"
             f"实际 {[f'revid {m[0]}' for m in markers]!r}）——"
             "把 stamp 子命令输出的标记行加入正文末尾再保存"
         )
@@ -810,7 +815,7 @@ def cmd_stamp(slug):
     if meta is None:
         sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
     print(std_summary(meta))
-    print(f"<!-- K3: revid {meta['en_revid']}; {now_iso()} -->")
+    print(f"<!-- LLM: revid {meta['en_revid']}; {now_iso()} -->")
 
 
 def cmd_skip(slug, reason):
