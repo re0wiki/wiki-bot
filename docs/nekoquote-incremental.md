@@ -34,7 +34,7 @@ cd wiki-bot 仓库根
 
 ## 故障处理
 
-- **wiki 侧改月表后必须回写源数据**：月表条目构建期只读本地数据（lua_base 零变换重放、zh.json 经 merge_raw 重新生成），只在 wiki 上改（如 `{{Seirei or Elf}}` 复核消歧、人工修译文）不落回本地，下轮增量同步重建即回潮（2026-08-23 实证：08-20 的复核消歧只改了 wiki，增量同步把 `{{Seirei}}` 回潮成 `{{Seirei or Elf}}`）。改完跑 `uv run python -m nekoquote.pull_wiki`——lua_base 月份整文件刷新 + zh.json 的 zh/qzh 字段回写（q 的宿主是提问推记录，与 merge_raw 的 qid 判据对称）。
+- **wiki 侧改月表后必须回写源数据**：月表条目构建期只读本地数据（lua_base 零变换重放、zh.json/tweets.json 经 merge_raw 重新生成），只在 wiki 上改（如 `{{Seirei or Elf}}` 复核消歧、fix:translation 命中 jt 字段）不落回本地，下轮增量同步重建即回潮（2026-08-23 实证：08-20 的复核消歧只改了 wiki，增量同步把 `{{Seirei}}` 回潮成 `{{Seirei or Elf}}`、jt 里的 `{{Yousei}}` 回潮成原文）。改完跑 `uv run python -m nekoquote.pull_wiki`——lua_base 月份整文件刷新（其条目是 P8 时代管线生成的，加工逻辑与 raw_tweet_entry 不同，不做逐字段比对），其余月份逐字段回写 zh.json（t/q）与 tweets.json（jt/jq）。
 - **Kimi content_filter 误伤**（"high risk" 400）：管线已自动二分隔离并跳过该条，跑完后查 `.cache/nekoquote/zh_blocked.json`；用其他模型（Gemini）译出后，把译文写进 `.cache/nekoquote/zh.json` 对应 tid 的 `zh` 字段再重跑构建+部署。**日文原文若触发过滤，不要让它进 LLM 上下文**（有先例）。
 - **导出缺最近内容**：先怀疑解析覆盖——正文可能在新版组件里（递归 walk）或与头部同组件链接之后；`nekoquote/parse.py` 的注释有三种格式的完整判例。
 - **部署后 wiki 上没变化**：查 `.cache/nekoquote/lua_live` 快照是否滞后（每次部署后必须同步，deploy 链已自动做）。
