@@ -284,6 +284,7 @@ user_fixes["para"] = base | {
             ("Status", "status"),
             ("Relatives", "relatives"),
             ("Magic", "magic"),
+            ("Affinity", "affinity"),  # en 后加的属性适性字段（zh 2026-08-22 同步）
             ("Divine Protection", "divine_protection"),
             ("Authority", "authority"),
             ("Weapon", "weapon"),
