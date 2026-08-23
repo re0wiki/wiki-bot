@@ -53,6 +53,8 @@ S = requests.Session()
 TEMPLATE_LINE = re.compile(r"^\{\{.*\}\}\s*$")
 CATEGORY_LINE = re.compile(r"^\[\[Category:[^\]]*\]\]\s*$", re.IGNORECASE)
 LANGLINK_LINE = re.compile(r"^\[\[[a-z][a-z-]*:[^\]]*\]\]\s*$")
+# 重定向页源码行（#REDIRECT / #重定向 / #重新導向）——不入管线、不打标记
+REDIRECT_LINE = re.compile(r"^\s*#(REDIRECT|重定向|重新導向)", re.IGNORECASE)
 # 内链 / 模板提取（校验用）
 WIKILINK = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]*)?\]\]")
 TEMPLATE_NAME = re.compile(r"\{\{([^{}|]+)")
@@ -510,7 +512,9 @@ def stamp_page(title, revid, reason):
     site.login()
     assert site.user() == BOT
     page = pywikibot.Page(site, title)
-    page.text = add_marker(page.text, f"<!-- K3: revid {revid}; {now_iso()} -->")
+    text = page.text
+    assert not REDIRECT_LINE.match(text), f"{title} 是重定向页，不打同步标记"
+    page.text = add_marker(text, f"<!-- K3: revid {revid}; {now_iso()} -->")
     # 标记改动读者不可见，但属低频单页编辑，与管线一致不带 bot flag
     page.save(summary=f"K3 同步标记：{reason}", bot=False, minor=False)
 
@@ -538,11 +542,17 @@ def real_colds(titles):
 
 
 def evaluate_candidate(item):
-    """评估单个队列项：返回候选元组或 None（auto-skip/已同步），可能懒修复 item["cold"]。"""
+    """评估单个队列项：返回候选元组 / None（auto-skip/已同步）/ "drop"（剔出队列）。
+
+    可能懒修复 item["cold"]。"""
     title = item["title"]
     zh_text, zh_revid, _ = get_page(ZH_API, title)
     if zh_text is None:
         return None
+    if REDIRECT_LINE.match(zh_text):
+        # 重定向页不是条目，不入管线——标记只落在正式条目页
+        print(f"drop: {title}（重定向页，出队）")
+        return "drop"
     marker = MARKER_RE.search(zh_text)
     mrev = marker.group(1) if marker else None
     m = EN_LINK.search(zh_text)
@@ -626,6 +636,7 @@ def cmd_prepare():
     # 写回 queue.json 懒修复排序（每周全量 refresh 仍保留，处理分类新增等）
     best = None  # (real_cold, title, zh_text, zh_revid, en_title, en_revid, body)
     queue_dirty = False
+    dropped = []
     i = 0
     while i < len(queue):
         item = queue[i]
@@ -634,10 +645,16 @@ def cmd_prepare():
         i += 1
         old_cold = item["cold"]
         cand = evaluate_candidate(item)
+        if cand == "drop":
+            dropped.append(item["title"])
+            queue_dirty = True
+            continue
         queue_dirty |= item["cold"] != old_cold
         if cand and (best is None or cand[0] < best[0]):
             best = cand
 
+    if dropped:
+        queue = [q for q in queue if q["title"] not in dropped]
     if queue_dirty:
         queue.sort(key=lambda q: q["cold"])
         save_json(QUEUE, queue)

@@ -12,7 +12,7 @@ refresh（重建选页队列）→ prepare（取队首、机械转换备料）�
 ```
 
 - **refresh**：重建 `.cache/llm_translate/queue.json`（全量扫描 + 标记扫描重定冷度，约 5 分钟，低频跑）。
-- **prepare**：取队列最冷的一页，拉 en 源码+revid、zh 现文，**本地机械转换**（en→zh 骨架，见「机械转换层」节），落工作文件到 `.cache/llm_translate/work/`；途中对机械可判定的页面（无 en 源 / en 仅标题骨架）自动打标记跳过。
+- **prepare**：取队列最冷的一页，拉 en 源码+revid、zh 现文，**本地机械转换**（en→zh 骨架，见「机械转换层」节），落工作文件到 `.cache/llm_translate/work/`；途中对机械可判定的页面（无 en 源 / en 仅标题骨架）自动打标记跳过，重定向页直接剔出队列（标记只落在正式条目页）。
 - **agent**：以骨架为基础直接编辑 zh 页（pywikibot 普通编辑），只翻 prose；摘要与同步标记用 `stamp` 子命令生成的标准行。
 - **done**：对 wiki 只读——以 prepare 时的 zh 现文与骨架为基线做事后机械核验（标记/页首/内链/模板/分类），通过即输出 NOTIFY 行。脚本对 wiki 的唯一写入是 skip/auto-skip 的机械打标记。
 
