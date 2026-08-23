@@ -264,7 +264,11 @@ def split_zh_frame(zh_text):
 
 
 def resolve_links(body):
-    """en 内链目标 → zh 最终目标（zh 同名页跟随重定向）。返回 (mapping, unresolved)。"""
+    """en 内链目标 → zh 最终目标（zh 同名页跟随重定向）。返回 (mapping, unresolved)。
+
+    # 锚点对 API 是非法标题字符（查询会静默落空），按裸标题查询，
+    命中后把锚点接回最终目标。
+    """
     targets = {
         m.group(1).strip()
         for m in WIKILINK.finditer(body)
@@ -272,25 +276,26 @@ def resolve_links(body):
         and not re.match(r"[a-z][a-z-]*:", m.group(1))
     }
     mapping, unresolved = {}, []
-    targets = sorted(targets)
-    for i in range(0, len(targets), 50):
-        batch = targets[i : i + 50]
+    bases = sorted({t.split("#", 1)[0] for t in targets})
+    base_final = {}  # 裸标题 → zh 最终目标
+    for i in range(0, len(bases), 50):
+        batch = bases[i : i + 50]
         r = api(ZH_API, prop="info", titles="|".join(batch), redirects="1")
         pages = r["query"]["pages"]
         resolved = {p.get("title") for p in pages if "missing" not in p}
-        for p in pages:
-            if "missing" in p:
-                unresolved.append(p["title"])
         # redirects=1 后 pages 里是最终目标标题；按规范化标题回挂到 en 目标
         norm = {n["to"]: n["from"] for n in r["query"].get("normalized", [])}
         reds = {rd["from"]: rd["to"] for rd in r["query"].get("redirects", [])}
-        for t in batch:
-            t_norm = norm.get(t, t)
-            final = reds.get(t_norm, t_norm)
+        for b in batch:
+            final = reds.get(norm.get(b, b), norm.get(b, b))
             if final in resolved:
-                mapping[t] = final
-            elif t not in unresolved and t_norm in [u for u in unresolved]:
-                unresolved.append(t)
+                base_final[b] = final
+    for t in sorted(targets):
+        base, sep, anchor = t.partition("#")
+        if base in base_final:
+            mapping[t] = base_final[base] + (sep + anchor if sep else "")
+        else:
+            unresolved.append(t)
     return mapping, sorted(set(unresolved))
 
 
@@ -704,7 +709,8 @@ def cmd_done(slug):
 
     核验（均以 prepare 时的 zh 现文与 conv 骨架为基线）：
     - 最新编辑是本账号，源码含且仅含一个同步标记且 revid 与 meta 一致；
-    - 页首模板块除 To do 翻译类标注清理外逐行不变，页尾语言链接块不变；
+    - 页首模板块除 To do 翻译类标注清理外逐行不变（语言链接与分类的
+      相对顺序归 cosmetic_changes，不在此核验）；
     - 正文内链目标（按 页面/文件/分类/语言链接 分类）与模板调用
       不超出 link_map ∪ 未解析名 ∪ conv 骨架 ∪ zh 现文的白名单；
     - 正文末尾挂了 [[Category:机翻待校对]]（人类校对后手动摘除）。
@@ -738,12 +744,10 @@ def cmd_done(slug):
 
     zh_old = (WORK / f"{slug}.zh.txt").read_text(encoding="utf-8")
     conv = (WORK / f"{slug}.conv.txt").read_text(encoding="utf-8")
-    old_head, old_body, old_tail = split_zh_frame(zh_old)
-    new_head, new_body, new_tail = split_zh_frame(new_text)
+    old_head, old_body, _ = split_zh_frame(zh_old)
+    new_head, new_body, _ = split_zh_frame(new_text)
     if new_head != [strip_todo(line) for line in old_head]:
         sys.exit("页首模板块被改动（唯一允许的改动是按规则清理 To do 的翻译类标注）")
-    if new_tail != old_tail:
-        sys.exit("页尾语言链接块被改动")
 
     def link_targets(text):
         return {m.group(1).strip() for m in WIKILINK.finditer(text)}

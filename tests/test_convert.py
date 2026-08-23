@@ -26,6 +26,14 @@ def test_convert_links():
     assert "[[File:X.png]]" in out  # 文件链不在映射内，原样
 
 
+def test_convert_links_anchor():
+    # # 锚点经 resolve_links 保留进映射，convert_links 整体替换
+    mapping = {"Minor Characters#Aheem Lavril": "角色:次要角色#Aheem Lavril"}
+    src = "his son [[Minor Characters#Aheem Lavril|Aheem Lavril]]"
+    out = lt.convert_links(src, mapping)
+    assert "[[角色:次要角色#Aheem Lavril|Aheem Lavril]]" in out
+
+
 # ------------------------------------------------------------ 信息框合并
 
 
