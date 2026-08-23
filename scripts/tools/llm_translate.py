@@ -225,7 +225,7 @@ def cmd_refresh():
 
 
 def split_en_body(en_text):
-    """剥离 en 页首模板行与页尾分类/语言链接，返回正文。"""
+    """剥离 en 页首模板行与页尾分类/语言链接/导航区，返回正文。"""
     lines = en_text.splitlines()
     while lines and (TEMPLATE_LINE.match(lines[0]) or not lines[0].strip()):
         lines.pop(0)
@@ -235,6 +235,14 @@ def split_en_body(en_text):
         or not lines[-1].strip()
     ):
         lines.pop()
+    # 页尾导航区（==Navigation== + navbox 群）：navbox 全在 template-remove 清单，
+    # zh 的系列导航由 Tab/* 承担，不带入
+    while lines and (TEMPLATE_LINE.match(lines[-1]) or not lines[-1].strip()):
+        lines.pop()
+    if lines and re.fullmatch(r"==\s*Navigation\s*==", lines[-1], re.IGNORECASE):
+        lines.pop()
+        while lines and not lines[-1].strip():
+            lines.pop()
     return "\n".join(lines).strip() + "\n"
 
 

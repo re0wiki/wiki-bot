@@ -82,6 +82,25 @@ def test_merge_structure_no_infobox():
     assert lt.merge_structure("纯 prose。\n", "zh prose。\n") == "纯 prose。\n"
 
 
+def test_split_en_body_strips_navigation():
+    # 页尾 ==Navigation== + navbox 群剥离（navbox 全在 template-remove 清单）
+    body = lt.split_en_body(
+        "{{Parent Tab |tab1 = Information}}\n"
+        "正文。\n\n"
+        "==Navigation==\n"
+        "{{Royal Selection Navbox}}\n"
+        "{{Lugunica Navbox}}\n"
+        "[[Category:Terminology]]\n"
+        "[[de:X]]\n"
+    )
+    assert body == "正文。\n"
+
+
+def test_split_en_body_trailing_navbox_without_heading():
+    body = lt.split_en_body("正文。\n\n{{LN Navigation}}\n")
+    assert body == "正文。\n"
+
+
 # ------------------------------------------------------------ 端到端（真实 fix 表规则）
 
 

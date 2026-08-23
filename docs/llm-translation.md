@@ -20,11 +20,12 @@ refresh（重建选页队列）→ prepare（取队首、机械转换备料）�
 
 `convert_en_body` 把 en 正文离线转成 zh 半成品骨架，本地复刻 replace.py 的应用路径（fix 表规则不经 wiki、不碰沙盒）：
 
-1. 模板名映射（`jobs/jobs.py` 的 `_template_replacements`，唯一事实源）；
-2. 标题等号内侧空格归一（en 多写 `==X==`，wiki 侧本由 cosmetic_changes 顺带做）；
-3. fix 表规则依次应用：para（参数名归一 + 多语言堆积拆分）→ heading（标题归一）→ date（日期 ISO 化）→ misc（间隔号/引号等）→ anti-ve（prose `<br>` 转段落；模板内受例外保护）；
-4. 内链目标替换：resolve_links 映射（en 标题 → zh 同名页 → 跟随重定向）把 `[[X]]` 改写为 `[[zh 最终目标|X]]`，显示文字留 agent 翻译；解析失败（en 有 zh 无）保留 en 原名并列进报告；
-5. **信息框字段级合并**（`merge_structure`，zh 策展内容不丢）：zh 同名参数值含中文（已策展）→ 保留 zh 行，英文残留/空值 → 用 en 转换值；zh 独有参数行（isbn_ko/painter/voice_zh_* 等）块尾保留；zh 有 image_a/n/g/c 分媒介图库时丢弃 en 的单 image 参数；previous/next 与 character 的 name_ja_romaji（fix:para 删除对象）永不带回；zh 独有的整个信息框（en 无对应）整块前置保留。
+1. `split_en_body` 剥离 en 框架：页首模板行、页尾分类/语言链接、页尾 `==Navigation==` 导航区（navbox 全在 template-remove 清单，zh 系列导航由 Tab/* 承担）；
+2. 模板名映射（`jobs/jobs.py` 的 `_template_replacements`，唯一事实源）；
+3. 标题等号内侧空格归一（en 多写 `==X==`，wiki 侧本由 cosmetic_changes 顺带做）；
+4. fix 表规则依次应用：para（参数名归一 + 多语言堆积拆分）→ heading（标题归一）→ date（日期 ISO 化）→ misc（间隔号/引号等）→ anti-ve（prose `<br>` 转段落；模板内受例外保护）；
+5. 内链目标替换：resolve_links 映射（en 标题 → zh 同名页 → 跟随重定向）把 `[[X]]` 改写为 `[[zh 最终目标|X]]`，显示文字留 agent 翻译；解析失败（en 有 zh 无）保留 en 原名并列进报告；
+6. **信息框字段级合并**（`merge_structure`，zh 策展内容不丢）：zh 同名参数值含中文（已策展）→ 保留 zh 行，英文残留/空值 → 用 en 转换值；zh 独有参数行（isbn_ko/painter/voice_zh_* 等）块尾保留；zh 有 image_a/n/g/c 分媒介图库时丢弃 en 的单 image 参数；previous/next 与 character 的 name_ja_romaji（fix:para 删除对象）永不带回；zh 独有的整个信息框（en 无对应）整块前置保留。
 
 译名归一不在转换层——LLM 按译名表翻译，残留别名由主循环的 fix:translation 对成稿机械兜底。
 
@@ -77,7 +78,7 @@ agent 直接产出整页新源码。页首页尾以 zh 现文为准机械保留�
 
 - 页首：`{{Init}}`、`{{To do}}`、`{{Tab/...}}` 等行首模板块原样保留，**唯一允许的改动**是清理 `{{To do}}` 参数中的翻译类标注（机翻标记由 `[[Category:机翻待校对]]` 承载，`{{To do}}` 里的翻译标注是冗余）：K3 标注段与「本页翻译结果不准确…重新翻译」「AI翻译，待校对」等翻译任务类标注段（管线处理即完成其任务）按「；」分段丢弃，清空则还原裸 `{{To do}}`；**其他参数**（如「列表格式待整理」「内容待补充」）原样保留。裸 `{{To do}}` 不动（其 `Category:待修撰` 归入是队列数据源）。
 - 正文：翻译规则见下节。
-  - en 侧页首模板（如 `{{Parent Tab}}`）、页尾 `[[Category:...]]` 与语言链接不带入——分类由 Module:Init 按前缀/后缀自动打，语言链接以 zh 为准。
+  - en 侧页首模板（如 `{{Parent Tab}}`）、页尾 `[[Category:...]]`、语言链接与 `==Navigation==` 导航区不带入（split_en_body 机械剥离）——分类由 Module:Init 按前缀/后缀自动打，语言链接以 zh 为准，系列导航由 Tab/* 承担。
   - **末尾必须挂 `[[Category:机翻待校对]]`**：有分类段则并入，否则在语言链接块前独立成段。人类校对后手动摘除；若管线再次处理（en 有新内容 = 新机翻内容）会重新挂上。
   - **分类之后放一行同步标记注释**（`stamp` 子命令输出的第二行，原位替换已有标记）。
 - 页尾：zh 现文的语言链接块逐行原样保留（标记在语言链接块之前，不属页尾）。
