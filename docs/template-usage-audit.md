@@ -78,9 +78,7 @@ for nsid in [i for i in site.namespaces if i >= 0 and i not in (6, 7)]:
 
 ## 执行阶段（删除 + 清理清单）
 
-1. **先备份**：删除前把每个候选的 wikitext 存 JSON 归档
-   （仓库 `logs/deleted_templates_YYYY-MM-DD.json`）。管理员能 undelete，
-   但本地归档让自助恢复/diff 变得 trivial。
+1. **无需本地归档**：删除内容随时可由管理员 undelete 恢复，不留本地 JSON 存档。
 2. **删前 whatlinkshere 扫荡**——`page.backlinks(follow_redirects=False)`
    （snake_case 参数；camelCase 会 TypeError）。它能抓到 embeddedin 和源码 grep **都**看不见的用法：
    - 经辅助模板链接的索引页（`{{t|Name}}`——源码里没有字面 `Template:Name`，grep 漏掉，

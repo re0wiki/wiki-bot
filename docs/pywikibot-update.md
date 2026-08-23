@@ -1,6 +1,6 @@
 # pywikibot submodule 更新流程
 
-把 fork（`re0wiki/pywikibot` 的 `main`）rebase 到 upstream 最新版的完整流程。**定制提交清单的唯一权威是 AGENTS.md「pywikibot fork 的定制」节**——本文不重复列举文件名与抽查命令（曾经列举过，漂移后比 AGENTS.md 落后数个补丁才被发觉）。
+把 fork（`re0wiki/pywikibot` 的 `main`）rebase 到 upstream 最新版的完整流程。**定制提交清单的唯一权威是 AGENTS.md「pywikibot fork 的定制」节**——本文不重复列举，避免双源漂移。
 
 ## 步骤
 

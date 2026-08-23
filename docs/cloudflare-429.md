@@ -160,7 +160,6 @@ maxthrottle = 60    # 常规延迟硬顶（管不住 retry_after，见上）
 
 **明确不给 fork 打 `retry_after` 钳制补丁**（`throttle.py` 里 `min(retry_after, maxthrottle)`）：
 为保持 fork 干净、方便合并上游，治理靠「不触发 429」而非「触发后睡短一点」。
-曾误判为 throttle.ctrl 持久化惩罚，已证伪（见上）。
 
 ## 什么时候绕开 pywikibot
 

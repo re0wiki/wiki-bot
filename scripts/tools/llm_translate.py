@@ -11,8 +11,8 @@
     uv run python scripts/tools/llm_translate.py backlog   # 机翻待校对积压检查（>=5 退出码 3）
 
 同步状态的唯一载体是条目源码末尾的 HTML 注释标记：
-    <!-- K3: revid <en_revid>; <ISO 时间> -->   （已同步到 en 该版本；- 表示 en 页不存在）
-    <!-- K3: no-en; <ISO 时间> -->               （无 en 链接的 zh 原创页）
+    <!-- K3: revid <en_revid>; <ISO 时间> -->   （已同步到 en 该版本）
+revid 为 - 表示无 en 源（zh 源码无 en 链接，或 en 页不存在）。
 编辑（done）与跳过（skip/auto-skip）统一以标记落账——不怕本地状态丢失，格式变更
 只是普通编辑。本脚本对 wiki 的写入只有一处：skip/auto-skip 的机械打标记。
 
@@ -53,14 +53,15 @@ S = requests.Session()
 TEMPLATE_LINE = re.compile(r"^\{\{.*\}\}\s*$")
 CATEGORY_LINE = re.compile(r"^\[\[Category:[^\]]*\]\]\s*$", re.IGNORECASE)
 LANGLINK_LINE = re.compile(r"^\[\[[a-z][a-z-]*:[^\]]*\]\]\s*$")
+# 重定向页源码行（#REDIRECT / #重定向 / #重新導向）——不入管线、不打标记
+REDIRECT_LINE = re.compile(r"^\s*#(REDIRECT|重定向|重新導向)", re.IGNORECASE)
 # 内链 / 模板提取（校验用）
 WIKILINK = re.compile(r"\[\[([^\]|]+)(?:\|[^\]]*)?\]\]")
 TEMPLATE_NAME = re.compile(r"\{\{([^{}|]+)")
 EN_LINK = re.compile(r"\[\[en:([^\]|]+)")
 # 同步状态标记（条目源码末尾的 HTML 注释，唯一状态载体）：
-# <!-- K3: revid <N|->; <ISO 时间> -->（已同步到 en 版本 N，- 表示 en 页不存在）
-# <!-- K3: no-en; <ISO 时间> -->（无 en 链接的 zh 原创页）
-MARKER_RE = re.compile(r"<!--\s*K3: (no-en|revid (\d+|-)); (\S+) -->")
+# <!-- K3: revid <N|->; <ISO 时间> -->（已同步到 en 版本 N；- 表示无 en 源）
+MARKER_RE = re.compile(r"<!--\s*K3: revid (\d+|-); (\S+) -->")
 
 
 def api(base, **params):
@@ -134,7 +135,7 @@ def category_members():
 
 
 def scan_markers(titles):
-    """批量抓 zh 源码解析同步标记 → {title: (kind, revid, ts)}（20/批防响应过大）。"""
+    """批量抓 zh 源码解析同步标记 → {title: 标记时间}（20/批防响应过大）。"""
     out = {}
     for i in range(0, len(titles), 20):
         r = api(
@@ -149,8 +150,23 @@ def scan_markers(titles):
                 continue
             m = MARKER_RE.search(p["revisions"][0]["slots"]["main"]["content"])
             if m:
-                out[p["title"]] = (m.group(1), m.group(2), m.group(3))
+                out[p["title"]] = m.group(2)
     return out
+
+
+def creation_ts(title):
+    """创建时间（无人类编辑的 bot 搬运页的冷度）。"""
+    r = api(
+        ZH_API,
+        prop="revisions",
+        titles=title,
+        rvdir="newer",
+        rvlimit="1",
+        rvprop="ids|timestamp|user",
+    )
+    rev = r["query"]["pages"][0]["revisions"][0]
+    assert rev.get("user") == BOT, f"{title} 无人类编辑但创建者是 {rev.get('user')}"
+    return rev["timestamp"]
 
 
 def cmd_refresh():
@@ -186,17 +202,7 @@ def cmd_refresh():
             queue.append({"title": t, "cold": latest[t]})
     orphans = [t for t in members if t not in latest]
     for i, t in enumerate(orphans):
-        r = api(
-            ZH_API,
-            prop="revisions",
-            titles=t,
-            rvdir="newer",
-            rvlimit="1",
-            rvprop="ids|timestamp|user",
-        )
-        rev = r["query"]["pages"][0]["revisions"][0]
-        assert rev.get("user") == BOT, f"{t} 无人类编辑但创建者是 {rev.get('user')}"
-        queue.append({"title": t, "cold": rev["timestamp"]})
+        queue.append({"title": t, "cold": creation_ts(t)})
         if (i + 1) % 50 == 0:
             print(f"orphans: {i + 1}/{len(orphans)}")
 
@@ -206,7 +212,7 @@ def cmd_refresh():
     markers = scan_markers([q["title"] for q in queue])
     for q in queue:
         if q["title"] in markers:
-            q["cold"] = max(q["cold"], markers[q["title"]][2])
+            q["cold"] = max(q["cold"], markers[q["title"]])
     if markers:
         print(f"marked pages re-dated: {len(markers)}")
 
@@ -221,7 +227,7 @@ def cmd_refresh():
 
 
 def split_en_body(en_text):
-    """剥离 en 页首模板行与页尾分类/语言链接，返回正文。"""
+    """剥离 en 页首模板行与页尾分类/语言链接/导航区，返回正文。"""
     lines = en_text.splitlines()
     while lines and (TEMPLATE_LINE.match(lines[0]) or not lines[0].strip()):
         lines.pop(0)
@@ -231,6 +237,14 @@ def split_en_body(en_text):
         or not lines[-1].strip()
     ):
         lines.pop()
+    # 页尾导航区（==Navigation== + navbox 群）：navbox 全在 template-remove 清单，
+    # zh 的系列导航由 Tab/* 承担，不带入
+    while lines and (TEMPLATE_LINE.match(lines[-1]) or not lines[-1].strip()):
+        lines.pop()
+    if lines and re.fullmatch(r"==\s*Navigation\s*==", lines[-1], re.IGNORECASE):
+        lines.pop()
+        while lines and not lines[-1].strip():
+            lines.pop()
     return "\n".join(lines).strip() + "\n"
 
 
@@ -252,7 +266,11 @@ def split_zh_frame(zh_text):
 
 
 def resolve_links(body):
-    """en 内链目标 → zh 最终目标（zh 同名页跟随重定向）。返回 (mapping, unresolved)。"""
+    """en 内链目标 → zh 最终目标（zh 同名页跟随重定向）。返回 (mapping, unresolved)。
+
+    # 锚点对 API 是非法标题字符（查询会静默落空），按裸标题查询，
+    命中后把锚点接回最终目标。
+    """
     targets = {
         m.group(1).strip()
         for m in WIKILINK.finditer(body)
@@ -260,26 +278,215 @@ def resolve_links(body):
         and not re.match(r"[a-z][a-z-]*:", m.group(1))
     }
     mapping, unresolved = {}, []
-    targets = sorted(targets)
-    for i in range(0, len(targets), 50):
-        batch = targets[i : i + 50]
+    bases = sorted({t.split("#", 1)[0] for t in targets})
+    base_final = {}  # 裸标题 → zh 最终目标
+    for i in range(0, len(bases), 50):
+        batch = bases[i : i + 50]
         r = api(ZH_API, prop="info", titles="|".join(batch), redirects="1")
         pages = r["query"]["pages"]
         resolved = {p.get("title") for p in pages if "missing" not in p}
-        for p in pages:
-            if "missing" in p:
-                unresolved.append(p["title"])
         # redirects=1 后 pages 里是最终目标标题；按规范化标题回挂到 en 目标
         norm = {n["to"]: n["from"] for n in r["query"].get("normalized", [])}
         reds = {rd["from"]: rd["to"] for rd in r["query"].get("redirects", [])}
-        for t in batch:
-            t_norm = norm.get(t, t)
-            final = reds.get(t_norm, t_norm)
+        for b in batch:
+            final = reds.get(norm.get(b, b), norm.get(b, b))
             if final in resolved:
-                mapping[t] = final
-            elif t not in unresolved and t_norm in [u for u in unresolved]:
-                unresolved.append(t)
+                base_final[b] = final
+    for t in sorted(targets):
+        base, sep, anchor = t.partition("#")
+        if base in base_final:
+            mapping[t] = base_final[base] + (sep + anchor if sep else "")
+        else:
+            unresolved.append(t)
     return mapping, sorted(set(unresolved))
+
+
+# ---------------------------------------------------------------- en→zh 机械转换
+# 本地复刻 replace.py 的应用路径（re.compile + nocase + replaceExcept 例外），
+# 让 fix 表规则与 jobs 模板名映射离线作用于 en 源码——LLM 只翻 prose，
+# 结构转换不靠 LLM 注意力。划分标准见 AGENTS.md「新增自动化」节。
+
+_UF = None  # user-fixes.py 模块（lazy）
+_SITE = None  # zh site 对象（lazy，仅供 interwiki 例外正则取 family 语言列表）
+
+
+def _uf():
+    global _UF
+    if _UF is None:
+        import importlib.util
+
+        spec = importlib.util.spec_from_file_location(
+            "user_fixes", ROOT / "user-fixes.py"
+        )
+        assert spec and spec.loader
+        _UF = importlib.util.module_from_spec(spec)
+        _UF.__dict__["fixes"] = {}  # 正常由 pwb/pywikibot/fixes.py exec 时注入
+        spec.loader.exec_module(_UF)
+    return _UF
+
+
+def _zh_site():
+    global _SITE
+    if _SITE is None:
+        import pywikibot
+
+        _SITE = pywikibot.Site("zh", "re0")  # 惰性构造，不触网
+    return _SITE
+
+
+def apply_fix(text, fix):
+    """复刻 replace.py：regex/nocase 编译 + inside-tags 例外，逐条应用。"""
+    from pywikibot import textlib
+
+    exceptions = fix.get("exceptions", {}).get("inside-tags", [])
+    flags = re.IGNORECASE if fix.get("nocase") else 0
+    for old, new in fix["replacements"]:
+        pattern = re.compile(old if fix.get("regex") else re.escape(old), flags)
+        text = textlib.replaceExcept(text, pattern, new, exceptions, site=_zh_site())
+    return text
+
+
+def convert_template_names(text):
+    """en 模板名 → zh 模板名（jobs.jobs._template_replacements 为唯一事实源）。"""
+    if str(ROOT) not in sys.path:  # 脚本方式运行时 sys.path[0] 是 scripts/tools
+        sys.path.insert(0, str(ROOT))
+    from jobs.jobs import _template_replacements
+
+    for old, new in _template_replacements:
+        text = re.sub(rf"\{{\{{\s*{re.escape(old)}(?=\s*[|}}])", "{{" + new, text)
+    return text
+
+
+def convert_links(text, mapping):
+    """en 内链目标 → zh 最终目标（resolve_links 的映射）；显示文字留给 agent 翻译。"""
+
+    def repl(m):
+        target, pipe = m.group(1).strip(), m.group(2)
+        if target in mapping:
+            return f"[[{mapping[target]}{pipe or '|' + target}]]"
+        return m.group(0)
+
+    return re.sub(r"\[\[([^\]|]+)(\|[^\]]*)?\]\]", repl, text)
+
+
+CJK = re.compile(r"[一-鿿]")
+# 合并时永不从 zh 现文带回的参数（fix:para 的删除对象，防复活）
+MERGE_DROP = {"previous", "next"}
+
+
+def find_infoboxes(text):
+    """括号平衡提取全部 {{Infobox ...}} 块 → [(start, end, name)]。"""
+    out = []
+    for m in re.finditer(r"\{\{\s*(Infobox [^{}|]*?)\s*(?=[|}\n])", text):
+        depth, i = 0, m.start()
+        while i < len(text) - 1:
+            two = text[i : i + 2]
+            if two == "{{":
+                depth += 1
+                i += 2
+            elif two == "}}":
+                depth -= 1
+                i += 2
+                if depth == 0:
+                    out.append((m.start(), i, m.group(1).strip()))
+                    break
+            else:
+                i += 1
+    return out
+
+
+def parse_params(block):
+    """信息框块 → (头行, [(参数名小写, 原始行列表)], 尾行)；值可多行（gallery 等）。"""
+    lines = block.split("\n")
+    params = []
+    for line in lines[1:-1]:
+        pm = re.match(r"^\|[ \t]*([A-Za-z_][\w -]*?)[ \t]*=", line)
+        if pm:
+            params.append((pm.group(1).lower(), [line]))
+        elif params:
+            params[-1][1].append(line)  # 续行（含空行）归前一参数
+    return lines[0], params, lines[-1]
+
+
+def param_value(lines):
+    return "\n".join([lines[0].split("=", 1)[1], *lines[1:]]).strip()
+
+
+def merge_infobox(conv_block, zh_block):
+    """信息框字段级合并：en 转换骨架为基，zh 策展内容保留。
+
+    - zh 同名参数值含中文（已策展）→ 保留 zh 行；英文残留/空值 → 用 en 转换值；
+    - zh 独有参数行 → 块尾保留；
+    - image 守卫：zh 有 image_a/n/g/c 分媒介图库时丢弃 en 的单 image 参数；
+    - MERGE_DROP 与 character 的 name_ja_romaji 不参与合并（fix:para 删除对象）。
+    """
+    c_head, c_params, c_tail = parse_params(conv_block)
+    _, z_params, _ = parse_params(zh_block)
+    z_map = dict(z_params)
+    is_character = "infobox character" in c_head.lower()
+    z_image_split = any(
+        z_map.get(n) and param_value(z_map[n])
+        for n in ("image_a", "image_n", "image_g", "image_c")
+    )
+
+    def droppable(name):
+        return name in MERGE_DROP or (is_character and name == "name_ja_romaji")
+
+    out = []
+    for name, lines in c_params:
+        if droppable(name) or (name == "image" and z_image_split):
+            continue
+        z_lines = z_map.get(name)
+        if z_lines and CJK.search(param_value(z_lines)):
+            out.extend(z_lines)  # zh 已策展，保留
+        else:
+            out.extend(lines)
+    c_names = {name for name, _ in c_params}
+    for name, lines in z_params:
+        if name not in c_names and not droppable(name):
+            out.extend(lines)  # zh 独有字段（isbn_ko/painter/voice_zh_* 等）
+    return "\n".join([c_head, *out, c_tail])
+
+
+def merge_structure(conv, zh_text):
+    """conv 骨架与 zh 现文的信息框字段级合并；zh 独有的信息框整块保留在骨架顶部。"""
+    z_left = {name.lower(): (s, e) for s, e, name in find_infoboxes(zh_text)}
+    for s, e, name in sorted(find_infoboxes(conv), reverse=True):
+        z = z_left.pop(name.lower(), None)
+        if z is not None:
+            conv = conv[:s] + merge_infobox(conv[s:e], zh_text[z[0] : z[1]]) + conv[e:]
+    if z_left:
+        # en 无对应的信息框（zh 原创结构）整块前置保留
+        conv = "\n".join(zh_text[s:e] for s, e in z_left.values()) + "\n" + conv
+    return conv
+
+
+def cosmetic(text, title):
+    """cosmetic_changes 的本地复用：与循环任务同套件同语义（标题空格/列表空格/
+    空段清理等），替代自造正则。toolkit 需 Page 对象（取 site/title/namespace，
+    惰性构造不拉取内容）；title 须为真实页名（cleanUpLinks 的自链接判定用）。"""
+    import pywikibot
+    from pywikibot.cosmetic_changes import CANCEL, CosmeticChangesToolkit
+
+    page = pywikibot.Page(_zh_site(), title)
+    out = CosmeticChangesToolkit(page, ignore=CANCEL.METHOD).change(text)
+    return out or text  # 无变化时返回 False
+
+
+CONVERT_FIXES = ("para", "heading", "date", "misc", "anti-ve")
+
+
+def convert_en_body(body, zh_text, mapping, title):
+    """en 正文 → zh 半成品骨架：模板名/参数/标题/日期/格式归一 + 内链目标替换
+    + 与 zh 现文的信息框字段级合并。译名归一不在此处——主循环的 fix:translation
+    对最终成稿机械兜底。"""
+    conv = convert_template_names(body)
+    conv = cosmetic(conv, title)  # 标题空格归一由 cleanUpSectionHeaders 承担
+    fixes = _uf().user_fixes
+    for name in CONVERT_FIXES:
+        conv = apply_fix(conv, fixes[name])
+    conv = convert_links(conv, mapping)
+    return merge_structure(conv, zh_text)
 
 
 def add_marker(text, marker):
@@ -297,7 +504,7 @@ def add_marker(text, marker):
     return "\n".join(body + [marker] + ([""] if tail else []) + tail) + "\n"
 
 
-def stamp_page(title, kind, reason):
+def stamp_page(title, revid, reason):
     """机械打同步标记（skip/auto-skip 的唯一 wiki 写入）。"""
     import pywikibot
 
@@ -305,63 +512,72 @@ def stamp_page(title, kind, reason):
     site.login()
     assert site.user() == BOT
     page = pywikibot.Page(site, title)
-    page.text = add_marker(page.text, f"<!-- K3: {kind}; {now_iso()} -->")
+    text = page.text
+    assert not REDIRECT_LINE.match(text), f"{title} 是重定向页，不打同步标记"
+    page.text = add_marker(text, f"<!-- K3: revid {revid}; {now_iso()} -->")
     # 标记改动读者不可见，但属低频单页编辑，与管线一致不带 bot flag
     page.save(summary=f"K3 同步标记：{reason}", bot=False, minor=False)
 
 
 def real_colds(titles):
-    """批量计算实际冷度（每页最近一次非 IchiSanNi 编辑的时间）。
+    """逐页计算实际冷度（每页最近一次非 IchiSanNi 编辑的时间），与 refresh 同规则。
 
-    rvlimit=20 内找首个非 bot 修订；若近 20 版全是 bot 编辑则取第 20 版时间
-    （是真实冷度的上界——偏暖估计只会让我们更保守，安全方向）。
+    rvexcludeuser 由 API 侧精确排除 bot（连编多少次都不失真）；
+    无人类编辑的搬运页取创建时间。
+    （rvexcludeuser 仅限单页查询，故逐页请求——调用点本就每候选一次。）
     """
     out = {}
-    for i in range(0, len(titles), 50):
+    for t in titles:
         r = api(
             ZH_API,
             prop="revisions",
-            titles="|".join(titles[i : i + 50]),
+            titles=t,
             rvprop="ids|timestamp|user",
-            rvlimit="20",
+            rvexcludeuser=BOT,
+            rvlimit="1",
         )
-        for p in r["query"]["pages"]:
-            revs = p.get("revisions", [])
-            cold = next((rv["timestamp"] for rv in revs if rv.get("user") != BOT), None)
-            out[p["title"]] = cold or (revs[-1]["timestamp"] if revs else None)
+        revs = r["query"]["pages"][0].get("revisions", [])
+        out[t] = revs[0]["timestamp"] if revs else creation_ts(t)
     return out
 
 
 def evaluate_candidate(item):
-    """评估单个队列项：返回候选元组或 None（auto-skip/已同步），可能懒修复 item["cold"]。"""
+    """评估单个队列项：返回候选元组 / None（auto-skip/已同步）/ "drop"（剔出队列）。
+
+    可能懒修复 item["cold"]。"""
     title = item["title"]
     zh_text, zh_revid, _ = get_page(ZH_API, title)
     if zh_text is None:
         return None
+    if REDIRECT_LINE.match(zh_text):
+        # 重定向页不是条目，不入管线——标记只落在正式条目页
+        print(f"drop: {title}（重定向页，出队）")
+        return "drop"
     marker = MARKER_RE.search(zh_text)
+    mrev = marker.group(1) if marker else None
     m = EN_LINK.search(zh_text)
-    if not m:
-        if marker and marker.group(1) == "no-en":
-            return None
-        stamp_page(title, "no-en", "无 en 链接（zh 原创）")
-        print(f"auto-skip: {title}（无 en 链接，zh 原创）")
-        return None
-    en_title = m.group(1).strip()
-    en_text, en_revid, _ = get_page(EN_API, en_title)
+    en_title = m.group(1).strip() if m else None
+    en_text = en_revid = None
+    if en_title:
+        en_text, en_revid, _ = get_page(EN_API, en_title)
     if en_text is None:
-        if marker and marker.group(2) == "-":
+        # 无 en 源（zh 源码无 en 链接，或 en 页不存在）：revid 视为 -。
+        # 复活统一走 revid 不一致——zh 原创页后来加了 en 链接、
+        # 悬空链接的 en 页被创建，都是实际 revid 与标记的 - 不等
+        if mrev == "-":
             return None
-        stamp_page(title, "revid -", "en 页不存在")
-        print(f"auto-skip: {title}（en 页不存在）")
+        reason = "en 页不存在" if en_title else "无 en 链接（zh 原创）"
+        stamp_page(title, "-", reason)
+        print(f"auto-skip: {title}（{reason}）")
         return None
-    if marker and marker.group(1) != "no-en" and marker.group(2) == str(en_revid):
-        item["cold"] = max(item["cold"], marker.group(3))  # 懒修复：标记时间参与取 max
+    if marker is not None and mrev == str(en_revid):
+        item["cold"] = max(item["cold"], marker.group(2))  # 懒修复：标记时间参与取 max
         return None  # 已同步且 en 未变化；revid 变化即自然落入处理（追更复活）
     body = split_en_body(en_text)
     if not any(
         len(line) > 20 and not line.startswith("=") for line in body.splitlines()
     ):
-        stamp_page(title, f"revid {en_revid}", "en 无实质内容（仅标题骨架）")
+        stamp_page(title, en_revid, "en 无实质内容（仅标题骨架）")
         print(f"auto-skip: {title}（en 仅标题骨架）")
         return None
     item["cold"] = real_colds([title])[title] or item["cold"]
@@ -369,20 +585,17 @@ def evaluate_candidate(item):
 
 
 def write_work_files(best):
-    """把队首候选的备料写进 work 目录（en 正文 / zh 现文 / meta），并打印摘要。"""
+    """把队首候选的备料写进 work 目录（en 正文 / zh 现文 / conv 骨架 / meta），并打印摘要。"""
     cold, title, zh_text, zh_revid, en_title, en_revid, body = best
     mapping, unresolved = resolve_links(body)
+    conv = convert_en_body(body, zh_text, mapping, title)
     head, zh_body, tail = split_zh_frame(zh_text)
-    zh_flags = [
-        name
-        for name, pat in [("infobox", r"\{\{Infobox"), ("gallery", r"<gallery")]
-        if re.search(pat, zh_body)
-    ]
 
     slug = slugify(title)
     WORK.mkdir(parents=True, exist_ok=True)
     (WORK / f"{slug}.body.en.txt").write_text(body, encoding="utf-8")
     (WORK / f"{slug}.zh.txt").write_text(zh_text, encoding="utf-8")
+    (WORK / f"{slug}.conv.txt").write_text(conv, encoding="utf-8")
     save_json(
         WORK / f"{slug}.meta.json",
         {
@@ -394,20 +607,18 @@ def write_work_files(best):
             "head": head,
             "tail": tail,
             "zh_body_len": len(zh_body),
-            "zh_flags": zh_flags,
             "link_map": mapping,
             "unresolved_links": unresolved,
         },
     )
     print(f"prepared: {title} (cold {cold[:10]}, en revid {en_revid})")
     print(
-        f"  en body: {len(body)} chars, links: {len(mapping)} resolved, {len(unresolved)} unresolved"
+        f"  conv skeleton: {len(conv)} chars（en body {len(body)} chars, "
+        f"links: {len(mapping)} resolved, {len(unresolved)} unresolved）"
     )
     print(
-        f"  zh body replaced: {len(zh_body)} chars（人工内容请先过目 {WORK / f'{slug}.zh.txt'}）"
+        f"  agent 以 {WORK / f'{slug}.conv.txt'} 为基础翻译 prose；zh 策展字段已机械保留"
     )
-    if zh_flags:
-        print(f"  ⚠ zh 现文含 {zh_flags}——保留结构，对照 en 补增量")
 
 
 def cmd_prepare():
@@ -425,6 +636,7 @@ def cmd_prepare():
     # 写回 queue.json 懒修复排序（每周全量 refresh 仍保留，处理分类新增等）
     best = None  # (real_cold, title, zh_text, zh_revid, en_title, en_revid, body)
     queue_dirty = False
+    dropped = []
     i = 0
     while i < len(queue):
         item = queue[i]
@@ -433,10 +645,16 @@ def cmd_prepare():
         i += 1
         old_cold = item["cold"]
         cand = evaluate_candidate(item)
+        if cand == "drop":
+            dropped.append(item["title"])
+            queue_dirty = True
+            continue
         queue_dirty |= item["cold"] != old_cold
         if cand and (best is None or cand[0] < best[0]):
             best = cand
 
+    if dropped:
+        queue = [q for q in queue if q["title"] not in dropped]
     if queue_dirty:
         queue.sort(key=lambda q: q["cold"])
         save_json(QUEUE, queue)
@@ -477,16 +695,15 @@ def extract_templates(text):
     return {m.group(1).strip() for m in TEMPLATE_NAME.finditer(text)}
 
 
-# 参数含这些子串的 To do 标注，其任务本身就是「重翻/校对翻译」，管线处理即完成 → 清理
-TODO_FULFILLED = ("本页翻译结果不准确", "AI翻译")
-# 历史 K3 标注（机翻标记已改由 Category:机翻待校对 承载，页首不再注入）
-K3_MARK = "由 K3 翻译自英文站，待校对润色"
+# 参数含这些子串的 To do 标注属翻译类（重翻/校对任务标注、K3 标注），
+# 管线处理即完成、机翻标记由 Category:机翻待校对 承载 → 清理
+TODO_FULFILLED = ("本页翻译结果不准确", "AI翻译", "由 K3 翻译自英文站，待校对润色")
 
 
 def strip_todo(line):
     """页首 To do 清理：机翻标记由分类承载后，参数中的翻译类标注一律移除。
 
-    按「；」分段丢弃 K3 标注段与翻译任务类旧标注段；清空则还原裸模板；
+    按「；」分段丢弃翻译类标注段；清空则还原裸模板；
     其他参数（人工标注的无关任务）原样保留。
     """
     m = re.fullmatch(r"\{\{\s*To do\s*\|(.+)\}\}", line.strip())
@@ -495,7 +712,7 @@ def strip_todo(line):
     kept = [
         seg
         for seg in m.group(1).split("；")
-        if K3_MARK not in seg and not any(k in seg for k in TODO_FULFILLED)
+        if not any(k in seg for k in TODO_FULFILLED)
     ]
     if kept == [m.group(1)]:
         return line
@@ -507,11 +724,11 @@ def strip_todo(line):
 def cmd_done(slug):
     """一页处理完成：机械核验 agent 的 wiki 编辑。
 
-    核验（均以 prepare 时的 zh 现文为基线）：
+    核验（均以 prepare 时的 zh 现文与 conv 骨架为基线）：
     - 最新编辑是本账号，源码含且仅含一个同步标记且 revid 与 meta 一致；
-    - 页首模板块除 To do 翻译类标注清理外逐行不变，页尾语言链接块不变；
+    - 页首模板块除 To do 翻译类标注清理外逐行不变；
     - 正文内链目标（按 页面/文件/分类/语言链接 分类）与模板调用
-      不超出 link_map ∪ 未解析名 ∪ en 源 ∪ zh 现文的白名单；
+      不超出 link_map ∪ 未解析名 ∪ conv 骨架 ∪ zh 现文的白名单；
     - 正文末尾挂了 [[Category:机翻待校对]]（人类校对后手动摘除）。
     状态由源码标记承载，通过即输出 NOTIFY 行，无本地落盘。
     """
@@ -533,22 +750,20 @@ def cmd_done(slug):
         sys.exit(f"最新编辑非本账号（{rev.get('user')}）——人工编辑冲突，中止")
     want = str(meta["en_revid"])
     markers = MARKER_RE.findall(rev["slots"]["main"]["content"])
-    if len(markers) != 1 or markers[0][1] != want:
+    if len(markers) != 1 or markers[0][0] != want:
         sys.exit(
             f"同步标记缺失或不匹配（期望 <!-- K3: revid {want}; ... -->，"
-            f"实际 {[m[0] for m in markers]!r}）——"
+            f"实际 {[f'revid {m[0]}' for m in markers]!r}）——"
             "把 stamp 子命令输出的标记行加入正文末尾再保存"
         )
     new_text = MARKER_RE.sub("", rev["slots"]["main"]["content"])
 
     zh_old = (WORK / f"{slug}.zh.txt").read_text(encoding="utf-8")
-    en_body = (WORK / f"{slug}.body.en.txt").read_text(encoding="utf-8")
-    old_head, old_body, old_tail = split_zh_frame(zh_old)
-    new_head, new_body, new_tail = split_zh_frame(new_text)
+    conv = (WORK / f"{slug}.conv.txt").read_text(encoding="utf-8")
+    old_head, old_body, _ = split_zh_frame(zh_old)
+    new_head, new_body, _ = split_zh_frame(new_text)
     if new_head != [strip_todo(line) for line in old_head]:
         sys.exit("页首模板块被改动（唯一允许的改动是按规则清理 To do 的翻译类标注）")
-    if new_tail != old_tail:
-        sys.exit("页尾语言链接块被改动")
 
     def link_targets(text):
         return {m.group(1).strip() for m in WIKILINK.finditer(text)}
@@ -562,10 +777,10 @@ def cmd_done(slug):
             return "lang"
         return "page"
 
-    old_links, en_links = link_targets(old_body), link_targets(en_body)
+    old_links, conv_links = link_targets(old_body), link_targets(conv)
     allowed = {
         "cat": {t for t in old_links if classify(t) == "cat"} | {PROOFREAD_CAT},
-        "file": {t for t in old_links | en_links if classify(t) == "file"},
+        "file": {t for t in old_links | conv_links if classify(t) == "file"},
         "lang": {t for t in old_links if classify(t) == "lang"},
         "page": (
             {t for t in old_links if classify(t) == "page"}
@@ -579,7 +794,7 @@ def cmd_done(slug):
         sys.exit("内链校验失败: " + ", ".join(bad))
     if PROOFREAD_CAT not in {t for t in new_links if classify(t) == "cat"}:
         sys.exit(f"缺 [[{PROOFREAD_CAT}]]（管线处理过的条目必挂，加在正文末尾）")
-    tpl_ok = extract_templates(en_body) | extract_templates(old_body)
+    tpl_ok = extract_templates(conv) | extract_templates(old_body)
     tpl_bad = extract_templates(new_body) - tpl_ok
     if tpl_bad:
         sys.exit(f"模板校验失败: 新增 {sorted(tpl_bad)}")
@@ -606,7 +821,7 @@ def cmd_skip(slug, reason):
     meta = load_json(WORK / f"{slug}.meta.json", None)
     if meta is None:
         sys.exit(f"找不到 {slug}.meta.json")
-    stamp_page(meta["title"], f"revid {meta['en_revid']}", reason)
+    stamp_page(meta["title"], meta["en_revid"], reason)
     clean_work(slug)
     print(f"skipped: {meta['title']}（{reason}，en revid {meta['en_revid']}）")
 
