@@ -45,65 +45,86 @@ def proc_jq(text: str) -> str:
     return strip_tco(BR_RE.sub("<br/>", MENTION_RE.sub("", text).strip()))
 
 
+def collect_pages(site) -> dict:
+    """wiki 上全部 NekoQuote/YYYY-MM 月表页 {月份: Page}。"""
+    pages = {}
+    for p in site.allpages(prefix="NekoQuote/", namespace=828):
+        m = MONTH_RE.match(p.title(with_ns=False))
+        if m:
+            pages[m.group(1)] = p
+    return pages
+
+
+def refresh_base(month: str, text: str, base) -> bool | None:
+    """lua_base 月份整文件刷新（wiki 月表是唯一权威副本；对齐 emit 的尾换行约定）。
+
+    其条目由 lua_base 零变换重放，不做逐字段回写（见模块 docstring）。
+    返回 None=非 lua_base 月份，True=有刷新，False=无变化。
+    """
+    bf = base / f"{month}.lua"
+    if not bf.exists():
+        return None
+    if not text.endswith("\n"):
+        text += "\n"
+    if bf.read_text(encoding="utf-8") == text:
+        return False
+    bf.write_text(text, encoding="utf-8")
+    return True
+
+
+def writeback_entry(month: str, fields: list, zh: dict, tw: dict) -> tuple[int, int]:
+    """单条目字段回写（非 lua_base 月份）。返回 (zh.json 改动数, tweets.json 改动数)。"""
+    m = STATUS_RE.search(fget(fields, "src") or "")
+    if not m or m.group(1) not in tw:
+        return 0, 0
+    tid = m.group(1)
+    # q/jq 字段的宿主是提问推记录（与 build.merge_raw 的 qid 判据一致）
+    qid = tw[tid].get("reply_to")
+    qid = qid if qid in tw and tw[qid].get("author") != "nezumiironyanko" else None
+    # 字段名 → (目标 dict, key, 由现 text 重建的期望值)；期望值=None 表示纯 wiki 侧字段
+    targets = {"jt": (tw[tid], "text", proc_jt(tw[tid]["text"]))}
+    if tid in zh:
+        targets["t"] = (zh[tid], "zh", None)
+    if qid:
+        targets["q"] = (zh.setdefault(qid, {}), "qzh", None)
+        targets["jq"] = (tw[qid], "text", proc_jq(tw[qid]["text"]))
+    n_zh = n_tw = 0
+    for name, quote, raw in fields:
+        hit = targets.get(name)
+        if hit is None:
+            continue
+        rec, key, expected = hit
+        v = unescape(quote, raw)
+        cur = rec.get(key) if expected is None else expected
+        if v and v != cur:
+            print(f"  {month} {tid} {name}: {str(cur)[:60]!r} -> {v[:60]!r}")
+            rec[key] = v
+            if expected is None:
+                n_zh += 1
+            else:
+                n_tw += 1
+    return n_zh, n_tw
+
+
 def main() -> None:
     site = pywikibot.Site("zh", "re0")  # 只读，无需登录
     zh_path = DATA / "zh.json"
     tw_path = DATA / "tweets.json"
     zh = json.loads(zh_path.read_text(encoding="utf-8"))
     tw = json.loads(tw_path.read_text(encoding="utf-8"))
-    base = DATA / "lua_base"
 
-    pages = {}
-    for p in site.allpages(prefix="NekoQuote/", namespace=828):
-        m = MONTH_RE.match(p.title(with_ns=False))
-        if m:
-            pages[m.group(1)] = p
-
+    pages = collect_pages(site)
     n_zh = n_tw = n_base = 0
     preloaded = pagegenerators.PreloadingGenerator(pages.values())
     for month, p in zip(pages, preloaded, strict=True):
-        # lua_base 月份整文件刷新（wiki 月表是唯一权威副本；对齐 emit 的尾换行约定），
-        # 其条目由 lua_base 零变换重放，不做逐字段回写（见 docstring）
-        bf = base / f"{month}.lua"
-        if bf.exists():
-            text = p.text if p.text.endswith("\n") else p.text + "\n"
-            if bf.read_text(encoding="utf-8") != text:
-                bf.write_text(text, encoding="utf-8")
-                n_base += 1
+        r = refresh_base(month, p.text, DATA / "lua_base")
+        if r is not None:
+            n_base += r
             continue
         for fields, _ in parse_table(p.text):
-            m = STATUS_RE.search(fget(fields, "src") or "")
-            if not m or m.group(1) not in tw:
-                continue
-            tid = m.group(1)
-            # q/jq 字段的宿主是提问推记录（与 build.merge_raw 的 qid 判据一致）
-            qid = tw[tid].get("reply_to")
-            qid = (
-                qid
-                if qid in tw and tw[qid].get("author") != "nezumiironyanko"
-                else None
-            )
-            # 字段名 → (目标 dict, key, 由现 text 重建的期望值)；期望值=None 表示纯 wiki 侧字段
-            targets = {"jt": (tw[tid], "text", proc_jt(tw[tid]["text"]))}
-            if tid in zh:
-                targets["t"] = (zh[tid], "zh", None)
-            if qid:
-                targets["q"] = (zh.setdefault(qid, {}), "qzh", None)
-                targets["jq"] = (tw[qid], "text", proc_jq(tw[qid]["text"]))
-            for name, quote, raw in fields:
-                hit = targets.get(name)
-                if hit is None:
-                    continue
-                rec, key, expected = hit
-                v = unescape(quote, raw)
-                cur = rec.get(key) if expected is None else expected
-                if v and v != cur:
-                    print(f"  {month} {tid} {name}: {str(cur)[:60]!r} -> {v[:60]!r}")
-                    rec[key] = v
-                    if expected is None:
-                        n_zh += 1
-                    else:
-                        n_tw += 1
+            a, b = writeback_entry(month, fields, zh, tw)
+            n_zh += a
+            n_tw += b
     if n_zh:
         zh_path.write_text(json.dumps(zh, ensure_ascii=False), encoding="utf-8")
     if n_tw:
