@@ -34,7 +34,7 @@ cd wiki-bot 仓库根
 
 ## 故障处理
 
-- **Kimi content_filter 误伤**（"high risk" 400）：管线已自动二分隔离并跳过该条，跑完后查 `.cache/nekoquote/zh_blocked.json`；用其他模型（Gemini）译出后，把译文写进 `.cache/nekoquote/zh.json` 对应 tid 的 `zh` 字段再重跑构建+部署。**日文原文若触发过滤，不要让它进 LLM 上下文**（2026-08-15 先例：原文隔离在 logs/blocked_jp.txt）。
+- **Kimi content_filter 误伤**（"high risk" 400）：管线已自动二分隔离并跳过该条，跑完后查 `.cache/nekoquote/zh_blocked.json`；用其他模型（Gemini）译出后，把译文写进 `.cache/nekoquote/zh.json` 对应 tid 的 `zh` 字段再重跑构建+部署。**日文原文若触发过滤，不要让它进 LLM 上下文**（有先例）。
 - **导出缺最近内容**：先怀疑解析覆盖——正文可能在新版组件里（递归 walk）或与头部同组件链接之后；`nekoquote/parse.py` 的注释有三种格式的完整判例。
 - **部署后 wiki 上没变化**：查 `.cache/nekoquote/lua_live` 快照是否滞后（每次部署后必须同步，deploy 链已自动做）。
 
