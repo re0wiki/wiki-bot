@@ -19,7 +19,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 - **pywikibot 是 git submodule**（fork：`github.com/re0wiki/pywikibot`，upstream 是 wikimedia/pywikibot）。克隆要 `--recurse-submodules`（否则 `uv sync` 会因路径缺失失败）。更新 submodule 后提交信息写 `chore: update pywikibot`。
 - pywikibot 通过 `[tool.uv.sources]` 以 **editable 方式从 submodule 路径装入 venv**（`{ path = "pwb", editable = true }`），submodule gitlink 是唯一版本锁，无需再同步 uv.lock 里的 commit。`pyproject.toml` 里的 `[tool.ty.environment] extra-paths = ["./pwb"]` 是必须的：ty 无法静态解析 PEP 660 editable finder，删掉会导致全项目 unresolved-import。
 - Lint：`ruff check` / `ruff format`（PATH 里没有 ruff 时用 `uv run ruff ...`，ty 同理；`pyproject.toml` 里 extend-exclude 了 pwb 子模块、logs/ 与 *.md（保留手工对齐的代码块注释），不要给它们 lint；`scripts/oneoff/` 归档脚本纳入正常检查，归档前需先过 lint/format/ty）。类型检查用 `ty`（`src.exclude` 排除 pwb 与 logs/，正常应为 0 诊断）。
-- 离线单测：`pytest tests/`（不触 wiki；覆盖译名表一致性、watchdog 纯函数；`PYWIKIBOT_DIR` 由 tests/conftest.py 设置）。**临时探索脚本写成 .py 放 `logs/`（scratch，gitignored）、从仓库根目录跑**（`uv run python logs/_foo.py`），跑完即删；docs 只写结论不引用其路径。从子目录跑则 pywikibot 找不到 `user-config.py`（cwd 不参与配置发现时按用户目录找）。Wiki 侧改动验证方式仍是 `-s/--simulate` 干跑 + 上 wiki 查编辑结果。
+- 离线单测：`pytest tests/`（不触 wiki；覆盖译名表一致性、watchdog 纯函数；`PYWIKIBOT_DIR` 由 tests/conftest.py 设置）。临时探索脚本写成 .py 放 `logs/`（scratch，gitignored）、从仓库根目录跑（`uv run python logs/_foo.py`）；docs 只写结论不引用其路径。从子目录跑则 pywikibot 找不到 `user-config.py`（cwd 不参与配置发现时按用户目录找）。Wiki 侧改动验证方式仍是 `-s/--simulate` 干跑 + 上 wiki 查编辑结果。
 - Secrets：`user-password.py`（BotPasswords，gitignored，勿读勿提交）。
 
 ## 架构地图
