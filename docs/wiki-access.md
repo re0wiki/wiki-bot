@@ -66,6 +66,22 @@ list(islice(pywikibot.Page(site, "角色:菜月·昴").backlinks(), 10))
 list(pywikibot.Page(site, "Template:Init").embeddedin(total=10))
 ```
 
+### 批量取内容：PreloadingGenerator
+
+在生成器循环里直接访问 `page.text` 是**逐页一次请求**（RTT 锁死 ~3.8 req/s，全站扫描要近一小时）。套一层 `PreloadingGenerator` 即批量预取——内部走 `titles=` 50 个/批的 `prop=revisions` 查询（即上文两阶段 dump 配方的库内封装）：
+
+```python
+from pywikibot import pagegenerators
+
+gen = pagegenerators.AllpagesPageGenerator(site=site, namespace=0)
+for page in pagegenerators.PreloadingGenerator(gen, groupsize=50):
+    page.text  # 已随批预取，不再发请求
+```
+
+- 保持默认 `groupsize=50`（也是 `PreloadingGenerator` 的默认值）：content 查询 >50/批 有静默截断风险（见实测坑节），且 apihighlimits 的 500/批 prop 查询在会话被踢时间歇失败。
+- 它**没有截断兜底断言**——全站 dump 级任务（要断言「抓取页数 ≥ siteinfo articles 数」）仍用手搓两阶段配方；日常「扫生成器结果读源码」用它即可。
+- 多站点混合生成器（如 interwiki 结果）也支持：内部按 site 分组各自成批。
+
 ## 裸 API（库没封装的功能走这里）
 
 ```python
