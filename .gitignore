@@ -8,6 +8,7 @@ __pycache__/
 
 # 运行时产物与一次性工作文件
 logs/
+scratch/
 *apicache*
 autonomous_problems.dat
 throttle.ctrl
