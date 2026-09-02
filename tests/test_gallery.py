@@ -1,4 +1,4 @@
-"""scripts/re0_gallery.py 的纯函数测试（不触碰 wiki）。
+"""src/scripts/re0_gallery.py 的纯函数测试（不触碰 wiki）。
 
 merge_galleries 曾是「生产验证稳定，能跑就别动」的无测试代码，
 2026-07 抽为纯函数后补离线回归。
@@ -6,7 +6,7 @@ merge_galleries 曾是「生产验证稳定，能跑就别动」的无测试代�
 
 from repo_loader import load_module
 
-g = load_module("re0_gallery", "scripts/re0_gallery.py")
+g = load_module("re0_gallery", "src/scripts/re0_gallery.py")
 
 
 def test_counts_match_replaces_galleries_and_restores_templates():

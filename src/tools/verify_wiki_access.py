@@ -1,6 +1,6 @@
 """Verify both wiki access paths are functional (read-only, no new edits).
 
-Usage: uv run python scripts/tools/verify_wiki_access.py
+Usage: uv run python src/tools/verify_wiki_access.py
 Working dir: wiki-bot repo root.
 """
 

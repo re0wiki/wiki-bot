@@ -20,12 +20,12 @@ import requests
 
 import pywikibot as pwb
 
-ROOT = Path(__file__).resolve().parent.parent
+ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT))
 
-from nekoquote import DATA, bootstrap
-from nekoquote.chain import run_chain
-from nekoquote.parse import extract
+from src.nekoquote import DATA, bootstrap
+from src.nekoquote.chain import run_chain
+from src.nekoquote.parse import extract
 
 CHANNEL_ID = "1293525355663196243"  # 中文服务器 FBK 转发频道
 STATE = DATA / "sync_state.json"

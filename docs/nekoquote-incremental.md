@@ -1,6 +1,6 @@
 # NekoQuote 增量收录 Runbook
 
-**2026-08-18 起主通道：循环任务 `nekoquote`（`scripts/re0_nekoquote.py`）全自动同步**——Discord bot token 拉中文服务器的 FBK 转发频道新消息（水位线 `.cache/nekoquote/sync_state.json`，全链成功才推进），复用 `nekoquote/` 包的解析与管线，随 main.py 循环执行、无需人工。以下手动导出流程保留为备份/排障手段（注意 EN 频道同为 FBK 转发，与中文频道**不互为独立兜底**；FBK/nitter 是共同单点）。
+**2026-08-18 起主通道：循环任务 `nekoquote`（`src/scripts/re0_nekoquote.py`）全自动同步**——Discord bot token 拉中文服务器的 FBK 转发频道新消息（水位线 `.cache/nekoquote/sync_state.json`，全链成功才推进），复用 `src/nekoquote/` 包的解析与管线，随 main.py 循环执行、无需人工。以下手动导出流程保留为备份/排障手段（注意 EN 频道同为 FBK 转发，与中文频道**不互为独立兜底**；FBK/nitter 是共同单点）。
 
 长月新推的持续收录流程（2026-08-15 定稿）。自动抓取通道全不可靠（fxtwitter 无时间线枚举、wayback CDX 被动滞后、nitter 半死），走英文社区 Discord 转发频道的**定期手动导出 + 一键管线**。
 
@@ -21,7 +21,7 @@
 
 ```bash
 cd wiki-bot 仓库根
-.venv/Scripts/python.exe -m nekoquote.merge <导出目录>
+.venv/Scripts/python.exe -m src.nekoquote.merge <导出目录>
 ```
 
 一键完成：解析（content/embeds/递归组件三路全扫、双布局兼容、RT 剥除）→ 新推入 `.cache/nekoquote/tweets.json` → K3 翻译（断点续跑）→ 译名归一 → 构建月表 → round-trip 校验 → 增量部署 → 更新 `lua_live` 快照。pending（已删推清单）命中自动划账。
@@ -30,13 +30,13 @@ cd wiki-bot 仓库根
 
 建议频率：每月一次，或明知有新内容（生日问答场次、动画播出期）时。
 
-**动画播出期追加步骤（实况集数标记）**：管线本身不带集数标记。新集播出后——① en 站对应 `Episode N` 页补了 Air Date 后重跑 `nekoquote/epcalendar.py`（`python -m nekoquote.epcalendar`）（覆盖 51-90 集，更新 `.cache/nekoquote/ep_calendar.json`）；② 重跑 `nekoquote/epmarks.py`（`python -m nekoquote.epmarks`） 再生成 `.cache/nekoquote/ep_marks.json`（规则：#rezeroneko ∧ 播出窗口；映射文件由构建器 merge 期落地）；③ 照常构建部署；④ 新建对应 `动画:第n集/猫语`（格式 `{{Init}}\n{{Q|S4第n集}}`），季页无需动。
+**动画播出期追加步骤（实况集数标记）**：管线本身不带集数标记。新集播出后——① en 站对应 `Episode N` 页补了 Air Date 后重跑 `src/nekoquote/epcalendar.py`（`python -m src.nekoquote.epcalendar`）（覆盖 51-90 集，更新 `.cache/nekoquote/ep_calendar.json`）；② 重跑 `src/nekoquote/epmarks.py`（`python -m src.nekoquote.epmarks`） 再生成 `.cache/nekoquote/ep_marks.json`（规则：#rezeroneko ∧ 播出窗口；映射文件由构建器 merge 期落地）；③ 照常构建部署；④ 新建对应 `动画:第n集/猫语`（格式 `{{Init}}\n{{Q|S4第n集}}`），季页无需动。
 
 ## 故障处理
 
-- **wiki 侧改月表后必须回写源数据**：月表条目构建期只读本地数据（lua_base 零变换重放、zh.json/tweets.json 经 merge_raw 重新生成），只在 wiki 上改（如 `{{Seirei or Elf}}` 复核消歧、fix:translation 命中 jt 字段）不落回本地，下轮增量同步重建即回潮（2026-08-23 实证：08-20 的复核消歧只改了 wiki，增量同步把 `{{Seirei}}` 回潮成 `{{Seirei or Elf}}`、jt 里的 `{{Yousei}}` 回潮成原文）。改完跑 `uv run python -m nekoquote.pull_wiki`——lua_base 月份整文件刷新（其条目是 P8 时代管线生成的，加工逻辑与 raw_tweet_entry 不同，不做逐字段比对），其余月份逐字段回写 zh.json（t/q）与 tweets.json（jt/jq）。
+- **wiki 侧改月表后必须回写源数据**：月表条目构建期只读本地数据（lua_base 零变换重放、zh.json/tweets.json 经 merge_raw 重新生成），只在 wiki 上改（如 `{{Seirei or Elf}}` 复核消歧、fix:translation 命中 jt 字段）不落回本地，下轮增量同步重建即回潮（2026-08-23 实证：08-20 的复核消歧只改了 wiki，增量同步把 `{{Seirei}}` 回潮成 `{{Seirei or Elf}}`、jt 里的 `{{Yousei}}` 回潮成原文）。改完跑 `uv run python -m src.nekoquote.pull_wiki`——lua_base 月份整文件刷新（其条目是 P8 时代管线生成的，加工逻辑与 raw_tweet_entry 不同，不做逐字段比对），其余月份逐字段回写 zh.json（t/q）与 tweets.json（jt/jq）。
 - **Kimi content_filter 误伤**（"high risk" 400）：管线已自动二分隔离并跳过该条，跑完后查 `.cache/nekoquote/zh_blocked.json`；用其他模型（Gemini）译出后，把译文写进 `.cache/nekoquote/zh.json` 对应 tid 的 `zh` 字段再重跑构建+部署。**日文原文若触发过滤，不要让它进 LLM 上下文**（有先例）。
-- **导出缺最近内容**：先怀疑解析覆盖——正文可能在新版组件里（递归 walk）或与头部同组件链接之后；`nekoquote/parse.py` 的注释有三种格式的完整判例。
+- **导出缺最近内容**：先怀疑解析覆盖——正文可能在新版组件里（递归 walk）或与头部同组件链接之后；`src/nekoquote/parse.py` 的注释有三种格式的完整判例。
 - **部署后 wiki 上没变化**：查 `.cache/nekoquote/lua_live` 快照是否滞后（每次部署后必须同步，deploy 链已自动做）。
 
 ## 数据流备查

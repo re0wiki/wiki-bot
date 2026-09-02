@@ -43,7 +43,7 @@ import requests
 API = "https://rezero.fandom.com/zh/api.php"
 REPO_ROOT = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-)  # scripts/tools/ 上三级才是仓库根
+)  # src/tools/ 上三级才是仓库根
 STATE_FILE = os.path.join(REPO_ROOT, ".cache", "rc_watchdog.json")
 
 EXCLUDE_USERS = {"IchiSanNi"}  # bot 账号

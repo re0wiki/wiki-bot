@@ -20,7 +20,7 @@ def run_chain(stages: tuple[str, ...] = STAGES) -> None:
     env["PYTHONIOENCODING"] = "utf-8"
     for s in stages:
         r = subprocess.run(
-            [sys.executable, "-m", f"nekoquote.{s}"],
+            [sys.executable, "-m", f"src.nekoquote.{s}"],
             cwd=ROOT,
             capture_output=True,
             text=True,

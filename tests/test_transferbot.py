@@ -1,8 +1,8 @@
-"""scripts/re0_transferbot.py 的纯函数测试（不触碰 wiki）。"""
+"""src/scripts/re0_transferbot.py 的纯函数测试（不触碰 wiki）。"""
 
 from repo_loader import load_module
 
-tb = load_module("re0_transferbot", "scripts/re0_transferbot.py")
+tb = load_module("re0_transferbot", "src/scripts/re0_transferbot.py")
 
 
 def test_normalize():

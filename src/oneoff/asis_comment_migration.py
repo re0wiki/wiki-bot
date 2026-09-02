@@ -20,7 +20,7 @@
 - 新标记线性扫描配平、不嵌套；
 - div 区域内容不得含嵌套的 as-is div。
 
-用法：干跑 `uv run python scripts/oneoff/asis_comment_migration.py`，
+用法：干跑 `uv run python src/oneoff/asis_comment_migration.py`，
 实际写入加 `--apply`（bot flag，需登录）。
 """
 

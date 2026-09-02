@@ -1,8 +1,8 @@
-"""scripts/re0_redirect.py 的纯函数测试（不触碰 wiki）。"""
+"""src/scripts/re0_redirect.py 的纯函数测试（不触碰 wiki）。"""
 
 from repo_loader import load_module
 
-rd = load_module("re0_redirect", "scripts/re0_redirect.py")
+rd = load_module("re0_redirect", "src/scripts/re0_redirect.py")
 
 
 # region collect_stems

@@ -1,10 +1,10 @@
-"""scripts/re0_move.py 的纯函数测试（不触碰 wiki）。"""
+"""src/scripts/re0_move.py 的纯函数测试（不触碰 wiki）。"""
 
 import re
 
 from repo_loader import load_module
 
-mv = load_module("re0_move", "scripts/re0_move.py")
+mv = load_module("re0_move", "src/scripts/re0_move.py")
 
 
 def test_no_change_returns_none():

@@ -12,7 +12,7 @@ from pathlib import Path
 
 import requests
 
-KEYS_FILE = Path(__file__).parent.parent / "secrets.json"
+KEYS_FILE = Path(__file__).parents[2] / "secrets.json"
 
 
 SYSTEM_PROMPT = """你是 Re:Zero（Re:从零开始的异世界生活）的日译中译者。

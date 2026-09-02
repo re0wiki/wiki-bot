@@ -3,7 +3,7 @@
 扫描 zh 站主空间全部页面源码，找出 ``[[wikipedia:...]]`` 链接，
 按目标语言分组列出。只读，不写 wiki。
 
-用法：uv run python scripts/tools/audit_wikipedia_links.py
+用法：uv run python src/tools/audit_wikipedia_links.py
 """
 
 import re
