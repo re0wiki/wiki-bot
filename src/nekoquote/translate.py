@@ -8,12 +8,12 @@ import sys
 import time
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).parent.parent))
-from nekoquote import DATA
-from nekoquote.llm import SYSTEM_PROMPT, chat
+sys.path.insert(0, str(Path(__file__).parents[2]))
+from src.nekoquote import DATA
+from src.nekoquote.llm import SYSTEM_PROMPT, chat
 
 try:
-    from nekoquote.llm import get_config
+    from src.nekoquote.llm import get_config
 
     get_config("kimi")
 except FileNotFoundError as e:

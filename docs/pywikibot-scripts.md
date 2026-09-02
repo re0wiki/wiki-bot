@@ -1,6 +1,6 @@
 # pywikibot 自带脚本速查
 
-原则：**能直接用 `pwb/pywikibot/scripts/` 里的现成脚本就别手写**。手写只用于现成脚本确实覆盖不了的场景（如 `scripts/re0_*.py` 那几个）。
+原则：**能直接用 `pwb/pywikibot/scripts/` 里的现成脚本就别手写**。手写只用于现成脚本确实覆盖不了的场景（如 `src/scripts/re0_*.py` 那几个）。
 
 运行方式（仓库根目录）：
 
@@ -14,7 +14,7 @@ uv run python pwb/pwb.py <script> [生成器] [脚本选项] [-simulate]
 
 ## jobs 里已在用的
 
-`transferbot` / `interwiki` / `replace -fix:*` / `category remove` / `template` / `fixing_redirects` / `redirect` / `cosmetic_changes` / `noreferences` / `touch`——见 `jobs/jobs.py`，不赘述。
+`transferbot` / `interwiki` / `replace -fix:*` / `category remove` / `template` / `fixing_redirects` / `redirect` / `cosmetic_changes` / `noreferences` / `touch`——见 `src/src/jobs/jobs.py`，不赘述。
 
 ## 未入 jobs 但对常见任务有用的
 
@@ -83,7 +83,7 @@ uv run python pwb/pwb.py replace -automaticsummary \
 ```
 
 - `-exceptinside:` 的正则跳过跨语言链接内部（`[[en:...]]` 等），避免把外语链接文本替换掉。
-- 六个 `-start:ns:!` = `jobs/starts.py` 的 starts_more（主/project/template/category/module/mediawiki 全扫）。`-start::!` 注意是**双冒号**（空 ns 名 = 主空间）。
+- 六个 `-start:ns:!` = `src/src/jobs/starts.py` 的 starts_more（主/project/template/category/module/mediawiki 全扫）。`-start::!` 注意是**双冒号**（空 ns 名 = 主空间）。
 - 限定范围可用 `-transcludes:模板名` 或 `-page:X`（可多个）替代 `-start` 系列。
 - 先 `-page:某页` 单页验证 regex，再放开到全站——历史上删模板参数时 `[^}]*` 会跨行吃多，正确写法是 `[^}\n]*\n?`。
 - `-regex` 模式下替换串里 `\1` 引用捕获组；`-nocase` 对中文无意义可省。

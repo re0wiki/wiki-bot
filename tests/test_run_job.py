@@ -1,4 +1,4 @@
-"""jobs/run_job.py 命令行拼装的纯函数测试（不触 wiki、不起子进程）。"""
+"""src/jobs/run_job.py 命令行拼装的纯函数测试（不触 wiki、不起子进程）。"""
 
 import sys
 from subprocess import CalledProcessError
@@ -6,7 +6,7 @@ from subprocess import CalledProcessError
 import pytest
 from repo_loader import load_module
 
-rj = load_module("run_job", "jobs/run_job.py")
+rj = load_module("run_job", "src/jobs/run_job.py")
 
 
 def test_cmd_uses_current_interpreter():

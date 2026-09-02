@@ -21,7 +21,7 @@ get_repl_func: Any = fx.__dict__["get_repl_func"]
 translation_names: list[str] = fx.__dict__["translation_names"]
 
 # RULES 直接复用 re0_move 的构建结果，不再本地重复构造。
-RULES = load_module("re0_move", "scripts/re0_move.py").RULES
+RULES = load_module("re0_move", "src/scripts/re0_move.py").RULES
 
 
 def normalize(title: str) -> str:

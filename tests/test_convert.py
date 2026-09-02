@@ -2,7 +2,7 @@
 
 from repo_loader import load_module
 
-lt = load_module("llm_translate", "scripts/tools/llm_translate.py")
+lt = load_module("llm_translate", "src/scripts/tools/llm_translate.py")
 
 
 # ------------------------------------------------------------ 模板名 / 内链

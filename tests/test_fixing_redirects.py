@@ -1,8 +1,8 @@
-"""scripts/re0_fixing_redirects.py 的纯函数测试（不触碰 wiki）。"""
+"""src/scripts/re0_fixing_redirects.py 的纯函数测试（不触碰 wiki）。"""
 
 from repo_loader import load_module
 
-fr = load_module("re0_fixing_redirects", "scripts/re0_fixing_redirects.py")
+fr = load_module("re0_fixing_redirects", "src/scripts/re0_fixing_redirects.py")
 
 
 class FakeSite:

@@ -4,8 +4,8 @@ import sys
 import time
 from subprocess import CalledProcessError
 
-from jobs.jobs import Job, jobs
-from jobs.run_job import run_job
+from src.jobs.jobs import Job, jobs
+from src.jobs.run_job import run_job
 
 # region logging
 logging.basicConfig(

@@ -12,12 +12,12 @@ previous/next（约定见 `docs/templates.md`）。en 站用信息框 Previous/N
 - transferbot 带入的 `| previous/next =` 残留由 fix:para 常驻删行，无需处理。
 - en 的合并/拆分调整要跟随（zh 拆分页结构与 en Part 结构一一对应）。
 
-## 审计工具：`scripts/tools/series_nav_audit.py`
+## 审计工具：`src/scripts/tools/series_nav_audit.py`
 
 只读、匿名可达（≤50 titles/批 prop 查询），跑法：
 
 ```bash
-uv run python scripts/tools/series_nav_audit.py
+uv run python src/scripts/tools/series_nav_audit.py
 ```
 
 输出两项检查，全部干净时退出码 0，有待办则 1：

@@ -30,7 +30,7 @@ from urllib.parse import quote
 
 import requests
 
-ROOT = Path(__file__).resolve().parent.parent.parent
+ROOT = Path(__file__).resolve().parents[3]
 DATA = ROOT / ".cache" / "llm_translate"
 WORK = DATA / "work"
 QUEUE = DATA / "queue.json"
@@ -351,9 +351,9 @@ def apply_fix(text, fix):
 
 def convert_template_names(text):
     """en 模板名 → zh 模板名（jobs.jobs._template_replacements 为唯一事实源）。"""
-    if str(ROOT) not in sys.path:  # 脚本方式运行时 sys.path[0] 是 scripts/tools
+    if str(ROOT) not in sys.path:  # 脚本方式运行时 sys.path[0] 是 src/scripts/tools
         sys.path.insert(0, str(ROOT))
-    from jobs.jobs import _template_replacements
+    from src.jobs.jobs import _template_replacements
 
     for old, new in _template_replacements:
         text = re.sub(rf"\{{\{{\s*{re.escape(old)}(?=\s*[|}}])", "{{" + new, text)

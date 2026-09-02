@@ -1,8 +1,8 @@
-"""scripts/re0_image.py 的纯函数测试（不触碰 wiki）。"""
+"""src/scripts/re0_image.py 的纯函数测试（不触碰 wiki）。"""
 
 from repo_loader import load_module
 
-img = load_module("re0_image", "scripts/re0_image.py")
+img = load_module("re0_image", "src/scripts/re0_image.py")
 
 
 # region calc_diff（键为无命名空间前缀的图片名）
