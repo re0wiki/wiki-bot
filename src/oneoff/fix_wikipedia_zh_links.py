@@ -1,13 +1,13 @@
 """把指向维基百科非中文站的链接改为中文站对应条目（2026-08-18 一次性）。
 
-依据：scripts/tools/audit_wikipedia_links.py 全站审计 + 各语言维基百科 langlinks
+依据：src/tools/audit_wikipedia_links.py 全站审计 + 各语言维基百科 langlinks
 查询（lllang=zh）。仅处理当时审计出的非 zh 目标；无 zh 对应条目的
 （Dawn M. Bennett / Hanakotoba / Hideaki Tezuka / Kira Buckland /
 Sean Chiplock）保持原样。
 
 用法（仓库根目录）：
-    uv run python src/scripts/oneoff/fix_wikipedia_zh_links.py        # 干跑
-    uv run python src/scripts/oneoff/fix_wikipedia_zh_links.py --apply
+    uv run python src/oneoff/fix_wikipedia_zh_links.py        # 干跑
+    uv run python src/oneoff/fix_wikipedia_zh_links.py --apply
 """
 
 import argparse
@@ -16,12 +16,12 @@ import re
 import sys
 from pathlib import Path
 
-ROOT = Path(__file__).resolve().parents[3]
-sys.path.insert(0, str(ROOT / "src" / "scripts"))
+ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(ROOT / "src" / "tools"))
 
 spec = importlib.util.spec_from_file_location(
     "audit_wikipedia_links",
-    ROOT / "src" / "scripts" / "tools" / "audit_wikipedia_links.py",
+    ROOT / "src" / "tools" / "audit_wikipedia_links.py",
 )
 assert spec and spec.loader
 audit = importlib.util.module_from_spec(spec)

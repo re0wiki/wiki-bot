@@ -1,6 +1,6 @@
 """nav Custom- 迁移 阶段0-2：OpenCC 转换推导 zh-hans 候选值（无 pywikibot 依赖）。
 
-uv run --no-project --with opencc-python-reimplemented python scripts/oneoff/nav_custom_step2.py
+uv run --no-project --with opencc-python-reimplemented python src/oneoff/nav_custom_step2.py
 
 产出 .cache/nav_custom/candidates.json：
   {label: {kind, key_hint_en, hant, hans_candidate, hans_source, flags}}

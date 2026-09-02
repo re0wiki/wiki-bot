@@ -36,7 +36,7 @@ grep 命中的也只是语法不是调用。同理 `{{=}}`（1.39 起）。判�
    维护模板可能在 User/Project 页——dump 范围要含 0/2/4/6/8/10/14/828
    （本节的旧配方排除 ns 6/7，只适用于当时已知名单，不复用）。
 
-复核脚本：`src/scripts/tools/recheck_template_usage.py`（全命名空间批量 dump + 逐模板 grep，
+复核脚本：`src/tools/recheck_template_usage.py`（全命名空间批量 dump + 逐模板 grep，
 排除自身/自身子页，输出零引用清单与重定向标注）。
 
 ## 全站 dump 配方（全命名空间，默认限速下 ~11k 页 ~3 分钟）

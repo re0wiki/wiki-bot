@@ -1,14 +1,14 @@
-"""src/scripts/tools/recent_changes_watchdog.py 的纯函数测试（不触碰 wiki）。"""
+"""src/tools/recent_changes_watchdog.py 的纯函数测试（不触碰 wiki）。"""
 
 import os
 
 from repo_loader import load_module
 
-wd = load_module("rc_watchdog", "src/scripts/tools/recent_changes_watchdog.py")
+wd = load_module("rc_watchdog", "src/tools/recent_changes_watchdog.py")
 
 
 def test_state_file_at_repo_root():
-    """脚本在 src/scripts/tools/ 下，STATE_FILE 必须解析到仓库根的 .cache/——
+    """脚本在 src/tools/ 下，STATE_FILE 必须解析到仓库根的 .cache/——
     曾因目录分层重构少退一级，水位线写到 src/scripts/.cache/ 导致断档。"""
     repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
     assert wd.STATE_FILE == os.path.join(repo_root, ".cache", "rc_watchdog.json")

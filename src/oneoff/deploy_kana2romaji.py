@@ -1,6 +1,6 @@
 """部署 Kana2Romaji 重写到 wiki 并用 parse API 跑回归测试矩阵。
 
-用法：uv run python scripts/oneoff/deploy_kana2romaji.py
+用法：uv run python src/oneoff/deploy_kana2romaji.py
 """
 
 import os

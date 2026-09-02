@@ -3,12 +3,12 @@
 设计文档：docs/llm-translation.md。翻译本身由 agent 完成，不在本脚本内。
 
 用法（仓库根目录）：
-    uv run python scripts/tools/llm_translate.py refresh   # 重建选页队列（约 5 分钟，低频）
-    uv run python scripts/tools/llm_translate.py prepare   # 取队首备料
-    uv run python scripts/tools/llm_translate.py stamp <slug>  # 打印编辑应用的标准摘要与同步标记
-    uv run python scripts/tools/llm_translate.py done <slug> [理由]  # 核验 wiki 编辑
-    uv run python scripts/tools/llm_translate.py skip <slug> [理由]  # 无需内容编辑（打标记）
-    uv run python scripts/tools/llm_translate.py backlog   # 机翻待校对积压检查（>=5 退出码 3）
+    uv run python src/tools/llm_translate.py refresh   # 重建选页队列（约 5 分钟，低频）
+    uv run python src/tools/llm_translate.py prepare   # 取队首备料
+    uv run python src/tools/llm_translate.py stamp <slug>  # 打印编辑应用的标准摘要与同步标记
+    uv run python src/tools/llm_translate.py done <slug> [理由]  # 核验 wiki 编辑
+    uv run python src/tools/llm_translate.py skip <slug> [理由]  # 无需内容编辑（打标记）
+    uv run python src/tools/llm_translate.py backlog   # 机翻待校对积压检查（>=5 退出码 3）
 
 同步状态的唯一载体是条目源码末尾的 HTML 注释标记：
     <!-- LLM: revid <en_revid>; <ISO 时间> -->   （已同步到 en 该版本）
@@ -30,7 +30,7 @@ from urllib.parse import quote
 
 import requests
 
-ROOT = Path(__file__).resolve().parents[3]
+ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / ".cache" / "llm_translate"
 WORK = DATA / "work"
 QUEUE = DATA / "queue.json"
@@ -351,7 +351,7 @@ def apply_fix(text, fix):
 
 def convert_template_names(text):
     """en 模板名 → zh 模板名（jobs.jobs._template_replacements 为唯一事实源）。"""
-    if str(ROOT) not in sys.path:  # 脚本方式运行时 sys.path[0] 是 src/scripts/tools
+    if str(ROOT) not in sys.path:  # 脚本方式运行时 sys.path[0] 是 src/tools
         sys.path.insert(0, str(ROOT))
     from src.jobs.jobs import _template_replacements
 

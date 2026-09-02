@@ -32,7 +32,7 @@ git diff upstream/master...main --stat
 
 ```bash
 uv sync                                                          # editable 重装
-uv run python src/scripts/tools/verify_wiki_access.py   # 期望 ALL CHECKS PASSED
+uv run python src/tools/verify_wiki_access.py   # 期望 ALL CHECKS PASSED
 ```
 
 冒烟测试可直接在仓库根跑 `uv run python -c "import pywikibot"`；设 `PYWIKIBOT_NO_USER_CONFIG=1` 可跳过配置加载。

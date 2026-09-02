@@ -18,7 +18,7 @@ src = [".", "pwb"]
 # watchdog 由 Hermes cron 用 runpy 跑在 Hermes 自带的 Python 3.11 下（不走本
 # 项目 3.14 venv），不能让它用上 PEP 758 的无括号 except（ruff 0.16+ 按
 # requires-python 3.14 会把括号脱掉，脚本在 3.11 下直接起不来）。
-per-file-target-version = { "src/scripts/tools/recent_changes_watchdog.py" = "py311" }
+per-file-target-version = { "src/tools/recent_changes_watchdog.py" = "py311" }
 
 [tool.ruff.lint.per-file-ignores]
 # user-config.py 的名字由 pywikibot 注入；user-fixes.py 的 fixes 由

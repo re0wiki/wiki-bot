@@ -5,7 +5,7 @@ zh 站大部分条目处于未翻译/机翻/过时状态（全站 1657 页挂 `C
 
 ## 职责划分
 
-机械环节全部在 `src/scripts/tools/llm_translate.py`，LLM 只做一件事：翻译 prose。
+机械环节全部在 `src/tools/llm_translate.py`，LLM 只做一件事：翻译 prose。
 
 ```
 refresh（重建选页队列）→ prepare（取队首、机械转换备料）→ agent 直接编辑 zh 页 → done（核验）
