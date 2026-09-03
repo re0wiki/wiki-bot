@@ -25,6 +25,7 @@ import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
+from urllib.parse import quote
 
 import requests
 
@@ -690,13 +691,17 @@ def notify_line(meta):
     total = api(ZH_API, meta="siteinfo", siprop="statistics")["query"]["statistics"][
         "articles"
     ]
+    zh = f"https://rezero.fandom.com/zh/wiki/{quote(meta['title'], safe='/:')}"
+    en = f"https://rezero.fandom.com/wiki/{quote(meta['en_title'], safe='/:')}"
+    cat = f"https://rezero.fandom.com/zh/wiki/{quote(CATEGORY, safe='/:')}"
+    proof_cat = f"https://rezero.fandom.com/zh/wiki/{quote(PROOFREAD_CAT, safe='/:')}"
     stats = (
-        f"待修撰 {todo} 条（占全站条目 {todo / max(total, 1) * 100:.1f}%）；"
-        f"机翻待校对 {proof} 条（占待修撰 {proof / max(todo, 1) * 100:.1f}%）"
+        f"[待修撰]({cat}) {todo} 条（占全站条目 {todo / max(total, 1) * 100:.1f}%）；"
+        f"[机翻待校对]({proof_cat}) {proof} 条（占待修撰 {proof / max(todo, 1) * 100:.1f}%）"
     )
     return (
-        f"NOTIFY: [[{meta['title']}]] {cold_dur(meta)}无人类编辑，"
-        f"已由 Bot 根据 [[en:{meta['en_title']}]] 自动更新。{stats}"
+        f"NOTIFY: [{meta['title']}]({zh}) {cold_dur(meta)}无人类编辑，"
+        f"已由 Bot 根据 [en:{meta['en_title']}]({en}) 自动更新。{stats}"
     )
 
 
