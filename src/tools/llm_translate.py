@@ -8,7 +8,6 @@
     uv run python src/tools/llm_translate.py stamp <slug>  # 打印编辑应用的标准摘要与同步标记
     uv run python src/tools/llm_translate.py done <slug> [理由]  # 核验 wiki 编辑
     uv run python src/tools/llm_translate.py skip <slug> [理由]  # 无需内容编辑（打标记）
-    uv run python src/tools/llm_translate.py backlog   # 机翻待校对积压检查（>=5 退出码 3）
 
 同步状态的唯一载体是条目源码末尾的 HTML 注释标记：
     <!-- LLM: revid <en_revid>; <ISO 时间> -->   （已同步到 en 该版本）
@@ -41,8 +40,6 @@ BOT = "IchiSanNi"
 CATEGORY = "Category:待修撰"
 # 管线处理过的条目必挂的分类（人类校对后手动摘除；再次处理会重新挂上）
 PROOFREAD_CAT = "Category:机翻待校对"
-# 机翻待校对积压上限：达到即暂停处理新页（等人类校对摘分类），由 backlog 子命令判定
-BACKLOG_LIMIT = 5
 # 标记名不随模型变；翻译用的模型型号记录在编辑摘要（人类可读、可扫描归因），
 # 换模型只改这里
 SUMMARY_PREFIX = "LLM(K3): revid "
@@ -683,11 +680,25 @@ def std_summary(meta):
     return f"{SUMMARY_PREFIX}{meta['en_revid']}（{cold_dur(meta)}无人类编辑）"
 
 
+def cat_pages(cat):
+    """分类的 pages 数（categoryinfo 一次查询；分类不存在时 0）。"""
+    r = api(ZH_API, prop="categoryinfo", titles=cat)
+    return r["query"]["pages"][0].get("categoryinfo", {}).get("pages", 0)
+
+
 def notify_line(meta):
     url = f"https://rezero.fandom.com/zh/wiki/{quote(meta['title'], safe='/:')}"
+    todo, proof = cat_pages(CATEGORY), cat_pages(PROOFREAD_CAT)
+    total = api(ZH_API, meta="siteinfo", siprop="statistics")["query"]["statistics"][
+        "articles"
+    ]
+    stats = (
+        f"待修撰 {todo} 条（占全站条目 {todo / max(total, 1) * 100:.1f}%）；"
+        f"机翻待校对 {proof} 条（占待修撰 {proof / max(todo, 1) * 100:.1f}%）"
+    )
     return (
         f"NOTIFY: [[{meta['title']}]] {cold_dur(meta)}无人类编辑，"
-        f"已由 Bot 根据 [[en:{meta['en_title']}]] 自动更新 {url}"
+        f"已由 Bot 根据 [[en:{meta['en_title']}]] 自动更新 {url}（{stats}）"
     )
 
 
@@ -831,30 +842,6 @@ def cmd_skip(slug, reason):
     print(f"skipped: {meta['title']}（{reason}，en revid {meta['en_revid']}）")
 
 
-def cmd_backlog():
-    """机翻待校对积压检查：打印条目数；积压（>= BACKLOG_LIMIT）时退出码 3。
-
-    cron wrapper 据此在 script 段输出 {"wakeAgent": false} 静默跳过本 tick
-    （等人类校对摘除分类后自动恢复）。
-    """
-    n, cont = 0, {}
-    while True:
-        r = api(
-            ZH_API,
-            list="categorymembers",
-            cmtitle=PROOFREAD_CAT,
-            cmlimit="500",
-            **cont,
-        )
-        n += len(r["query"]["categorymembers"])
-        if "continue" not in r:
-            break
-        cont = r["continue"]
-    print(f"backlog: {n}/{BACKLOG_LIMIT}")
-    if n >= BACKLOG_LIMIT:
-        sys.exit(3)
-
-
 def cmd_status():
     queue = load_json(QUEUE, [])
     wip = sorted(p.stem.rsplit(".", 2)[0] for p in WORK.glob("*.meta.json"))
@@ -865,7 +852,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "cmd",
-        choices=["refresh", "prepare", "stamp", "done", "skip", "backlog", "status"],
+        choices=["refresh", "prepare", "stamp", "done", "skip", "status"],
     )
     ap.add_argument("slug", nargs="?")
     ap.add_argument("reason", nargs="?")
@@ -874,8 +861,6 @@ if __name__ == "__main__":
         cmd_refresh()
     elif args.cmd == "prepare":
         cmd_prepare()
-    elif args.cmd == "backlog":
-        cmd_backlog()
     elif args.cmd == "status":
         cmd_status()
     else:
