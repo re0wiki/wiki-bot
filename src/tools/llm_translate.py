@@ -25,7 +25,6 @@ import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from urllib.parse import quote
 
 import requests
 
@@ -687,7 +686,6 @@ def cat_pages(cat):
 
 
 def notify_line(meta):
-    url = f"https://rezero.fandom.com/zh/wiki/{quote(meta['title'], safe='/:')}"
     todo, proof = cat_pages(CATEGORY), cat_pages(PROOFREAD_CAT)
     total = api(ZH_API, meta="siteinfo", siprop="statistics")["query"]["statistics"][
         "articles"
@@ -698,7 +696,7 @@ def notify_line(meta):
     )
     return (
         f"NOTIFY: [[{meta['title']}]] {cold_dur(meta)}无人类编辑，"
-        f"已由 Bot 根据 [[en:{meta['en_title']}]] 自动更新 {url}（{stats}）"
+        f"已由 Bot 根据 [[en:{meta['en_title']}]] 自动更新。{stats}"
     )
 
 

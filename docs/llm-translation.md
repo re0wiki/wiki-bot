@@ -118,7 +118,7 @@ Hermes cron 驱动，watchdog 同款「script + agent」两段式。cron 的 scr
 
 agent 只做编辑与收尾。频率与每次页数随 token 预算调整（改 cron schedule 或 prompt 循环次数），token 富余时也可手动触发（`cronjob run`）或直接在会话里走 prepare → 编辑 → done 流程。
 
-done 成功时输出 `NOTIFY: [[zh 条目]] <时长>无人类编辑，已由 Bot 根据 [[en:条目]] 自动更新 <url>（待修撰 N 条（占全站条目 P%）；机翻待校对 M 条（占待修撰 Q%））` 固定格式行，由 cron agent 原样转发到 Discord `#wiki编辑事务【qq互联】`（与自动巡查同频道，方式同 watchdog：主 profile `hermes send -t discord:<频道ID>`）；无编辑的 skip 不推送。
+done 成功时输出 `NOTIFY: [[zh 条目]] <时长>无人类编辑，已由 Bot 根据 [[en:条目]] 自动更新。待修撰 N 条（占全站条目 P%）；机翻待校对 M 条（占待修撰 Q%）` 固定格式行，由 cron agent 原样转发到 Discord `#wiki编辑事务【qq互联】`（与自动巡查同频道，方式同 watchdog：主 profile `hermes send -t discord:<频道ID>`）；无编辑的 skip 不推送。消息不含裸 URL——QQ 互联 bot 会解析 `[[]]` 生成链接（裸 URL 还会与紧随的括号粘连）。
 
 ## 当前限制
 
