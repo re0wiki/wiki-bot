@@ -671,7 +671,7 @@ def cmd_prepare():
 def cold_dur(meta):
     """冷度时长字符串（摘要用，向其他编辑者说明自动处理该页的原因）。"""
     days = (datetime.now(UTC) - datetime.fromisoformat(meta["cold"])).days
-    return f"{days / 365:.1f}年" if days >= 365 else f"{max(days // 30, 1)}个月"
+    return f"{days / 365:.1f} 年" if days >= 365 else f"{max(days // 30, 1)} 个月"
 
 
 def std_summary(meta):
