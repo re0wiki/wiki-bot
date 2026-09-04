@@ -69,7 +69,7 @@ list(pywikibot.Page(site, "Template:Init").embeddedin(total=10))
 pagegenerators.PrefixingPageGenerator(prefix="小说:", namespace=0, site=site, filterredir=False)
 ```
 
-- **坑：`AllpagesPageGenerator(start=前缀, total=N)` 不是前缀枚举**——`start` 只是字典序下界游标（上游文档原文 "pages >= this title"），`total` 仅是数量上限，枚举会越过前缀边界继续扫排序在后的全部页面。曾因把 `total` 从 200 调到 2000 而越界改到 角色:/术语: 页（192 处误改，全部回退）。按前缀枚举一律用 `PrefixingPageGenerator`；`AllpagesPageGenerator` 要设终点只能用 11.4+ 的 `until=`（字典序上界，前缀语义需自行拼上界字符串，不如 Prefixing 直接）。
+- **坑：`AllpagesPageGenerator(start=前缀, total=N)` 不是前缀枚举**——`start` 只是字典序下界游标（上游文档原文 "pages >= this title"），`total` 仅是数量上限，枚举会越过前缀边界继续扫排序在后的全部页面。按前缀枚举一律用 `PrefixingPageGenerator`；`AllpagesPageGenerator` 要设终点只能用 11.4+ 的 `until=`（字典序上界，前缀语义需自行拼上界字符串，不如 Prefixing 直接）。
 
 ### 批量取内容：PreloadingGenerator
 
