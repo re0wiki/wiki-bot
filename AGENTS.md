@@ -62,20 +62,7 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 ## 读写 wiki
 
 - **红线**：写入测试只允许在 zh 站的测试页面——`User:IchiSanNi` 的所有子页面，或任意命名空间的 `Sandbox`/`沙盒` 页及其子页面；正式批量写入需用户明确指示；**绝不写 zh 以外的语言站**；不读不打印 `user-password.py`（pywikibot 会自己加载）。
-- 以 pywikibot 库方式为主，在仓库根目录跑（`user-config.py`/`families/` 都在根目录）：
-
-```python
-import pywikibot
-
-site = pywikibot.Site("zh", "re0")   # 读任意语言站都可以，写只限 zh
-site.login()                          # 写入前必须
-assert site.user() == "IchiSanNi"
-p = pywikibot.Page(site, "角色:菜月·昴")
-p.text                                # 读
-p.save(summary="...", bot=False, minor=False)  # 手动编辑（save 默认 bot=True/minor=True，须显式关）；批量脚本用 bot=True
-```
-
-- 完整配方（pagegenerators 生成器、simple_request 裸 API、BotPassword 逃生舱、实测坑）见 `docs/wiki-access.md`；凭据有效性验证跑 `src/tools/verify_wiki_access.py`。
+- **门规**：写任何 wiki 交互代码之前——含 scratch/ 下的一次性脚本、裸 API 调用——先读 `docs/wiki-access.md`（读写配方、生成器、限速、实测坑都在里面，本文件不重复）。凭据有效性验证跑 `src/tools/verify_wiki_access.py`。
 
 ## pywikibot fork 的定制（rebase 上游时必须保留）
 

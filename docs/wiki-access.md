@@ -64,7 +64,12 @@ list(islice(pywikibot.Page(site, "角色:菜月·昴").backlinks(), 10))
 
 # 模板引用页（embeddedin 的 total= 生效）
 list(pywikibot.Page(site, "Template:Init").embeddedin(total=10))
+
+# 按前缀枚举 —— 用 PrefixingPageGenerator（内部走 apprefix，严格限定前缀）
+pagegenerators.PrefixingPageGenerator(prefix="小说:", namespace=0, site=site, filterredir=False)
 ```
+
+- **坑：`AllpagesPageGenerator(start=前缀, total=N)` 不是前缀枚举**——`start` 只是字典序下界游标（上游文档原文 "pages >= this title"），`total` 仅是数量上限，枚举会越过前缀边界继续扫排序在后的全部页面。按前缀枚举一律用 `PrefixingPageGenerator`；`AllpagesPageGenerator` 要设终点只能用 11.4+ 的 `until=`（字典序上界，前缀语义需自行拼上界字符串，不如 Prefixing 直接）。
 
 ### 批量取内容：PreloadingGenerator
 
