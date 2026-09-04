@@ -73,7 +73,7 @@ pagegenerators.PrefixingPageGenerator(prefix="小说:", namespace=0, site=site, 
 
 ### 批量取内容：PreloadingGenerator
 
-在生成器循环里直接访问 `page.text` 是**逐页一次请求**（RTT 锁死 ~3.8 req/s，全站扫描要近一小时）。套一层 `PreloadingGenerator` 即批量预取——内部走 `titles=` 50 个/批的 `prop=revisions` 查询（即上文两阶段 dump 配方的库内封装）：
+在生成器循环里直接访问 `page.text` 是**逐页一次请求**（RTT 锁死 ~3.8 req/s，全站扫描要近一小时）。套一层 `PreloadingGenerator` 即批量预取——内部走 `titles=` 50 个/批的 `prop=revisions` 查询（即实测坑节所述两阶段 dump 配方的库内封装）：
 
 ```python
 from pywikibot import pagegenerators
