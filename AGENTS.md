@@ -125,3 +125,4 @@ p.save(summary="...", bot=False, minor=False)  # 手动编辑（save 默认 bot=
 - user-fixes 里写「不跨模板边界」的作用域正则要当心两处解析坑（2026-08-11 fix:para 死行删除规则实证）：`\{\{}` 不是 `{{`——`\}` 也是字面量，该写法匹配的是三字符 `{{}`，正确写法是 `(?!\{\{)`；DOTALL 下值匹配用 `.*` 会吞到文末，行值一律 `[^\n]*`；参数名/等号两侧的空白用 `[ \t]*` 不用 `\s*`——`\s` 含 `\n`，遇空值行（如 `|Next = ` 独占一行）会把下一行吞成值。验证这类规则必须断言 diff 只删目标行（仅看 `new != text` 会漏掉截尾事故）。
 - 上游 transferbot **不接受 `-always`**（加了会报错）；它不加也会自动覆盖目标页。jobs 已于 2026-08-13 换装 `re0_transferbot`（无此参数问题），此坑仅在手跑上游脚本时相关。
 - `touch -random:128` 在任务列表末尾，是为了触发缓存刷新，不是无意义操作。
+- 库方式按前缀枚举页面用 `PrefixingPageGenerator(prefix=…)`；`AllpagesPageGenerator(start=前缀)` 的 `start` 只是字典序下界游标、无终点，`total` 调大即越界扫进排序在后的无关页面（曾因 total=200→2000 误改 192 个 角色:/术语: 页，全部回退）。配方见 docs/wiki-access.md 生成器节。
