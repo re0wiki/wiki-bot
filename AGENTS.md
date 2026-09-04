@@ -61,6 +61,7 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 
 ## 读写 wiki
 
+- **门规**：写任何 wiki 交互代码之前——含 scratch/ 下的一次性脚本、裸 API 调用——先读 `docs/wiki-access.md`。高频坑（UA、生成器选择、限速、批量写模式）都在里面，「就写个小脚本」正是踩坑现场。凭据有效性验证跑 `src/tools/verify_wiki_access.py`。
 - **红线**：写入测试只允许在 zh 站的测试页面——`User:IchiSanNi` 的所有子页面，或任意命名空间的 `Sandbox`/`沙盒` 页及其子页面；正式批量写入需用户明确指示；**绝不写 zh 以外的语言站**；不读不打印 `user-password.py`（pywikibot 会自己加载）。
 - 以 pywikibot 库方式为主，在仓库根目录跑（`user-config.py`/`families/` 都在根目录）：
 
@@ -74,8 +75,6 @@ p = pywikibot.Page(site, "角色:菜月·昴")
 p.text                                # 读
 p.save(summary="...", bot=False, minor=False)  # 手动编辑（save 默认 bot=True/minor=True，须显式关）；批量脚本用 bot=True
 ```
-
-- 完整配方（pagegenerators 生成器、simple_request 裸 API、BotPassword 逃生舱、实测坑）见 `docs/wiki-access.md`；凭据有效性验证跑 `src/tools/verify_wiki_access.py`。
 
 ## pywikibot fork 的定制（rebase 上游时必须保留）
 
@@ -126,3 +125,4 @@ p.save(summary="...", bot=False, minor=False)  # 手动编辑（save 默认 bot=
 - 上游 transferbot **不接受 `-always`**（加了会报错）；它不加也会自动覆盖目标页。jobs 已于 2026-08-13 换装 `re0_transferbot`（无此参数问题），此坑仅在手跑上游脚本时相关。
 - `touch -random:128` 在任务列表末尾，是为了触发缓存刷新，不是无意义操作。
 - 库方式按前缀枚举页面用 `PrefixingPageGenerator(prefix=…)`；`AllpagesPageGenerator(start=前缀)` 的 `start` 只是字典序下界游标、无终点，`total` 调大即越界扫进排序在后的无关页面（曾因 total=200→2000 误改 192 个 角色:/术语: 页，全部回退）。配方见 docs/wiki-access.md 生成器节。
+- 裸调 api.php（curl/urllib/requests）必须显式带 User-Agent，否则 Cloudflare 直接 403（docs/wiki-access.md 有记录仍被重复踩过，故提升至此）。
