@@ -125,4 +125,3 @@ p.save(summary="...", bot=False, minor=False)  # 手动编辑（save 默认 bot=
 - 上游 transferbot **不接受 `-always`**（加了会报错）；它不加也会自动覆盖目标页。jobs 已于 2026-08-13 换装 `re0_transferbot`（无此参数问题），此坑仅在手跑上游脚本时相关。
 - `touch -random:128` 在任务列表末尾，是为了触发缓存刷新，不是无意义操作。
 - 库方式按前缀枚举页面用 `PrefixingPageGenerator(prefix=…)`；`AllpagesPageGenerator(start=前缀)` 的 `start` 只是字典序下界游标、无终点，`total` 调大即越界扫进排序在后的无关页面（曾因 total=200→2000 误改 192 个 角色:/术语: 页，全部回退）。配方见 docs/wiki-access.md 生成器节。
-- 裸调 api.php（curl/urllib/requests）必须显式带 User-Agent，否则 Cloudflare 直接 403（docs/wiki-access.md 有记录仍被重复踩过，故提升至此）。
