@@ -119,7 +119,7 @@ ENTRIES: list[Entry] = [
         en="Vincent Vollachia",
         cat="角色",
     ),
-    Entry(name="斯芬克丝", ja="スピンクス", en="Sphinx", cat="角色"),
+    Entry(name="斯宾克斯", aliases=("斯芬克丝",), ja="スピンクス", en="Sphinx", cat="角色"),
     Entry(name="普拉姆", ja="プラム·リッシュ", en="Plum Risch", cat="角色"),
     Entry(name="普莉希拉", en="Priscilla Barielle"),
     Entry(name="普莉斯卡"),
