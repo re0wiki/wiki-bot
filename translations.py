@@ -148,7 +148,7 @@ ENTRIES: list[Entry] = [
     Entry(name="琉兹", en="Ryuzu Meyer (disambiguation)"),
     Entry(name="琉加", ja="リュカ", en="Lucas", cat="角色"),
     Entry(name="璞可", ja="プーカ", en="Pooka", cat="角色"),
-    Entry(name="皮波特", ja="ピボット·アーナンシー", en="Pivot Arnancy", cat="角色"),
+    Entry(name="皮博特", aliases=("皮波特",), ja="ピボット·アーナンシー", en="Pivot Arnancy", cat="角色"),
     Entry(name="盖因", ja="カイン", en="Cain", cat="角色"),
     Entry(
         name="碧翠丝",
