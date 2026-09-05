@@ -550,6 +550,14 @@ ENTRIES: list[Entry] = [
     Entry(name="施瓦兹", aliases=("舒瓦茨",), note="乐师 夏美·施瓦茨"),
     Entry(name="艾力欧尔", en="Elior", aliases=("艾利奥尔",), note="艾力欧尔大森林"),
     Entry(name="奥尔菲", ja="オルフェ", en="Orphe", cat="角色"),
+    Entry(
+        name="缇娜",
+        pattern="(?<!艾奇)(?<!福尔)缇娜",
+        ja="ティーナ",
+        en="Tina",
+        cat="角色",
+        note="guard 沿自记录：防 艾奇提娜/福尔提娜 等他名尾段",
+    ),
 ]
 
 RECORD_ONLY: list[Entry] = [
@@ -615,14 +623,6 @@ RECORD_ONLY: list[Entry] = [
         name="克雷茵",
         ja="クライン·ユークリウス",
         en="Klein Juukulius",
-        cat="角色",
-        record_only=True,
-    ),
-    Entry(
-        name="提娜",
-        en="Tina",
-        pattern="(?<!艾奇|福尔)提娜",
-        ja="ティーナ",
         cat="角色",
         record_only=True,
     ),
