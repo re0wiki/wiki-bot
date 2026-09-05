@@ -291,7 +291,7 @@ ENTRIES: list[Entry] = [
         en="Olbart Dunkelkenn",
         cat="角色",
     ),
-    Entry(name="丹克肯", pattern="丹克(尔)?肯"),
+    Entry(name="丹克肯", pattern="丹克(尔)?肯", aliases=("邓克尔肯",), note="奥尔巴特·丹克肯"),
     Entry(name="卡夫马", en="Kafma Irulux"),
     Entry(name="伊鲁鲁克斯", pattern="伊鲁鲁?克斯"),
     Entry(name="塞尔菲苏", ja="サーフィス", en="Safis", cat="角色"),
