@@ -606,6 +606,7 @@ ENTRIES: list[Entry] = [
     Entry(name="魔操加护", aliases=("魔操的加护",), cat="术语"),
     Entry(name="共感觉", aliases=("共感的加护",), cat="术语", note="官方从不称加护"),
     Entry(name="不死王的洗礼", aliases=("不死王的圣礼",), cat="术语"),
+    Entry(name="寒冰烙印艺术", aliases=("冰印艺术",), cat="术语"),
     Entry(name="爱蜜莉雅", ja="エミリア", en="Emilia", cat="角色"),
     Entry(name="魔女因子", aliases=("大罪因子",), cat="术语"),
     Entry(name="克劳泽列", aliases=("克劳泽利亚",), note="术式 阿尔·克劳泽列"),
