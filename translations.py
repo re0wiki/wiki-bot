@@ -596,6 +596,7 @@ ENTRIES: list[Entry] = [
     Entry(name="马斯卡莱德", aliases=("玛斯柯瑞德",), note="莉莉安娜·马斯卡莱德"),
     Entry(name="蓝色雷光", aliases=("青色雷光",), note="塞西鲁斯称号"),
     Entry(name="皮克塔特", aliases=("聘可塔特",), note="水门都市邻近都市"),
+    Entry(name="爱蜜莉雅", ja="エミリア", en="Emilia", cat="角色"),
     Entry(name="克劳泽列", aliases=("克劳泽利亚",), note="术式 阿尔·克劳泽列"),
     Entry(name="库拉利斯特", aliases=("克劳利斯塔",), note="术式 阿尔·库拉利斯特"),
     Entry(name="雷德纳斯", aliases=("雷多纳斯",), note="雷德纳斯台地"),
