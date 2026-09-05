@@ -598,6 +598,7 @@ ENTRIES: list[Entry] = [
     Entry(name="皮克塔特", aliases=("聘可塔特",), note="水门都市邻近都市"),
     Entry(name="克劳泽列", aliases=("克劳泽利亚",), note="术式 阿尔·克劳泽列"),
     Entry(name="库拉利斯特", aliases=("克劳利斯塔",), note="术式 阿尔·库拉利斯特"),
+    Entry(name="雷德纳斯", aliases=("雷多纳斯",), note="雷德纳斯台地"),
     Entry(name="六条舌", aliases=("六枚舌",), note="奥尔菲外号及其情报组织"),
     Entry(name="吉尔达克", note="马可仕·吉尔达克"),
     Entry(
