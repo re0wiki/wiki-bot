@@ -254,7 +254,7 @@ ENTRIES: list[Entry] = [
     Entry(name="米杰尔达", en="Mizelda Shudrak"),
     Entry(name="修德拉格"),
     Entry(name="塔里塔", en="Taritta Shudrak"),
-    Entry(name="乌塔卡塔", ja="ウタカタ·シュドラク", en="Utakata Shudrak", cat="角色"),
+    Entry(name="乌塔卡塔", ja="ウタカタ·シュドラク", en="Utakata Shudrak", cat="角色", aliases=("乌卡塔卡",)),
     Entry(name="迪克尔", en="Zikr Osman"),
     Entry(name="高朗", en="Gaoran Peitiet"),
     Entry(name="梅琳达", en="Melinda"),
