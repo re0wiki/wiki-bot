@@ -280,7 +280,7 @@ ENTRIES: list[Entry] = [
     Entry(name="奇夏", en="Chisha Gold"),
     Entry(name="秀佐", en="Shasuke"),
     Entry(name="戴纳斯", ja="ダイナス·トラサルディ", en="Dynas Trussardi", cat="角色"),
-    Entry(name="巴尔罗伊", en="Balleroy Temeglyph"),
+    Entry(name="巴鲁罗伊", en="Balleroy Temeglyph"),
     Entry(name="蒙哥罗", en="Moguro Hagane"),
     Entry(name="哈格奈"),
     Entry(name="古尔比", en="Groovy Gumlet"),
