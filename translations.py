@@ -230,7 +230,7 @@ ENTRIES: list[Entry] = [
     Entry(name="基尔狄拉乌", en="Witchbeast", cat="术语"),
     Entry(name="巴登凯托斯"),
     Entry(name="塞坦塔", en="Setanta"),
-    Entry(name="特里亚斯"),
+    Entry(name="特利亚斯"),
     Entry(name="欧德古勒斯", ja="オドグラス", en="Odglass", cat="角色"),
     Entry(name="埃尔纱幕"),
     Entry(name="丁赛尔", aliases=("汀泽尔", "霆杰尔"), note="加菲尔·丁赛尔"),
