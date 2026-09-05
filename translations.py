@@ -660,6 +660,11 @@ ENTRIES: list[Entry] = [
         aliases=("汉赛尔与格莱特",),
         note="vol26；格林童话《糖果屋》",
     ),
+    Entry(
+        name="梵·阿斯特雷亚",
+        aliases=("范·阿斯特雷亚",),
+        note="阿斯特雷亚家姓氏段；范/梵 均不在任何相似组，只走全名段精确对",
+    ),
     Entry(name="魔女因子", aliases=("大罪因子",), cat="术语"),
     Entry(name="克劳泽列", aliases=("克劳泽利亚",), note="术式 阿尔·克劳泽列"),
     Entry(name="库拉利斯特", aliases=("克劳利斯塔",), note="术式 阿尔·库拉利斯特"),
