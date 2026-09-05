@@ -332,7 +332,7 @@ ENTRIES: list[Entry] = [
     Entry(
         name="基利安", ja="ギリアン·エンデュミオン", en="Gilian Endymion", cat="角色"
     ),
-    Entry(name="乌比尔克", ja="ウビルク", en="Ubilk", cat="角色"),
+    Entry(name="乌比克", pattern="乌比(尔)?克", ja="ウビルク", en="Ubilk", cat="角色"),
     Entry(name="荷奈特", ja="ホーネット", en="Hornet", cat="角色"),
     Entry(name="伊德拉", ja="イドラ·ミサンガ", en="Idra Missanga", cat="角色"),
     Entry(name="玛里乌里", en="Mariuli Shudrak"),
