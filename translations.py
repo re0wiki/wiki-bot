@@ -578,6 +578,7 @@ ENTRIES: list[Entry] = [
     Entry(name="蓝色雷光", aliases=("青色雷光",), note="塞西鲁斯称号"),
     Entry(name="皮克塔特", aliases=("聘可塔特",), note="水门都市邻近都市"),
     Entry(name="克劳泽列", aliases=("克劳泽利亚",), note="术式 阿尔·克劳泽列"),
+    Entry(name="六条舌", aliases=("六枚舌",), note="奥尔菲外号及其情报组织"),
 ]
 
 RECORD_ONLY: list[Entry] = [
