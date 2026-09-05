@@ -72,7 +72,7 @@ SIMILAR_CHARS: tuple[str, ...] = (
 )
 
 ENTRIES: list[Entry] = [
-    Entry(name="丝碧卡", en="Natsuki Spica"),
+    Entry(name="丝碧卡", en="Natsuki Spica", aliases=("丝琵卡",)),
     Entry(name="亨克尔", en="Heinkel Astrea"),
     Entry(name="伽那库斯", cat="术语"),
     Entry(name="佛拉基亚", en="Vollachia Empire", cat="术语"),
