@@ -85,7 +85,7 @@ ENTRIES: list[Entry] = [
     Entry(name="卡尔斯腾"),
     Entry(name="卡德蒙", en="Kadomon Risch"),
     Entry(name="卡拉拉基", en="Kararagi", cat="术语"),
-    Entry(name="卡斯图鲁平原"),
+    Entry(name="卡什采尔平原", aliases=("卡斯图鲁平原",)),
     Entry(name="卡罗尔", en="Carol Remendis", aliases=("卡萝尔", "卡萝")),
     Entry(name="卡米拉", ja="カーミラ", en="Carmilla", cat="角色"),
     Entry(name="古斯提克", en="Gusteko", cat="术语"),
