@@ -198,7 +198,7 @@ ENTRIES: list[Entry] = [
     Entry(name="谢尔盖", ja="セルゲイ", en="Sergei", cat="角色"),
     Entry(name="贾雷克", ja="ギャレク·トンプソン", en="Garek Thompson", cat="角色"),
     Entry(name="塞赫美特", ja="セクメト", en="Sekhmet", cat="角色"),
-    Entry(name="赫克托尔", ja="ヘクトール", en="Hector", cat="角色"),
+    Entry(name="赫克托耳", ja="ヘクトール", en="Hector", cat="角色", aliases=("赫克特",)),
     Entry(name="赫罗西欧", en="Holosseo Featherrun"),
     Entry(name="赫鲁贝尔", ja="ハリベル", en="Halibel", cat="角色"),
     Entry(name="达德利", ja="ダドリー·ミロード", en="Dudley Miload", cat="角色"),
