@@ -113,3 +113,4 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 - user-fixes 里写「不跨模板边界」的作用域正则要当心两处解析坑（2026-08-11 fix:para 死行删除规则实证）：`\{\{}` 不是 `{{`——`\}` 也是字面量，该写法匹配的是三字符 `{{}`，正确写法是 `(?!\{\{)`；DOTALL 下值匹配用 `.*` 会吞到文末，行值一律 `[^\n]*`；参数名/等号两侧的空白用 `[ \t]*` 不用 `\s*`——`\s` 含 `\n`，遇空值行（如 `|Next = ` 独占一行）会把下一行吞成值。验证这类规则必须断言 diff 只删目标行（仅看 `new != text` 会漏掉截尾事故）。
 - 上游 transferbot **不接受 `-always`**（加了会报错）；它不加也会自动覆盖目标页。jobs 已于 2026-08-13 换装 `re0_transferbot`（无此参数问题），此坑仅在手跑上游脚本时相关。
 - `touch -random:128` 在任务列表末尾，是为了触发缓存刷新，不是无意义操作。
+- `site.isInterwikiLink()` 会为命中的跨站前缀**构造目标 APISite**，其 `__init__` 固定 `login(cookie_only=True)` 发 userinfo 请求（zh 站 interwikimap 有 135 个外站前缀，wikipedia/wp 等指向 en.wikipedia.org；2026-09-05 实测墙内不可达，re0_fixing_redirects 每轮运行 SSL 重试直至崩溃）。判断「链接是否跨站」用 re0_fixing_redirects 的 `is_interwiki()`（只比前缀、零外站请求），不要调库方法。
