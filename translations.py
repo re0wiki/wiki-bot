@@ -576,6 +576,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(name="马斯卡莱德", aliases=("玛斯柯瑞德",), note="莉莉安娜·马斯卡莱德"),
     Entry(name="蓝色雷光", aliases=("青色雷光",), note="塞西鲁斯称号"),
+    Entry(name="皮克塔特", aliases=("聘可塔特",), note="水门都市邻近都市"),
 ]
 
 RECORD_ONLY: list[Entry] = [
