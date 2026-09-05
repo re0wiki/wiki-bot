@@ -182,7 +182,7 @@ ENTRIES: list[Entry] = [
     Entry(name="莎缇拉", ja="サテラ", en="Satella", cat="角色"),
     Entry(name="莱伊", ja="ライ·バテンカイトス", en="Lye Batenkaitos", cat="角色"),
     Entry(name="莱普", en="Leip Barielle"),
-    Entry(name="菜月菜穗子", en="Natsuki Naoko"),
+    Entry(name="菜月菜穗子", en="Natsuki Naoko", aliases=("菜月·菜穗子",)),
     Entry(name="菜月贤一", en="Natsuki Kenichi", cat="角色", aliases=("菜月·贤一",)),
     Entry(name="菲莉丝", ja="フェリックス·アーガイル", en="Ferris", cat="角色"),
     Entry(name="萨尔姆", ja="サルム·プリスティス", en="Salum Pristis", cat="角色"),
