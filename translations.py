@@ -93,7 +93,7 @@ ENTRIES: list[Entry] = [
     Entry(name="塞西鲁斯", ja="セシルス·セグムント", en="Cecilus Segmunt", cat="角色"),
     Entry(name="塞格蒙德"),
     Entry(name="夏乌拉", ja="シャウラ", en="Shaula", cat="角色"),
-    Entry(name="夏库纳尔", ja="シャクナール", en="Shaknar", cat="角色"),
+    Entry(name="夏克纳尔", ja="シャクナール", en="Shaknar", cat="角色"),
     Entry(name="多鲁特洛", ja="ドルテロ·アムル", en="Doltero Amule", cat="角色"),
     Entry(name="奇力塔卡", en="Kiritaka Muse"),
     Entry(
