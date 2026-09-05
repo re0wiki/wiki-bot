@@ -196,7 +196,7 @@ ENTRIES: list[Entry] = [
     Entry(name="西里乌斯", en="Sirius Romanée-Conti"),
     Entry(name="罗曼尼康帝"),
     Entry(name="谢尔盖", ja="セルゲイ", en="Sergei", cat="角色"),
-    Entry(name="贾雷克", ja="ギャレク·トンプソン", en="Garek Thompson", cat="角色"),
+    Entry(name="加雷克", ja="ギャレク·トンプソン", en="Garek Thompson", cat="角色", aliases=("贾雷克",), main=False, note="p2o 展开误伤 外加雷格鲁斯（加雷格）；只走精确对"),
     Entry(name="塞赫美特", ja="セクメト", en="Sekhmet", cat="角色"),
     Entry(
         name="赫克托耳", ja="ヘクトール", en="Hector", cat="角色", aliases=("赫克特",)
