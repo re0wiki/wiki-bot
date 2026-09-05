@@ -612,6 +612,7 @@ ENTRIES: list[Entry] = [
     Entry(name="普勒阿得斯", aliases=("普雷阿迪斯",), note="普勒阿得斯监视塔"),
     Entry(name="三笨蛋出发！土蜘蛛篇", aliases=("三傻同行！土蜘蛛篇",), note="vol16 译注引题"),
     Entry(name="最优秀纪行", aliases=("最优纪行",), note="EX4 书名"),
+    Entry(name="王选前日谈", aliases=("王选前日谭",), note="EX4 目录"),
     Entry(name="魔女因子", aliases=("大罪因子",), cat="术语"),
     Entry(name="克劳泽列", aliases=("克劳泽利亚",), note="术式 阿尔·克劳泽列"),
     Entry(name="库拉利斯特", aliases=("克劳利斯塔",), note="术式 阿尔·库拉利斯特"),
