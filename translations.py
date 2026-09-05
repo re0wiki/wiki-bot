@@ -221,7 +221,7 @@ ENTRIES: list[Entry] = [
         aliases=("雷古勒斯", "雷格勒斯"),
         note="字序调换（格鲁/古勒）p2o 覆盖不了，走精确对",
     ),
-    Entry(name="柯尼亚斯"),
+    Entry(name="科尼亚斯"),
     Entry(name="鲁伊", en="Rui Arneb"),
     Entry(name="卢克尼卡", en="Kingdom of Lugunica", cat="术语"),
     Entry(name="马可仕", en="Marcos Gildark"),
