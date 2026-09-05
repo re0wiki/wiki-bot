@@ -558,6 +558,7 @@ ENTRIES: list[Entry] = [
         cat="角色",
         note="guard 沿自记录：防 艾奇提娜/福尔提娜 等他名尾段",
     ),
+    Entry(name="迷尼亚", aliases=("米尼亚",), note="咒语后缀 X·迷尼亚（ミーニャ）"),
 ]
 
 RECORD_ONLY: list[Entry] = [
