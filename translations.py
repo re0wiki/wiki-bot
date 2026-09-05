@@ -157,7 +157,7 @@ ENTRIES: list[Entry] = [
         cat="角色",
         aliases=("贝阿托莉丝",),
     ),
-    Entry(name="米捷尔", en="Minor Characters", cat="角色"),
+    Entry(name="米塞尔", cat="角色", aliases=("米捷尔",), note="米塞尔子爵"),
     Entry(name="约书亚", en="Joshua Juukulius"),
     Entry(name="堤丰", ja="テュフォン", en="Typhon", cat="角色"),
     Entry(name="缇莉艾娜", ja="ティリエナ", en="Tiriena", cat="角色"),
