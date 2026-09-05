@@ -524,8 +524,8 @@ ENTRIES: list[Entry] = [
         note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
-        name="记忆的回廊",
-        aliases=("记忆回廊",),
+        name="记忆回廊",
+        aliases=("记忆的回廊",),
         main=False,
         note="2字短名/特判，只走精确对不进主列表",
     ),
