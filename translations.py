@@ -589,6 +589,12 @@ ENTRIES: list[Entry] = [
     Entry(name="克劳泽列", aliases=("克劳泽利亚",), note="术式 阿尔·克劳泽列"),
     Entry(name="六条舌", aliases=("六枚舌",), note="奥尔菲外号及其情报组织"),
     Entry(name="吉尔达克", note="马可仕·吉尔达克"),
+    Entry(
+        name="多纳",
+        aliases=("德纳",),
+        main=False,
+        note="术式 tier 前缀 埃尔/乌尔/阿尔·多纳；德纳 多为 加德纳/卡德纳 等他名子串",
+    ),
 ]
 
 RECORD_ONLY: list[Entry] = [
