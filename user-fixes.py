@@ -435,6 +435,7 @@ user_fixes["heading"] = base | {
 # region translation
 flatten = itertools.chain.from_iterable
 s2t = OpenCC("s2t.json").convert
+t2s = OpenCC("t2s.json").convert
 
 similar_chars = translations.SIMILAR_CHARS  # 数据在 translations.py
 
