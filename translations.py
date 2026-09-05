@@ -366,7 +366,7 @@ ENTRIES: list[Entry] = [
     Entry(name="安娜塔西亚", pattern="安娜(斯)?塔西亚", en="Anastasia Hoshin"),
     Entry(name="培提奇乌斯", pattern="培提(尔)?奇乌?斯", en="Petelgeuse Romanée-Conti"),
     Entry(name="威尔海姆", pattern="威尔海(鲁)?姆", en="Wilhelm van Astrea"),
-    Entry(name="莱茵哈鲁特", pattern="莱茵哈鲁?特", en="Reinhard van Astrea"),
+    Entry(name="莱因哈鲁特", pattern="莱因哈鲁?特", en="Reinhard van Astrea"),
     Entry(name="罗兹瓦尔", pattern="罗兹瓦尔?", en="Roswaal L. Mathers"),
     Entry(
         name="帕尔米拉", en="Palmyra", pattern="帕尔?米拉", ja="パルミラ", cat="角色"
