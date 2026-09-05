@@ -89,7 +89,7 @@ ENTRIES: list[Entry] = [
     Entry(name="卡萝", en="Carol Remendis"),
     Entry(name="卡蜜拉", ja="カーミラ", en="Carmilla", cat="角色"),
     Entry(name="古斯提科", en="Gusteko", cat="术语"),
-    Entry(name="史泰德", en="Stride Vollachia"),
+    Entry(name="斯特莱德", en="Stride Vollachia", aliases=("史泰德",)),
     Entry(name="塞西鲁斯", ja="セシルス·セグムント", en="Cecilus Segmunt", cat="角色"),
     Entry(name="赛格蒙德"),
     Entry(name="夏乌拉", ja="シャウラ", en="Shaula", cat="角色"),
