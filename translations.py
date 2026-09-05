@@ -339,7 +339,7 @@ ENTRIES: list[Entry] = [
     Entry(name="杰比聂尔", ja="ザビーネル·ルグニカ", en="Zabinel Lugunica", cat="角色"),
     Entry(name="德莱森", ja="ドライゼン·ヴォラキア", en="Drizen Vollachia", cat="角色"),
     Entry(name="卡欧斯福莱姆", en="Chaosflame", cat="术语", aliases=("混沌之炎",)),
-    Entry(name="美佐里亚", ja="メゾレイア", en="Mezoreia", cat="角色"),
+    Entry(name="梅佐雷亚", ja="メゾレイア", en="Mezoreia", cat="角色", aliases=("美佐里亚",)),
     Entry(name="莱杰尔", ja="ライゼル", en="Reisel", cat="角色"),
     Entry(name="巴罗伊", ja="バルトロイ·フィッツ", en="Barthroy Fitts", cat="角色"),
     Entry(name="波多尔德"),
