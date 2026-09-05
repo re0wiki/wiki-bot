@@ -122,7 +122,12 @@ def test_aliases_no_collision():
 
 def test_aliases_normalize_to_entry_name():
     """别名经完整规则链必须归一到所属条目名（否则规则间互相覆盖）。"""
-    bad = [(a, e.name, normalize(a)) for e in ENTRIES for a in e.aliases if normalize(a) != e.name]
+    bad = [
+        (a, e.name, normalize(a))
+        for e in ENTRIES
+        for a in e.aliases
+        if normalize(a) != e.name
+    ]
     assert not bad, f"以下别名未归一到条目名: {bad}"
 
 
