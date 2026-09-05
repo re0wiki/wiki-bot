@@ -565,6 +565,7 @@ ENTRIES: list[Entry] = [
         note="guard 沿自记录：防 艾奇提娜/福尔提娜 等他名尾段",
     ),
     Entry(name="迷尼亚", aliases=("米尼亚",), note="咒语后缀 X·迷尼亚（ミーニャ）"),
+    Entry(name="卫兹礼", aliases=("威兹利",), note="托尔多·卫兹礼"),
 ]
 
 RECORD_ONLY: list[Entry] = [
