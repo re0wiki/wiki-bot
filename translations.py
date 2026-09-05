@@ -109,7 +109,7 @@ ENTRIES: list[Entry] = [
     Entry(name="库奥克", ja="クオーク", en="Quark", cat="角色"),
     Entry(name="库珥修", ja="クルシュ·カルステン", en="Crusch Karsten", cat="角色"),
     Entry(name="库鲁刚", ja="クルガン", en="Kurgan", cat="角色"),
-    Entry(name="弗琉盖尔", ja="フリューゲル", en="Flugel", cat="角色"),
+    Entry(name="弗里格尔", aliases=("弗琉盖尔",), ja="フリューゲル", en="Flugel", cat="角色"),
     Entry(name="弗莱巴尔", en="Fribal van Astrea"),
     Entry(name="戴因", ja="ダイン", en="Dain", cat="角色"),
     Entry(name="提姆兹", ja="テムズ·アストレア", en="Thames Astrea", cat="角色"),
@@ -373,7 +373,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(name="加菲尔", pattern="加菲尔(?!丝|特|艾)", en="Garfiel Tinzel"),
     Entry(name="拉菲尔", pattern="拉菲尔(?!丝|特|艾)", en="Rafiel Thompson"),
-    Entry(name="利格鲁", pattern="(?<!阿)利格鲁(?!卡|姆)", en="Natsuki Rigel"),
+    Entry(name="利格鲁", pattern="(?<!阿)(?<!弗)利格鲁(?!卡|姆)", en="Natsuki Rigel"),
     Entry(name="佩特拉", pattern="佩特拉(?!其乌斯|姆)", en="Petra Leyte"),
     Entry(
         name="拉姆",
