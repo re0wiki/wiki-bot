@@ -250,7 +250,7 @@ ENTRIES: list[Entry] = [
     Entry(name="巴多海姆"),
     Entry(name="托斯卡", en="Toska Astrea"),
     Entry(name="拉米亚", ja="ラミア·ゴドウィン", en="Lamia Godwin", cat="角色"),
-    Entry(name="弗兰德斯", en="Flanders"),
+    Entry(name="弗兰德斯", en="Flanders", aliases=("芙兰达兹",)),
     Entry(name="米杰尔达", en="Mizelda Shudrak"),
     Entry(name="修德拉格"),
     Entry(name="塔里塔", en="Taritta Shudrak"),
