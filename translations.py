@@ -314,7 +314,7 @@ ENTRIES: list[Entry] = [
     Entry(name="拉尔丰"),
     Entry(name="视风的加护", aliases=("风见的加护",), main=False, note="2字短名/特判，只走精确对不进主列表"),
     Entry(name="阿内芙", aliases=("阿尔内布",), main=False, note="2字短名/特判，只走精确对不进主列表"),
-    Entry(name="莉雅", main=False, note="2字短名/特判，只走精确对不进主列表；别名 莉娅 无实据且子串误伤 莎莉婭，不登记"),
+    Entry(name="莉雅", aliases=("莉娅",), main=False, note="帕克/福尔图娜对爱蜜莉雅的称呼；莉娅 为常见变体，前字为 莎 时属 莎莉婭·费瑟兰（user-fixes guard 规则）"),
     Entry(name="八重", en="Yae Tenzen", aliases=("娅艾",), main=False, note="2字短名/特判，只走精确对不进主列表"),
     Entry(name="莱特", aliases=("蕾缇",), main=False, note="2字短名/特判，只走精确对不进主列表"),
     Entry(name="陶德", en="Todd Fang", aliases=("托德",), main=False, note="2字短名/特判，只走精确对不进主列表"),
@@ -333,7 +333,7 @@ ENTRIES: list[Entry] = [
     Entry(name="雷佐", main=False, note="佐 属杰泽佐组，p2o 展开与 蕾泽 互撞并误伤 莱杰尔"),
     Entry(name="米蒂安"),
     Entry(name="阿拉基亚", aliases=("亚拉基亚",)),
-    Entry(name="金", main=False, aliases=("戈尔德",), note="官方意译待查：官方作 格尔德（米格尔德族），wiki 作 金；单字名不进主列表"),
+    Entry(name="奇夏·金", aliases=("奇夏·戈尔德",), note="官方意译 戈尔德→金（英 Chisha Gold）"),
     Entry(name="贝亚子", aliases=("贝阿子", "碧翠子")),
 ]
 

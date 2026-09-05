@@ -509,13 +509,17 @@ translation_manual = [  # 手动添加的替换组（结构规则：模板替换
     (r"(?<=半)\{\{(Seirei|Yousei) or Elf\}\}", "{{Elf}}"),
     ("斯巴[鲁魯]", "昴"),  # 不用 f() 展开：茨(≈斯)巴 尔(≈鲁) 会误判「法茨巴尔穆」
     (f"梅{f('莉')}(?!{f('奥')})", "梅莉"),  # 防「梅里欧·阿嘎玛」误伤
+    (r"(?<!莎)莉[娅婭]", "莉雅"),  # 莉娅→莉雅；前字 莎 时属 莎莉婭·费瑟兰
     (f"其{f('他它她')}", "其他"),  # 用字归一（非译名）
 ]
+# 有别名在更长的他名内部出现（子串误伤）的，不走精确对生成，在上面用 guard 规则处理
+_GUARDED_ALIASES = {"莉娅"}
 # Entry.aliases 生成精确对，繁体写法一并归一
 translation_manual += [
     (a2, e.name)
     for e in translations.ENTRIES
     for a in e.aliases
+    if a not in _GUARDED_ALIASES
     for a2 in dict.fromkeys((a, s2t(a)))
 ]
 
