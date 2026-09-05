@@ -546,6 +546,7 @@ ENTRIES: list[Entry] = [
         main=False,
         note="2字双组展开会误伤（特雷西亚基本→亚基命中）；只走 guard 精确对",
     ),
+    Entry(name="缪斯", aliases=("谬丝",), note="奇力塔卡·缪斯/缪斯商会"),
     Entry(name="卫兹礼", aliases=("威兹利",), note="托尔多·卫兹礼"),
 ]
 
