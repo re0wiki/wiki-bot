@@ -411,7 +411,7 @@ ENTRIES: list[Entry] = [
         cat="角色",
         aliases=("多尔肯",),
     ),
-    Entry(name="伊娜", pattern="(?<!罗)伊娜", en="Minor Characters"),
+    Entry(name="伊娜", pattern="(?<!罗)伊娜"),
     Entry(
         name="潘多拉", en="Pandora", pattern="潘多拉(?!顿)", ja="パンドラ", cat="角色"
     ),
@@ -689,7 +689,7 @@ RECORD_ONLY: list[Entry] = [
         cat="角色",
         record_only=True,
     ),
-    Entry(name="亚雷", en="Minor Characters", record_only=True),
+    Entry(name="亚雷", record_only=True),
     Entry(
         name="艾达",
         ja="エッダ·レイファスト",
