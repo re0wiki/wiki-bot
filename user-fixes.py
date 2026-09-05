@@ -495,20 +495,8 @@ translation_names = [
     e.pattern or e.name for e in translations.ENTRIES if e.main
 ]  # 数据在 translations.py
 
-translation_manual = [  # 手动添加的替换组
+translation_manual = [  # 手动添加的替换组（结构规则：模板替换/防误伤 lookaround/选择性展开）
     (rf"{f('凛淋萍平苹')}{f('果')}", "{{Ringa}}"),
-    (f"{f('流')}{f('丽')}{f('连')}", "琉璃泪"),
-    (f"{f('贝')}{f('阿')}{f('托')}{f('莉')}{f('丝')}", "碧翠丝"),
-    (
-        f"{f('多')}{f('娜')}{f('狐')}|{f('领')}{f('子')}{f('多')}{f('娜')}",
-        "围巾多娜",
-    ),
-    (f"{f('奥')}托", "奥托"),
-    (f"{f('舒')}{f('尔')}特", "舒尔特"),
-    (f"{f('基')}{f('尔')}提", "基尔提"),
-    (f"{f('阿')}{f('斯')}{f('特')}{f('雷利')}{f('亚')}", "阿斯特雷亚"),
-    (f"{f('空')}{f('斯')}{f('图')}{f('卢')}", "柯司兹尔"),
-    (f"其{f('他它她')}", "其他"),
     (
         (
             "(?<!禁书与谜之)(?<!术语:)(?<!人工)(?<!自然)(?<!契约)(?<![大邪微准])"
@@ -519,20 +507,17 @@ translation_manual = [  # 手动添加的替换组
     ),
     (f"{f('妖')}{f('精')}", "{{Yousei or Elf}}"),
     (r"(?<=半)\{\{(Seirei|Yousei) or Elf\}\}", "{{Elf}}"),
-    (f"{f('蕾')}泽", "蕾泽"),
-    (f"{f('雷')}佐", "雷佐"),
-    (f"梅{f('莉')}(?!{f('奥')})", "梅莉"),
-    (f"{f('米')}{f('迪')}{f('娅')}{f('姆')}", "米蒂安"),
-    (f"{f('亚')}{f('拉')}{f('基')}{f('亚')}", "阿拉基亚"),
-    (f"{f('格')}{f('姆')}{f('雷')}{f('特')}", "加姆莱特"),
-    (f"{f('戈')}{f('尔')}德", "金"),
     ("斯巴[鲁魯]", "昴"),  # 不用 f() 展开：茨(≈斯)巴 尔(≈鲁) 会误判「法茨巴尔穆」
-    (
-        rf"{f('贝')}(?:{f('阿')}|{f('亚')}){f('子')}|{f('碧')}{f('翠')}{f('子')}",
-        "贝亚子",
-    ),
+    (f"梅{f('莉')}(?!{f('奥')})", "梅莉"),  # 防「梅里欧·阿嘎玛」误伤
+    (f"其{f('他它她')}", "其他"),  # 用字归一（非译名）
 ]
-translation_manual += [(a, e.name) for e in translations.ENTRIES for a in e.aliases]
+# Entry.aliases 生成精确对，繁体写法一并归一
+translation_manual += [
+    (a2, e.name)
+    for e in translations.ENTRIES
+    for a in e.aliases
+    for a2 in dict.fromkeys((a, s2t(a)))
+]
 
 user_fixes["translation"] = base | {
     "generator": generator_more,
