@@ -548,6 +548,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(name="缪斯", aliases=("谬丝",), note="奇力塔卡·缪斯/缪斯商会"),
     Entry(name="施瓦兹", aliases=("舒瓦茨",), note="乐师 夏美·施瓦茨"),
+    Entry(name="艾力欧尔", en="Elior", aliases=("艾利奥尔",), note="艾力欧尔大森林"),
     Entry(name="卫兹礼", aliases=("威兹利",), note="托尔多·卫兹礼"),
 ]
 
