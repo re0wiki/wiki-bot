@@ -231,7 +231,7 @@ ENTRIES: list[Entry] = [
     Entry(name="特里亚斯"),
     Entry(name="欧德古勒斯", ja="オドグラス", en="Odglass", cat="角色"),
     Entry(name="埃尔纱幕"),
-    Entry(name="汀泽尔"),
+    Entry(name="丁赛尔", aliases=("汀泽尔", "霆杰尔"), note="加菲尔·丁赛尔"),
     Entry(name="奥斯洛", ja="オスロー·スーウェン", en="Oslo Suwen", cat="角色"),
     Entry(name="雷金", ja="レギン·スーウェン", en="Regin Suwen", cat="角色"),
     Entry(name="柯司兹尔", en="Costuul", cat="术语"),
