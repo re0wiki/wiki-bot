@@ -249,7 +249,7 @@ ENTRIES: list[Entry] = [
     Entry(name="劳安", en="Rowan Segmunt"),
     Entry(name="贾马尔", ja="ジャマル·オーレリー", en="Jamal Aurélie", cat="角色"),
     Entry(name="瓜拉尔", en="Guaral", cat="术语"),
-    Entry(name="巴多海姆"),
+    Entry(name="巴德哈姆"),
     Entry(name="托斯卡", en="Toska Astrea"),
     Entry(name="拉米亚", ja="ラミア·ゴドウィン", en="Lamia Godwin", cat="角色"),
     Entry(name="弗兰德斯", en="Flanders", aliases=("芙兰达兹",)),
