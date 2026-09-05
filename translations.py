@@ -160,7 +160,7 @@ ENTRIES: list[Entry] = [
     Entry(name="米塞尔", cat="角色", aliases=("米捷尔",), note="米塞尔子爵"),
     Entry(name="约书亚", en="Joshua Juukulius"),
     Entry(name="提丰", ja="テュフォン", en="Typhon", cat="角色"),
-    Entry(name="缇莉艾娜", ja="ティリエナ", en="Tiriena", cat="角色"),
+    Entry(name="梯利爱娜", aliases=("缇莉艾娜",), ja="ティリエナ", en="Tiriena", cat="角色"),
     Entry(name="梅札斯"),
     Entry(name="罗姆爷", ja="バルガ·クロムウェル", en="Rom", cat="角色"),
     Entry(name="埃佐", en="Ezzo Cadner"),
