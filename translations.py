@@ -404,11 +404,12 @@ ENTRIES: list[Entry] = [
     Entry(name="傅里叶", pattern="(?<!加)傅里叶", en="Fourier Lugunica", aliases=("弗利艾",)),
     Entry(name="拉塞尔", pattern="(?<!法)拉塞尔", en="Russell Fellow"),
     Entry(
-        name="多尔肯",
+        name="多尔凯尔",
         en="Dorkell",
-        pattern="(?<!佩)(?<!芙蕾)多尔肯(?!罗登|普里恩)",
+        pattern="(?<!佩)(?<!芙蕾)多尔凯尔(?!罗登|普里恩)",
         ja="ドルケル",
         cat="角色",
+        aliases=("多尔肯",),
     ),
     Entry(name="伊娜", pattern="(?<!罗)伊娜", en="Minor Characters"),
     Entry(
