@@ -609,6 +609,7 @@ ENTRIES: list[Entry] = [
     Entry(name="寒冰烙印艺术", aliases=("冰印艺术",), cat="术语"),
     Entry(name="冰柱界线", aliases=("冰柱魔线",), cat="术语"),
     Entry(name="爱蜜莉雅", ja="エミリア", en="Emilia", cat="角色"),
+    Entry(name="普勒阿得斯", aliases=("普雷阿迪斯",), note="普勒阿得斯监视塔"),
     Entry(name="魔女因子", aliases=("大罪因子",), cat="术语"),
     Entry(name="克劳泽列", aliases=("克劳泽利亚",), note="术式 阿尔·克劳泽列"),
     Entry(name="库拉利斯特", aliases=("克劳利斯塔",), note="术式 阿尔·库拉利斯特"),
