@@ -491,7 +491,9 @@ def get_repl_func(name: str):
     return func
 
 
-translation_names = [e.pattern or e.name for e in translations.ENTRIES if e.main]  # 数据在 translations.py
+translation_names = [
+    e.pattern or e.name for e in translations.ENTRIES if e.main
+]  # 数据在 translations.py
 
 translation_manual = [  # 手动添加的替换组
     (rf"{f('凛淋萍平苹')}{f('果')}", "{{Ringa}}"),
@@ -518,7 +520,7 @@ translation_manual = [  # 手动添加的替换组
     (f"{f('妖')}{f('精')}", "{{Yousei or Elf}}"),
     (r"(?<=半)\{\{(Seirei|Yousei) or Elf\}\}", "{{Elf}}"),
     (f"{f('蕾')}泽", "蕾泽"),
-    (f"{f('雷')}佐(?!提雅)", "雷佐"),
+    (f"{f('雷')}佐", "雷佐"),
     (f"梅{f('莉')}(?!{f('奥')})", "梅莉"),
     (f"{f('米')}{f('迪')}{f('娅')}{f('姆')}", "米蒂安"),
     (f"{f('亚')}{f('拉')}{f('基')}{f('亚')}", "阿拉基亚"),
@@ -537,7 +539,9 @@ user_fixes["translation"] = base | {
     "replacements": [(p2o(p), get_repl_func(p2n(p))) for p in translation_names]
     + [(o, get_repl_func(n)) for o, n in translation_manual],
 }
-_ = [e.pattern or e.name for e in translations.RECORD_ONLY]  # 特判太麻烦的，不处理；数据在 translations.py
+_ = [
+    e.pattern or e.name for e in translations.RECORD_ONLY
+]  # 特判太麻烦的，不处理；数据在 translations.py
 
 # endregion
 
