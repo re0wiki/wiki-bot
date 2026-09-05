@@ -97,7 +97,7 @@ ENTRIES: list[Entry] = [
     Entry(name="多鲁特洛", ja="ドルテロ·アムル", en="Doltero Amule", cat="角色"),
     Entry(name="奇力塔卡", en="Kiritaka Muse"),
     Entry(
-        name="安妮罗泽", ja="アンネローゼ·ミロード", en="Annerose Miload", cat="角色"
+        name="安妮罗洁", aliases=("安妮罗泽",), ja="アンネローゼ·ミロード", en="Annerose Miload", cat="角色"
     ),
     Entry(name="密涅瓦", en="Minerva"),
     Entry(name="由里乌斯", en="Julius Juukulius"),
