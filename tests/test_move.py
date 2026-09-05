@@ -17,6 +17,16 @@ def test_alias_normalizes_to_standard():
     assert mv.resolve_move("貝阿托莉絲") == ("碧翠丝", None)
 
 
+def test_traditional_title_presimplified_before_rules():
+    """繁体标题先归一简体再套规则：日文原名同字的繁体写法也能走到标准名。"""
+    assert mv.resolve_move("术语:王族誘拐案") == ("术语:王族诱拐事件", None)
+
+
+def test_no_rule_no_pure_variant_move():
+    """规则未命中时不做纯繁简移动（既有繁体标题保持原样）。"""
+    assert mv.resolve_move("小说:劍鬼戰歌") == (None, None)
+
+
 def test_rules_exclude_template_producing_entries():
     """产出模板调用的 manual 规则（{{...}}）不能用于标题。"""
     assert all("{{" not in name for _, name in mv.RULES)

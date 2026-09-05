@@ -435,6 +435,7 @@ user_fixes["heading"] = base | {
 # region translation
 flatten = itertools.chain.from_iterable
 s2t = OpenCC("s2t.json").convert
+t2s = OpenCC("t2s.json").convert
 
 similar_chars = translations.SIMILAR_CHARS  # 数据在 translations.py
 
@@ -531,6 +532,8 @@ translation_manual = [  # 手动添加的替换组（结构规则：模板替换
     ),  # 多尔肯→多尔凯尔，guard 沿自记录
     (r"卡[萝蘿](?!尔|爾)", "卡罗尔"),  # 卡萝尔 是同一人的完整变体，由别名精确对先行归一
     ("王选前日谭", "王选前日谈"),  # 仅简体：繁体 王選前日譚 与日文原名同字（name_ja/引用显示名），不得归一
+    ("最优纪行", "最优秀纪行"),  # 仅简体：日文原名 最優紀行 与繁体同字
+    ("王族诱拐案", "王族诱拐事件"),  # 仅简体：日文原名 王族誘拐案 与繁体同字
     (f"其{f('他它她')}", "其他"),  # 用字归一（非译名）
 ]
 # 有别名在更长的他名内部出现（子串误伤）或繁体形式与日文原名同字的，不走精确对生成，在上面用规则处理
@@ -546,6 +549,8 @@ _GUARDED_ALIASES = {
     "多尔肯",
     "卡萝",
     "王选前日谭",
+    "最优纪行",
+    "王族诱拐案",
 }
 # Entry.aliases 生成精确对，繁体写法一并归一
 translation_manual += [
