@@ -179,7 +179,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(name="莉莉安娜", en="Liliana Masquerade"),
     Entry(name="莎克拉", ja="サクラ·エレメント", en="Sakura Element", cat="角色"),
-    Entry(name="莎缇拉", ja="サテラ", en="Satella", cat="角色"),
+    Entry(name="莎缇菈", ja="サテラ", en="Satella", cat="角色"),
     Entry(name="莱伊", ja="ライ·バテンカイトス", en="Lye Batenkaitos", cat="角色"),
     Entry(name="莱普", en="Leip Barielle"),
     Entry(name="菜月菜穗子", en="Natsuki Naoko", aliases=("菜月·菜穗子",)),
