@@ -227,7 +227,7 @@ ENTRIES: list[Entry] = [
     Entry(name="马可仕", en="Marcos Gildark"),
     Entry(name="麦克罗托夫", en="Miklotov McMahon"),
     Entry(name="黑塔罗", en="Hetaro Pearlbaton"),
-    Entry(name="基尔提拉乌", en="Witchbeast", cat="术语"),
+    Entry(name="基尔狄拉乌", en="Witchbeast", cat="术语"),
     Entry(name="巴登凯托斯"),
     Entry(name="塞坦塔", en="Setanta"),
     Entry(name="特里亚斯"),
