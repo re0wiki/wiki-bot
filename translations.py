@@ -88,7 +88,7 @@ ENTRIES: list[Entry] = [
     Entry(name="卡斯图鲁平原"),
     Entry(name="卡罗尔", en="Carol Remendis", aliases=("卡萝尔", "卡萝")),
     Entry(name="卡米拉", ja="カーミラ", en="Carmilla", cat="角色"),
-    Entry(name="古斯提科", en="Gusteko", cat="术语"),
+    Entry(name="古斯提克", en="Gusteko", cat="术语"),
     Entry(name="斯特莱德", en="Stride Vollachia", aliases=("史泰德",)),
     Entry(name="塞西鲁斯", ja="セシルス·セグムント", en="Cecilus Segmunt", cat="角色"),
     Entry(name="赛格蒙德"),
