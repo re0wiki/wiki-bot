@@ -168,7 +168,7 @@ ENTRIES: list[Entry] = [
     Entry(name="艾力欧尔大森林", en="Elior Forest"),
     Entry(name="艾姬多娜", ja="エキドナ", en="Echidna", cat="角色"),
     Entry(name="爱蜜"),
-    Entry(name="艾西亚湿地"),
+    Entry(name="艾黑亚湿地", aliases=("艾西亚湿地",)),
     Entry(
         name="弗雷德莉卡", ja="フレデリカ·バウマン", en="Frederica Baumann", cat="角色"
     ),
