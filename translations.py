@@ -133,7 +133,7 @@ ENTRIES: list[Entry] = [
     Entry(name="梅娜", ja="メイーナ", en="Meina", cat="角色"),
     Entry(name="梅拉奎拉", en="Melakuera"),
     Entry(name="欧尔尼娅", en="Ornea Featherrun"),
-    Entry(name="欧米伽", ja="オメガ", en="Omega", cat="角色"),
+    Entry(name="欧米茄", ja="オメガ", en="Omega", cat="角色"),
     Entry(name="汉娜", en="Hannah Regret"),
     Entry(name="波尔多", en="Bordeaux Zergev"),
     Entry(name="波尔肯尼卡", ja="ボルカニカ", en="Volcanica", cat="角色"),
