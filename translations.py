@@ -77,7 +77,7 @@ ENTRIES: list[Entry] = [
     Entry(name="伽那库斯", cat="术语"),
     Entry(name="佛拉基亚", en="Vollachia Empire", cat="术语"),
     Entry(name="库林德", ja="クリンド", en="Clind", cat="角色"),
-    Entry(name="利布雷", ja="リブレ·フエルミ", en="Libre Fermi", cat="角色"),
+    Entry(name="历布莱", aliases=("利布雷",), ja="リブレ·フエルミ", en="Libre Fermi", cat="角色"),
     Entry(name="卡佩拉", en="Capella Emerada Lugunica"),
     Entry(name="艾美拉达", ja="エメラダ·ルグニカ", en="Emerada Lugunica", cat="角色"),
     Entry(name="卡吉雷斯", en="Casilles Astrea"),
