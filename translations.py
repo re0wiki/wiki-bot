@@ -542,7 +542,7 @@ ENTRIES: list[Entry] = [
         ja="アーチ·エリオール",
         en="Archi Elior",
         cat="角色",
-        aliases=("亚齐",),
+        aliases=("亚齐", "阿奇"),
         main=False,
         note="2字双组展开会误伤（特雷西亚基本→亚基命中）；只走 guard 精确对",
     ),
