@@ -397,9 +397,9 @@ ENTRIES: list[Entry] = [
         cat="角色",
     ),
     Entry(
-        name="凯缇",
+        name="凯迪",
         en="Ketty Muttart",
-        pattern="凯缇(?!尔|斯)",
+        pattern="凯迪(?!尔|斯)",
         ja="ケティ·ムッタート",
         cat="角色",
     ),
