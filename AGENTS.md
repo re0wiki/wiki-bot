@@ -83,7 +83,7 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 ## 译名维护工作流（最常见的改动）
 
 1. 译名选取规则见 wiki 的 `ReZero Wiki:译名表`（官方简中 > 官方繁体 > 民间 > 保留英文）。bot 执行的唯一权威是 `user-fixes.py`；译名表页面由人工随性维护、无逐条同步义务（bot 的 fix:translation 会自动归一页面上的别名写法），已有条目的标题与内容本身即译名表的作用，不另建清单页。用户通过 GitHub Issues 报译名问题（模板：新增/修改译名、遗漏替换、错误替换），wiki 页面明确告诉用户「不要手动移动页面或替换文本，提议通过后 Bot 会批量修改」。
-2. 改译名 = 改 `translations.py` 的 `ENTRIES`：`name` 进主列表（`p2o()` 自动生成别名正则），`aliases` 登记组外异写精确对，`main=False` 用于 2 字短名等防误判场景。覆盖新变体优先扩 `SIMILAR_CHARS` 相似组让 `p2o()` 自动生成（如 伊/易 组覆盖 路易→鲁伊）；正则级结构规则（lookaround 防误伤、字序调换、模板替换）留在 `user-fixes.py` 的 `translation_manual` 内联段。拿不准相似字符覆盖面的，先 `python main.py fix:translation -s` 干跑。标题含别名的页面由 `re0_move` 任务用同一张表自动移动，无需另行处理。
+2. 改译名 = 改 `translations.py` 的 `ENTRIES`：`name` 进主列表（`p2o()` 自动生成别名正则），`aliases` 登记组外异写精确对，`main=False` 用于 2 字短名、或两个字落在同一相似组（p2o 组合爆炸，实测命中 哈鲁特/亚基 等他名/普通词）等防误判场景。覆盖新变体优先扩 `SIMILAR_CHARS` 相似组让 `p2o()` 自动生成（如 伊/易 组覆盖 路易→鲁伊）；正则级结构规则（lookaround 防误伤、字序调换、模板替换）留在 `user-fixes.py` 的 `translation_manual` 内联段。拿不准相似字符覆盖面的，先 `python main.py fix:translation -s` 干跑。标题含别名的页面由 `re0_move` 任务用同一张表自动移动，无需另行处理。
 3. 提交信息遵循 Conventional Commits：`feat(translation): add X` / `fix(translation): 旧 -> 新`。
 4. `_` 清单（「特判太麻烦、明确不处理」）数据在 `translations.py` 的 `RECORD_ONLY`，别删。
 
