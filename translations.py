@@ -81,7 +81,7 @@ ENTRIES: list[Entry] = [
     Entry(name="卡佩拉", en="Capella Emerada Lugunica"),
     Entry(name="艾美拉达", ja="エメラダ·ルグニカ", en="Emerada Lugunica", cat="角色"),
     Entry(name="卡吉雷斯", en="Casilles Astrea"),
-    Entry(name="卡尔兰", ja="カルラン·アストレア", en="Carlan Astrea", cat="角色"),
+    Entry(name="卡尔朗", aliases=("卡尔兰",), ja="カルラン·アストレア", en="Carlan Astrea", cat="角色"),
     Entry(name="卡尔斯腾"),
     Entry(name="卡德蒙", en="Kadomon Risch"),
     Entry(name="卡拉拉基", en="Kararagi", cat="术语"),
