@@ -529,6 +529,15 @@ ENTRIES: list[Entry] = [
     Entry(name="贝亚子", aliases=("贝阿子", "碧翠子")),
     Entry(name="爱蜜莉雅炭", aliases=("爱蜜莉雅碳",), note="帕克对爱蜜莉雅的昵称"),
     Entry(name="普利斯提拉", ja="プリステラ", en="Priestella", aliases=("普利斯特拉",), note="水门都市"),
+    Entry(
+        name="亚奇",
+        ja="アーチ·エリオール",
+        en="Archi Elior",
+        cat="角色",
+        aliases=("亚齐",),
+        main=False,
+        note="2字双组展开会误伤（特雷西亚基本→亚基命中）；只走 guard 精确对",
+    ),
 ]
 
 RECORD_ONLY: list[Entry] = [
@@ -641,14 +650,6 @@ RECORD_ONLY: list[Entry] = [
         en="Colette",
         pattern="(?<!攻|利|摩)柯蕾特",
         ja="コレット",
-        cat="角色",
-        record_only=True,
-    ),
-    Entry(
-        name="亚齐",
-        en="Archi Elior",
-        pattern="(?<!多萝西|艾米莉|约书|贝|卡秋)亚齐",
-        ja="アーチ·エリオール",
         cat="角色",
         record_only=True,
     ),
