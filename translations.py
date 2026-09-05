@@ -314,7 +314,7 @@ ENTRIES: list[Entry] = [
     Entry(name="罗格蕾丝", en="Logres Hyatt"),
     Entry(name="玛卡利斯塔", en="Macallister Parkin"),
     Entry(name="维库塔", en="Viktor Orcos"),
-    Entry(name="姆斯朗", en="Minor Characters", cat="角色"),
+    Entry(name="慕斯兰", aliases=("姆斯朗",), note="慕斯兰·卡拉德"),
     Entry(name="鲁斯贝尔", ja="ルスベル·カラード", en="Lusbel Kallard", cat="角色"),
     Entry(
         name="基利安", ja="ギリアン·エンデュミオン", en="Gilian Endymion", cat="角色"
