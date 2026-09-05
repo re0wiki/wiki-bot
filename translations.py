@@ -437,10 +437,10 @@ ENTRIES: list[Entry] = [
     ),
     Entry(name="拉尔丰"),
     Entry(
-        name="视风的加护",
-        aliases=("风见的加护",),
-        main=False,
-        note="2字短名/特判，只走精确对不进主列表",
+        name="视风加护",
+        aliases=("风见的加护", "视风的加护"),
+        cat="术语",
+        note="库珥修的加护",
     ),
     Entry(
         name="阿内芙",
