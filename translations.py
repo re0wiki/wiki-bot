@@ -155,7 +155,7 @@ ENTRIES: list[Entry] = [
         ja="ベアトリス",
         en="Beatrice",
         cat="角色",
-        aliases=("贝阿托莉丝",),
+        aliases=("贝阿托莉丝", "贝翠丝"),
     ),
     Entry(name="米塞尔", cat="角色", aliases=("米捷尔",), note="米塞尔子爵"),
     Entry(name="约书亚", en="Joshua Juukulius"),
