@@ -616,6 +616,7 @@ ENTRIES: list[Entry] = [
     Entry(name="卡尔斯腾公爵领的战斗少女", aliases=("卡尔斯腾公爵领地的战乙女",), note="EX1 章名"),
     Entry(name="王族诱拐事件", aliases=("王族诱拐案",), note="vol16"),
     Entry(name="丽格蕾特", aliases=("利格雷特",), note="汉娜·丽格蕾特"),
+    Entry(name="汉赛尔和格莱特", aliases=("汉赛尔与格莱特",), note="vol26；格林童话《糖果屋》"),
     Entry(name="魔女因子", aliases=("大罪因子",), cat="术语"),
     Entry(name="克劳泽列", aliases=("克劳泽利亚",), note="术式 阿尔·克劳泽列"),
     Entry(name="库拉利斯特", aliases=("克劳利斯塔",), note="术式 阿尔·库拉利斯特"),
