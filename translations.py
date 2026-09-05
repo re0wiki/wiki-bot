@@ -216,7 +216,7 @@ ENTRIES: list[Entry] = [
         ja="レグルス·コルニアス",
         en="Regulus Corneas",
         cat="角色",
-        aliases=("雷古勒斯",),
+        aliases=("雷古勒斯", "雷格勒斯"),
         note="字序调换（格鲁/古勒）p2o 覆盖不了，走精确对",
     ),
     Entry(name="柯尼亚斯"),
