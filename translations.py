@@ -528,6 +528,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(name="贝亚子", aliases=("贝阿子", "碧翠子")),
     Entry(name="爱蜜莉雅炭", aliases=("爱蜜莉雅碳",), note="帕克对爱蜜莉雅的昵称"),
+    Entry(name="普利斯提拉", ja="プリステラ", en="Priestella", aliases=("普利斯特拉",), note="水门都市"),
 ]
 
 RECORD_ONLY: list[Entry] = [
