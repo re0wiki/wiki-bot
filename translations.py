@@ -112,7 +112,7 @@ ENTRIES: list[Entry] = [
     Entry(name="弗里格尔", aliases=("弗琉盖尔",), ja="フリューゲル", en="Flugel", cat="角色"),
     Entry(name="弗莱巴尔", en="Fribal van Astrea"),
     Entry(name="戴因", ja="ダイン", en="Dain", cat="角色"),
-    Entry(name="提姆兹", ja="テムズ·アストレア", en="Thames Astrea", cat="角色"),
+    Entry(name="特姆兹", aliases=("提姆兹",), main=False, note="特/兹 属大组，p2o 展开误伤 威尔海姆丝毫（海姆丝）", ja="テムズ·アストレア", en="Thames Astrea", cat="角色"),
     Entry(
         name="文森特",
         ja="ヴィンセント·ヴォラキア<br>ヴィンセント·アベルクス(假名)",
