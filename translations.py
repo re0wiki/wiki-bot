@@ -567,6 +567,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(name="迷尼亚", aliases=("米尼亚",), note="咒语后缀 X·迷尼亚（ミーニャ）"),
     Entry(name="卫兹礼", aliases=("威兹利",), note="托尔多·卫兹礼"),
+    Entry(name="葛兰希尔黛", aliases=("格兰希尔特",), note="艾尔莎·葛兰希尔黛；同名酒品牌"),
 ]
 
 RECORD_ONLY: list[Entry] = [
