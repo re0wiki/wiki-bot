@@ -527,6 +527,7 @@ ENTRIES: list[Entry] = [
         note="官方意译 戈尔德→金（英 Chisha Gold）",
     ),
     Entry(name="贝亚子", aliases=("贝阿子", "碧翠子")),
+    Entry(name="爱蜜莉雅炭", aliases=("爱蜜莉雅碳",), note="帕克对爱蜜莉雅的昵称"),
 ]
 
 RECORD_ONLY: list[Entry] = [
