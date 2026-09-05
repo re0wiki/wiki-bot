@@ -22,7 +22,6 @@ import regex as re
 
 import pywikibot as pwb
 from pywikibot import config
-from pywikibot.exceptions import InvalidTitleError
 from pywikibot.pagegenerators import GeneratorFactory
 from pywikibot.textlib import isDisabled
 from pywikibot.tools import first_lower, first_upper
@@ -31,6 +30,26 @@ SUMMARY = "机器人：修正重定向"
 
 # 与 jobs/starts.py 的 ns_more 同步（main/project/template/category/module/mediawiki）
 REDIRECT_NAMESPACES = (0, 4, 10, 14, 828, 8)
+
+
+def is_interwiki(site, title: str) -> bool:
+    """isInterwikiLink 的无网络替代：只比对第一个冒号前缀，不构造目标 Site。
+
+    site.isInterwikiLink 会为命中的跨站前缀构造目标 APISite，其 __init__
+    固定 login(cookie_only=True) 发 userinfo 请求——本站 interwikimap 有
+    135 个外站前缀（wikipedia/wp 等指向 en.wikipedia.org，2026-09-05 实测
+    墙内不可达，每轮运行触发 SSL 重试直至崩溃）。语义与 Link.parse_site
+    等价（同样只看第一个冒号前缀）。
+    """
+    t = title.lstrip(": ")
+    if ":" not in t:
+        return False
+    prefix = t[: t.index(":")].lower()
+    if site.namespaces.lookup_name(prefix):
+        return False
+    if prefix in site.family.langs:
+        return prefix != site.code
+    return prefix in {e["prefix"] for e in site.siteinfo["interwikimap"]}
 
 
 def normalize(title: str) -> str:
@@ -46,11 +65,8 @@ def extract_redirects(pages) -> dict[str, tuple[str, str | None]]:
         if not m:
             continue
         title, _, frag = m[1].partition("#")
-        try:
-            if page.site.isInterwikiLink(title):
-                continue  # 跨站重定向目标，不改写指向它的链接
-        except InvalidTitleError:
-            continue
+        if is_interwiki(page.site, title):
+            continue  # 跨站重定向目标，不改写指向它的链接
         raw[page.title()] = (normalize(title), frag or None)
     return raw
 
@@ -143,29 +159,24 @@ def rewrite_links(
     for m in link_re.finditer(text):
         newlink = None
         title = m["title"].strip()
-        if title and not isDisabled(text, m.start()):
-            try:
-                interwiki = site.isInterwikiLink(title)
-            except InvalidTitleError:
-                interwiki = True  # 无效标题跳过
-            if not interwiki:
-                had_colon = title.startswith(":")
-                if had_colon:
-                    title = title[1:].lstrip()
-                ns_prefix = title.split(":", 1)[0].lower() if ":" in title else None
-                if had_colon or ns_prefix not in skip_prefixes:
-                    hit = rmap.get(normalize(title))
-                    if hit:
-                        newlink = resolve_link(
-                            title,
-                            m["section"] or "",
-                            m["label"],
-                            m["trail"],
-                            *hit,
-                            site.linktrail(),
-                        )
-                        if newlink and had_colon:
-                            newlink = "[[:" + newlink[2:]
+        if title and not isDisabled(text, m.start()) and not is_interwiki(site, title):
+            had_colon = title.startswith(":")
+            if had_colon:
+                title = title[1:].lstrip()
+            ns_prefix = title.split(":", 1)[0].lower() if ":" in title else None
+            if had_colon or ns_prefix not in skip_prefixes:
+                hit = rmap.get(normalize(title))
+                if hit:
+                    newlink = resolve_link(
+                        title,
+                        m["section"] or "",
+                        m["label"],
+                        m["trail"],
+                        *hit,
+                        site.linktrail(),
+                    )
+                    if newlink and had_colon:
+                        newlink = "[[:" + newlink[2:]
         if newlink is None:
             continue
         out.append(text[curpos : m.start()])

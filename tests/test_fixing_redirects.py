@@ -1,22 +1,37 @@
 """src/scripts/re0_fixing_redirects.py 的纯函数测试（不触碰 wiki）。"""
 
+from typing import ClassVar
+
 from repo_loader import load_module
 
 fr = load_module("re0_fixing_redirects", "src/scripts/re0_fixing_redirects.py")
 
 
+class FakeNamespaces:
+    @staticmethod
+    def lookup_name(name):
+        return name in ("category", "分类", "file", "文件", "media") or None
+
+
+class FakeFamily:
+    langs: ClassVar[dict] = {"zh": None, "en": None, "de": None}
+
+
 class FakeSite:
-    """只提供 rewrite_links 需要的两个方法，不触网。"""
+    """只提供 rewrite_links/is_interwiki 需要的属性，不触网。"""
+
+    code = "zh"
+    namespaces = FakeNamespaces()
+    family = FakeFamily()
+    siteinfo: ClassVar[dict] = {
+        "interwikimap": [{"prefix": "wikipedia"}, {"prefix": "wp"}]
+    }
 
     def __init__(self, trail=""):
         self._trail = trail
 
     def linktrail(self):
         return self._trail
-
-    @staticmethod
-    def isInterwikiLink(title):
-        return title.split(":", 1)[0] in ("en", "de", "wikipedia")
 
 
 SITE = FakeSite()
@@ -58,6 +73,39 @@ def test_chain_first_fragment_wins():
 # region normalize
 def test_normalize():
     assert fr.normalize("_a_b_ ") == "A b"
+
+
+# endregion
+
+
+# region is_interwiki
+def test_is_interwiki_foreign_language():
+    assert fr.is_interwiki(SITE, "en:Foo") is True
+
+
+def test_is_interwiki_same_language_is_local():
+    assert fr.is_interwiki(SITE, "zh:Foo") is False
+
+
+def test_is_interwiki_interwiki_map_prefix():
+    assert fr.is_interwiki(SITE, "wikipedia:zh:Foo") is True
+    assert fr.is_interwiki(SITE, "wp:Foo") is True
+
+
+def test_is_interwiki_namespace_is_local():
+    assert fr.is_interwiki(SITE, "分类:Foo") is False
+
+
+def test_is_interwiki_pseudo_prefix_is_local():
+    assert fr.is_interwiki(SITE, "角色:Foo") is False
+
+
+def test_is_interwiki_plain_title():
+    assert fr.is_interwiki(SITE, "Foo") is False
+
+
+def test_is_interwiki_leading_colon():
+    assert fr.is_interwiki(SITE, ":en:Foo") is True
 
 
 # endregion
