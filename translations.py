@@ -401,7 +401,7 @@ ENTRIES: list[Entry] = [
         ja="フラム·レメンディス",
         cat="角色",
     ),
-    Entry(name="弗利艾", pattern="(?<!加)弗利艾", en="Fourier Lugunica"),
+    Entry(name="傅里叶", pattern="(?<!加)傅里叶", en="Fourier Lugunica", aliases=("弗利艾",)),
     Entry(name="拉塞尔", pattern="(?<!法)拉塞尔", en="Russell Fellow"),
     Entry(
         name="多尔肯",
