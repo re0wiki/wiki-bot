@@ -568,6 +568,12 @@ ENTRIES: list[Entry] = [
     Entry(name="迷尼亚", aliases=("米尼亚",), note="咒语后缀 X·迷尼亚（ミーニャ）"),
     Entry(name="卫兹礼", aliases=("威兹利",), note="托尔多·卫兹礼"),
     Entry(name="葛兰希尔黛", aliases=("格兰希尔特",), note="艾尔莎·葛兰希尔黛；同名酒品牌"),
+    Entry(
+        name="奥多",
+        aliases=("欧德",),
+        main=False,
+        note="奥多·拉格纳（Od Laguna）；欧德 是 欧德古勒斯 前缀，走 guard 精确对",
+    ),
 ]
 
 RECORD_ONLY: list[Entry] = [
