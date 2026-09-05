@@ -139,7 +139,7 @@ ENTRIES: list[Entry] = [
     Entry(name="波尔肯尼卡", ja="ボルカニカ", en="Volcanica", cat="角色"),
     Entry(name="泰玛艾", ja="テマエ", en="Temae", cat="角色"),
     Entry(
-        name="特蕾西亚",
+        name="特雷西亚",
         ja="テレシア·ヴァン·アストレア",
         en="Theresia van Astrea",
         cat="角色",
