@@ -9,11 +9,11 @@ mv = load_module("re0_move", "src/scripts/re0_move.py")
 
 def test_no_change_returns_none():
     """标题已是标准名（含繁体标准名不动标题的规则差异不在此层）。"""
-    assert mv.resolve_move("菜月·昴") == (None, None)
+    assert mv.resolve_move("菜月昴") == (None, None)
 
 
 def test_alias_normalizes_to_standard():
-    assert mv.resolve_move("菜月昴") == ("菜月·昴", None)
+    assert mv.resolve_move("菜月·昴") == ("菜月昴", None)
     assert mv.resolve_move("貝阿托莉絲") == ("碧翠丝", None)
 
 

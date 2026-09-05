@@ -362,7 +362,7 @@ ENTRIES: list[Entry] = [
     Entry(name="莱杰尔", ja="ライゼル", en="Reisel", cat="角色"),
     Entry(name="巴罗伊", ja="バルトロイ·フィッツ", en="Barthroy Fitts", cat="角色"),
     Entry(name="波多尔德"),
-    Entry(name="菜月·昴", en="Natsuki Subaru", pattern="菜月·?昴", cat="角色"),
+    Entry(name="菜月昴", en="Natsuki Subaru", pattern="菜月(·)?昴", cat="角色"),
     Entry(name="安娜塔西亚", pattern="安娜(斯)?塔西亚", en="Anastasia Hoshin"),
     Entry(name="培提奇乌斯", pattern="培提(尔)?奇乌?斯", en="Petelgeuse Romanée-Conti"),
     Entry(name="威尔海姆", pattern="威尔海(鲁)?姆", en="Wilhelm van Astrea"),
