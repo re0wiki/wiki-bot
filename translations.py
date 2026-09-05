@@ -273,7 +273,7 @@ ENTRIES: list[Entry] = [
     Entry(name="乔拉", en="Jorah Pendleton"),
     Entry(name="贝尔斯特兹", en="Berstetz Fondalfon"),
     Entry(name="塞丽娜", en="Serena Dracroy"),
-    Entry(name="卡秋娅", ja="カチュア·オーレリー", en="Katya Aurélie", cat="角色"),
+    Entry(name="卡楚娅", aliases=("卡秋娅",), ja="カチュア·オーレリー", en="Katya Aurélie", cat="角色"),
     Entry(
         name="法尔塞路", ja="ファルセイル·ルグニカ", en="Farsale Lugunica", cat="角色"
     ),
