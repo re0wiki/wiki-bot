@@ -347,7 +347,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(name="吉奥尼斯", ja="ジオニス·ルグニカ", en="Gionis Lugunica", cat="角色"),
     Entry(
-        name="兰德哈尔", ja="ランドハル·ルグニカ", en="Randohal Lugunica", cat="角色"
+        name="兰德哈鲁", ja="ランドハル·ルグニカ", en="Randohal Lugunica", cat="角色"
     ),
     Entry(name="杰比聂尔", ja="ザビーネル·ルグニカ", en="Zabinel Lugunica", cat="角色"),
     Entry(name="德莱森", ja="ドライゼン·ヴォラキア", en="Drizen Vollachia", cat="角色"),
