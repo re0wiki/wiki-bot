@@ -129,7 +129,7 @@ ENTRIES: list[Entry] = [
     Entry(
         name="格拉希丝", ja="グラシス·レメンディス", en="Grassis Remendis", cat="角色"
     ),
-    Entry(name="梅卡德", ja="メッカート·カルステン", en="Meckart Karsten", cat="角色"),
+    Entry(name="梅卡多", ja="メッカート·カルステン", en="Meckart Karsten", cat="角色"),
     Entry(name="梅娜", ja="メイーナ", en="Meina", cat="角色"),
     Entry(name="梅拉奎拉", en="Melakuera"),
     Entry(name="欧尔尼娅", en="Ornea Featherrun"),
