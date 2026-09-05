@@ -574,6 +574,7 @@ ENTRIES: list[Entry] = [
         main=False,
         note="奥多·拉格纳（Od Laguna）；欧德 是 欧德古勒斯 前缀，走 guard 精确对",
     ),
+    Entry(name="马斯卡莱德", aliases=("玛斯柯瑞德",), note="莉莉安娜·马斯卡莱德"),
 ]
 
 RECORD_ONLY: list[Entry] = [
