@@ -390,9 +390,9 @@ ENTRIES: list[Entry] = [
         cat="角色",
     ),
     Entry(
-        name="提修雅",
+        name="提修亚",
         en="Tishua Astrea",
-        pattern="(?<!帕)提修雅",
+        pattern="(?<!帕)提修亚",
         ja="ティシュア·アストレア",
         cat="角色",
     ),
