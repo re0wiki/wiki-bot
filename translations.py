@@ -559,6 +559,7 @@ ENTRIES: list[Entry] = [
         main=False,
         note="2字名模糊匹配全中普通词（皇帝那/不提那/贝蒂那/凯迪那）；只走 guard 精确对",
     ),
+    Entry(name="迷尼亚", aliases=("米尼亚",), note="咒语后缀 X·迷尼亚（ミーニャ）"),
     Entry(name="卫兹礼", aliases=("威兹利",), note="托尔多·卫兹礼"),
 ]
 
