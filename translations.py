@@ -163,7 +163,7 @@ ENTRIES: list[Entry] = [
     Entry(name="缇莉艾娜", ja="ティリエナ", en="Tiriena", cat="角色"),
     Entry(name="梅札斯"),
     Entry(name="罗姆爷", ja="バルガ·クロムウェル", en="Rom", cat="角色"),
-    Entry(name="艾佐", en="Ezzo Cadner"),
+    Entry(name="埃佐", en="Ezzo Cadner"),
     Entry(name="加德纳"),
     Entry(name="艾力欧尔大森林", en="Elior Forest"),
     Entry(name="艾姬多娜", ja="エキドナ", en="Echidna", cat="角色"),
