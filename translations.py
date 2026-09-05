@@ -243,7 +243,7 @@ ENTRIES: list[Entry] = [
     Entry(name="塞蕾丝缇雅", ja="ザーレスティア", en="Zarestia", cat="角色"),
     Entry(name="禁书与谜之精灵", en="Re:Zero Forbidden Book and the Mysterious Spirit"),
     Entry(name="弗洛普", ja="フロップ·オコーネル", en="Flop O'Connell", cat="角色"),
-    Entry(name="奥康奈尔"),
+    Entry(name="奥康奈尔", aliases=("欧克奈尔",), note="弗洛普/米蒂安·奥康奈尔"),
     Entry(name="劳安", en="Rowan Segmunt"),
     Entry(name="贾马尔", ja="ジャマル·オーレリー", en="Jamal Aurélie", cat="角色"),
     Entry(name="瓜拉尔", en="Guaral", cat="术语"),
