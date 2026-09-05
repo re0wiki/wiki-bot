@@ -172,7 +172,7 @@ ENTRIES: list[Entry] = [
     Entry(
         name="弗雷德莉卡", ja="フレデリカ·バウマン", en="Frederica Baumann", cat="角色"
     ),
-    Entry(name="鲍尔曼", pattern="鲍尔?曼"),
+    Entry(name="鲍曼", pattern="鲍(尔)?曼"),
     Entry(name="荒地的合辛", en="Alec Hoshin"),
     Entry(
         name="莉可莉丝", ja="リコリス·アンスリウム", en="Lycoris Anthurium", cat="角色"
