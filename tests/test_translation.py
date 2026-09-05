@@ -88,3 +88,50 @@ def test_nekoquote_aliases_normalize():
     assert normalize("貝亞子") == "贝亚子"
     assert normalize("记忆回廊") == "记忆的回廊"
     assert normalize("地狱狙击") == "地狱·狙击"
+
+
+translations = load_module("translations", "translations.py")
+ENTRIES = list(translations.ENTRIES)
+RECORD_ONLY = list(translations.RECORD_ONLY)
+
+
+def test_entries_no_duplicate_names():
+    dup = [k for k, v in Counter(e.name for e in ENTRIES).items() if v > 1]
+    assert not dup, f"ENTRIES 存在重名条目: {dup}"
+
+
+def test_record_only_disjoint_from_entries():
+    clash = {e.name for e in RECORD_ONLY} & {e.name for e in ENTRIES}
+    assert not clash, f"RECORD_ONLY 与 ENTRIES 撞名: {clash}"
+
+
+def test_aliases_no_collision():
+    """别名：不重复登记、不撞任何标准名、不撞 RECORD_ONLY。"""
+    names = {e.name for e in ENTRIES} | {e.name for e in RECORD_ONLY}
+    seen = {}
+    bad = []
+    for e in ENTRIES:
+        for a in e.aliases:
+            if a in names:
+                bad.append(f"{a}（{e.name} 的别名）撞标准名")
+            if a in seen:
+                bad.append(f"{a} 重复登记于 {seen[a]} 与 {e.name}")
+            seen[a] = e.name
+    assert not bad, bad
+
+
+def test_aliases_normalize_to_entry_name():
+    """别名经完整规则链必须归一到所属条目名（否则规则间互相覆盖）。"""
+    bad = [
+        (a, e.name, normalize(a))
+        for e in ENTRIES
+        for a in e.aliases
+        if normalize(a) != e.name
+    ]
+    assert not bad, f"以下别名未归一到条目名: {bad}"
+
+
+def test_all_entry_names_stable_under_full_rule_chain():
+    """所有条目名（含 main=False）在完整规则链下幂等。"""
+    bad = [(e.name, normalize(e.name)) for e in ENTRIES if normalize(e.name) != e.name]
+    assert not bad, f"以下条目名会被规则链二次改写: {bad}"
