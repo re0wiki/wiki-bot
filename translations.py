@@ -518,7 +518,7 @@ ENTRIES: list[Entry] = [
         aliases=("欧托",),
         note="托 属多字组，p2o 展开误伤 奥多/欧德 等",
     ),
-    Entry(name="舒尔特"),
+    Entry(name="修尔特"),
     Entry(name="基尔提", main=False, note="提 属多字组，p2o 展开误伤 基尔狄拉乌"),
     Entry(name="阿斯特雷亚"),
     Entry(
