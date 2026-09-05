@@ -44,7 +44,9 @@ def resolve_move(
     - (新标题, 原因)：需跳过（伪命名空间前缀变化 / 新标题含非法字符）。
       其余跳过条件（目标已存在）依赖 wiki，留在 MoveBot 里判断。
     """
-    new = t2s(old)  # 标题先归一简体再套规则：正文的繁体保留语义不适用于标题（标题惯例只认简体），且繁体标题可能是与日文原名同字的写法
+    new = t2s(
+        old
+    )  # 标题先归一简体再套规则：正文的繁体保留语义不适用于标题（标题惯例只认简体），且繁体标题可能是与日文原名同字的写法
     for pattern, name in rules:
         new = pattern.sub(lambda _, n=name: n, new)
     if new == t2s(old):  # 规则未命中：不做纯繁简移动
