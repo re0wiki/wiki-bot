@@ -9,12 +9,22 @@ mv = load_module("re0_move", "src/scripts/re0_move.py")
 
 def test_no_change_returns_none():
     """标题已是标准名（含繁体标准名不动标题的规则差异不在此层）。"""
-    assert mv.resolve_move("菜月·昴") == (None, None)
+    assert mv.resolve_move("菜月昴") == (None, None)
 
 
 def test_alias_normalizes_to_standard():
-    assert mv.resolve_move("菜月昴") == ("菜月·昴", None)
+    assert mv.resolve_move("菜月·昴") == ("菜月昴", None)
     assert mv.resolve_move("貝阿托莉絲") == ("碧翠丝", None)
+
+
+def test_traditional_title_presimplified_before_rules():
+    """繁体标题先归一简体再套规则：日文原名同字的繁体写法也能走到标准名。"""
+    assert mv.resolve_move("术语:王族誘拐案") == ("术语:王族诱拐事件", None)
+
+
+def test_no_rule_no_pure_variant_move():
+    """规则未命中时不做纯繁简移动（既有繁体标题保持原样）。"""
+    assert mv.resolve_move("小说:劍鬼戰歌") == (None, None)
 
 
 def test_rules_exclude_template_producing_entries():

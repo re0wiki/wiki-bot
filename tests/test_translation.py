@@ -86,7 +86,7 @@ def test_nekoquote_aliases_normalize():
     assert normalize("碧翠子") == "贝亚子"
     assert normalize("贝阿子") == "贝亚子"
     assert normalize("貝亞子") == "贝亚子"
-    assert normalize("记忆回廊") == "记忆的回廊"
+    assert normalize("记忆的回廊") == "记忆回廊"
     assert normalize("地狱狙击") == "地狱·狙击"
 
 
