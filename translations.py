@@ -72,7 +72,7 @@ SIMILAR_CHARS: tuple[str, ...] = (
 )
 
 ENTRIES: list[Entry] = [
-    Entry(name="丝碧卡", en="Natsuki Spica", aliases=("丝琵卡",)),
+    Entry(name="丝碧卡", en="Natsuki Spica", aliases=("丝琵卡", "斯皮卡")),
     Entry(name="亨克尔", en="Heinkel Astrea"),
     Entry(name="伽那库斯", cat="术语"),
     Entry(name="佛拉基亚", en="Vollachia Empire", cat="术语"),
@@ -224,7 +224,14 @@ ENTRIES: list[Entry] = [
     Entry(name="莉莉安娜", en="Liliana Masquerade"),
     Entry(name="莎克拉", ja="サクラ·エレメント", en="Sakura Element", cat="角色"),
     Entry(name="莎缇菈", ja="サテラ", en="Satella", cat="角色"),
-    Entry(name="莱伊", ja="ライ·バテンカイトス", en="Lye Batenkaitos", cat="角色"),
+    Entry(
+        name="莱伊",
+        pattern="莱伊(?!德)",
+        ja="ライ·バテンカイトス",
+        en="Lye Batenkaitos",
+        cat="角色",
+        note="(?!德) 防 雷伊德（雷德 台版译名）误改为 莱伊德",
+    ),
     Entry(name="莱普", en="Leip Barielle"),
     Entry(name="菜月菜穗子", en="Natsuki Naoko", aliases=("菜月·菜穗子",)),
     Entry(name="菜月贤一", en="Natsuki Kenichi", cat="角色", aliases=("菜月·贤一",)),
@@ -288,7 +295,7 @@ ENTRIES: list[Entry] = [
     Entry(name="丁赛尔", aliases=("汀泽尔", "霆杰尔"), note="加菲尔·丁赛尔"),
     Entry(name="奥斯洛", ja="オスロー·スーウェン", en="Oslo Suwen", cat="角色"),
     Entry(name="雷金", ja="レギン·スーウェン", en="Regin Suwen", cat="角色"),
-    Entry(name="科斯茨尔", en="Costuul", cat="术语"),
+    Entry(name="科斯茨尔", en="Costuul", cat="术语", aliases=("克斯泽尔",)),
     Entry(name="福尔图娜", ja="フォルトナ", en="Fortuna", cat="角色"),
     Entry(name="汤普森"),
     Entry(name="苏文"),
@@ -403,6 +410,13 @@ ENTRIES: list[Entry] = [
         en="Alviero Juukulius",
         cat="角色",
     ),
+    Entry(
+        name="阿尔迪巴兰",
+        ja="アルデバラン",
+        en="Aldebaran",
+        cat="角色",
+        aliases=("阿尔德巴兰",),
+    ),
     Entry(name="吉奥尼斯", ja="ジオニス·ルグニカ", en="Gionis Lugunica", cat="角色"),
     Entry(
         name="兰德哈鲁", ja="ランドハル·ルグニカ", en="Randohal Lugunica", cat="角色"
@@ -431,7 +445,15 @@ ENTRIES: list[Entry] = [
     ),
     Entry(name="加菲尔", pattern="加菲尔(?!丝|特|艾)", en="Garfiel Tinzel"),
     Entry(name="拉菲尔", pattern="拉菲尔(?!丝|特|艾)", en="Rafiel Thompson"),
-    Entry(name="利格鲁", pattern="(?<!阿)(?<!弗)利格鲁(?!卡|姆)", en="Natsuki Rigel"),
+    Entry(
+        name="雷吉尔",
+        en="Natsuki Rigel",
+        ja="ナツキ·リゲル",
+        cat="角色",
+        aliases=("利格鲁", "瑞吉尔"),
+        main=False,
+        note="IF 线 菜月·雷吉尔；利格鲁 为民间译名（guard 精确对），瑞吉尔 为台版译名",
+    ),
     Entry(name="佩特拉", pattern="佩特拉(?!其乌斯|姆)", en="Petra Leyte"),
     Entry(
         name="拉姆",
