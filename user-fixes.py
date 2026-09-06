@@ -560,10 +560,10 @@ _GUARDED_ALIASES = {
     "最优纪行",
     "王族诱拐案",
 }
-# Entry.aliases 生成精确对，繁体写法一并归一
+# Entry.aliases 生成精确对，繁体写法一并归一（RECORD_ONLY 的别名也生成：名字本身不归一，别名归一到它）
 translation_manual += [
     (a2, e.name)
-    for e in translations.ENTRIES
+    for e in itertools.chain(translations.ENTRIES, translations.RECORD_ONLY)
     for a in e.aliases
     if a not in _GUARDED_ALIASES
     for a2 in dict.fromkeys((a, s2t(a)))

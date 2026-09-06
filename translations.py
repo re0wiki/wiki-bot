@@ -766,7 +766,9 @@ RECORD_ONLY: list[Entry] = [
         pattern="(?<!格|芙|·)雷德",
         ja="レイド·アストレア",
         cat="角色",
+        aliases=("雷伊德",),
         record_only=True,
+        note="雷伊德 为台版译名；雷德 本身不归一（格莱德/芙蕾德 等他名子串风险）",
     ),
     Entry(
         name="卢安娜", pattern="(?<!莉)卢安娜", en="Louanna Astrea", record_only=True
