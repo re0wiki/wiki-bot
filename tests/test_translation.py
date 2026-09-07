@@ -121,6 +121,21 @@ def test_aliases_no_collision():
     assert not bad, bad
 
 
+def test_variant_annotations_valid():
+    """Variant 标注值域：source ∈ 官简/官繁/民间，part ∈ 名/姓/全名/空。"""
+    bad = []
+    for e in ENTRIES + RECORD_ONLY:
+        for a in e.aliases:
+            if not isinstance(a, translations.Variant):
+                bad.append(f"{e.name} 的别名 {a} 未用 Variant 标注")
+                continue
+            if a.source not in ("官简", "官繁", "民间"):
+                bad.append(f"{e.name} 的别名 {a.text} source={a.source!r}")
+            if a.part not in ("名", "姓", "全名", ""):
+                bad.append(f"{e.name} 的别名 {a.text} part={a.part!r}")
+    assert not bad, bad
+
+
 def test_aliases_normalize_to_entry_name():
     """别名经完整规则链必须归一到所属条目名（否则规则间互相覆盖）。"""
     bad = [
