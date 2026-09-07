@@ -435,11 +435,10 @@ ENTRIES: list[Entry] = [
     Entry(
         name="罗姆爷",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("罗姆", Source.OFFICIAL_HANT, Part.GIVEN),),
-        note="真名 巴尔加·克罗姆威尔 另记录，不归一",
-        ja="バルガ·クロムウェル",
+        ja="バルガ·クロムウェル／ロム爺",
         en="Rom",
         cat="角色",
+        note="称呼（ロム爺）；罗姆（ロム，台版 羅姆）是另一日文名，不互转，另记录",
     ),
     Entry(name="埃佐", source=Source.OFFICIAL_HANS, en="Ezzo Cadner"),
     Entry(name="加德纳", source=Source.FAN),
@@ -1796,6 +1795,15 @@ ENTRIES: list[Entry] = [
 ]
 
 RECORD_ONLY: list[Entry] = [
+    Entry(
+        name="罗姆",
+        source=Source.OFFICIAL_HANT,
+        ja="ロム",
+        en="Rom",
+        cat="角色",
+        record_only=True,
+        note="巴尔加·克罗姆威尔 的通称（ロム）；与 罗姆爷（ロム爺）不互转",
+    ),
     Entry(
         name="巴尔加",
         source=Source.OFFICIAL_HANS,
