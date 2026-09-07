@@ -1914,14 +1914,11 @@ RECORD_ONLY: list[Entry] = [
     Entry(
         name="克雷茵",
         source=Source.FAN,
-        aliases=(
-            V("克莱因", Source.OFFICIAL_HANT, Part.GIVEN),
-            V("克莱茵", Source.FAN),
-        ),
         ja="クライン·ユークリウス",
         en="Klein Juukulius",
         cat="角色",
         record_only=True,
+        note="台版译作 克萊因，与 克莱茵（クレイン·ドナヒュー）台版同名；不同角色不互转",
     ),
     Entry(name="亚雷", source=Source.FAN, record_only=True),
     Entry(
@@ -2084,6 +2081,16 @@ RECORD_ONLY: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         record_only=True,
         note="普莉希拉·跋利耶尔",
+    ),
+    Entry(
+        name="菲利克斯",
+        source=Source.OFFICIAL_HANS,
+        ja="フェリックス·アーガイル",
+        en="Felix Argyle",
+        cat="角色",
+        aliases=(V("菲利克丝", Source.FAN),),
+        record_only=True,
+        note="菲莉丝 真名；称呼与真名不互转（菲莉丝 不归一过来，这里也不归一过去）",
     ),
     Entry(
         name="阿盖尔",
