@@ -570,7 +570,9 @@ _GUARDED_ALIASES = {
     "王族诱拐案",
 }
 # Entry.aliases 生成精确对，繁体写法一并归一（RECORD_ONLY 的别名也生成：名字本身不归一，别名归一到它）
-translation_manual += [
+# 精确对在首尾各跑一遍：先行使别名不被模糊规则截胡成中间态；收尾兜底繁简混合文本
+# （名字规则把别名周围繁体字归一简体后，简体精确对才有机会命中）
+translation_pairs = [
     (a2, e.name)
     for e in itertools.chain(translations.ENTRIES, translations.RECORD_ONLY)
     for a in translations.alias_texts(e)
@@ -580,8 +582,10 @@ translation_manual += [
 
 user_fixes["translation"] = base | {
     "generator": generator_more,
-    "replacements": [(p2o(p), get_repl_func(p2n(p))) for p in translation_names]
-    + [(o, get_repl_func(n)) for o, n in translation_manual],
+    "replacements": [(o, get_repl_func(n)) for o, n in translation_pairs]
+    + [(p2o(p), get_repl_func(p2n(p))) for p in translation_names]
+    + [(o, get_repl_func(n)) for o, n in translation_manual]
+    + [(o, get_repl_func(n)) for o, n in translation_pairs],
 }
 _ = [
     e.pattern or e.name for e in translations.RECORD_ONLY

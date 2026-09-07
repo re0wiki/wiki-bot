@@ -22,14 +22,20 @@ from pywikibot.fixes import (
     t2s,  # ty: ignore[unresolved-import]
     translation_manual,  # ty: ignore[unresolved-import]
     translation_names,  # ty: ignore[unresolved-import]
+    translation_pairs,  # ty: ignore[unresolved-import]
 )
 from pywikibot.pagegenerators import GeneratorFactory
 
-RULES = [(re.compile(p2o(p), re.IGNORECASE), p2n(p)) for p in translation_names] + [
-    (re.compile(o, re.IGNORECASE), n)
-    for o, n in translation_manual
-    if "{{" not in n  # 产出模板调用的规则不能用于标题
-]
+RULES = (
+    [(re.compile(o, re.IGNORECASE), n) for o, n in translation_pairs]
+    + [(re.compile(p2o(p), re.IGNORECASE), p2n(p)) for p in translation_names]
+    + [
+        (re.compile(o, re.IGNORECASE), n)
+        for o, n in translation_manual
+        if "{{" not in n  # 产出模板调用的规则不能用于标题
+    ]
+    + [(re.compile(o, re.IGNORECASE), n) for o, n in translation_pairs]
+)
 ILLEGAL_TITLE_CHARS = re.compile(r"[#<>\[\]{}|]")
 
 
