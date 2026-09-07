@@ -1111,7 +1111,7 @@ RECORD_ONLY: list[Entry] = [
         ja="リアラ·トンプソン<br> リーシア·ティンゼル(舊名)",
         cat="角色",
         record_only=True,
-        note="旧名 莉希亚·霆杰尔 是不同日文名，另记录不互转",
+        note="婚前名 莉西亚·霆杰尔（不同日文名）另记录，不互转",
     ),
     Entry(
         name="赫莱茵",
@@ -1137,13 +1137,13 @@ RECORD_ONLY: list[Entry] = [
         record_only=True,
     ),
     Entry(
-        name="莉希亚",
+        name="莉西亚",
+        pattern="(?<!格)莉西亚",
+        en="Reala Thompson",
         cat="角色",
+        aliases=(V("莉希亚", "官繁"),),
         record_only=True,
-        note="莉亚拉 旧名 莉希亚·霆杰尔；不同日文名不互转",
-    ),
-    Entry(
-        name="莉西亚", pattern="(?<!格)莉西亚", en="Reala Thompson", record_only=True
+        note="莉亚拉 婚前名 莉西亚·霆杰尔（リーシア·ティンゼル，加菲尔与弗雷德莉卡之母）",
     ),
     Entry(name="卢西安", record_only=True),
     Entry(name="阿尔", ja="アルデバラン", en="Al", cat="角色", record_only=True),
