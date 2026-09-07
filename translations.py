@@ -986,12 +986,12 @@ RECORD_ONLY: list[Entry] = [
     ),
     Entry(
         name="莉亚拉",
-        aliases=("莉希亚",),
         en="Reala Thompson",
         pattern="(?<!艾米)莉亚拉",
         ja="リアラ·トンプソン<br> リーシア·ティンゼル(舊名)",
         cat="角色",
         record_only=True,
+        note="旧名 莉希亚·霆杰尔 是不同日文名，另记录不互转",
     ),
     Entry(
         name="赫莱茵",
@@ -1015,6 +1015,12 @@ RECORD_ONLY: list[Entry] = [
         pattern="(?<!帕|夏|拉|札|悟)库娜",
         en="Kuna Shudrak",
         record_only=True,
+    ),
+    Entry(
+        name="莉希亚",
+        cat="角色",
+        record_only=True,
+        note="莉亚拉 旧名 莉希亚·霆杰尔；不同日文名不互转",
     ),
     Entry(
         name="莉西亚", pattern="(?<!格)莉西亚", en="Reala Thompson", record_only=True
