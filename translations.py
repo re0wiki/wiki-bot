@@ -173,7 +173,7 @@ ENTRIES: list[Entry] = [
         name="格拉希丝", ja="グラシス·レメンディス", en="Grassis Remendis", cat="角色"
     ),
     Entry(name="梅卡多", ja="メッカート·カルステン", en="Meckart Karsten", cat="角色"),
-    Entry(name="梅娜", ja="メイーナ", en="Meina", cat="角色"),
+    Entry(name="梅娜", ja="メイーナ", en="Meina", cat="角色", aliases=("梅伊纳",)),
     Entry(name="梅拉奎拉", en="Melakuera"),
     Entry(name="欧尔尼娅", en="Ornea Featherrun"),
     Entry(name="欧米茄", ja="オメガ", en="Omega", cat="角色"),
@@ -219,7 +219,8 @@ ENTRIES: list[Entry] = [
     Entry(name="梅札斯"),
     Entry(
         name="罗姆爷",
-        aliases=("罗姆", "巴尔加"),
+        aliases=("罗姆",),
+        note="真名 巴尔加·克罗姆威尔 另记录，不归一",
         ja="バルガ·クロムウェル",
         en="Rom",
         cat="角色",
@@ -289,16 +290,26 @@ ENTRIES: list[Entry] = [
     Entry(name="阿尼茉尼", ja="アネモネ", en="Anemone", cat="角色"),
     Entry(name="阿拉姆村", en="Arlam Village"),
     Entry(
-        name="阿汉", aliases=("汉巴利",), ja="カンバリー", en="Camberley", cat="角色"
+        name="阿汉",
+        note="真名 汉巴力 另记录，不归一",
+        ja="カンバリー",
+        en="Camberley",
+        cat="角色",
     ),
     Entry(
         name="阿珍",
-        aliases=("拉珍斯",),
+        note="真名 拉珍斯 另记录，不归一",
         ja="ラチンス·ホフマン",
         en="Rachins Hoffman",
         cat="角色",
     ),
-    Entry(name="阿顿", aliases=("加斯顿",), ja="ガストン", en="Gaston", cat="角色"),
+    Entry(
+        name="阿顿",
+        note="真名 加斯顿 另记录，不归一",
+        ja="ガストン",
+        en="Gaston",
+        cat="角色",
+    ),
     Entry(
         name="雷格鲁斯",
         ja="レグルス·コルニアス",
@@ -567,7 +578,7 @@ ENTRIES: list[Entry] = [
         cat="角色",
         aliases=("多尔肯",),
     ),
-    Entry(name="伊娜", pattern="(?<!罗)伊娜"),
+    Entry(name="伊娜", pattern="(?<!罗)(?<!梅)伊娜"),
     Entry(
         name="潘多拉", en="Pandora", pattern="潘多拉(?!顿)", ja="パンドラ", cat="角色"
     ),
@@ -579,7 +590,14 @@ ENTRIES: list[Entry] = [
         cat="角色",
     ),
     Entry(name="里卡多", pattern="(?<!尤|德)里卡多", en="Ricardo Welkin"),
-    Entry(name="裘斯", pattern="(?<!梅)裘斯"),
+    Entry(
+        name="杰乌斯",
+        ja="ジュース",
+        en="Juice",
+        cat="角色",
+        aliases=("裘斯",),
+        note="培提奇乌斯 旧名；裘斯 为民间旧译，走 guard 精确对",
+    ),
     Entry(
         name="拉扎克", aliases=("拉札克",), pattern="(?<!米)拉扎克", en="Razak Gildark"
     ),
@@ -818,6 +836,36 @@ ENTRIES: list[Entry] = [
 
 RECORD_ONLY: list[Entry] = [
     Entry(
+        name="巴尔加",
+        en="Valga Cromwell",
+        cat="角色",
+        record_only=True,
+        note="罗姆爷 真名 巴尔加·克罗姆威尔；称呼与真名不互转",
+    ),
+    Entry(
+        name="加斯顿",
+        ja="ガストン",
+        en="Gaston",
+        cat="角色",
+        record_only=True,
+        note="阿顿 真名；称呼与真名不互转",
+    ),
+    Entry(
+        name="拉珍斯",
+        ja="ラジャンス",
+        en="Rajins",
+        cat="角色",
+        record_only=True,
+        note="阿珍 真名；称呼与真名不互转",
+    ),
+    Entry(
+        name="汉巴力",
+        cat="角色",
+        aliases=("汉巴利",),
+        record_only=True,
+        note="阿汉 真名（官简）；汉巴利 为台版写法",
+    ),
+    Entry(
         name="雷德",
         en="Reid Astrea",
         pattern="(?<!格|芙|·)雷德",
@@ -989,7 +1037,14 @@ RECORD_ONLY: list[Entry] = [
         record_only=True,
     ),
     Entry(name="奈基", en="Neiji Lockhart", record_only=True),
-    Entry(name="米尔多", ja="ミルド", en="Mild", cat="角色", record_only=True),
+    Entry(
+        name="米尔多",
+        ja="ミルド",
+        en="Mild",
+        cat="角色",
+        record_only=True,
+        note="台版 米爾德 与 米尔德 撞车，不归一",
+    ),
     Entry(name="泰戈", record_only=True, note="戈加斯·泰戈"),
     Entry(name="合辛", record_only=True, note="安娜塔西亚·合辛"),
     Entry(name="奥斯曼", record_only=True, note="迪克尔·奥斯曼"),
