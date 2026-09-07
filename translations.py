@@ -1255,6 +1255,7 @@ ENTRIES: list[Entry] = [
         name="芙拉姆",
         source=Source.OFFICIAL_HANT,
         en="Flam Remendis",
+        aliases=(V("弗洛姆", Source.FAN),),
         pattern="(?<!丢)芙拉姆",
         ja="フラム·レメンディス",
         cat="角色",
@@ -1526,6 +1527,7 @@ ENTRIES: list[Entry] = [
     Entry(
         name="奥尔菲",
         source=Source.OFFICIAL_HANS,
+        aliases=(V("欧菲尔", Source.FAN),),
         ja="オルフェ",
         en="Orphe",
         cat="角色",
@@ -1805,6 +1807,7 @@ RECORD_ONLY: list[Entry] = [
     Entry(
         name="加斯顿",
         source=Source.OFFICIAL_HANS,
+        aliases=(V("葛斯顿", Source.FAN),),
         ja="ガストン",
         en="Gaston",
         cat="角色",
@@ -1911,7 +1914,10 @@ RECORD_ONLY: list[Entry] = [
     Entry(
         name="克雷茵",
         source=Source.FAN,
-        aliases=(V("克莱因", Source.OFFICIAL_HANT, Part.GIVEN),),
+        aliases=(
+            V("克莱因", Source.OFFICIAL_HANT, Part.GIVEN),
+            V("克莱茵", Source.FAN),
+        ),
         ja="クライン·ユークリウス",
         en="Klein Juukulius",
         cat="角色",
