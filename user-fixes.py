@@ -573,7 +573,7 @@ _GUARDED_ALIASES = {
 translation_manual += [
     (a2, e.name)
     for e in itertools.chain(translations.ENTRIES, translations.RECORD_ONLY)
-    for a in e.aliases
+    for a in translations.alias_texts(e)
     if a not in _GUARDED_ALIASES
     for a2 in dict.fromkeys((a, s2t(a)))
 ]

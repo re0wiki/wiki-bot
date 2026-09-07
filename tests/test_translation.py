@@ -91,6 +91,7 @@ def test_nekoquote_aliases_normalize():
 
 
 translations = load_module("translations", "translations.py")
+alias_texts = translations.alias_texts
 ENTRIES = list(translations.ENTRIES)
 RECORD_ONLY = list(translations.RECORD_ONLY)
 
@@ -111,7 +112,7 @@ def test_aliases_no_collision():
     seen = {}
     bad = []
     for e in ENTRIES:
-        for a in e.aliases:
+        for a in alias_texts(e):
             if a in names:
                 bad.append(f"{a}（{e.name} 的别名）撞标准名")
             if a in seen:
@@ -125,7 +126,7 @@ def test_aliases_normalize_to_entry_name():
     bad = [
         (a, e.name, normalize(a))
         for e in ENTRIES
-        for a in e.aliases
+        for a in alias_texts(e)
         if normalize(a) != e.name
     ]
     assert not bad, f"以下别名未归一到条目名: {bad}"
