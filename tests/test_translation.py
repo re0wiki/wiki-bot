@@ -122,16 +122,16 @@ def test_aliases_no_collision():
 
 
 def test_variant_annotations_valid():
-    """Variant 标注值域：source ∈ 官简/官繁/民间，part ∈ 名/姓/全名/空。"""
+    """Variant 标注：source 必填且为 Source 枚举，part 为 Part 枚举或 None。"""
     bad = []
     for e in ENTRIES + RECORD_ONLY:
         for a in e.aliases:
             if not isinstance(a, translations.Variant):
                 bad.append(f"{e.name} 的别名 {a} 未用 Variant 标注")
                 continue
-            if a.source not in ("官简", "官繁", "民间"):
+            if not isinstance(a.source, translations.Source):
                 bad.append(f"{e.name} 的别名 {a.text} source={a.source!r}")
-            if a.part not in ("名", "姓", "全名", ""):
+            if a.part is not None and not isinstance(a.part, translations.Part):
                 bad.append(f"{e.name} 的别名 {a.text} part={a.part!r}")
     assert not bad, bad
 

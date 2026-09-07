@@ -8,13 +8,26 @@
 ja/en/cat 供 LLM 翻译参考（英翻中提取英文词即可定位译名）（re0-corpus 侧审查管线也读本文件），尽力填充、可空。
 """
 
+from enum import StrEnum
 from typing import NamedTuple
+
+
+class Source(StrEnum):
+    官简 = "官简"  # 官方简体中文（天闻角川）
+    官繁 = "官繁"  # 官方繁体中文（台版）
+    民间 = "民间"  # 民间译名
+
+
+class Part(StrEnum):
+    名 = "名"  # 名字段
+    姓 = "姓"  # 姓氏段
+    全名 = "全名"
 
 
 class Variant(NamedTuple):
     text: str
-    source: str = ""  # 官简/官繁/民间（空 = 待定）
-    part: str = ""  # 名/姓/全名（角色用；空 = 不适用）
+    source: Source
+    part: Part | None = None
 
 
 V = Variant
@@ -27,8 +40,8 @@ class Entry(NamedTuple):
     en: str = ""  # 英文名（en 站条目名）
     cat: str = ""  # 角色/术语/…（wiki 伪命名空间前缀）
     aliases: tuple[
-        Variant | str, ...
-    ] = ()  # 显式别名（组外异写；来源/段标注用 V("X", source, part)）
+        Variant, ...
+    ] = ()  # 显式别名（组外异写）：V(写法, Source.x[, Part.x])
     main: bool = True  # False = 不进 translation_names 主列表（2字短名等防误判），别名仍生成精确对
     record_only: bool = False  # 仅记录不替换
     note: str = ""
@@ -91,15 +104,17 @@ ENTRIES: list[Entry] = [
     Entry(
         name="丝碧卡",
         en="Natsuki Spica",
-        aliases=(V("丝琵卡", "官繁", "名"), V("斯皮卡", "民间")),
+        aliases=(V("丝琵卡", Source.官繁, Part.名), V("斯皮卡", Source.民间)),
     ),
-    Entry(name="亨克尔", aliases=(V("海因格", "官繁", "名"),), en="Heinkel Astrea"),
+    Entry(
+        name="亨克尔", aliases=(V("海因格", Source.官繁, Part.名),), en="Heinkel Astrea"
+    ),
     Entry(name="伽那库斯", cat="术语"),
     Entry(name="佛拉基亚", en="Vollachia Empire", cat="术语"),
     Entry(name="库林德", ja="クリンド", en="Clind", cat="角色"),
     Entry(
         name="历布莱",
-        aliases=(V("利布雷", "官繁", "名"),),
+        aliases=(V("利布雷", Source.官繁, Part.名),),
         ja="リブレ·フエルミ",
         en="Libre Fermi",
         cat="角色",
@@ -109,7 +124,7 @@ ENTRIES: list[Entry] = [
     Entry(name="卡吉雷斯", en="Casilles Astrea"),
     Entry(
         name="卡尔朗",
-        aliases=(V("卡尔兰", "民间"),),
+        aliases=(V("卡尔兰", Source.民间),),
         ja="カルラン·アストレア",
         en="Carlan Astrea",
         cat="角色",
@@ -117,24 +132,32 @@ ENTRIES: list[Entry] = [
     Entry(name="卡尔斯腾"),
     Entry(name="卡德蒙", en="Kadomon Risch"),
     Entry(name="卡拉拉基", en="Kararagi", cat="术语"),
-    Entry(name="卡什采尔平原", aliases=(V("卡斯图鲁平原", "民间"),)),
+    Entry(name="卡什采尔平原", aliases=(V("卡斯图鲁平原", Source.民间),)),
     Entry(
         name="卡罗尔",
         en="Carol Remendis",
-        aliases=(V("卡萝尔", "民间"), V("卡萝", "官繁", "名")),
+        aliases=(V("卡萝尔", Source.民间), V("卡萝", Source.官繁, Part.名)),
     ),
     Entry(name="卡米拉", ja="カーミラ", en="Carmilla", cat="角色"),
     Entry(name="古斯提克", en="Gusteko", cat="术语"),
-    Entry(name="斯特莱德", en="Stride Vollachia", aliases=(V("史泰德", "官繁", "名"),)),
+    Entry(
+        name="斯特莱德",
+        en="Stride Vollachia",
+        aliases=(V("史泰德", Source.官繁, Part.名),),
+    ),
     Entry(name="塞西鲁斯", ja="セシルス·セグムント", en="Cecilus Segmunt", cat="角色"),
-    Entry(name="塞格蒙德", aliases=(V("塞格姆多", "民间"),)),
+    Entry(name="塞格蒙德", aliases=(V("塞格姆多", Source.民间),)),
     Entry(name="夏乌拉", ja="シャウラ", en="Shaula", cat="角色"),
     Entry(name="夏克纳尔", ja="シャクナール", en="Shaknar", cat="角色"),
     Entry(name="多鲁特洛", ja="ドルテロ·アムル", en="Doltero Amule", cat="角色"),
-    Entry(name="奇力塔卡", aliases=(V("奇利塔卡", "官繁", "名"),), en="Kiritaka Muse"),
+    Entry(
+        name="奇力塔卡",
+        aliases=(V("奇利塔卡", Source.官繁, Part.名),),
+        en="Kiritaka Muse",
+    ),
     Entry(
         name="安妮罗洁",
-        aliases=(V("安妮罗泽", "民间"),),
+        aliases=(V("安妮罗泽", Source.民间),),
         ja="アンネローゼ·ミロード",
         en="Annerose Miload",
         cat="角色",
@@ -147,7 +170,7 @@ ENTRIES: list[Entry] = [
     Entry(name="帕特拉修", en="Patrasche"),
     Entry(
         name="库乌德",
-        aliases=(V("康吾德", "官繁", "名"),),
+        aliases=(V("康吾德", Source.官繁, Part.名),),
         ja="コンウッド·メラハウ",
         en="Conwood Melahau",
         cat="角色",
@@ -157,7 +180,7 @@ ENTRIES: list[Entry] = [
     Entry(name="库鲁刚", ja="クルガン", en="Kurgan", cat="角色"),
     Entry(
         name="弗里格尔",
-        aliases=(V("弗琉盖尔", "民间"), V("富鲁盖尔", "官繁", "名")),
+        aliases=(V("弗琉盖尔", Source.民间), V("富鲁盖尔", Source.官繁, Part.名)),
         ja="フリューゲル",
         en="Flugel",
         cat="角色",
@@ -165,14 +188,14 @@ ENTRIES: list[Entry] = [
     Entry(name="弗莱巴尔", en="Fribal van Astrea"),
     Entry(
         name="戴因",
-        aliases=(V("岱因", "官繁", "名"),),
+        aliases=(V("岱因", Source.官繁, Part.名),),
         ja="ダイン",
         en="Dain",
         cat="角色",
     ),
     Entry(
         name="特姆兹",
-        aliases=(V("提姆兹", "官繁", "名"),),
+        aliases=(V("提姆兹", Source.官繁, Part.名),),
         main=False,
         note="特/兹 属大组，p2o 展开误伤 威尔海姆丝毫（海姆丝）",
         ja="テムズ·アストレア",
@@ -181,14 +204,14 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         name="文森特",
-        aliases=(V("文森", "官繁", "名"),),
+        aliases=(V("文森", Source.官繁, Part.名),),
         ja="ヴィンセント·ヴォラキア<br>ヴィンセント·アベルクス(假名)",
         en="Vincent Vollachia",
         cat="角色",
     ),
     Entry(
         name="斯宾克斯",
-        aliases=(V("斯芬克丝", "民间"), V("史芬克丝", "官繁", "名")),
+        aliases=(V("斯芬克丝", Source.民间), V("史芬克丝", Source.官繁, Part.名)),
         ja="スピンクス",
         en="Sphinx",
         cat="角色",
@@ -197,7 +220,9 @@ ENTRIES: list[Entry] = [
     Entry(name="普莉希拉", en="Priscilla Barielle"),
     Entry(name="普莉斯卡"),
     Entry(
-        name="李凯尔特", aliases=(V("里肯鲁多", "官繁", "名"),), en="Rickert Hoffman"
+        name="李凯尔特",
+        aliases=(V("里肯鲁多", Source.官繁, Part.名),),
+        en="Rickert Hoffman",
     ),
     Entry(name="查普", ja="チャップ", en="Chap", cat="角色"),
     Entry(name="格拉姆达特", en="Gramdart Holstoy"),
@@ -210,7 +235,7 @@ ENTRIES: list[Entry] = [
         ja="メイーナ",
         en="Meina",
         cat="角色",
-        aliases=(V("梅伊纳", "官繁", "名"),),
+        aliases=(V("梅伊纳", Source.官繁, Part.名),),
     ),
     Entry(name="梅拉奎拉", en="Melakuera"),
     Entry(name="欧尔尼娅", en="Ornea Featherrun"),
@@ -229,7 +254,7 @@ ENTRIES: list[Entry] = [
     Entry(name="琉兹", en="Ryuzu Meyer (disambiguation)"),
     Entry(
         name="琉加",
-        aliases=(V("榴卡", "官繁", "名"),),
+        aliases=(V("榴卡", Source.官繁, Part.名),),
         ja="リュカ",
         en="Lucas",
         cat="角色",
@@ -237,14 +262,14 @@ ENTRIES: list[Entry] = [
     Entry(name="璞可", ja="プーカ", en="Pooka", cat="角色"),
     Entry(
         name="皮博特",
-        aliases=(V("皮波特", "官繁", "名"),),
+        aliases=(V("皮波特", Source.官繁, Part.名),),
         ja="ピボット·アーナンシー",
         en="Pivot Arnancy",
         cat="角色",
     ),
     Entry(
         name="盖因",
-        aliases=(V("凯因", "官繁", "名"),),
+        aliases=(V("凯因", Source.官繁, Part.名),),
         ja="カイン",
         en="Cain",
         cat="角色",
@@ -254,14 +279,19 @@ ENTRIES: list[Entry] = [
         ja="ベアトリス",
         en="Beatrice",
         cat="角色",
-        aliases=(V("贝阿托莉丝", "民间"), V("贝翠丝", "民间")),
+        aliases=(V("贝阿托莉丝", Source.民间), V("贝翠丝", Source.民间)),
     ),
-    Entry(name="米塞尔", cat="角色", aliases=(V("米捷尔", "民间"),), note="米塞尔子爵"),
+    Entry(
+        name="米塞尔",
+        cat="角色",
+        aliases=(V("米捷尔", Source.民间),),
+        note="米塞尔子爵",
+    ),
     Entry(name="约书亚", en="Joshua Juukulius"),
     Entry(name="提丰", ja="テュフォン", en="Typhon", cat="角色"),
     Entry(
         name="梯利爱娜",
-        aliases=(V("缇莉艾娜", "官繁", "名"),),
+        aliases=(V("缇莉艾娜", Source.官繁, Part.名),),
         ja="ティリエナ",
         en="Tiriena",
         cat="角色",
@@ -269,7 +299,7 @@ ENTRIES: list[Entry] = [
     Entry(name="梅札斯"),
     Entry(
         name="罗姆爷",
-        aliases=(V("罗姆", "官繁", "名"),),
+        aliases=(V("罗姆", Source.官繁, Part.名),),
         note="真名 巴尔加·克罗姆威尔 另记录，不归一",
         ja="バルガ·クロムウェル",
         en="Rom",
@@ -280,7 +310,7 @@ ENTRIES: list[Entry] = [
     Entry(name="艾力欧尔大森林", en="Elior Forest"),
     Entry(name="艾姬多娜", ja="エキドナ", en="Echidna", cat="角色"),
     Entry(name="爱蜜"),
-    Entry(name="艾黑亚湿地", aliases=(V("艾西亚湿地", "民间"),)),
+    Entry(name="艾黑亚湿地", aliases=(V("艾西亚湿地", Source.民间),)),
     Entry(
         name="弗雷德莉卡", ja="フレデリカ·バウマン", en="Frederica Baumann", cat="角色"
     ),
@@ -300,17 +330,17 @@ ENTRIES: list[Entry] = [
         cat="角色",
         note="(?!德) 防 雷伊德（雷德 台版译名）误改为 莱伊德",
     ),
-    Entry(name="莱普", aliases=(V("莱夫", "官繁", "名"),), en="Leip Barielle"),
+    Entry(name="莱普", aliases=(V("莱夫", Source.官繁, Part.名),), en="Leip Barielle"),
     Entry(
         name="菜月菜穗子",
         en="Natsuki Naoko",
-        aliases=(V("菜月·菜穗子", "民间", "全名"),),
+        aliases=(V("菜月·菜穗子", Source.民间, Part.全名),),
     ),
     Entry(
         name="菜月贤一",
         en="Natsuki Kenichi",
         cat="角色",
-        aliases=(V("菜月·贤一", "民间", "全名"),),
+        aliases=(V("菜月·贤一", Source.民间, Part.全名),),
     ),
     Entry(name="菲莉丝", ja="フェリックス·アーガイル", en="Ferris", cat="角色"),
     Entry(name="萨尔姆", ja="サルム·プリスティス", en="Salum Pristis", cat="角色"),
@@ -329,7 +359,7 @@ ENTRIES: list[Entry] = [
         ja="ギャレク·トンプソン",
         en="Garek Thompson",
         cat="角色",
-        aliases=(V("贾雷克", "官繁", "名"),),
+        aliases=(V("贾雷克", Source.官繁, Part.名),),
         main=False,
         note="p2o 展开误伤 外加雷格鲁斯（加雷格）；只走精确对",
     ),
@@ -339,12 +369,12 @@ ENTRIES: list[Entry] = [
         ja="ヘクトール",
         en="Hector",
         cat="角色",
-        aliases=(V("赫克特", "官繁", "名"),),
+        aliases=(V("赫克特", Source.官繁, Part.名),),
     ),
     Entry(name="赫罗西欧", en="Holosseo Featherrun"),
     Entry(
         name="赫鲁贝尔",
-        aliases=(V("哈利贝尔", "官繁", "名"),),
+        aliases=(V("哈利贝尔", Source.官繁, Part.名),),
         ja="ハリベル",
         en="Halibel",
         cat="角色",
@@ -382,10 +412,10 @@ ENTRIES: list[Entry] = [
         ja="レグルス·コルニアス",
         en="Regulus Corneas",
         cat="角色",
-        aliases=(V("雷古勒斯", "官繁", "名"), V("雷格勒斯", "民间")),
+        aliases=(V("雷古勒斯", Source.官繁, Part.名), V("雷格勒斯", Source.民间)),
         note="字序调换（格鲁/古勒）p2o 覆盖不了，走精确对",
     ),
-    Entry(name="科尼亚斯", aliases=(V("柯尔尼亚斯", "民间"),)),
+    Entry(name="科尼亚斯", aliases=(V("柯尔尼亚斯", Source.民间),)),
     Entry(name="鲁伊", en="Rui Arneb"),
     Entry(name="卢克尼卡", en="Kingdom of Lugunica", cat="术语"),
     Entry(name="马可仕", en="Marcos Gildark"),
@@ -399,28 +429,32 @@ ENTRIES: list[Entry] = [
     Entry(name="埃尔纱幕"),
     Entry(
         name="丁赛尔",
-        aliases=(V("汀泽尔", "民间"), V("霆杰尔", "民间")),
+        aliases=(V("汀泽尔", Source.民间), V("霆杰尔", Source.民间)),
         note="加菲尔·丁赛尔",
     ),
     Entry(name="奥斯洛", ja="オスロー·スーウェン", en="Oslo Suwen", cat="角色"),
     Entry(name="雷金", ja="レギン·スーウェン", en="Regin Suwen", cat="角色"),
-    Entry(name="科斯茨尔", en="Costuul", cat="术语", aliases=(V("克斯泽尔", "民间"),)),
+    Entry(
+        name="科斯茨尔", en="Costuul", cat="术语", aliases=(V("克斯泽尔", Source.民间),)
+    ),
     Entry(name="福尔图娜", ja="フォルトナ", en="Fortuna", cat="角色"),
     Entry(name="汤普森"),
-    Entry(name="苏文", aliases=(V("思文", "民间"),)),
+    Entry(name="苏文", aliases=(V("思文", Source.民间),)),
     Entry(name="佳莉华", ja="カリファ", en="Kalifa", cat="角色"),
     Entry(name="伊莉雅", ja="イリア", en="Ilya", cat="角色"),
     Entry(name="塞蕾丝缇雅", ja="ザーレスティア", en="Zarestia", cat="角色"),
     Entry(name="禁书与谜之精灵", en="Re:Zero Forbidden Book and the Mysterious Spirit"),
     Entry(
         name="弗洛普",
-        aliases=(V("浮洛普", "官繁", "名"),),
+        aliases=(V("浮洛普", Source.官繁, Part.名),),
         ja="フロップ·オコーネル",
         en="Flop O'Connell",
         cat="角色",
     ),
     Entry(
-        name="奥康奈尔", aliases=(V("欧克奈尔", "民间"),), note="弗洛普/米蒂安·奥康奈尔"
+        name="奥康奈尔",
+        aliases=(V("欧克奈尔", Source.民间),),
+        note="弗洛普/米蒂安·奥康奈尔",
     ),
     Entry(name="劳安", en="Rowan Segmunt"),
     Entry(name="贾马尔", ja="ジャマル·オーレリー", en="Jamal Aurélie", cat="角色"),
@@ -428,32 +462,42 @@ ENTRIES: list[Entry] = [
     Entry(name="巴德哈姆"),
     Entry(name="托斯卡", en="Toska Astrea"),
     Entry(name="拉米亚", ja="ラミア·ゴドウィン", en="Lamia Godwin", cat="角色"),
-    Entry(name="弗兰德斯", en="Flanders", aliases=(V("芙兰达兹", "民间"),)),
+    Entry(name="弗兰德斯", en="Flanders", aliases=(V("芙兰达兹", Source.民间),)),
     Entry(
-        name="米杰尔达", aliases=(V("米杰耳怛", "官繁", "名"),), en="Mizelda Shudrak"
+        name="米杰尔达",
+        aliases=(V("米杰耳怛", Source.官繁, Part.名),),
+        en="Mizelda Shudrak",
     ),
-    Entry(name="修德拉格", aliases=(V("貅德拉格", "民间"),)),
-    Entry(name="塔里塔", aliases=(V("塔立塔", "官繁", "名"),), en="Taritta Shudrak"),
+    Entry(name="修德拉格", aliases=(V("貅德拉格", Source.民间),)),
+    Entry(
+        name="塔里塔",
+        aliases=(V("塔立塔", Source.官繁, Part.名),),
+        en="Taritta Shudrak",
+    ),
     Entry(
         name="乌塔卡塔",
         ja="ウタカタ·シュドラク",
         en="Utakata Shudrak",
         cat="角色",
-        aliases=(V("乌卡塔卡", "民间"), V("巫它卡它", "官繁", "名")),
+        aliases=(V("乌卡塔卡", Source.民间), V("巫它卡它", Source.官繁, Part.名)),
     ),
     Entry(name="迪克尔", en="Zikr Osman"),
-    Entry(name="高朗", aliases=(V("高兰", "官繁", "名"),), en="Gaoran Peitiet"),
+    Entry(name="高朗", aliases=(V("高兰", Source.官繁, Part.名),), en="Gaoran Peitiet"),
     Entry(name="梅琳达", en="Melinda"),
     Entry(name="亚历克", ja="アレク·ホーシン", en="Alec Hoshin", cat="角色"),
-    Entry(name="尤尔娜", aliases=(V("夜鸣", "官繁", "名"),), en="Yorna Mishigure"),
-    Entry(name="米西格雷", aliases=(V("魅时雨", "民间"),)),
+    Entry(
+        name="尤尔娜", aliases=(V("夜鸣", Source.官繁, Part.名),), en="Yorna Mishigure"
+    ),
+    Entry(name="米西格雷", aliases=(V("魅时雨", Source.民间),)),
     Entry(name="古斯塔夫", ja="グスタフ·モレロ", en="Gustav Morello", cat="角色"),
-    Entry(name="乔拉", aliases=(V("裘拉", "官繁", "名"),), en="Jorah Pendleton"),
+    Entry(
+        name="乔拉", aliases=(V("裘拉", Source.官繁, Part.名),), en="Jorah Pendleton"
+    ),
     Entry(name="贝尔斯特兹", en="Berstetz Fondalfon"),
     Entry(name="塞丽娜", en="Serena Dracroy"),
     Entry(
         name="卡楚娅",
-        aliases=(V("卡秋娅", "民间"),),
+        aliases=(V("卡秋娅", Source.民间),),
         ja="カチュア·オーレリー",
         en="Katya Aurélie",
         cat="角色",
@@ -463,16 +507,16 @@ ENTRIES: list[Entry] = [
         ja="ファルセイル·ルグニカ",
         en="Farsale Lugunica",
         cat="角色",
-        aliases=(V("法赛鲁", "官繁", "名"),),
+        aliases=(V("法赛鲁", Source.官繁, Part.名),),
     ),
     Entry(name="奇夏", en="Chisha Gold"),
-    Entry(name="秀佐", aliases=(V("沙助", "官繁", "名"),), en="Shasuke"),
+    Entry(name="秀佐", aliases=(V("沙助", Source.官繁, Part.名),), en="Shasuke"),
     Entry(name="戴纳斯", ja="ダイナス·トラサルディ", en="Dynas Trussardi", cat="角色"),
     Entry(name="巴鲁罗伊", en="Balleroy Temeglyph"),
     Entry(name="蒙哥罗", en="Moguro Hagane"),
     Entry(name="哈格奈"),
     Entry(name="古尔比", en="Groovy Gumlet"),
-    Entry(name="加姆莱特", aliases=(V("格姆雷特", "民间"),)),
+    Entry(name="加姆莱特", aliases=(V("格姆雷特", Source.民间),)),
     Entry(name="罗德利格斯", en="Rodriguez"),
     Entry(name="塞尔连"),
     Entry(
@@ -490,25 +534,31 @@ ENTRIES: list[Entry] = [
     Entry(
         name="丹克肯",
         pattern="丹克(尔)?肯",
-        aliases=(V("邓克尔肯", "民间"), V("丹特肯", "民间")),
+        aliases=(V("邓克尔肯", Source.民间), V("丹特肯", Source.民间)),
         note="奥尔巴特·丹克肯",
     ),
     Entry(name="卡夫马", en="Kafma Irulux"),
-    Entry(name="伊鲁鲁克斯", aliases=(V("依鲁鲁库斯", "民间"),), pattern="伊鲁鲁?克斯"),
+    Entry(
+        name="伊鲁鲁克斯",
+        aliases=(V("依鲁鲁库斯", Source.民间),),
+        pattern="伊鲁鲁?克斯",
+    ),
     Entry(
         name="塞尔菲苏",
-        aliases=(V("萨菲斯", "官繁", "名"),),
+        aliases=(V("萨菲斯", Source.官繁, Part.名),),
         ja="サーフィス",
         en="Safis",
         cat="角色",
     ),
-    Entry(name="瓦尔格伦", aliases=(V("瓦尔葛兰", "官繁", "名"),), en="Valgren"),
+    Entry(
+        name="瓦尔格伦", aliases=(V("瓦尔葛兰", Source.官繁, Part.名),), en="Valgren"
+    ),
     Entry(
         name="托尔多",
         ja="トルタ·ウィズリー",
         en="Tholter Weasily",
         cat="角色",
-        aliases=(V("托尔塔", "官繁", "名"),),
+        aliases=(V("托尔塔", Source.官繁, Part.名),),
         main=False,
         note="托/多 同属特组，p2o 展开会命中 哈鲁特/多尔德 等大量他名；只走精确对",
     ),
@@ -523,7 +573,7 @@ ENTRIES: list[Entry] = [
     Entry(name="维库塔", en="Viktor Orcos"),
     Entry(
         name="慕斯兰",
-        aliases=(V("姆斯朗", "民间"), V("穆斯兰", "民间")),
+        aliases=(V("姆斯朗", Source.民间), V("穆斯兰", Source.民间)),
         note="慕斯兰·卡拉德",
     ),
     Entry(name="路斯贝尔", ja="ルスベル·カラード", en="Lusbel Kallard", cat="角色"),
@@ -534,11 +584,13 @@ ENTRIES: list[Entry] = [
     Entry(name="荷奈特", ja="ホーネット", en="Hornet", cat="角色"),
     Entry(name="伊德拉", ja="イドラ·ミサンガ", en="Idra Missanga", cat="角色"),
     Entry(
-        name="玛里乌里", aliases=(V("马李巫李", "官繁", "名"),), en="Mariuli Shudrak"
+        name="玛里乌里",
+        aliases=(V("马李巫李", Source.官繁, Part.名),),
+        en="Mariuli Shudrak",
     ),
     Entry(
         name="马泽里安",
-        aliases=(V("马杰朗", "官繁", "名"),),
+        aliases=(V("马杰朗", Source.官繁, Part.名),),
         ja="マゼラン·スーウェン",
         en="Mazeran Suwen",
         cat="角色",
@@ -547,7 +599,7 @@ ENTRIES: list[Entry] = [
     Entry(name="雅克托尔", ja="ヤクトル·スーウェン", en="Yaktol Suwen", cat="角色"),
     Entry(
         name="阿尔维里奥",
-        aliases=(V("亚尔维罗", "官繁", "名"),),
+        aliases=(V("亚尔维罗", Source.官繁, Part.名),),
         ja="アルビエロ·ユークリウス",
         en="Alviero Juukulius",
         cat="角色",
@@ -557,7 +609,7 @@ ENTRIES: list[Entry] = [
         ja="アルデバラン",
         en="Aldebaran",
         cat="角色",
-        aliases=(V("阿尔德巴兰", "民间"),),
+        aliases=(V("阿尔德巴兰", Source.民间),),
     ),
     Entry(name="吉奥尼斯", ja="ジオニス·ルグニカ", en="Gionis Lugunica", cat="角色"),
     Entry(
@@ -569,14 +621,14 @@ ENTRIES: list[Entry] = [
         name="卡欧斯福莱姆",
         en="Chaosflame",
         cat="术语",
-        aliases=(V("混沌之炎", "民间"),),
+        aliases=(V("混沌之炎", Source.民间),),
     ),
     Entry(
         name="梅佐雷亚",
         ja="メゾレイア",
         en="Mezoreia",
         cat="角色",
-        aliases=(V("美佐里亚", "民间"),),
+        aliases=(V("美佐里亚", Source.民间),),
     ),
     Entry(name="莱杰尔", ja="ライゼル", en="Reisel", cat="角色"),
     Entry(name="巴罗伊", ja="バルトロイ·フィッツ", en="Barthroy Fitts", cat="角色"),
@@ -585,7 +637,7 @@ ENTRIES: list[Entry] = [
     Entry(name="安娜塔西亚", pattern="安娜(斯)?塔西亚", en="Anastasia Hoshin"),
     Entry(
         name="培提奇乌斯",
-        aliases=(V("贝特鲁吉乌斯", "官繁", "名"),),
+        aliases=(V("贝特鲁吉乌斯", Source.官繁, Part.名),),
         pattern="培提(尔)?奇乌?斯",
         en="Petelgeuse Romanée-Conti",
     ),
@@ -602,7 +654,7 @@ ENTRIES: list[Entry] = [
         en="Natsuki Rigel",
         ja="ナツキ·リゲル",
         cat="角色",
-        aliases=(V("利格鲁", "民间"), V("瑞吉尔", "民间")),
+        aliases=(V("利格鲁", Source.民间), V("瑞吉尔", Source.民间)),
         main=False,
         note="IF 线 菜月·雷吉尔；利格鲁 为民间译名（guard 精确对），瑞吉尔 为台版译名",
     ),
@@ -630,7 +682,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         name="凯迪",
-        aliases=(V("凯地", "官繁", "名"),),
+        aliases=(V("凯地", Source.官繁, Part.名),),
         en="Ketty Muttart",
         pattern="凯迪(?!尔|斯)",
         ja="ケティ·ムッタート",
@@ -657,7 +709,7 @@ ENTRIES: list[Entry] = [
         name="傅里叶",
         pattern="(?<!加)傅里叶",
         en="Fourier Lugunica",
-        aliases=(V("弗利艾", "民间"), V("弗利耶", "官繁", "名")),
+        aliases=(V("弗利艾", Source.民间), V("弗利耶", Source.官繁, Part.名)),
     ),
     Entry(name="拉塞尔", pattern="(?<!法)拉塞尔", en="Russell Fellow"),
     Entry(
@@ -666,7 +718,7 @@ ENTRIES: list[Entry] = [
         pattern="(?<!佩)(?<!芙蕾)多尔凯尔(?!罗登|普里恩)",
         ja="ドルケル",
         cat="角色",
-        aliases=(V("多尔肯", "官繁", "名"),),
+        aliases=(V("多尔肯", Source.官繁, Part.名),),
     ),
     Entry(name="伊娜", pattern="(?<!罗)(?<!梅)伊娜"),
     Entry(
@@ -685,12 +737,12 @@ ENTRIES: list[Entry] = [
         ja="ジュース",
         en="Juice",
         cat="角色",
-        aliases=(V("裘斯", "民间"),),
+        aliases=(V("裘斯", Source.民间),),
         note="培提奇乌斯 旧名；裘斯 为民间旧译，走 guard 精确对",
     ),
     Entry(
         name="拉扎克",
-        aliases=(V("拉札克", "官繁", "名"),),
+        aliases=(V("拉札克", Source.官繁, Part.名),),
         pattern="(?<!米)拉扎克",
         en="Razak Gildark",
     ),
@@ -707,39 +759,39 @@ ENTRIES: list[Entry] = [
     Entry(name="拉尔丰"),
     Entry(
         name="视风加护",
-        aliases=(V("风见的加护", "民间"), V("视风的加护", "民间")),
+        aliases=(V("风见的加护", Source.民间), V("视风的加护", Source.民间)),
         cat="术语",
         note="库珥修的加护",
     ),
     Entry(
         name="阿内芙",
-        aliases=(V("阿尔内布", "民间"), V("亚尔聂博", "民间")),
+        aliases=(V("阿尔内布", Source.民间), V("亚尔聂博", Source.民间)),
         main=False,
         note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
         name="莉雅",
-        aliases=(V("莉娅", "民间"),),
+        aliases=(V("莉娅", Source.民间),),
         main=False,
         note="帕克/福尔图娜对爱蜜莉雅的称呼；莉娅 为常见变体，前字为 莎 时属 莎莉婭·费瑟兰（user-fixes guard 规则）",
     ),
     Entry(
         name="八重",
         en="Yae Tenzen",
-        aliases=(V("娅艾", "民间"),),
+        aliases=(V("娅艾", Source.民间),),
         main=False,
         note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
         name="莱特",
-        aliases=(V("蕾缇", "民间"),),
+        aliases=(V("蕾缇", Source.民间),),
         main=False,
         note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
         name="陶德",
         en="Todd Fang",
-        aliases=(V("托德", "民间"),),
+        aliases=(V("托德", Source.民间),),
         main=False,
         note="2字短名/特判，只走精确对不进主列表",
     ),
@@ -748,14 +800,14 @@ ENTRIES: list[Entry] = [
         ja="タンザ",
         en="Tanza",
         cat="角色",
-        aliases=(V("坦萨", "民间"), V("貚纱", "官繁", "名")),
+        aliases=(V("坦萨", Source.民间), V("貚纱", Source.官繁, Part.名)),
         main=False,
         note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
         name="保莉",
         en="Holly Shudrak",
-        aliases=(V("荷莉", "民间"), V("禾力", "官繁", "名")),
+        aliases=(V("荷莉", Source.民间), V("禾力", Source.官繁, Part.名)),
         main=False,
         note="2字短名/特判，只走精确对不进主列表",
     ),
@@ -764,28 +816,30 @@ ENTRIES: list[Entry] = [
         ja="レム",
         en="Rem",
         cat="角色",
-        aliases=(V("蕾姆", "民间"),),
+        aliases=(V("蕾姆", Source.民间),),
         main=False,
         note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
         name="记忆回廊",
-        aliases=(V("记忆的回廊", "民间"),),
+        aliases=(V("记忆的回廊", Source.民间),),
         main=False,
         note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
         name="地狱·狙击",
-        aliases=(V("地狱狙击", "民间"),),
+        aliases=(V("地狱狙击", Source.民间),),
         main=False,
         note="2字短名/特判，只走精确对不进主列表",
     ),
-    Entry(name="琉璃泪", aliases=(V("流丽连", "民间"),)),
-    Entry(name="围巾多娜", aliases=(V("多娜狐", "民间"), V("领子多娜", "民间"))),
+    Entry(name="琉璃泪", aliases=(V("流丽连", Source.民间),)),
+    Entry(
+        name="围巾多娜", aliases=(V("多娜狐", Source.民间), V("领子多娜", Source.民间))
+    ),
     Entry(
         name="奥托",
         main=False,
-        aliases=(V("欧托", "民间"),),
+        aliases=(V("欧托", Source.民间),),
         note="托 属多字组，p2o 展开误伤 奥多/欧德 等",
     ),
     Entry(name="修尔特"),
@@ -798,26 +852,26 @@ ENTRIES: list[Entry] = [
         name="雷佐",
         main=False,
         note="佐 属杰泽佐组，p2o 展开与 蕾泽 互撞并误伤 莱杰尔",
-        aliases=(V("瑞佐", "官繁", "名"),),
+        aliases=(V("瑞佐", Source.官繁, Part.名),),
     ),
     Entry(name="米蒂安"),
-    Entry(name="阿拉基亚", aliases=(V("亚拉基亚", "官繁", "名"),)),
+    Entry(name="阿拉基亚", aliases=(V("亚拉基亚", Source.官繁, Part.名),)),
     Entry(
         name="奇夏·金",
-        aliases=(V("奇夏·戈尔德", "民间", "全名"),),
+        aliases=(V("奇夏·戈尔德", Source.民间, Part.全名),),
         note="官方意译 戈尔德→金（英 Chisha Gold）",
     ),
-    Entry(name="贝亚子", aliases=(V("贝阿子", "民间"), V("碧翠子", "民间"))),
+    Entry(name="贝亚子", aliases=(V("贝阿子", Source.民间), V("碧翠子", Source.民间))),
     Entry(
         name="爱蜜莉雅炭",
-        aliases=(V("爱蜜莉雅碳", "民间"),),
+        aliases=(V("爱蜜莉雅碳", Source.民间),),
         note="帕克对爱蜜莉雅的昵称",
     ),
     Entry(
         name="普利斯提拉",
         ja="プリステラ",
         en="Priestella",
-        aliases=(V("普利斯特拉", "民间"),),
+        aliases=(V("普利斯特拉", Source.民间),),
         note="水门都市",
     ),
     Entry(
@@ -825,16 +879,18 @@ ENTRIES: list[Entry] = [
         ja="アーチ·エリオール",
         en="Archi Elior",
         cat="角色",
-        aliases=(V("亚齐", "官繁", "名"), V("阿奇", "民间")),
+        aliases=(V("亚齐", Source.官繁, Part.名), V("阿奇", Source.民间)),
         main=False,
         note="2字双组展开会误伤（特雷西亚基本→亚基命中）；只走 guard 精确对",
     ),
-    Entry(name="缪斯", aliases=(V("谬丝", "民间"),), note="奇力塔卡·缪斯/缪斯商会"),
-    Entry(name="施瓦兹", aliases=(V("舒瓦茨", "民间"),), note="乐师 夏美·施瓦茨"),
+    Entry(
+        name="缪斯", aliases=(V("谬丝", Source.民间),), note="奇力塔卡·缪斯/缪斯商会"
+    ),
+    Entry(name="施瓦兹", aliases=(V("舒瓦茨", Source.民间),), note="乐师 夏美·施瓦茨"),
     Entry(
         name="艾力欧尔",
         en="Elior",
-        aliases=(V("艾利奥尔", "民间"), V("艾利欧尔", "官简")),
+        aliases=(V("艾利奥尔", Source.民间), V("艾利欧尔", Source.官简)),
         note="艾力欧尔大森林",
     ),
     Entry(name="奥尔菲", ja="オルフェ", en="Orphe", cat="角色"),
@@ -843,13 +899,13 @@ ENTRIES: list[Entry] = [
         ja="ティーナ",
         en="Tina",
         cat="角色",
-        aliases=(V("提娜", "官繁", "名"),),
+        aliases=(V("提娜", Source.官繁, Part.名),),
         main=False,
         note="2字名模糊匹配全中普通词（皇帝那/不提那/贝蒂那/凯迪那）；只走 guard 精确对",
     ),
     Entry(
         name="迷尼亚",
-        aliases=(V("米尼亚", "民间"),),
+        aliases=(V("米尼亚", Source.民间),),
         note="咒语后缀 X·迷尼亚（ミーニャ）",
     ),
     Entry(
@@ -857,7 +913,7 @@ ENTRIES: list[Entry] = [
         ja="ミルデ·アーラム",
         en="Milde Arlam",
         cat="角色",
-        aliases=(V("米路德", "民间"), V("米尔黛", "官繁", "名")),
+        aliases=(V("米路德", Source.民间), V("米尔黛", Source.官繁, Part.名)),
         main=False,
         note="阿拉姆村；米尔多（Mild）是另一人，p2o 展开会误伤",
     ),
@@ -866,89 +922,99 @@ ENTRIES: list[Entry] = [
         ja="ダーツ",
         en="Dartz",
         cat="角色",
-        aliases=(V("达兹", "官繁", "名"),),
+        aliases=(V("达兹", Source.官繁, Part.名),),
         main=False,
         note="复原师；2字名只走 guard 精确对",
     ),
-    Entry(name="卫兹礼", aliases=(V("威兹利", "民间"),), note="托尔多·卫兹礼"),
+    Entry(name="卫兹礼", aliases=(V("威兹利", Source.民间),), note="托尔多·卫兹礼"),
     Entry(
         name="葛兰希尔黛",
-        aliases=(V("格兰希尔特", "民间"),),
+        aliases=(V("格兰希尔特", Source.民间),),
         note="艾尔莎·葛兰希尔黛；同名酒品牌",
     ),
     Entry(
         name="奥多",
-        aliases=(V("欧德", "民间"),),
+        aliases=(V("欧德", Source.民间),),
         main=False,
         note="奥多·拉格纳（Od Laguna）；欧德 是 欧德古勒斯 前缀，走 guard 精确对",
     ),
     Entry(
         name="马斯卡莱德",
-        aliases=(V("玛斯柯瑞德", "民间"),),
+        aliases=(V("玛斯柯瑞德", Source.民间),),
         note="莉莉安娜·马斯卡莱德",
     ),
-    Entry(name="蓝色雷光", aliases=(V("青色雷光", "民间"),), note="塞西鲁斯称号"),
-    Entry(name="皮克塔特", aliases=(V("聘可塔特", "民间"),), note="水门都市邻近都市"),
-    Entry(name="避风加护", aliases=(V("避风的加护", "民间"),), cat="术语"),
-    Entry(name="死神加护", aliases=(V("死神的加护", "民间"),), cat="术语"),
-    Entry(name="剑圣加护", aliases=(V("剑圣的加护", "民间"),), cat="术语"),
-    Entry(name="言灵加护", aliases=(V("言灵的加护", "民间"),), cat="术语"),
-    Entry(name="地灵加护", aliases=(V("地灵的加护", "民间"),), cat="术语"),
-    Entry(name="传心加护", aliases=(V("传心的加护", "民间"),), cat="术语"),
-    Entry(name="诱精加护", aliases=(V("诱精的加护", "民间"),), cat="术语"),
-    Entry(name="魔操加护", aliases=(V("魔操的加护", "民间"),), cat="术语"),
+    Entry(name="蓝色雷光", aliases=(V("青色雷光", Source.民间),), note="塞西鲁斯称号"),
+    Entry(
+        name="皮克塔特", aliases=(V("聘可塔特", Source.民间),), note="水门都市邻近都市"
+    ),
+    Entry(name="避风加护", aliases=(V("避风的加护", Source.民间),), cat="术语"),
+    Entry(name="死神加护", aliases=(V("死神的加护", Source.民间),), cat="术语"),
+    Entry(name="剑圣加护", aliases=(V("剑圣的加护", Source.民间),), cat="术语"),
+    Entry(name="言灵加护", aliases=(V("言灵的加护", Source.民间),), cat="术语"),
+    Entry(name="地灵加护", aliases=(V("地灵的加护", Source.民间),), cat="术语"),
+    Entry(name="传心加护", aliases=(V("传心的加护", Source.民间),), cat="术语"),
+    Entry(name="诱精加护", aliases=(V("诱精的加护", Source.民间),), cat="术语"),
+    Entry(name="魔操加护", aliases=(V("魔操的加护", Source.民间),), cat="术语"),
     Entry(
         name="共感觉",
-        aliases=(V("共感的加护", "民间"),),
+        aliases=(V("共感的加护", Source.民间),),
         cat="术语",
         note="官方从不称加护",
     ),
-    Entry(name="不死王的洗礼", aliases=(V("不死王的圣礼", "民间"),), cat="术语"),
-    Entry(name="寒冰烙印艺术", aliases=(V("冰印艺术", "民间"),), cat="术语"),
-    Entry(name="冰柱界线", aliases=(V("冰柱魔线", "民间"),), cat="术语"),
+    Entry(name="不死王的洗礼", aliases=(V("不死王的圣礼", Source.民间),), cat="术语"),
+    Entry(name="寒冰烙印艺术", aliases=(V("冰印艺术", Source.民间),), cat="术语"),
+    Entry(name="冰柱界线", aliases=(V("冰柱魔线", Source.民间),), cat="术语"),
     Entry(name="爱蜜莉雅", ja="エミリア", en="Emilia", cat="角色"),
     Entry(
-        name="普勒阿得斯", aliases=(V("普雷阿迪斯", "民间"),), note="普勒阿得斯监视塔"
+        name="普勒阿得斯",
+        aliases=(V("普雷阿迪斯", Source.民间),),
+        note="普勒阿得斯监视塔",
     ),
     Entry(
         name="三笨蛋出发！土蜘蛛篇",
-        aliases=(V("三傻同行！土蜘蛛篇", "民间"),),
+        aliases=(V("三傻同行！土蜘蛛篇", Source.民间),),
         note="vol16 译注引题",
     ),
-    Entry(name="最优秀纪行", aliases=(V("最优纪行", "民间"),), note="EX4 书名"),
-    Entry(name="王选前日谈", aliases=(V("王选前日谭", "民间"),), note="EX4 目录"),
+    Entry(name="最优秀纪行", aliases=(V("最优纪行", Source.民间),), note="EX4 书名"),
+    Entry(name="王选前日谈", aliases=(V("王选前日谭", Source.民间),), note="EX4 目录"),
     Entry(
         name="卡尔斯腾公爵领的战斗少女",
-        aliases=(V("卡尔斯腾公爵领地的战乙女", "民间"),),
+        aliases=(V("卡尔斯腾公爵领地的战乙女", Source.民间),),
         note="EX1 章名",
     ),
-    Entry(name="王族诱拐事件", aliases=(V("王族诱拐案", "民间"),), note="vol16"),
-    Entry(name="丽格蕾特", aliases=(V("利格雷特", "民间"),), note="汉娜·丽格蕾特"),
+    Entry(name="王族诱拐事件", aliases=(V("王族诱拐案", Source.民间),), note="vol16"),
+    Entry(name="丽格蕾特", aliases=(V("利格雷特", Source.民间),), note="汉娜·丽格蕾特"),
     Entry(
         name="汉赛尔和格莱特",
-        aliases=(V("汉赛尔与格莱特", "民间"),),
+        aliases=(V("汉赛尔与格莱特", Source.民间),),
         note="vol26；格林童话《糖果屋》",
     ),
     Entry(
         name="梵·阿斯特雷亚",
-        aliases=(V("范·阿斯特雷亚", "民间", "全名"),),
+        aliases=(V("范·阿斯特雷亚", Source.民间, Part.全名),),
         note="阿斯特雷亚家姓氏段；范/梵 均不在任何相似组，只走全名段精确对",
     ),
-    Entry(name="魔女因子", aliases=(V("大罪因子", "民间"),), cat="术语"),
+    Entry(name="魔女因子", aliases=(V("大罪因子", Source.民间),), cat="术语"),
     Entry(
-        name="克劳泽列", aliases=(V("克劳泽利亚", "民间"),), note="术式 阿尔·克劳泽列"
+        name="克劳泽列",
+        aliases=(V("克劳泽利亚", Source.民间),),
+        note="术式 阿尔·克劳泽列",
     ),
     Entry(
         name="库拉利斯特",
-        aliases=(V("克劳利斯塔", "民间"),),
+        aliases=(V("克劳利斯塔", Source.民间),),
         note="术式 阿尔·库拉利斯特",
     ),
-    Entry(name="雷德纳斯", aliases=(V("雷多纳斯", "民间"),), note="雷德纳斯台地"),
-    Entry(name="六条舌", aliases=(V("六枚舌", "民间"),), note="奥尔菲外号及其情报组织"),
+    Entry(name="雷德纳斯", aliases=(V("雷多纳斯", Source.民间),), note="雷德纳斯台地"),
+    Entry(
+        name="六条舌",
+        aliases=(V("六枚舌", Source.民间),),
+        note="奥尔菲外号及其情报组织",
+    ),
     Entry(name="吉尔达克", note="马可仕·吉尔达克"),
     Entry(
         name="多纳",
-        aliases=(V("德纳", "官简"),),
+        aliases=(V("德纳", Source.官简),),
         main=False,
         note="术式 tier 前缀 埃尔/乌尔/阿尔·多纳；德纳 多为 加德纳/卡德纳 等他名子串",
     ),
@@ -981,7 +1047,7 @@ RECORD_ONLY: list[Entry] = [
     Entry(
         name="汉巴力",
         cat="角色",
-        aliases=(V("汉巴利", "民间"),),
+        aliases=(V("汉巴利", Source.民间),),
         record_only=True,
         note="阿汉 真名（官简）；汉巴利 为台版写法",
     ),
@@ -991,7 +1057,7 @@ RECORD_ONLY: list[Entry] = [
         pattern="(?<!格|芙|·)雷德",
         ja="レイド·アストレア",
         cat="角色",
-        aliases=(V("雷伊德", "官繁", "名"),),
+        aliases=(V("雷伊德", Source.官繁, Part.名),),
         record_only=True,
         note="雷伊德 为台版译名；雷德 本身不归一（格莱德/芙蕾德 等他名子串风险）",
     ),
@@ -1000,7 +1066,7 @@ RECORD_ONLY: list[Entry] = [
         pattern="(?<!莉)卢安娜",
         en="Louanna Astrea",
         record_only=True,
-        aliases=(V("露昂娜", "官繁", "名"),),
+        aliases=(V("露昂娜", Source.官繁, Part.名),),
     ),
     Entry(
         name="狄加",
@@ -1013,7 +1079,7 @@ RECORD_ONLY: list[Entry] = [
     Entry(name="沃尔夫", ja="ウォルフ", cat="角色", record_only=True),
     Entry(
         name="弗鲁夫",
-        aliases=(V("忽尔芙", "官繁", "名"),),
+        aliases=(V("忽尔芙", Source.官繁, Part.名),),
         ja="フルフー",
         en="Frufoo",
         cat="角色",
@@ -1030,7 +1096,7 @@ RECORD_ONLY: list[Entry] = [
     ),
     Entry(
         name="弗尔多",
-        aliases=(V("佛鲁德", "官繁", "名"),),
+        aliases=(V("佛鲁德", Source.官繁, Part.名),),
         en="Ford Lugunica",
         pattern="弗尔多(?!娜)",
         ja="フォルド·ルグニカ",
@@ -1039,7 +1105,7 @@ RECORD_ONLY: list[Entry] = [
     ),
     Entry(
         name="蜜蜜",
-        aliases=(V("咪咪", "官繁", "名"),),
+        aliases=(V("咪咪", Source.官繁, Part.名),),
         ja="ミミ·パールバトン",
         en="Mimi Pearlbaton",
         cat="角色",
@@ -1052,7 +1118,7 @@ RECORD_ONLY: list[Entry] = [
     Entry(name="克莱茵", en="Crane Donahue", record_only=True),
     Entry(
         name="克雷茵",
-        aliases=(V("克莱因", "官繁", "名"),),
+        aliases=(V("克莱因", Source.官繁, Part.名),),
         ja="クライン·ユークリウス",
         en="Klein Juukulius",
         cat="角色",
@@ -1115,7 +1181,7 @@ RECORD_ONLY: list[Entry] = [
     ),
     Entry(
         name="赫莱茵",
-        aliases=(V("希艾因", "官繁", "名"),),
+        aliases=(V("希艾因", Source.官繁, Part.名),),
         ja="ヒアイン·ヤッツ",
         en="Hiain Yatz",
         cat="角色",
@@ -1124,14 +1190,14 @@ RECORD_ONLY: list[Entry] = [
     Entry(name="哈莱因", record_only=True),
     Entry(
         name="威茨",
-        aliases=(V("魏兹", "官繁", "名"),),
+        aliases=(V("魏兹", Source.官繁, Part.名),),
         pattern="威茨(?!利)",
         en="Weitz Rogen",
         record_only=True,
     ),
     Entry(
         name="库娜",
-        aliases=(V("枯纳", "官繁", "名"),),
+        aliases=(V("枯纳", Source.官繁, Part.名),),
         pattern="(?<!帕|夏|拉|札|悟)库娜",
         en="Kuna Shudrak",
         record_only=True,
@@ -1141,7 +1207,7 @@ RECORD_ONLY: list[Entry] = [
         pattern="(?<!格)莉西亚",
         en="Reala Thompson",
         cat="角色",
-        aliases=(V("莉希亚", "官繁"),),
+        aliases=(V("莉希亚", Source.官繁),),
         record_only=True,
         note="莉亚拉 婚前名 莉西亚·霆杰尔（リーシア·ティンゼル，加菲尔与弗雷德莉卡之母）",
     ),
