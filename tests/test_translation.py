@@ -121,6 +121,27 @@ def test_aliases_no_collision():
     assert not bad, bad
 
 
+def test_std_name_source_precedence():
+    """优先级不变式（官简 > 官繁 > 民间）：
+    标准名为官繁时不能有官简别名（否则官简应提升为标准名）。
+    （「民间标准名不能有官方别名」暂缓启用：审查管线的模糊匹配可能漏配官简写法——
+    弗鲁夫 即因「弗尔芙」未被匹配到而误标民间；启用前需先核完误标清单）
+    """
+    S = translations.Source
+    bad = []
+    for e in ENTRIES + RECORD_ONLY:
+        for a in e.aliases:
+            if e.source == S.OFFICIAL_HANT and a.source == S.OFFICIAL_HANS:
+                bad.append(f"官繁标准名 {e.name} 有官简别名 {a.text}（应提升为标准名）")
+    assert not bad, bad
+
+
+def test_std_name_annotated():
+    """标准名必须标注来源。"""
+    bad = [e.name for e in ENTRIES + RECORD_ONLY if e.source is None]
+    assert not bad, f"未标注来源: {bad}"
+
+
 def test_variant_annotations_valid():
     """Variant 标注：source 必填且为 Source 枚举，part 为 Part 枚举或 None。"""
     bad = []
