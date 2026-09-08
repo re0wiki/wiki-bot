@@ -541,6 +541,8 @@ translation_manual = [  # 手动添加的替换组（结构规则：模板替换
         rf"(?<!阿)(?<!弗)利格{f('鲁')}(?!卡|姆)",
         "雷吉尔",
     ),  # 利格鲁→雷吉尔，guard 沿自记录（弗利格鲁 属 弗里格尔 变体）
+    ("文森(?!特)", "文森特"),  # 台版名 文森；防吃 文森特 前缀
+    (r"(?<!梅)裘斯", "杰乌斯"),  # 裘斯→杰乌斯；梅裘斯 是他名（guard 沿自记录）
     (f"其{f('他它她')}", "其他"),  # 用字归一（非译名）
 ]
 # 有别名在更长的他名内部出现（子串误伤）或繁体形式与日文原名同字的，不走精确对生成，在上面用规则处理
@@ -556,23 +558,29 @@ _GUARDED_ALIASES = {
     "多尔肯",
     "卡萝",
     "利格鲁",
+    "文森",
+    "裘斯",
     "王选前日谭",
     "最优纪行",
     "王族诱拐案",
 }
 # Entry.aliases 生成精确对，繁体写法一并归一（RECORD_ONLY 的别名也生成：名字本身不归一，别名归一到它）
-translation_manual += [
+# 精确对在首尾各跑一遍：先行使别名不被模糊规则截胡成中间态；收尾兜底繁简混合文本
+# （名字规则把别名周围繁体字归一简体后，简体精确对才有机会命中）
+translation_pairs = [
     (a2, e.name)
     for e in itertools.chain(translations.ENTRIES, translations.RECORD_ONLY)
-    for a in e.aliases
+    for a in translations.alias_texts(e)
     if a not in _GUARDED_ALIASES
     for a2 in dict.fromkeys((a, s2t(a)))
 ]
 
 user_fixes["translation"] = base | {
     "generator": generator_more,
-    "replacements": [(p2o(p), get_repl_func(p2n(p))) for p in translation_names]
-    + [(o, get_repl_func(n)) for o, n in translation_manual],
+    "replacements": [(o, get_repl_func(n)) for o, n in translation_pairs]
+    + [(p2o(p), get_repl_func(p2n(p))) for p in translation_names]
+    + [(o, get_repl_func(n)) for o, n in translation_manual]
+    + [(o, get_repl_func(n)) for o, n in translation_pairs],
 }
 _ = [
     e.pattern or e.name for e in translations.RECORD_ONLY
