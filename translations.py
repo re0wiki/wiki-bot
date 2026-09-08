@@ -2139,7 +2139,11 @@ RECORD_ONLY: list[Entry] = [
         note="罗伊·阿尔法德",
     ),
     Entry(
-        name="菲洛", source=Source.OFFICIAL_HANS, record_only=True, note="拉塞尔·菲洛"
+        name="菲洛",
+        aliases=(V("费罗", Source.OFFICIAL_HANT, Part.FAMILY),),
+        source=Source.OFFICIAL_HANS,
+        record_only=True,
+        note="拉塞尔·菲洛",
     ),
     Entry(
         name="利罗迪特",
@@ -2149,15 +2153,17 @@ RECORD_ONLY: list[Entry] = [
     ),
     Entry(
         name="切格夫",
+        aliases=(V("卓格夫", Source.OFFICIAL_HANT, Part.FAMILY),),
         source=Source.OFFICIAL_HANS,
         record_only=True,
         note="波尔多·切格夫",
     ),
     Entry(
         name="麦克马洪",
+        aliases=(V("马克马洪", Source.OFFICIAL_HANT, Part.FAMILY),),
         source=Source.OFFICIAL_HANS,
         record_only=True,
-        note="托夫·麦克马洪",
+        note="麦克罗托夫·麦克马洪",
     ),
     Entry(name="戈亚", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"),
     Entry(name="芙拉", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"),
@@ -2756,5 +2762,26 @@ RECORD_ONLY: list[Entry] = [
         cat="角色",
         record_only=True,
         note="姓：奔加姆",
+    ),
+    Entry(
+        name="提美格里福",
+        aliases=(V("特梅格里夫", Source.OFFICIAL_HANS, Part.FAMILY),),
+        source=Source.OFFICIAL_HANS,
+        record_only=True,
+        note="巴鲁罗伊·提美格里福；官简内部不一致：EX4 提美格里福×15 vs vol22 特梅格里夫×3，取多",
+    ),
+    Entry(
+        name="菲尔米",
+        aliases=(V("菲尔密", Source.OFFICIAL_HANT, Part.FAMILY),),
+        source=Source.OFFICIAL_HANS,
+        record_only=True,
+        note="历布莱·菲尔米",
+    ),
+    Entry(
+        name="莱蒙蒂斯",
+        aliases=(V("雷玫迪斯", Source.OFFICIAL_HANT, Part.FAMILY),),
+        source=Source.OFFICIAL_HANS,
+        record_only=True,
+        note="卡罗尔/芙拉姆/格拉希丝·莱蒙蒂斯",
     ),
 ]
