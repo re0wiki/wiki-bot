@@ -69,6 +69,7 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 
 每个定制一个独立提交（2026-07-27 起由单个大 commit 拆分；历史上另有 `import regex as re` 全库替换、requirements 加 regex、redirect offset、TokenWallet csrf-first、fixes 默认 generator 五个补丁，2026-07 验证不再必要后摘除——generator 已改为在 `src/jobs/jobs.py` 里显式传 `starts_base`；transferbot 搬运标记两个补丁 2026-08-13 随 re0_transferbot 换装摘除）：
 
+- `textlib.py`：`replaceExcept` 加快速路径（marker 为空且不 allowoverlap 时）：异常区间预计算一次（合并排序），编辑后区间随 delta 平移，替代原版「每个候选匹配 × 每个异常正则」的全文重扫——保护行密集的页面（NekoQuote 月表，200KB）上 10x+ 加速。行为锚点测试在主仓 `tests/test_fork_replaceexcept.py`。
 - `textlib.py` + `fixes.py`：新增 `keep` 标签 = `<!--as-is-->...<!--/as-is-->` 注释对，textlib 加 regex，HTML/syntax/isbn/specialpages fixes 的 exceptions 里加 `keep` —— wiki 上可以用这对注释保护内容不被 bot 改。注释零渲染、可行内使用，行内内容整词包裹即可（如 `<!--as-is-->精灵<!--/as-is-->`）。标记不配平时该区域失去保护（静默失效，扫描时可查配平）。
 - `fixes.py`：HTML fix 把 `<br>` 归一到不闭合形式（MediaWiki 渲染等价，不闭合是本 wiki 惯例）。
 - `fixes.py`：syntax fix 注释掉外链竖线规则（误报太多）。
