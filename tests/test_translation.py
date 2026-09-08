@@ -17,7 +17,6 @@ fx = importlib.import_module("pywikibot.fixes")
 # 自己的 globals，静态检查不可见，故经 __dict__ 取。
 p2o: Any = fx.__dict__["p2o"]
 p2n: Any = fx.__dict__["p2n"]
-get_repl_func: Any = fx.__dict__["get_repl_func"]
 translation_names: list[str] = fx.__dict__["translation_names"]
 
 # RULES 直接复用 re0_move 的构建结果，不再本地重复构造。
@@ -67,12 +66,29 @@ def test_beatrice_normalizes_to_official_name():
     assert normalize("貝阿托莉絲") == "碧翠丝"
 
 
-def test_get_repl_func_preserves_traditional_standard():
-    """正文替换对繁体标准名原样保留（与标题归一简体的差异点）。"""
-    func = get_repl_func("碧翠丝")
-    pat = re.compile("碧翠[丝絲]")
-    assert pat.sub(func, "碧翠絲") == "碧翠絲"
-    assert pat.sub(func, "碧翠丝") == "碧翠丝"
+def test_fix_unifies_traditional_to_simplified():
+    """正文替换一律归一到简体标准名。"""
+    replacements: Any = fx.fixes["translation"]["replacements"]
+    new = "碧翠絲"
+    for old, repl in replacements:
+        new = re.compile(old).sub(repl, new)
+    assert new == "碧翠丝"
+
+
+def test_nekoquote_ja_fields_protected():
+    """NekoQuote 月表的日文原文字段（jq/jt Lua 字符串）不被归一，中文字段正常归一。"""
+    from pywikibot import textlib
+
+    fix: Any = fx.fixes["translation"]
+    # inside 异常是字符串（replace.py 自行编译）；textlib 里 str 是类别名，须先编译
+    exceptions = [re.compile(p) for p in fix["exceptions"]["inside"]]
+    text = 'q = "死神加護",\n        jq = "死神加護の傷を負っている",'
+    for old, repl in fix["replacements"]:
+        text = textlib.replaceExcept(
+            text, re.compile(old), repl, exceptions, caseInsensitive=True
+        )
+    assert 'q = "死神加护"' in text
+    assert 'jq = "死神加護の傷を負っている"' in text
 
 
 def test_nekoquote_aliases_normalize():

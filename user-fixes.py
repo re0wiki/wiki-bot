@@ -479,19 +479,6 @@ def p2n(pattern: str):
     return re.sub(r"\(.*?\)|\?", "", pattern)
 
 
-def get_repl_func(name: str):
-    """返回name对应的替换函数。"""
-
-    def func(match: re.Match) -> str:
-        """若为标准译名对应的繁体名则原样返回，否则返回标准译名。"""
-        cur = match.group()
-        if cur == s2t(name):
-            return cur
-        return name
-
-    return func
-
-
 translation_names = [
     e.pattern or e.name for e in translations.ENTRIES if e.main
 ]  # 数据在 translations.py
@@ -542,7 +529,10 @@ translation_manual = [  # 手动添加的替换组（结构规则：模板替换
         "雷吉尔",
     ),  # 利格鲁→雷吉尔，guard 沿自记录（弗利格鲁 属 弗里格尔 变体）
     ("文森(?!特)", "文森特"),  # 台版名 文森；防吃 文森特 前缀
-    ("穆塔(?!特)", "穆塔特"),  # 民间写法 穆塔；防吃 穆塔特 前缀（穆塔多 已由别名精确对先行转换）
+    (
+        "穆塔(?!特)",
+        "穆塔特",
+    ),  # 民间写法 穆塔；防吃 穆塔特 前缀（穆塔多 已由别名精确对先行转换）
     (r"(?<!梅)裘斯", "杰乌斯"),  # 裘斯→杰乌斯；梅裘斯 是他名（guard 沿自记录）
     (f"其{f('他它她')}", "其他"),  # 用字归一（非译名）
 ]
@@ -579,10 +569,16 @@ translation_pairs = [
 
 user_fixes["translation"] = base | {
     "generator": generator_more,
-    "replacements": [(o, get_repl_func(n)) for o, n in translation_pairs]
-    + [(p2o(p), get_repl_func(p2n(p))) for p in translation_names]
-    + [(o, get_repl_func(n)) for o, n in translation_manual]
-    + [(o, get_repl_func(n)) for o, n in translation_pairs],
+    # 一律归一到官方简中标准名
+    "exceptions": base["exceptions"]
+    | {
+        # NekoQuote 月表的日文原文字段（Lua 字符串）不归一；replace.py 自行编译，这里只给字符串
+        "inside": [r'(?m)^\s*(?:jq|jt)\s*=\s*"(?:[^"\\]|\\.)*"'],
+    },
+    "replacements": list(translation_pairs)
+    + [(p2o(p), p2n(p)) for p in translation_names]
+    + list(translation_manual)
+    + list(translation_pairs),
 }
 _ = [
     e.pattern or e.name for e in translations.RECORD_ONLY
