@@ -19,7 +19,9 @@
   非零退出且不推进，下次运行重试，不静默漏审。
 
 输出（stdout，注入 cron job 的 prompt 作为上下文）：
-- 无新改动：NO_NEW_CHANGES
+- 无新改动：NO_NEW_CHANGES，且末行输出 {"wakeAgent": false}——Hermes cron 的
+  唤醒门（scheduler_prompt._parse_wake_gate）：脚本 stdout 最后一个非空行是该 JSON 时
+  整个 agent 运行被抑制（无 LLM 调用、无投递）。只在无审查需求时输出此行。
 - 有新改动：两段
   1. NEW_CHANGES：每行一条，含 rcid/revid/old_revid/标题/用户/时间/字节变化/摘要
   2. MERGED_DIFFS：同用户同页的**相邻**连续编辑已合并（最早 old_revid→最晚 revid），
@@ -250,6 +252,8 @@ def main() -> int:
     if not pending:
         advance_waterline()
         print("NO_NEW_CHANGES")
+        # 唤醒门：末行 JSON 让 cron 跳过本次 agent 运行，无改动时不调 LLM
+        print(json.dumps({"wakeAgent": False}))
         return 0
 
     out: list[str] = [
