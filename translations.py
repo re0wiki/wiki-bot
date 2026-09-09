@@ -4,7 +4,7 @@
 - ENTRIES：标准译名表（顺序即替换链顺序，勿随意重排）；pattern 为非空时用于生成匹配规则；
   fuzzy=False 的条目不生成名字模糊规则（短名防误判/特判太麻烦不处理的），别名规则照常
 - SIMILAR_CHARS：相似字符组（手工维护，见 AGENTS.md 译名工作流）
-- aliases：相似字组够不着的显式别名（组内异写由 p2o 自动生成，勿重复登记）
+- aliases：相似字组够不着的显式别名（组内异写由 p2o 自动生成，勿重复登记）；pattern 挂 guard 正则（经 p2st 简繁展开，与标准名 pattern 的 p2o 相似组展开是两套，勿混用）
 ja/en/cat 供 LLM 翻译参考（英翻中提取英文词即可定位译名）（re0-corpus 侧审查管线也读本文件），尽力填充、可空。
 """
 
@@ -21,8 +21,7 @@ class Source(StrEnum):
 class Variant(NamedTuple):
     text: str
     source: Source
-    pre: str = ""  # 前缀 guard（lookbehind 正则）：别名位于更长他名内部时防子串误伤
-    post: str = ""  # 后缀 guard（lookahead 正则）
+    pattern: str = ""  # 匹配模式（默认 = text；别名位于更长他名内部时写 guard 正则，经 p2st 简繁展开）
 
 
 V = Variant
@@ -196,7 +195,7 @@ ENTRIES: list[Entry] = [
         full_name="卡罗尔·莱蒙蒂斯",
         source=Source.OFFICIAL_HANS,
         en="Carol",
-        aliases=(V("卡萝尔", Source.FAN), V("卡萝", Source.OFFICIAL_HANT, post="(?!尔|爾)")),
+        aliases=(V("卡萝尔", Source.FAN), V("卡萝", Source.OFFICIAL_HANT, pattern="卡萝(?!尔|爾)")),
     ),
     Entry(
         name="卡米拉",
@@ -358,7 +357,7 @@ ENTRIES: list[Entry] = [
         name="文森特",
         full_name="文森特·佛拉基亚",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("文森", Source.OFFICIAL_HANT, post="(?!特)"),),
+        aliases=(V("文森", Source.OFFICIAL_HANT, pattern="文森(?!特)"),),
         ja="ヴィンセント·ヴォラキア<br>ヴィンセント·アベルクス(假名)",
         en="Vincent",
         cat="角色",
@@ -1483,8 +1482,9 @@ ENTRIES: list[Entry] = [
         en="Meili",
         full_name="梅莉·波多尔德",
         source=Source.OFFICIAL_HANS,
+        aliases=(V("梅麗", Source.FAN, pattern="梅[丽利吕呂李莉裏里麗](?![奥奧欧歐])"),),
         cat="角色",
-        fuzzy=False,  # p2o(梅莉)=[梅美麥麦][莉…] 会把 美丽 打成 梅莉  # 名归一规则在 user-fixes：首字须 literal 梅，f 展开会吃「美丽」
+        fuzzy=False,  # p2o(梅莉)=[梅美麥麦][莉…] 会把 美丽 打成 梅莉；异写经别名 pattern 覆盖
     ),
     Entry(
         name="菜月昴",
@@ -1563,7 +1563,7 @@ ENTRIES: list[Entry] = [
         en="Rigel",
         ja="ナツキ·リゲル",
         cat="角色",
-        aliases=(V("利格鲁", Source.FAN), V("瑞吉尔", Source.FAN)),
+        aliases=(V("利格鲁", Source.FAN, pattern="(?<!阿)(?<!弗)利格[卢尔爾珥盧耳路露魯鲁](?!卡|姆)"), V("瑞吉尔", Source.FAN)),
         fuzzy=False,
         note="IF 线 菜月·雷吉尔；利格鲁 为民间译名（guard 精确对），瑞吉尔 为台版译名",
     ),
@@ -1661,7 +1661,7 @@ ENTRIES: list[Entry] = [
         pattern="(?<!加)傅里叶",
         en="Fourier",
         aliases=(
-            V("弗利艾", Source.FAN, pre="(?<!加)"),
+            V("弗利艾", Source.FAN, pattern="(?<!加)弗利艾"),
             V("弗利耶", Source.OFFICIAL_HANT),
         ),
     ),
@@ -1680,7 +1680,7 @@ ENTRIES: list[Entry] = [
         pattern="(?<!佩)(?<!芙蕾)多尔凯尔(?!罗登|普里恩)",
         ja="ドルケル",
         cat="角色",
-        aliases=(V("多尔肯", Source.OFFICIAL_HANT, pre="(?<!佩)(?<!芙蕾)", post="(?!罗登|普里恩)"),),
+        aliases=(V("多尔肯", Source.OFFICIAL_HANT, pattern="(?<!佩)(?<!芙蕾)多尔肯(?!罗登|普里恩)"),),
     ),
     Entry(name="伊娜", source=Source.OFFICIAL_HANS, pattern="(?<!罗)(?<!梅)伊娜"),
     Entry(
@@ -1714,7 +1714,7 @@ ENTRIES: list[Entry] = [
         ja="ジュース",
         en="Juice",
         cat="角色",
-        aliases=(V("裘斯", Source.FAN, pre="(?<!梅)"),),
+        aliases=(V("裘斯", Source.FAN, pattern="(?<!梅)裘斯"),),
         note="培提奇乌斯 旧名；裘斯 为民间旧译，走 guard 精确对",
     ),
     Entry(
@@ -1766,7 +1766,7 @@ ENTRIES: list[Entry] = [
     Entry(
         name="莉雅",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("莉娅", Source.FAN, pre="(?<!莎)"),),
+        aliases=(V("莉娅", Source.FAN, pattern="(?<!莎)莉娅"),),
         fuzzy=False,
         note="帕克/福尔图娜对爱蜜莉雅的称呼；莉娅 为常见变体，前字为 莎 时属 莎莉婭·费瑟兰（user-fixes guard 规则）",
     ),
@@ -1923,7 +1923,7 @@ ENTRIES: list[Entry] = [
         en="Archi",
         cat="角色",
         full_name="亚奇·艾力欧尔",
-        aliases=(V("亚齐", Source.OFFICIAL_HANT, pre="(?<!多萝西)(?<!艾米莉)(?<!约书)(?<!贝)(?<!卡秋)"), V("阿奇", Source.FAN, pre="(?<!多萝西)(?<!艾米莉)(?<!约书)(?<!贝)(?<!卡秋)")),
+        aliases=(V("亚齐", Source.OFFICIAL_HANT, pattern="(?<!多萝西)(?<!艾米莉)(?<!约书)(?<!贝)(?<!卡秋)亚齐"), V("阿奇", Source.FAN, pattern="(?<!多萝西)(?<!艾米莉)(?<!约书)(?<!贝)(?<!卡秋)阿奇")),
         fuzzy=False,
         note="2字双组展开会误伤（特雷西亚基本→亚基命中）；只走 guard 精确对",
     ),
@@ -1965,7 +1965,7 @@ ENTRIES: list[Entry] = [
         cat="角色",
         aliases=(
             V("蒂娜", Source.FAN),
-            V("提娜", Source.OFFICIAL_HANT, pre="(?<!艾奇)(?<!福尔)"),
+            V("提娜", Source.OFFICIAL_HANT, pattern="(?<!艾奇)(?<!福尔)提娜"),
         ),
         fuzzy=False,
         note="2字名模糊匹配全中普通词（皇帝那/不提那/贝蒂那/凯迪那）；只走 guard 精确对",
@@ -1996,7 +1996,7 @@ ENTRIES: list[Entry] = [
         ja="ダーツ",
         en="Dartz",
         cat="角色",
-        aliases=(V("达兹", Source.OFFICIAL_HANT, pre="(?<!格拉姆)(?<!芙兰)", post="(?!利)"),),
+        aliases=(V("达兹", Source.OFFICIAL_HANT, pattern="(?<!格拉姆)(?<!芙兰)达兹(?!利)"),),
         fuzzy=False,
         note="复原师；2字名只走 guard 精确对",
     ),
@@ -2019,7 +2019,7 @@ ENTRIES: list[Entry] = [
     Entry(
         name="奥多",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("欧德", Source.FAN, post="(?!古勒斯)"),),
+        aliases=(V("欧德", Source.FAN, pattern="欧德(?!古勒斯)"),),
         fuzzy=False,
         note="奥多·拉格纳（Od Laguna）；欧德 是 欧德古勒斯 前缀，走 guard 精确对",
     ),
@@ -2248,7 +2248,7 @@ ENTRIES: list[Entry] = [
     Entry(
         name="多纳",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("德纳", Source.OFFICIAL_HANS, pre="(?<!加)(?<!卡)(?<!雷)"),),
+        aliases=(V("德纳", Source.OFFICIAL_HANS, pattern="(?<!加)(?<!卡)(?<!雷)德纳"),),
         fuzzy=False,
         note="术式 tier 前缀 埃尔/乌尔/阿尔·多纳；德纳 多为 加德纳/卡德纳 等他名子串",
     ),
@@ -3199,7 +3199,7 @@ ENTRIES: list[Entry] = [
         ja="ムッタート",
         aliases=(
             V("穆塔多", Source.OFFICIAL_HANT),
-            V("穆塔", Source.FAN, post="(?!特)"),
+            V("穆塔", Source.FAN, pattern="穆塔(?!特)"),
         ),
         source=Source.OFFICIAL_HANS,
         cat="角色",

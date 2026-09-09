@@ -480,6 +480,35 @@ def p2n(pattern: str):
     return re.sub(r"\(.*?\)|\?", "", pattern)
 
 
+def p2st(pattern: str):
+    """别名的简繁展开：正则中每个字面字符展开为 [简繁] 字符类。
+
+    与 p2o（相似组宽展开，用于标准名）分工：别名只做简繁展开（窄），防止
+    f('梅') 含 美 这类相似组把普通词卷进来。手写 [...] 字符类与转义原样保留
+    （利格鲁 的宽组、梅莉 的选择性展开靠手写类表达）。
+    """
+    out = []
+    in_class = False
+    i = 0
+    while i < len(pattern):
+        c = pattern[i]
+        if c == "\\" and i + 1 < len(pattern):
+            out.append(pattern[i : i + 2])
+            i += 2
+            continue
+        if c == "[":
+            in_class = True
+        elif c == "]":
+            in_class = False
+        if in_class or c in "[]":
+            out.append(c)
+        else:
+            t = s2t(c)
+            out.append(f"[{c}{t}]" if t != c else c)
+        i += 1
+    return "".join(out)
+
+
 translation_names = [
     e.pattern or e.name for e in translations.ENTRIES if e.fuzzy
 ]  # 数据在 translations.py
@@ -496,46 +525,35 @@ translation_manual = [  # 手动添加的替换组（结构规则：模板替换
     ),
     (f"{f('妖')}{f('精')}", "{{Yousei or Elf}}"),
     (r"(?<=半)\{\{(Seirei|Yousei) or Elf\}\}", "{{Elf}}"),
-    (f"梅{f('莉')}(?!{f('奥')})", "梅莉"),  # 防「梅里欧·阿嘎玛」误伤；首字 literal：f('梅') 会吃「美丽」
-    (
-        rf"(?<!阿)(?<!弗)利格{f('鲁')}(?!卡|姆)",
-        "雷吉尔",
-    ),  # 利格鲁→雷吉尔；guard 内嵌 f('鲁') 宽展开，V.pre/post 的 s2t 覆盖不了（弗利格鲁 属 弗里格尔 变体）
     ("王选前日谭", "王选前日谈"),  # 仅简体：繁体 王選前日譚 与日文原名同字（name_ja/引用显示名/gallery 文件名），不得归一
     ("最优纪行", "最优秀纪行"),  # 仅简体：日文原名 最優紀行 与繁体同字
     ("王族诱拐案", "王族诱拐事件"),  # 仅简体：日文原名 王族誘拐案 与繁体同字
 ]
 # 别名机制：精确对由 Entry.aliases 生成，繁体写法一并归一（fuzzy=False 条目的别名也
-# 生成：名字本身不归一，别名归一到它）。带 pre/post guard 的别名生成 guard 对而非精确对——
-# 别名位于更长他名内部时防子串误伤，guard 数据在 translations.py 的 Variant 上。
-# 利格鲁：其 guard 内嵌 f('鲁') 宽展开（[卢尔爾珥盧耳路露魯鲁]），s2t 覆盖不了。
+# 生成：名字本身不归一，别名归一到它）。带 pattern 的别名生成 guard 对（p2st 简繁展开，
+# 手写字符类原样保留），别名位于更长他名内部时防子串误伤。
 # 王选前日谭/最优纪行/王族诱拐案：繁体与日文原名同字，s2t 对会伤 name_ja/引用显示名/
 # gallery 文件名里的日文（as-is 模式枚举覆盖不了文件名类语境），只走 manual 简体精确对。
-_GUARDED_ALIASES = {"利格鲁", "王选前日谭", "最优纪行", "王族诱拐案"}
+_GUARDED_ALIASES = {"王选前日谭", "最优纪行", "王族诱拐案"}
 
 
 def _variant(v):
     return v if isinstance(v, translations.Variant) else None
 
 
-def _st_class(s):
-    """逐字生成 [简繁] 字符类：混简繁写法（达茲/達兹）一并覆盖。"""
-    return "".join(f"[{c}{t}]" if (t := s2t(c)) != c else c for c in s)
-
-
 translation_pairs = [
     (a2, e.name)
     for e in translations.ENTRIES
     for a in e.aliases
-    if not ((v := _variant(a)) and (v.pre or v.post))
+    if not ((v := _variant(a)) and v.pattern)
     for a0 in [a.text if isinstance(a, translations.Variant) else a]
     if a0 not in _GUARDED_ALIASES
     for a2 in dict.fromkeys((a0, s2t(a0)))
 ] + [
-    (v.pre + _st_class(v.text) + v.post, e.name)
+    (p2st(v.pattern), e.name)
     for e in translations.ENTRIES
     for a in e.aliases
-    if (v := _variant(a)) and (v.pre or v.post)
+    if (v := _variant(a)) and v.pattern
 ]
 # 精确对/guard 对在首尾各跑一遍：先行使别名不被模糊规则截胡成中间态；收尾兜底繁简混合文本
 # （名字规则把别名周围繁体字归一简体后，简体精确对才有机会命中）

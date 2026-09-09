@@ -17,6 +17,7 @@ fx = importlib.import_module("pywikibot.fixes")
 # 自己的 globals，静态检查不可见，故经 __dict__ 取。
 p2o: Any = fx.__dict__["p2o"]
 p2n: Any = fx.__dict__["p2n"]
+p2st: Any = fx.__dict__["p2st"]
 translation_names: list[str] = fx.__dict__["translation_names"]
 
 # RULES 直接复用 re0_move 的构建结果，不再本地重复构造。
@@ -162,6 +163,23 @@ def test_variant_annotations_valid():
                 continue
             if not isinstance(a.source, translations.Source):
                 bad.append(f"{e.name} 的别名 {a.text} source={a.source!r}")
+    assert not bad, bad
+
+
+def test_pattern_matches_base_text():
+    """一致性：pattern 必须能匹配其基准形态（别名 pattern 匹配 text，条目 pattern 匹配 name）。"""
+    bad = [
+        f"{e.name} 的别名 {a.text} pattern 不匹配"
+        for e in ENTRIES
+        for a in e.aliases
+        if isinstance(a, translations.Variant)
+        and a.pattern
+        and not re.search(p2st(a.pattern), a.text)
+    ] + [
+        f"{e.name} 的 pattern 不匹配 name"
+        for e in ENTRIES
+        if e.pattern and e.fuzzy and not re.search(p2o(e.pattern), e.name)
+    ]
     assert not bad, bad
 
 
