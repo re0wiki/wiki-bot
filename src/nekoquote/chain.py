@@ -8,6 +8,7 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 
 from . import DATA
 
@@ -19,6 +20,7 @@ def run_chain(stages: tuple[str, ...] = STAGES) -> None:
     env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
     env["PYTHONIOENCODING"] = "utf-8"
     for s in stages:
+        t0 = time.perf_counter()
         r = subprocess.run(
             [sys.executable, "-m", f"src.nekoquote.{s}"],
             cwd=ROOT,
@@ -29,6 +31,7 @@ def run_chain(stages: tuple[str, ...] = STAGES) -> None:
             check=False,
         )
         print((r.stdout or "")[-400:])
+        print(f"[chain] {s} 耗时 {time.perf_counter() - t0:.1f}s")
         if r.returncode != 0:
             print(r.stderr[-800:])
             raise SystemExit(f"nekoquote.{s} 失败")
