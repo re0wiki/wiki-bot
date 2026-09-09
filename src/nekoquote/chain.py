@@ -1,4 +1,4 @@
-"""增量链执行器：翻译 → 归一 → 构建 → 校验 → 部署 → 同步部署快照。
+"""增量链执行器：翻译 → 构建 → 校验 → 部署 → 同步部署快照。
 
 任一阶段非零退出即 SystemExit（调用方据此不推进水位线/状态）。
 子进程清掉 PYTHONPATH（防外部注入的 venv 路径遮蔽本项目依赖）。
@@ -12,7 +12,7 @@ import sys
 from . import DATA
 
 ROOT = DATA.parent.parent
-STAGES = ("translate", "normalize", "build", "verify_rt", "deploy")
+STAGES = ("translate", "build", "verify_rt", "deploy")
 
 
 def run_chain(stages: tuple[str, ...] = STAGES) -> None:

@@ -1,18 +1,71 @@
 """语录管线 LLM 客户端（默认 Kimi K3，配置在 secrets.json 的 llm 字段）。
 
 - 429/5xx 指数退避（尊重 Retry-After）；reasoning 模型 max_tokens 恒 32768
-- 历史：早期给弱模型（OpenCode deepseek-v4-flash-free，质量不达标已弃用）配的
-  ja→zh 名词表注入已随 K3 切换移除——译名由确定性后处理（nekoquote.normalize
-  套 user-fixes 译名规则）兜底，比 prompt 注入可靠
+- 译名保障 = prompt 注入（glossary_lines）：推文中出现的译名表实体按 ja 面形态
+  确定性检出并给出 ja→zh 对照；ja 面形态歧义（多名共用）的不注入
 """
 
 import json
+import re
 import time
 from pathlib import Path
 
 import requests
 
 KEYS_FILE = Path(__file__).parents[2] / "secrets.json"
+
+_GLOSSARY: dict[str, str] | None = None
+
+# 与普通词同形的 ja 面形态不注入（ジュース=果汁 等），避免非实体语境误导
+_COMMON_WORD_SURFACES = {"ジュース"}
+
+
+def _build_glossary() -> dict[str, str]:
+    """ja 面形态 -> 标准中文名。面形态 = ja 全文 + 各段。
+
+    冲突裁决：ja 全文精确相等者优先于「别的条目 ja 的段」（ラチンス → 拉珍斯
+    精确命中，压过 阿珍 ja=ラチンス·ホフマン 的段）；仍歧义（多名共用）的不注入。
+    """
+    import translations  # 仓库根（调用方已把根目录入 sys.path）
+
+    surf: dict[str, str | None] = {}
+    # 先全段（精确）
+    for e in translations.ENTRIES + translations.RECORD_ONLY:
+        if e.ja:
+            s = e.ja.strip()
+            if len(s) >= 2 and s not in _COMMON_WORD_SURFACES:
+                surf[s] = e.name if surf.get(s) in (None, e.name) else None
+    exact = {k: v for k, v in surf.items() if v}
+    # 再分段：不覆盖已有精确归属
+    for e in translations.ENTRIES + translations.RECORD_ONLY:
+        if not e.ja:
+            continue
+        for s in re.split(r"[·・]", e.ja):
+            s = s.strip()
+            if len(s) < 2 or s == e.ja.strip() or s in _COMMON_WORD_SURFACES:
+                continue
+            if s in exact:
+                continue
+            if s in surf and surf[s] != e.name:
+                surf[s] = None  # 歧义
+            else:
+                surf[s] = e.name
+    return {k: v for k, v in surf.items() if v}
+
+
+def glossary_lines(texts: list[str]) -> str:
+    """texts 中出现的实体的译名对照块（无命中返回空串）。"""
+    global _GLOSSARY
+    if _GLOSSARY is None:
+        _GLOSSARY = _build_glossary()
+    hits = {}
+    for surface, zh in _GLOSSARY.items():
+        if any(surface in t for t in texts):
+            hits[surface] = zh
+    if not hits:
+        return ""
+    lines = "\n".join(f"{ja} = {zh}" for ja, zh in sorted(hits.items()))
+    return f"\n\n译名对照（必须使用）：\n{lines}\n"
 
 
 SYSTEM_PROMPT = """你是 Re:Zero（Re:从零开始的异世界生活）的日译中译者。
