@@ -605,12 +605,13 @@ def known_nouns(body, conv):
     hits.sort(key=lambda h: -len(h[0]))  # 稳定排序：等长保持表中先后顺序
     kept = []
     surfaces = []  # 全部胜出面（含被内链跳过的），用于子面抑制
+    displays = re.findall(r"\[\[[^]|]*\|([^]]*)\]\]", conv)  # 骨架内链的显示文字
     for en, name in hits:  # 长面优先：Rachins Hoffman 命中后跳过其子面 Rachins；同面取表中先者
         if any(en in s for s in surfaces):
             continue
         surfaces.append(en)
-        if f"[[{name}|" in conv or f"[[{name}]]" in conv:
-            continue  # 标准名已在骨架内链目标中
+        if any(en in d for d in displays):
+            continue  # en 面出现在内链显示文字中：该词已被链接覆盖，目标名 agent 可见
         kept.append((en, name))
     return sorted(f"{en} = {name}" for en, name in kept)
 

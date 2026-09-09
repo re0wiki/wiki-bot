@@ -25,9 +25,10 @@ MARKER = "<!-- LLM: revid 100; 2026-01-01T00:00:00+00:00 -->"
 def test_known_nouns():
     """已裁决专名注入：词边界精确匹配、长面优先去歧、内链覆盖不重复注入。"""
     body = "Wilhelm van Astrea spoke with Rachins Hoffman about the Zergev Squadron."
-    hits = lt.known_nouns(body, "[[拉珍斯|Rachins Hoffman]] joined the Zergev Squadron.")
+    # 骨架内链形态是 [[zh 最终目标|en 显示文字]]，目标含伪命名空间且多为称呼/全名
+    hits = lt.known_nouns(body, "[[角色:阿珍|Rachins Hoffman]] joined the Zergev Squadron.")
     assert "Zergev Squadron = 切格夫队" in hits  # 无链接的表外词注入
-    assert not any("Rachins" in h for h in hits)  # 标准名已是内链目标，不重复注入
+    assert not any("Rachins" in h for h in hits)  # 已被链接覆盖，不重复注入
     assert lt.known_nouns("Remastered footage, nothing else.", "") == []  # 词边界
 
 
