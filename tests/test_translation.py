@@ -159,7 +159,7 @@ def test_std_name_annotated():
 
 
 def test_variant_annotations_valid():
-    """Variant 标注：source 必填且为 Source 枚举，part 为 Part 枚举或 None。"""
+    """Variant 标注：source 必填且为 Source 枚举。"""
     bad = []
     for e in ENTRIES + RECORD_ONLY:
         for a in e.aliases:
@@ -168,8 +168,6 @@ def test_variant_annotations_valid():
                 continue
             if not isinstance(a.source, translations.Source):
                 bad.append(f"{e.name} 的别名 {a.text} source={a.source!r}")
-            if a.part is not None and not isinstance(a.part, translations.Part):
-                bad.append(f"{e.name} 的别名 {a.text} part={a.part!r}")
     assert not bad, bad
 
 
