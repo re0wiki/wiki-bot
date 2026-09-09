@@ -1,4 +1,4 @@
-"""增量链执行器：翻译 → 归一 → 构建 → 校验 → 部署 → 同步部署快照。
+"""增量链执行器：翻译 → 构建 → 校验 → 部署 → 同步部署快照。
 
 任一阶段非零退出即 SystemExit（调用方据此不推进水位线/状态）。
 子进程清掉 PYTHONPATH（防外部注入的 venv 路径遮蔽本项目依赖）。
@@ -8,17 +8,19 @@ import os
 import shutil
 import subprocess
 import sys
+import time
 
 from . import DATA
 
 ROOT = DATA.parent.parent
-STAGES = ("translate", "normalize", "build", "verify_rt", "deploy")
+STAGES = ("translate", "build", "verify_rt", "deploy")
 
 
 def run_chain(stages: tuple[str, ...] = STAGES) -> None:
     env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
     env["PYTHONIOENCODING"] = "utf-8"
     for s in stages:
+        t0 = time.perf_counter()
         r = subprocess.run(
             [sys.executable, "-m", f"src.nekoquote.{s}"],
             cwd=ROOT,
@@ -29,6 +31,7 @@ def run_chain(stages: tuple[str, ...] = STAGES) -> None:
             check=False,
         )
         print((r.stdout or "")[-400:])
+        print(f"[chain] {s} 耗时 {time.perf_counter() - t0:.1f}s")
         if r.returncode != 0:
             print(r.stderr[-800:])
             raise SystemExit(f"nekoquote.{s} 失败")

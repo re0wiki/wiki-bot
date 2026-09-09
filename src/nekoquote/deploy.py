@@ -1,5 +1,7 @@
 """部署：变更月表 + 新非空月表 /doc 补骨架 + 主模块同步（全部对 lua_live 快照差量）。"""
 
+import time
+
 import pywikibot
 
 from . import DATA
@@ -29,12 +31,17 @@ print(f"变更月表 {len(changed)} 张（vs 上次部署）")
 for m in changed:
     content = (DATA / "lua" / f"{m}.lua").read_text(encoding="utf-8")
     p = pywikibot.Page(site, f"Module:NekoQuote/{m}")
+    if p.text == content:
+        # 快照滞后导致的「假变更」：内容已与线上一致，省一次写请求
+        print(f"  {m} ≡（与线上一致，仅快照滞后）", flush=True)
+        continue
     p.text = content
+    t0 = time.perf_counter()
     p.save(summary="语录月表增量更新", bot=True)
     # /doc：新非空月表补骨架（统一 Template:NekoQuoteDoc）
     d = pywikibot.Page(site, f"Module:NekoQuote/{m}/doc")
     if "{{NekoQuoteDoc}}" not in d.text:
         d.text = "{{NekoQuoteDoc}}"
         d.save(summary="语录 /doc 骨架", bot=True)
-    print(f"  {m} ✓", flush=True)
+    print(f"  {m} ✓ ({time.perf_counter() - t0:.1f}s)", flush=True)
 print("完成")

@@ -10,7 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 from src.nekoquote import DATA
-from src.nekoquote.llm import SYSTEM_PROMPT, chat
+from src.nekoquote.llm import SYSTEM_PROMPT, chat, glossary_lines
 
 try:
     from src.nekoquote.llm import get_config
@@ -95,6 +95,9 @@ def run_batch(items, prompt_prefix):
     lines = [f"{i}\t{t}" for i, (_, t) in enumerate(items)]
     prompt = (
         prompt_prefix
+        + glossary_lines(
+            [t for _, t in items]
+        )  # 译名对照注入（译名表 ja 面形态确定性检出）
         + "\n\n每行输出「编号<TAB>译文」，不要输出其他内容：\n\n"
         + "\n".join(lines)
     )
