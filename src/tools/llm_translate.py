@@ -586,11 +586,11 @@ def evaluate_candidate(item):
     return (item["cold"], title, zh_text, zh_revid, en_title, en_revid, body)
 
 
-def known_nouns(body):
-    """en 正文中出现的已裁决专名（译名表 en 字段词边界精确匹配）→ ja→zh 对照行。
+def known_nouns(body, conv):
+    """en 正文中出现的已裁决专名（译名表 en 字段词边界精确匹配）→ 对照行。
 
-    窄注入：只覆盖裁决过的表外词（nouns.jsonl 毕业后登记进译名表的词）；
-    常见角色的译名由骨架内链目标承担，不在此重复。
+    窄注入：只覆盖骨架内链未覆盖的词——标准名已是 conv 内链目标（[[名| 或
+    [[名]]）的条目跳过，其译名 agent 从骨架直接可见，不重复注入。
     """
     root = str(Path(__file__).resolve().parents[2])
     if root not in sys.path:
@@ -599,13 +599,19 @@ def known_nouns(body):
 
     hits = []
     for e in translations.ENTRIES + translations.RECORD_ONLY:
-        if e.en and len(e.en) >= 3 and re.search(rf"\b{re.escape(e.en)}\b", body):
-            hits.append((e.en, e.name))
-    hits.sort(key=lambda h: -len(h[0]))
+        if not e.en or len(e.en) < 3 or not re.search(rf"\b{re.escape(e.en)}\b", body):
+            continue
+        hits.append((e.en, e.name))
+    hits.sort(key=lambda h: -len(h[0]))  # 稳定排序：等长保持表中先后顺序
     kept = []
-    for en, name in hits:  # 长面优先：Rachins Hoffman 命中后跳过其子面 Rachins
-        if not any(en in k[0] for k in kept):
-            kept.append((en, name))
+    surfaces = []  # 全部胜出面（含被内链跳过的），用于子面抑制
+    for en, name in hits:  # 长面优先：Rachins Hoffman 命中后跳过其子面 Rachins；同面取表中先者
+        if any(en in s for s in surfaces):
+            continue
+        surfaces.append(en)
+        if f"[[{name}|" in conv or f"[[{name}]]" in conv:
+            continue  # 标准名已在骨架内链目标中
+        kept.append((en, name))
     return sorted(f"{en} = {name}" for en, name in kept)
 
 
@@ -621,7 +627,7 @@ def write_work_files(best):
     (WORK / f"{slug}.body.en.txt").write_text(body, encoding="utf-8")
     (WORK / f"{slug}.zh.txt").write_text(zh_text, encoding="utf-8")
     (WORK / f"{slug}.conv.txt").write_text(conv, encoding="utf-8")
-    nouns = known_nouns(body)
+    nouns = known_nouns(body, conv)
     if nouns:
         (WORK / f"{slug}.nouns.txt").write_text("\n".join(nouns) + "\n", encoding="utf-8")
     save_json(

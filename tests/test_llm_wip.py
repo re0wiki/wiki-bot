@@ -23,11 +23,12 @@ MARKER = "<!-- LLM: revid 100; 2026-01-01T00:00:00+00:00 -->"
 
 
 def test_known_nouns():
-    """已裁决专名注入：词边界精确匹配、长面优先去歧。"""
-    hits = lt.known_nouns("Wilhelm van Astrea spoke with Rachins Hoffman about Rachins.")
-    assert "Wilhelm van Astrea = 威尔海姆" in hits
-    assert len([h for h in hits if "Rachins" in h]) == 1  # 长面命中后子面不重复注入
-    assert lt.known_nouns("Remastered footage, nothing else.") == []  # 词边界
+    """已裁决专名注入：词边界精确匹配、长面优先去歧、内链覆盖不重复注入。"""
+    body = "Wilhelm van Astrea spoke with Rachins Hoffman about the Zergev Squadron."
+    hits = lt.known_nouns(body, "[[拉珍斯|Rachins Hoffman]] joined the Zergev Squadron.")
+    assert "Zergev Squadron = 切格夫队" in hits  # 无链接的表外词注入
+    assert not any("Rachins" in h for h in hits)  # 标准名已是内链目标，不重复注入
+    assert lt.known_nouns("Remastered footage, nothing else.", "") == []  # 词边界
 
 
 def make_work(tmp_path, monkeypatch):
