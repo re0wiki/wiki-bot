@@ -606,7 +606,10 @@ def known_nouns(body, conv):
     kept = []
     surfaces = []  # 全部胜出面（含被内链跳过的），用于子面抑制
     displays = re.findall(r"\[\[[^]|]*\|([^]]*)\]\]", conv)  # 骨架内链的显示文字
-    for en, name in hits:  # 长面优先：Rachins Hoffman 命中后跳过其子面 Rachins；同面取表中先者
+    for (
+        en,
+        name,
+    ) in hits:  # 长面优先：Rachins Hoffman 命中后跳过其子面 Rachins；同面取表中先者
         if any(en in s for s in surfaces):
             continue
         surfaces.append(en)
@@ -630,7 +633,9 @@ def write_work_files(best):
     (WORK / f"{slug}.conv.txt").write_text(conv, encoding="utf-8")
     nouns = known_nouns(body, conv)
     if nouns:
-        (WORK / f"{slug}.nouns.txt").write_text("\n".join(nouns) + "\n", encoding="utf-8")
+        (WORK / f"{slug}.nouns.txt").write_text(
+            "\n".join(nouns) + "\n", encoding="utf-8"
+        )
     save_json(
         WORK / f"{slug}.meta.json",
         {

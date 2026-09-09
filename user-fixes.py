@@ -526,6 +526,8 @@ translation_manual = [  # 手动添加的替换组（模板替换；译名规则
     (f"{f('妖')}{f('精')}", "{{Yousei or Elf}}"),
     (r"(?<=半)\{\{(Seirei|Yousei) or Elf\}\}", "{{Elf}}"),
 ]
+
+
 # 别名机制：精确对由 Entry.aliases 生成，繁体写法一并归一（fuzzy=False 条目的别名也
 # 生成：名字本身不归一，别名归一到它）。带 pattern 的别名生成 guard 对（p2st 简繁展开，
 # 手写字符类原样保留），别名位于更长他名内部时防子串误伤。
