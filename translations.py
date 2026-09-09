@@ -49,7 +49,7 @@ class Entry(NamedTuple):
         Variant, ...
     ] = ()  # 显式别名（组外异写）：V(写法, Source.X[, Part.X])
     main: bool = True  # False = 不进 translation_names 主列表（2字短名等防误判），别名仍生成精确对
-    record_only: bool = False  # 仅记录不替换
+    record_only: bool = False  # 无对应 wiki 条目页（文档标注；名字规则由 main 门控，别名对照常生成）
     note: str = ""
 
 
