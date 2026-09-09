@@ -25,7 +25,9 @@ def test_protected_line_untouched():
 def test_edit_before_span_shifts_it():
     """保护区前的编辑改变长度后，后面的保护区仍然有效。"""
     text = '碧翠丝丝\njq = "加護",\nq = "加護"'
-    out = rep(text, r"加護|碧翠丝丝", lambda m: "加护" if "加" in m.group() else "碧翠丝")
+    out = rep(
+        text, r"加護|碧翠丝丝", lambda m: "加护" if "加" in m.group() else "碧翠丝"
+    )
     assert out == '碧翠丝\njq = "加護",\nq = "加护"'
 
 
