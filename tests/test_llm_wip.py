@@ -22,6 +22,14 @@ META = {
 MARKER = "<!-- LLM: revid 100; 2026-01-01T00:00:00+00:00 -->"
 
 
+def test_known_nouns():
+    """已裁决专名注入：词边界精确匹配、长面优先去歧。"""
+    hits = lt.known_nouns("Wilhelm van Astrea spoke with Rachins Hoffman about Rachins.")
+    assert "Wilhelm van Astrea = 威尔海姆" in hits
+    assert len([h for h in hits if "Rachins" in h]) == 1  # 长面命中后子面不重复注入
+    assert lt.known_nouns("Remastered footage, nothing else.") == []  # 词边界
+
+
 def make_work(tmp_path, monkeypatch):
     """建假 work 目录（meta/zh/conv 三件）并把模块的 WORK 指过去。"""
     work = tmp_path / "work"

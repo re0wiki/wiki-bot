@@ -868,7 +868,12 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
     ),
     Entry(name="塞坦塔", ja="セタンタ", source=Source.OFFICIAL_HANT, en="Setanta"),
-    Entry(name="特利亚斯", source=Source.OFFICIAL_HANS),
+    Entry(
+        name="特利亚斯",
+        source=Source.OFFICIAL_HANS,
+        aliases=(V("特里亚斯", Source.FAN),),
+        note="威尔海姆旧姓",
+    ),
     Entry(
         name="欧德古勒斯", source=Source.FAN, ja="オドグラス", en="Odglass", cat="角色"
     ),
@@ -2067,6 +2072,21 @@ ENTRIES: list[Entry] = [
         cat="术语",
     ),
     Entry(
+        name="克维音之石",
+        source=Source.OFFICIAL_HANS,
+        aliases=(V("奎因之石", Source.FAN),),
+        record_only=True,
+        cat="术语",
+        note="13卷第七章题",
+    ),
+    Entry(
+        name="沙时间",
+        source=Source.OFFICIAL_HANS,
+        record_only=True,
+        cat="术语",
+        note="奥吉拉沙丘沙暴屏障，en Sand Time",
+    ),
+    Entry(
         name="寒冰烙印艺术",
         source=Source.OFFICIAL_HANS,
         aliases=(V("冰印艺术", Source.FAN),),
@@ -2628,6 +2648,14 @@ RECORD_ONLY: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         record_only=True,
         note="波尔多·切格夫",
+    ),
+    Entry(
+        name="切格夫队",
+        aliases=(V("卓格夫小队", Source.FAN), V("切格夫小队", Source.FAN)),
+        source=Source.OFFICIAL_HANS,
+        record_only=True,
+        cat="术语",
+        note="en Zergev Squadron（重定向至 Royal Army 小节）",
     ),
     Entry(
         name="麦克马洪",

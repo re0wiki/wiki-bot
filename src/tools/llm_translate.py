@@ -586,6 +586,29 @@ def evaluate_candidate(item):
     return (item["cold"], title, zh_text, zh_revid, en_title, en_revid, body)
 
 
+def known_nouns(body):
+    """en 正文中出现的已裁决专名（译名表 en 字段词边界精确匹配）→ ja→zh 对照行。
+
+    窄注入：只覆盖裁决过的表外词（nouns.jsonl 毕业后登记进译名表的词）；
+    常见角色的译名由骨架内链目标承担，不在此重复。
+    """
+    root = str(Path(__file__).resolve().parents[2])
+    if root not in sys.path:
+        sys.path.insert(0, root)  # 脚本直跑时 sys.path[0] 是 src/tools，译名表在仓库根
+    import translations
+
+    hits = []
+    for e in translations.ENTRIES + translations.RECORD_ONLY:
+        if e.en and len(e.en) >= 3 and re.search(rf"\b{re.escape(e.en)}\b", body):
+            hits.append((e.en, e.name))
+    hits.sort(key=lambda h: -len(h[0]))
+    kept = []
+    for en, name in hits:  # 长面优先：Rachins Hoffman 命中后跳过其子面 Rachins
+        if not any(en in k[0] for k in kept):
+            kept.append((en, name))
+    return sorted(f"{en} = {name}" for en, name in kept)
+
+
 def write_work_files(best):
     """把队首候选的备料写进 work 目录（en 正文 / zh 现文 / conv 骨架 / meta），并打印摘要。"""
     cold, title, zh_text, zh_revid, en_title, en_revid, body = best
@@ -598,6 +621,9 @@ def write_work_files(best):
     (WORK / f"{slug}.body.en.txt").write_text(body, encoding="utf-8")
     (WORK / f"{slug}.zh.txt").write_text(zh_text, encoding="utf-8")
     (WORK / f"{slug}.conv.txt").write_text(conv, encoding="utf-8")
+    nouns = known_nouns(body)
+    if nouns:
+        (WORK / f"{slug}.nouns.txt").write_text("\n".join(nouns) + "\n", encoding="utf-8")
     save_json(
         WORK / f"{slug}.meta.json",
         {
@@ -621,6 +647,10 @@ def write_work_files(best):
     print(
         f"  agent 以 {WORK / f'{slug}.conv.txt'} 为基础翻译 prose；zh 策展字段已机械保留"
     )
+    if nouns:
+        print(f"  已裁决专名（见 {WORK / f'{slug}.nouns.txt'}，译文须使用）：")
+        for n in nouns:
+            print(f"    {n}")
 
 
 def resolve_wip():
