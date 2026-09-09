@@ -42,7 +42,6 @@ class Entry(NamedTuple):
         Variant, ...
     ] = ()  # 显式别名（组外异写）：V(写法, Source.X)
     main: bool = True  # False = 不进 translation_names 主列表（2字短名等防误判），别名仍生成精确对
-    record_only: bool = False  # 无对应 wiki 条目页（文档标注；名字规则由 main 门控，别名对照常生成）
     note: str = ""
 
 
@@ -1475,7 +1474,6 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         aliases=(V("斯巴鲁", Source.FAN),),
         main=False,  # p2o(昴)=[昴昂] 会把 昂扬/昂贵 打成 昴
-        record_only=True,
         cat="角色",
         note="行文短名；条目页为 菜月昴",
     ),
@@ -1486,8 +1484,7 @@ ENTRIES: list[Entry] = [
         full_name="梅莉·波多尔德",
         source=Source.OFFICIAL_HANS,
         cat="角色",
-        main=False,  # p2o(梅莉)=[梅美麥麦][莉…] 会把 美丽 打成 梅莉
-        record_only=True,  # 名归一规则在 user-fixes：首字须 literal 梅，f 展开会吃「美丽」
+        main=False,  # p2o(梅莉)=[梅美麥麦][莉…] 会把 美丽 打成 梅莉  # 名归一规则在 user-fixes：首字须 literal 梅，f 展开会吃「美丽」
     ),
     Entry(
         name="菜月昴",
@@ -2113,7 +2110,6 @@ ENTRIES: list[Entry] = [
         en="Quain Stone",
         source=Source.OFFICIAL_HANS,
         aliases=(V("奎因之石", Source.FAN),),
-        record_only=True,
         cat="术语",
         note="13卷第七章题",
     ),
@@ -2122,7 +2118,6 @@ ENTRIES: list[Entry] = [
         en="Elf",
         source=Source.FAN,
         main=False,
-        record_only=True,
         cat="术语",
         note="Elf 的标准译法是模板；正文归一由结构规则（{{Seirei or Elf}} 等）处理",
     ),
@@ -2130,7 +2125,6 @@ ENTRIES: list[Entry] = [
         name="沙时间",
         en="Sand Time",
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         cat="术语",
         note="奥吉拉沙丘沙暴屏障",
     ),
@@ -2279,7 +2273,6 @@ ENTRIES: list[Entry] = [
         ja="イグレシア",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：泽尔加·伊格莱西亚、鲁达·伊格莱西亚",
     ),
 ]
@@ -2291,7 +2284,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ロム",
         en="Rom",
         cat="角色",
-        record_only=True,
         note="巴尔加·克罗姆威尔 的通称（ロム）；与 罗姆爷（ロム爺）不互转",
     ),
     Entry(
@@ -2300,7 +2292,6 @@ RECORD_ONLY: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         en="Valga",
         cat="角色",
-        record_only=True,
         note="罗姆爷 真名 巴尔加·克罗姆威尔；称呼与真名不互转",
     ),
     Entry(
@@ -2310,7 +2301,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ガストン",
         en="Gaston",
         cat="角色",
-        record_only=True,
         note="阿顿 真名；称呼与真名不互转",
     ),
     Entry(
@@ -2323,7 +2313,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ラチンス",
         en="Rachins",
         cat="角色",
-        record_only=True,
         note="阿珍 真名；称呼与真名不互转",
     ),
     Entry(
@@ -2337,7 +2326,6 @@ RECORD_ONLY: list[Entry] = [
             V("康巴利", Source.FAN),
             V("汉巴利", Source.FAN),
         ),
-        record_only=True,
         note="阿汉 真名（官简）；汉巴利 为台版写法",
     ),
     Entry(
@@ -2349,7 +2337,6 @@ RECORD_ONLY: list[Entry] = [
         cat="角色",
         full_name="雷德·阿斯特雷亚",
         aliases=(V("雷伊德", Source.OFFICIAL_HANT),),
-        record_only=True,
         note="雷伊德 为台版译名；雷德 本身不归一（格莱德/芙蕾德 等他名子串风险）",
     ),
     Entry(
@@ -2358,7 +2345,6 @@ RECORD_ONLY: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         pattern="(?<!莉)卢安娜",
         en="Louanna",
-        record_only=True,
         aliases=(
             V("露安娜", Source.FAN),
             V("露昂娜", Source.OFFICIAL_HANT),
@@ -2372,14 +2358,12 @@ RECORD_ONLY: list[Entry] = [
         ja="ティーガ·ラウレオン",
         cat="角色",
         full_name="狄加·拉雷恩",
-        record_only=True,
     ),
     Entry(
         name="沃尔夫",
         source=Source.OFFICIAL_HANT,
         ja="ウォルフ",
         cat="角色",
-        record_only=True,
     ),
     Entry(
         name="雷诺",
@@ -2387,7 +2371,6 @@ RECORD_ONLY: list[Entry] = [
         full_name="雷诺·雷克斯",
         source=Source.OFFICIAL_HANT,
         en="Leno",
-        record_only=True,
     ),
     Entry(
         name="菲鲁特",
@@ -2396,7 +2379,6 @@ RECORD_ONLY: list[Entry] = [
         pattern="(?<!加|拉)菲鲁特(?!娜)",
         ja="フェルト",
         cat="角色",
-        record_only=True,
     ),
     Entry(
         name="弗尔多",
@@ -2407,7 +2389,6 @@ RECORD_ONLY: list[Entry] = [
         ja="フォルド·ルグニカ",
         cat="角色",
         full_name="弗尔多·卢克尼卡",
-        record_only=True,
     ),
     Entry(
         name="蜜蜜",
@@ -2417,7 +2398,6 @@ RECORD_ONLY: list[Entry] = [
         en="Mimi",
         cat="角色",
         full_name="蜜蜜·帕尔巴顿",
-        record_only=True,
     ),
     Entry(
         name="托托",
@@ -2425,7 +2405,6 @@ RECORD_ONLY: list[Entry] = [
         ja="トト",
         en="Toto",
         cat="角色",
-        record_only=True,
     ),
     Entry(
         name="贝利",
@@ -2433,14 +2412,12 @@ RECORD_ONLY: list[Entry] = [
         source=Source.FAN,
         pattern="(?<!赫鲁|卡)贝利",
         en="Beli",
-        record_only=True,
     ),
     Entry(
         name="克莱茵",
         ja="クレイン·ドナヒュー",
         source=Source.FAN,
         en="Crane",
-        record_only=True,
     ),
     Entry(
         name="克雷茵",
@@ -2449,10 +2426,9 @@ RECORD_ONLY: list[Entry] = [
         en="Klein",
         cat="角色",
         full_name="克莱因·尤克历乌斯",
-        record_only=True,
         note="台版译作 克萊因，与 克莱茵（クレイン·ドナヒュー）台版同名；不同角色不互转",
     ),
-    Entry(name="亚雷", source=Source.FAN, record_only=True),
+    Entry(name="亚雷", source=Source.FAN),
     Entry(
         name="艾达",
         source=Source.OFFICIAL_HANT,
@@ -2460,7 +2436,6 @@ RECORD_ONLY: list[Entry] = [
         en="Edda",
         cat="角色",
         full_name="艾达·雷法斯特",
-        record_only=True,
     ),
     Entry(
         name="海伦",
@@ -2469,7 +2444,6 @@ RECORD_ONLY: list[Entry] = [
         en="Helaine",
         cat="角色",
         full_name="海伦·盖特尼斯",
-        record_only=True,
     ),
     Entry(
         name="柯林",
@@ -2478,7 +2452,6 @@ RECORD_ONLY: list[Entry] = [
         en="Colin",
         cat="角色",
         full_name="柯林·拉布里尔",
-        record_only=True,
     ),
     Entry(
         name="格林",
@@ -2488,7 +2461,6 @@ RECORD_ONLY: list[Entry] = [
         ja="グリム·ファウゼン",
         cat="角色",
         full_name="格林·法先",
-        record_only=True,
     ),
     Entry(
         name="柯蕾特",
@@ -2497,7 +2469,6 @@ RECORD_ONLY: list[Entry] = [
         pattern="(?<!攻|利|摩)柯蕾特",
         ja="コレット",
         cat="角色",
-        record_only=True,
     ),
     Entry(
         name="萨德",
@@ -2506,7 +2477,6 @@ RECORD_ONLY: list[Entry] = [
         pattern="(?<!艾尔)萨德(?!拉|兰)",
         ja="サド",
         cat="角色",
-        record_only=True,
     ),
     Entry(
         name="莉亚拉",
@@ -2516,7 +2486,6 @@ RECORD_ONLY: list[Entry] = [
         ja="リアラ·トンプソン<br> リーシア·ティンゼル(舊名)",
         cat="角色",
         full_name="莉亚拉·汤普森",
-        record_only=True,
         note="婚前名 莉西亚·霆杰尔（不同日文名）另记录，不互转",
     ),
     Entry(
@@ -2527,9 +2496,8 @@ RECORD_ONLY: list[Entry] = [
         en="Hiain",
         cat="角色",
         full_name="赫莱茵·亚兹",
-        record_only=True,
     ),
-    Entry(name="哈莱因", source=Source.FAN, record_only=True),
+    Entry(name="哈莱因", source=Source.FAN),
     Entry(
         name="威茨",
         ja="ヴァイツ·ログン",
@@ -2538,7 +2506,6 @@ RECORD_ONLY: list[Entry] = [
         aliases=(V("魏兹", Source.OFFICIAL_HANT),),
         pattern="威茨(?!利)",
         en="Weitz",
-        record_only=True,
     ),
     Entry(
         name="库娜",
@@ -2547,7 +2514,6 @@ RECORD_ONLY: list[Entry] = [
         aliases=(V("枯纳", Source.OFFICIAL_HANT),),
         pattern="(?<!帕|夏|拉|札|悟)库娜",
         en="Kuna",
-        record_only=True,
     ),
     Entry(
         name="莉西亚",
@@ -2557,10 +2523,9 @@ RECORD_ONLY: list[Entry] = [
         en="Reshia",
         cat="角色",
         aliases=(V("莉希亚", Source.OFFICIAL_HANT),),
-        record_only=True,
         note="莉亚拉 婚前名 莉西亚·霆杰尔（リーシア·ティンゼル，加菲尔与弗雷德莉卡之母）",
     ),
-    Entry(name="卢西安", source=Source.FAN, record_only=True),
+    Entry(name="卢西安", source=Source.FAN),
     Entry(
         name="阿尔",
         full_name="阿尔迪巴兰",
@@ -2568,7 +2533,6 @@ RECORD_ONLY: list[Entry] = [
         ja="アルデバラン",
         en="Al",
         cat="角色",
-        record_only=True,
     ),
     Entry(
         name="佛格",
@@ -2576,7 +2540,6 @@ RECORD_ONLY: list[Entry] = [
         ja="フォッグ",
         en="Fogg",
         cat="角色",
-        record_only=True,
     ),
     Entry(
         name="比恩",
@@ -2585,7 +2548,6 @@ RECORD_ONLY: list[Entry] = [
         en="Biehn",
         cat="角色",
         full_name="比恩·阿盖尔",
-        record_only=True,
     ),
     Entry(
         name="罗伊",
@@ -2594,14 +2556,12 @@ RECORD_ONLY: list[Entry] = [
         en="Roy",
         cat="角色",
         full_name="罗伊·阿尔法德",
-        record_only=True,
     ),
     Entry(
         name="奈基",
         ja="ネイジ·ロックハート",
         source=Source.FAN,
         en="Neiji",
-        record_only=True,
     ),
     Entry(
         name="米尔多",
@@ -2609,18 +2569,16 @@ RECORD_ONLY: list[Entry] = [
         ja="ミルド",
         en="Mild",
         cat="角色",
-        record_only=True,
         note="台版 米爾德 与 米尔德 撞车，不归一",
     ),
     Entry(
-        name="泰戈", source=Source.OFFICIAL_HANS, record_only=True, note="戈加斯·泰戈"
+        name="泰戈", source=Source.OFFICIAL_HANS, note="戈加斯·泰戈"
     ),
     Entry(
         name="合辛",
         en="Hoshin",
         ja="ホーシン",
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="安娜塔西亚·合辛",
     ),
     Entry(
@@ -2628,7 +2586,6 @@ RECORD_ONLY: list[Entry] = [
         en="Osman",
         ja="オスマン",
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="迪克尔·奥斯曼",
     ),
     Entry(
@@ -2636,7 +2593,6 @@ RECORD_ONLY: list[Entry] = [
         en="Barielle",
         ja="バーリエル",
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="普莉希拉·跋利耶尔",
     ),
     Entry(
@@ -2646,7 +2602,6 @@ RECORD_ONLY: list[Entry] = [
         en="Felix",
         cat="角色",
         aliases=(V("菲利克丝", Source.FAN),),
-        record_only=True,
         note="菲莉丝 真名；称呼与真名不互转（菲莉丝 不归一过来，这里也不归一过去）",
     ),
     Entry(
@@ -2654,7 +2609,6 @@ RECORD_ONLY: list[Entry] = [
         en="Argyle",
         ja="アーガイル",
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="菲利克斯·阿盖尔",
     ),
     Entry(
@@ -2662,19 +2616,16 @@ RECORD_ONLY: list[Entry] = [
         en="Cromwell",
         ja="クロムウェル",
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="巴尔加·克罗姆威尔",
     ),
     Entry(
         name="法乌塞",
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="古力姆·法乌塞",
     ),
     Entry(
         name="亚伯克斯",
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="文森特·亚伯克斯",
     ),
     Entry(
@@ -2683,7 +2634,6 @@ RECORD_ONLY: list[Entry] = [
         ja="アルファルド",
         aliases=(V("爱尔法德", Source.OFFICIAL_HANT),),
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="罗伊·阿尔法德",
     ),
     Entry(
@@ -2692,13 +2642,11 @@ RECORD_ONLY: list[Entry] = [
         ja="フェロー",
         aliases=(V("费罗", Source.OFFICIAL_HANT),),
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="拉塞尔·菲洛",
     ),
     Entry(
         name="利罗迪特",
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="戈加斯·利罗迪特",
     ),
     Entry(
@@ -2707,7 +2655,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ツェルゲフ",
         aliases=(V("卓格夫", Source.OFFICIAL_HANT),),
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="波尔多·切格夫",
     ),
     Entry(
@@ -2715,7 +2662,6 @@ RECORD_ONLY: list[Entry] = [
         en="Zergev Squadron",
         aliases=(V("卓格夫小队", Source.FAN), V("切格夫小队", Source.FAN)),
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         cat="术语",
     ),
     Entry(
@@ -2724,35 +2670,33 @@ RECORD_ONLY: list[Entry] = [
         ja="マクマホン",
         aliases=(V("马克马洪", Source.OFFICIAL_HANT),),
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="麦克罗托夫·麦克马洪",
     ),
-    Entry(name="戈亚", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"),
-    Entry(name="芙拉", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"),
-    Entry(name="修玛", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"),
-    Entry(name="流星", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"),
-    Entry(name="纱幕", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"),
-    Entry(name="渡门", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"),
+    Entry(name="戈亚", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="芙拉", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="修玛", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="流星", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="纱幕", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="渡门", source=Source.OFFICIAL_HANS, note="术式名"),
     Entry(
-        name="吉瓦尔德", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"
+        name="吉瓦尔德", source=Source.OFFICIAL_HANS, note="术式名"
     ),
-    Entry(name="姆拉克", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"),
-    Entry(name="维塔", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"),
+    Entry(name="姆拉克", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="维塔", source=Source.OFFICIAL_HANS, note="术式名"),
     Entry(
-        name="百人一太刀", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"
+        name="百人一太刀", source=Source.OFFICIAL_HANS, note="术式名"
     ),
     Entry(
-        name="绝对零度", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"
+        name="绝对零度", source=Source.OFFICIAL_HANS, note="术式名"
     ),
-    Entry(name="冰之花", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"),
-    Entry(name="冰兵", source=Source.OFFICIAL_HANS, record_only=True, note="术式名"),
+    Entry(name="冰之花", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="冰兵", source=Source.OFFICIAL_HANS, note="术式名"),
     Entry(
         name="伊芙桑特",
         en="Yvsant",
         ja="イヴサント",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：雷哈雷·伊芙桑特",
     ),
     Entry(
@@ -2761,7 +2705,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ペッツァ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：娜南納·佩札",
     ),
     Entry(
@@ -2771,7 +2714,6 @@ RECORD_ONLY: list[Entry] = [
         source=Source.FAN,
         cat="角色",
         aliases=(V("佩希特", Source.OFFICIAL_HANT),),
-        record_only=True,
         note="姓：高朗",
     ),
     Entry(
@@ -2781,7 +2723,6 @@ RECORD_ONLY: list[Entry] = [
         source=Source.FAN,
         cat="角色",
         aliases=(V("彭达冯", Source.OFFICIAL_HANT),),
-        record_only=True,
         note="姓：贝尔斯特兹",
     ),
     Entry(
@@ -2790,7 +2731,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ガバット",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：莱斯利·加巴特",
     ),
     Entry(
@@ -2799,7 +2739,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ガロ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：海登·加洛",
     ),
     Entry(
@@ -2808,7 +2747,6 @@ RECORD_ONLY: list[Entry] = [
         ja="カラード",
         source=Source.OFFICIAL_HANS,
         cat="角色",
-        record_only=True,
         note="姓：鲁斯贝尔",
     ),
     Entry(
@@ -2817,7 +2755,6 @@ RECORD_ONLY: list[Entry] = [
         ja="シュピーゲル",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：托利德·史匹格",
     ),
     Entry(
@@ -2826,7 +2763,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ハヤタ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：奧爾戈·哈亞塔",
     ),
     Entry(
@@ -2835,7 +2771,6 @@ RECORD_ONLY: list[Entry] = [
         ja="インプセン",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：法里德·因普森",
     ),
     Entry(
@@ -2844,7 +2779,6 @@ RECORD_ONLY: list[Entry] = [
         ja="トゥエリコ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：諾艾爾·圖耶里科",
     ),
     Entry(
@@ -2853,7 +2787,6 @@ RECORD_ONLY: list[Entry] = [
         ja="エルマート",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：希尔菲",
     ),
     Entry(
@@ -2862,7 +2795,6 @@ RECORD_ONLY: list[Entry] = [
         ja="タラスク",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：歐魯佐·塔拉斯克",
     ),
     Entry(
@@ -2871,7 +2803,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ドナヒュー",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：克萊因",
     ),
     Entry(
@@ -2880,7 +2811,6 @@ RECORD_ONLY: list[Entry] = [
         ja="テンゼン",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：不二樓·天膳、八重·天膳",
     ),
     Entry(
@@ -2889,7 +2819,6 @@ RECORD_ONLY: list[Entry] = [
         ja="クウェイル",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：埃德蒙·奎爾",
     ),
     Entry(
@@ -2899,7 +2828,6 @@ RECORD_ONLY: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         cat="角色",
         aliases=(V("欧瑞黎", Source.OFFICIAL_HANT),),
-        record_only=True,
         note="姓：卡秋娅、贾马尔",
     ),
     Entry(
@@ -2908,7 +2836,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ウェルキン",
         source=Source.OFFICIAL_HANS,
         cat="角色",
-        record_only=True,
         note="姓：里卡多",
     ),
     Entry(
@@ -2917,7 +2844,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ウエズミ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：哈馬亞魯·威斯密",
     ),
     Entry(
@@ -2926,7 +2852,6 @@ RECORD_ONLY: list[Entry] = [
         ja="アンスリウム",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：莉可莉丝",
     ),
     Entry(
@@ -2935,7 +2860,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ユリトー",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：米克利·尤里托",
     ),
     Entry(
@@ -2944,7 +2868,6 @@ RECORD_ONLY: list[Entry] = [
         ja="バロネス",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：李奧納多·巴羅內斯",
     ),
     Entry(
@@ -2953,7 +2876,6 @@ RECORD_ONLY: list[Entry] = [
         ja="プリスティス",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：梅尔蒂、梅尔蒂 (虚假的王选候补)",
     ),
     Entry(
@@ -2962,7 +2884,6 @@ RECORD_ONLY: list[Entry] = [
         ja="パールバトン",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：缇碧、蜜蜜、黑塔罗",
     ),
     Entry(
@@ -2971,7 +2892,6 @@ RECORD_ONLY: list[Entry] = [
         ja="パーキン",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：馬卡利斯特",
     ),
     Entry(
@@ -2980,7 +2900,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ペンダルトン",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：乔拉",
     ),
     Entry(
@@ -2989,7 +2908,6 @@ RECORD_ONLY: list[Entry] = [
         ja="エンデュミオン",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：基利安",
     ),
     Entry(
@@ -2999,7 +2917,6 @@ RECORD_ONLY: list[Entry] = [
         source=Source.FAN,
         cat="角色",
         aliases=(V("哥德文", Source.OFFICIAL_HANT),),
-        record_only=True,
         note="姓：拉米亚",
     ),
     Entry(
@@ -3008,7 +2925,6 @@ RECORD_ONLY: list[Entry] = [
         ja="トネリコ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：希洛洛",
     ),
     Entry(
@@ -3017,7 +2933,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ラブリル",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：柯林",
     ),
     Entry(
@@ -3026,7 +2941,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ラウレオン",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：狄加、狄加 (虚假的王选候补)",
     ),
     Entry(
@@ -3036,7 +2950,6 @@ RECORD_ONLY: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         cat="角色",
         aliases=(V("方克", Source.OFFICIAL_HANT),),
-        record_only=True,
         note="姓：陶德·方古",
     ),
     Entry(
@@ -3045,7 +2958,6 @@ RECORD_ONLY: list[Entry] = [
         ja="マネスク",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：帕拉迪奥·曼內斯庫",
     ),
     Entry(
@@ -3055,7 +2967,6 @@ RECORD_ONLY: list[Entry] = [
         source=Source.FAN,
         cat="角色",
         aliases=(V("多拉克罗伊", Source.OFFICIAL_HANT),),
-        record_only=True,
         note="姓：塞丽娜",
     ),
     Entry(
@@ -3064,7 +2975,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ゴルダリオ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：特里奧拉·格爾達里奧、維特克·格爾達里奧",
     ),
     Entry(
@@ -3074,7 +2984,6 @@ RECORD_ONLY: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         cat="角色",
         aliases=(V("梅耶尔", Source.OFFICIAL_HANT),),
-        record_only=True,
         note="姓：琉兹 (复制体)、琉兹 (本体)",
     ),
     Entry(
@@ -3087,7 +2996,6 @@ RECORD_ONLY: list[Entry] = [
             V("梅拉豪", Source.FAN),
             V("梅拉浩", Source.OFFICIAL_HANT),
         ),
-        record_only=True,
         note="姓：库乌德",
     ),
     Entry(
@@ -3096,7 +3004,6 @@ RECORD_ONLY: list[Entry] = [
         ja="メイガン",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：修堤·梅根",
     ),
     Entry(
@@ -3105,7 +3012,6 @@ RECORD_ONLY: list[Entry] = [
         ja="メトレイ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：赞克·梅特利",
     ),
     Entry(
@@ -3114,7 +3020,6 @@ RECORD_ONLY: list[Entry] = [
         ja="トラサルディ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：戴纳斯",
     ),
     Entry(
@@ -3123,7 +3028,6 @@ RECORD_ONLY: list[Entry] = [
         ja="オールセン",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：尼柯·歐爾森",
     ),
     Entry(
@@ -3132,7 +3036,6 @@ RECORD_ONLY: list[Entry] = [
         ja="オルコス",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：維克特·歐魯克斯",
     ),
     Entry(
@@ -3141,7 +3044,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ファウゼン",
         source=Source.OFFICIAL_HANS,
         cat="角色",
-        record_only=True,
         note="姓：格林",
     ),
     Entry(
@@ -3150,7 +3052,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ファブレス",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：葛利奇",
     ),
     Entry(
@@ -3159,7 +3060,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ゼッペス",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：奧利佛·澤佩斯",
     ),
     Entry(
@@ -3168,7 +3068,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ロックハート",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：涅吉·洛克哈特",
     ),
     Entry(
@@ -3177,7 +3076,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ハイネルガ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：貝里·海聶魯革",
     ),
     Entry(
@@ -3186,7 +3084,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ヴァールハイト",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：萊納·瓦爾海特",
     ),
     Entry(
@@ -3195,7 +3092,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ガットネス",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：海伦",
     ),
     Entry(
@@ -3208,7 +3104,6 @@ RECORD_ONLY: list[Entry] = [
         ),
         source=Source.OFFICIAL_HANS,
         cat="角色",
-        record_only=True,
         note="姓：凯迪",
     ),
     Entry(
@@ -3217,7 +3112,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ミサンガ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：伊德拉",
     ),
     Entry(
@@ -3226,7 +3120,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ミロード",
         source=Source.OFFICIAL_HANS,
         cat="角色",
-        record_only=True,
         note="姓：安妮罗泽、格蕾丝、达德利",
     ),
     Entry(
@@ -3235,7 +3128,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ログン",
         source=Source.OFFICIAL_HANS,
         cat="角色",
-        record_only=True,
         note="姓：威茨",
     ),
     Entry(
@@ -3243,7 +3135,6 @@ RECORD_ONLY: list[Entry] = [
         ja="メレテー",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：古恩·美列登",
     ),
     Entry(
@@ -3252,7 +3143,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ケナシュ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：伊戈尔",
     ),
     Entry(
@@ -3261,7 +3151,6 @@ RECORD_ONLY: list[Entry] = [
         ja="エディッツ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：比克拉姆·艾迪茲",
     ),
     Entry(
@@ -3270,7 +3159,6 @@ RECORD_ONLY: list[Entry] = [
         ja="エレメント",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：莎克拉、莎克拉 (虚假的王选候补)",
     ),
     Entry(
@@ -3279,7 +3167,6 @@ RECORD_ONLY: list[Entry] = [
         ja="モレロ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：古斯塔夫",
     ),
     Entry(
@@ -3288,7 +3175,6 @@ RECORD_ONLY: list[Entry] = [
         ja="フィッツ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：巴罗伊",
     ),
     Entry(
@@ -3297,7 +3183,6 @@ RECORD_ONLY: list[Entry] = [
         ja="フェザーラン",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：多蘿蒂婭·費瑟蘭、希多妮婭·費瑟蘭、希魯蒂婭·費瑟蘭、欧尔尼娅·費瑟蘭、莎莉婭·費瑟蘭、赫罗西欧·費瑟蘭",
     ),
     Entry(
@@ -3306,7 +3191,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ヘティア",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：米蕾耶·赫蒂婭",
     ),
     Entry(
@@ -3315,7 +3199,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ホルストイ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：格拉姆达特",
     ),
     Entry(
@@ -3324,7 +3207,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ディアルモ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：古打·迪亞爾莫",
     ),
     Entry(
@@ -3333,7 +3215,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ドーソン",
         source=Source.OFFICIAL_HANS,
         cat="角色",
-        record_only=True,
         note="姓：克拉格雷爾·道森",
     ),
     Entry(
@@ -3342,7 +3223,6 @@ RECORD_ONLY: list[Entry] = [
         ja="リズボン",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：玛洛妮",
     ),
     Entry(
@@ -3351,7 +3231,6 @@ RECORD_ONLY: list[Entry] = [
         ja="リッシュ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：卡德蒙、普拉姆、菈庫莎",
     ),
     Entry(
@@ -3361,7 +3240,6 @@ RECORD_ONLY: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         cat="角色",
         aliases=(V("哥尔特", Source.OFFICIAL_HANT),),
-        record_only=True,
         note="姓：奇夏·金",
     ),
     Entry(
@@ -3370,7 +3248,6 @@ RECORD_ONLY: list[Entry] = [
         ja="アーナンシー",
         source=Source.OFFICIAL_HANS,
         cat="角色",
-        record_only=True,
         note="姓：皮波特",
     ),
     Entry(
@@ -3378,7 +3255,6 @@ RECORD_ONLY: list[Entry] = [
         ja="アガマ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：梅里欧·阿嘎玛",
     ),
     Entry(
@@ -3387,7 +3263,6 @@ RECORD_ONLY: list[Entry] = [
         ja="アムル",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：多鲁特洛",
     ),
     Entry(
@@ -3397,7 +3272,6 @@ RECORD_ONLY: list[Entry] = [
         ja="アドガルド",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：維格·阿德加德",
     ),
     Entry(
@@ -3406,7 +3280,6 @@ RECORD_ONLY: list[Entry] = [
         ja="アーラム",
         source=Source.OFFICIAL_HANS,
         cat="角色",
-        record_only=True,
         note="姓：米路德",
     ),
     Entry(
@@ -3415,7 +3288,6 @@ RECORD_ONLY: list[Entry] = [
         ja="アグリ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：忠甸·阿格利",
     ),
     Entry(
@@ -3424,7 +3296,6 @@ RECORD_ONLY: list[Entry] = [
         ja="レックス",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：雷诺",
     ),
     Entry(
@@ -3433,7 +3304,6 @@ RECORD_ONLY: list[Entry] = [
         ja="レグンドラ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：蒂亞朵菈·雷根德拉",
     ),
     Entry(
@@ -3442,7 +3312,6 @@ RECORD_ONLY: list[Entry] = [
         ja="レイファスト",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：艾达",
     ),
     Entry(
@@ -3451,7 +3320,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ハイアット",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：罗格蕾丝·霍華德",
     ),
     Entry(
@@ -3460,7 +3328,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ホフマン",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：李凯尔特、阿珍",
     ),
     Entry(
@@ -3469,7 +3336,6 @@ RECORD_ONLY: list[Entry] = [
         ja="マゴージ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：利夫坦",
     ),
     Entry(
@@ -3479,7 +3345,6 @@ RECORD_ONLY: list[Entry] = [
         source=Source.FAN,
         cat="角色",
         aliases=(V("曼迪森", Source.OFFICIAL_HANT),),
-        record_only=True,
         note="姓：曼弗雷德",
     ),
     Entry(
@@ -3488,7 +3353,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ウルラート",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：塔爾可·烏魯拉特",
     ),
     Entry(
@@ -3497,7 +3361,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ヤッツ",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：赫莱茵",
     ),
     Entry(
@@ -3506,7 +3369,6 @@ RECORD_ONLY: list[Entry] = [
         ja="イースタン",
         source=Source.FAN,
         cat="角色",
-        record_only=True,
         note="姓：奔加姆",
     ),
     Entry(
@@ -3515,7 +3377,6 @@ RECORD_ONLY: list[Entry] = [
         ja="テメグリフ",
         aliases=(V("特梅格里夫", Source.OFFICIAL_HANS),),
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="巴鲁罗伊·提美格里福；官简内部不一致：EX4 提美格里福×15 vs vol22 特梅格里夫×3，取多",
     ),
     Entry(
@@ -3524,7 +3385,6 @@ RECORD_ONLY: list[Entry] = [
         ja="フエルミ",
         aliases=(V("菲尔密", Source.OFFICIAL_HANT),),
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="历布莱·菲尔米",
     ),
     Entry(
@@ -3533,7 +3393,6 @@ RECORD_ONLY: list[Entry] = [
         ja="レメンディス",
         aliases=(V("雷玫迪斯", Source.OFFICIAL_HANT),),
         source=Source.OFFICIAL_HANS,
-        record_only=True,
         note="卡罗尔/芙拉姆/格拉希丝·莱蒙蒂斯",
     ),
     Entry(
@@ -3542,7 +3401,6 @@ RECORD_ONLY: list[Entry] = [
         full_name="克莱因·多纳修",
         cat="角色",
         source=Source.FAN,
-        record_only=True,
         note="与 克雷茵·尤克历乌斯 的官简全名 克莱因·尤克历乌斯 撞名，勿互转",
     ),
     Entry(
@@ -3553,7 +3411,6 @@ RECORD_ONLY: list[Entry] = [
         full_name="露梅拉·依亚·尤克历乌斯",
         cat="角色",
         source=Source.FAN,
-        record_only=True,
     ),
     Entry(
         name="尤加尔德",
@@ -3561,7 +3418,6 @@ RECORD_ONLY: list[Entry] = [
         full_name="尤加尔德·佛拉基亚",
         cat="角色",
         source=Source.FAN,
-        record_only=True,
     ),
     Entry(
         name="菲尔欧蕾",
@@ -3569,7 +3425,6 @@ RECORD_ONLY: list[Entry] = [
         full_name="菲尔欧蕾·卢克尼卡",
         cat="角色",
         source=Source.FAN,
-        record_only=True,
     ),
     Entry(
         name="菈库莎",
@@ -3577,7 +3432,6 @@ RECORD_ONLY: list[Entry] = [
         full_name="菈库莎·里施",
         cat="角色",
         source=Source.FAN,
-        record_only=True,
     ),
     Entry(
         name="马卡利斯特",
@@ -3585,7 +3439,6 @@ RECORD_ONLY: list[Entry] = [
         full_name="马卡利斯特·帕金",
         cat="角色",
         source=Source.FAN,
-        record_only=True,
     ),
     Entry(
         name="露梅拉",
@@ -3593,7 +3446,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ルーメラ",
         cat="角色",
         source=Source.FAN,
-        record_only=True,
         note="依亚 全名 露梅拉·依亚·尤克历乌斯 的首段；corpus 无覆盖",
     ),
     Entry(
@@ -3604,7 +3456,6 @@ RECORD_ONLY: list[Entry] = [
         ja="ローシ",
         en="Roshi",
         source=Source.FAN,
-        record_only=True,
         note="帕尔巴顿家（与 蜜蜜 三胞胎同姓）",
     ),
 ]
