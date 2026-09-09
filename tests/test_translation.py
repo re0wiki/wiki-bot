@@ -109,7 +109,6 @@ def test_nekoquote_aliases_normalize():
 translations = load_module("translations", "translations.py")
 alias_texts = translations.alias_texts
 ENTRIES = list(translations.ENTRIES)
-RECORD_ONLY = list(translations.RECORD_ONLY)
 
 
 def test_entries_no_duplicate_names():
@@ -117,14 +116,9 @@ def test_entries_no_duplicate_names():
     assert not dup, f"ENTRIES 存在重名条目: {dup}"
 
 
-def test_record_only_disjoint_from_entries():
-    clash = {e.name for e in RECORD_ONLY} & {e.name for e in ENTRIES}
-    assert not clash, f"RECORD_ONLY 与 ENTRIES 撞名: {clash}"
-
-
 def test_aliases_no_collision():
-    """别名：不重复登记、不撞任何标准名、不撞 RECORD_ONLY。"""
-    names = {e.name for e in ENTRIES} | {e.name for e in RECORD_ONLY}
+    """别名：不重复登记、不撞任何标准名。"""
+    names = {e.name for e in ENTRIES}
     seen = {}
     bad = []
     for e in ENTRIES:
@@ -145,7 +139,7 @@ def test_std_name_source_precedence():
     """
     S = translations.Source
     bad = []
-    for e in ENTRIES + RECORD_ONLY:
+    for e in ENTRIES:
         for a in e.aliases:
             if e.source == S.OFFICIAL_HANT and a.source == S.OFFICIAL_HANS:
                 bad.append(f"官繁标准名 {e.name} 有官简别名 {a.text}（应提升为标准名）")
@@ -154,14 +148,14 @@ def test_std_name_source_precedence():
 
 def test_std_name_annotated():
     """标准名必须标注来源。"""
-    bad = [e.name for e in ENTRIES + RECORD_ONLY if e.source is None]
+    bad = [e.name for e in ENTRIES if e.source is None]
     assert not bad, f"未标注来源: {bad}"
 
 
 def test_variant_annotations_valid():
     """Variant 标注：source 必填且为 Source 枚举。"""
     bad = []
-    for e in ENTRIES + RECORD_ONLY:
+    for e in ENTRIES:
         for a in e.aliases:
             if not isinstance(a, translations.Variant):
                 bad.append(f"{e.name} 的别名 {a} 未用 Variant 标注")
@@ -183,14 +177,14 @@ def test_aliases_normalize_to_entry_name():
 
 
 def test_all_entry_names_stable_under_full_rule_chain():
-    """所有条目名（含 main=False）在完整规则链下幂等。"""
+    """所有条目名（含 fuzzy=False）在完整规则链下幂等。"""
     bad = [(e.name, normalize(e.name)) for e in ENTRIES if normalize(e.name) != e.name]
     assert not bad, f"以下条目名会被规则链二次改写: {bad}"
 
 
 def test_full_name_consistency():
     """full_name = 角色条目完整标题（全名或真名）：唯一；各段（名/姓，含 梵·阿斯特雷亚 这类带助词的姓）须在表中。"""
-    all_entries = list(translations.ENTRIES) + list(translations.RECORD_ONLY)
+    all_entries = list(translations.ENTRIES)
     by_name = {e.name for e in all_entries}
     seen: dict[str, str] = {}
     for e in all_entries:

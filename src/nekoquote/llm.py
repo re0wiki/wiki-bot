@@ -30,14 +30,14 @@ def _build_glossary() -> dict[str, str]:
 
     surf: dict[str, str | None] = {}
     # 先全段（精确）
-    for e in translations.ENTRIES + translations.RECORD_ONLY:
+    for e in translations.ENTRIES:
         if e.ja:
             s = e.ja.strip()
             if len(s) >= 2 and s not in _COMMON_WORD_SURFACES:
                 surf[s] = e.name if surf.get(s) in (None, e.name) else None
     exact = {k: v for k, v in surf.items() if v}
     # 再分段：不覆盖已有精确归属
-    for e in translations.ENTRIES + translations.RECORD_ONLY:
+    for e in translations.ENTRIES:
         if not e.ja:
             continue
         for s in re.split(r"[·・]", e.ja):

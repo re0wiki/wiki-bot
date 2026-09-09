@@ -481,7 +481,7 @@ def p2n(pattern: str):
 
 
 translation_names = [
-    e.pattern or e.name for e in translations.ENTRIES if e.main
+    e.pattern or e.name for e in translations.ENTRIES if e.fuzzy
 ]  # 数据在 translations.py
 
 translation_manual = [  # 手动添加的替换组（结构规则：模板替换/别名 guard 装不下的选择性展开）
@@ -505,8 +505,8 @@ translation_manual = [  # 手动添加的替换组（结构规则：模板替换
     ("最优纪行", "最优秀纪行"),  # 仅简体：日文原名 最優紀行 与繁体同字
     ("王族诱拐案", "王族诱拐事件"),  # 仅简体：日文原名 王族誘拐案 与繁体同字
 ]
-# 别名机制：精确对由 Entry.aliases 生成，繁体写法一并归一（RECORD_ONLY 的别名也生成：
-# 名字本身不归一，别名归一到它）。带 pre/post guard 的别名生成 guard 对而非精确对——
+# 别名机制：精确对由 Entry.aliases 生成，繁体写法一并归一（fuzzy=False 条目的别名也
+# 生成：名字本身不归一，别名归一到它）。带 pre/post guard 的别名生成 guard 对而非精确对——
 # 别名位于更长他名内部时防子串误伤，guard 数据在 translations.py 的 Variant 上。
 # 利格鲁：其 guard 内嵌 f('鲁') 宽展开（[卢尔爾珥盧耳路露魯鲁]），s2t 覆盖不了。
 # 王选前日谭/最优纪行/王族诱拐案：繁体与日文原名同字，s2t 对会伤 name_ja/引用显示名/
@@ -525,7 +525,7 @@ def _st_class(s):
 
 translation_pairs = [
     (a2, e.name)
-    for e in itertools.chain(translations.ENTRIES, translations.RECORD_ONLY)
+    for e in translations.ENTRIES
     for a in e.aliases
     if not ((v := _variant(a)) and (v.pre or v.post))
     for a0 in [a.text if isinstance(a, translations.Variant) else a]
@@ -533,7 +533,7 @@ translation_pairs = [
     for a2 in dict.fromkeys((a0, s2t(a0)))
 ] + [
     (v.pre + _st_class(v.text) + v.post, e.name)
-    for e in itertools.chain(translations.ENTRIES, translations.RECORD_ONLY)
+    for e in translations.ENTRIES
     for a in e.aliases
     if (v := _variant(a)) and (v.pre or v.post)
 ]
@@ -557,10 +557,6 @@ user_fixes["translation"] = base | {
     + list(translation_manual)
     + list(translation_pairs),
 }
-_ = [
-    e.pattern or e.name for e in translations.RECORD_ONLY
-]  # 特判太麻烦的，不处理；数据在 translations.py
-
 # endregion
 
 fixes: dict

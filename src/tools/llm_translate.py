@@ -598,7 +598,7 @@ def known_nouns(body, conv):
     import translations
 
     hits = []
-    for e in translations.ENTRIES + translations.RECORD_ONLY:
+    for e in translations.ENTRIES:
         if not e.en or len(e.en) < 3 or not re.search(rf"\b{re.escape(e.en)}\b", body):
             continue
         hits.append((e.en, e.name))
