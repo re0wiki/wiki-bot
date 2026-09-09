@@ -94,7 +94,7 @@ def test_nekoquote_ja_fields_protected():
 def test_nekoquote_aliases_normalize():
     """回归：语录管线引入的译名变体归一（斯巴鲁/路易/碧翠子/记忆回廊/地狱狙击）。"""
     assert normalize("斯巴鲁") == "昴"
-    assert normalize("菜月·斯巴鲁") == "菜月·昴"
+    assert normalize("菜月·斯巴鲁") == "菜月昴"  # 斯巴鲁 别名精确对先跑，名字规则收尾归一到底
     assert (
         normalize("法茨巴尔穆六世") == "法茨巴尔穆六世"
     )  # 回归：茨巴尔 不得误判为斯巴鲁

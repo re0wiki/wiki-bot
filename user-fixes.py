@@ -86,6 +86,7 @@ user_fixes["misc"] = base | {
         (mid_dots, mid_dot),
         ("－－", "——"),
         (r"<!---->|￼", ""),
+        ("其[他它她]", "其他"),  # 用字归一（非译名，不属 translation fix）
         ("“", "「"),
         ("”", "」"),
         ("【", "『"),
@@ -483,7 +484,7 @@ translation_names = [
     e.pattern or e.name for e in translations.ENTRIES if e.main
 ]  # 数据在 translations.py
 
-translation_manual = [  # 手动添加的替换组（结构规则：模板替换/防误伤 lookaround/选择性展开）
+translation_manual = [  # 手动添加的替换组（结构规则：模板替换/别名 guard 装不下的选择性展开）
     (rf"{f('凛淋萍平苹')}{f('果')}", "{{Ringa}}"),
     (
         (
@@ -495,85 +496,61 @@ translation_manual = [  # 手动添加的替换组（结构规则：模板替换
     ),
     (f"{f('妖')}{f('精')}", "{{Yousei or Elf}}"),
     (r"(?<=半)\{\{(Seirei|Yousei) or Elf\}\}", "{{Elf}}"),
-    ("斯巴[鲁魯]", "昴"),  # 不用 f() 展开：茨(≈斯)巴 尔(≈鲁) 会误判「法茨巴尔穆」
-    (f"梅{f('莉')}(?!{f('奥')})", "梅莉"),  # 防「梅里欧·阿嘎玛」误伤
-    (r"(?<!莎)莉[娅婭]", "莉雅"),  # 莉娅→莉雅；前字 莎 时属 莎莉婭·费瑟兰
-    (
-        r"(?<!多萝西)(?<!艾米莉)(?<!约书)(?<!贝)(?<!卡秋)[亚亞][齐齊]|(?<!多萝西)(?<!艾米莉)(?<!约书)(?<!贝)(?<!卡秋)阿[奇齊]",
-        "亚奇",
-    ),  # 亚齐/阿奇→亚奇，guard 沿自记录
-    (r"(?<!艾奇)(?<!福尔)提娜", "缇娜"),  # 提娜→缇娜，guard 沿自记录
-    (r"(?<!加)弗利艾", "傅里叶"),  # 弗利艾→傅里叶，guard 沿自记录
-    (r"[欧歐]德(?!古勒斯)", "奥多"),  # 欧德→奥多；欧德古勒斯 是另一存在
-    (
-        r"(?<!格拉姆)(?<!芙兰)达[兹茲](?!利)",
-        "达茨",
-    ),  # 达兹→达茨，guard 沿自记录（芙兰达兹 是 弗兰德斯 的别名）
-    (
-        r"(?<!加)(?<!卡)(?<!雷)德[纳納]",
-        "多纳",
-    ),  # 德纳→多纳；加德纳/卡德纳/雷德纳斯 是他名
-    (
-        r"(?<!佩)(?<!芙蕾)多尔肯(?!罗登|普里恩)",
-        "多尔凯尔",
-    ),  # 多尔肯→多尔凯尔，guard 沿自记录
-    (r"卡[萝蘿](?!尔|爾)", "卡罗尔"),  # 卡萝尔 是同一人的完整变体，由别名精确对先行归一
-    (
-        "王选前日谭",
-        "王选前日谈",
-    ),  # 仅简体：繁体 王選前日譚 与日文原名同字（name_ja/引用显示名），不得归一
-    ("最优纪行", "最优秀纪行"),  # 仅简体：日文原名 最優紀行 与繁体同字
-    ("王族诱拐案", "王族诱拐事件"),  # 仅简体：日文原名 王族誘拐案 与繁体同字
+    (f"梅{f('莉')}(?!{f('奥')})", "梅莉"),  # 防「梅里欧·阿嘎玛」误伤；首字 literal：f('梅') 会吃「美丽」
     (
         rf"(?<!阿)(?<!弗)利格{f('鲁')}(?!卡|姆)",
         "雷吉尔",
-    ),  # 利格鲁→雷吉尔，guard 沿自记录（弗利格鲁 属 弗里格尔 变体）
-    ("文森(?!特)", "文森特"),  # 台版名 文森；防吃 文森特 前缀
-    (
-        "穆塔(?!特)",
-        "穆塔特",
-    ),  # 民间写法 穆塔；防吃 穆塔特 前缀（穆塔多 已由别名精确对先行转换）
-    (r"(?<!梅)裘斯", "杰乌斯"),  # 裘斯→杰乌斯；梅裘斯 是他名（guard 沿自记录）
-    (f"其{f('他它她')}", "其他"),  # 用字归一（非译名）
+    ),  # 利格鲁→雷吉尔；guard 内嵌 f('鲁') 宽展开，V.pre/post 的 s2t 覆盖不了（弗利格鲁 属 弗里格尔 变体）
+    ("王选前日谭", "王选前日谈"),  # 仅简体：繁体 王選前日譚 与日文原名同字（name_ja/引用显示名/gallery 文件名），不得归一
+    ("最优纪行", "最优秀纪行"),  # 仅简体：日文原名 最優紀行 与繁体同字
+    ("王族诱拐案", "王族诱拐事件"),  # 仅简体：日文原名 王族誘拐案 与繁体同字
 ]
-# 有别名在更长的他名内部出现（子串误伤）或繁体形式与日文原名同字的，不走精确对生成，在上面用规则处理
-_GUARDED_ALIASES = {
-    "莉娅",
-    "亚齐",
-    "阿奇",
-    "提娜",
-    "弗利艾",
-    "欧德",
-    "达兹",
-    "德纳",
-    "多尔肯",
-    "卡萝",
-    "利格鲁",
-    "文森",
-    "穆塔",
-    "裘斯",
-    "王选前日谭",
-    "最优纪行",
-    "王族诱拐案",
-}
-# Entry.aliases 生成精确对，繁体写法一并归一（RECORD_ONLY 的别名也生成：名字本身不归一，别名归一到它）
-# 精确对在首尾各跑一遍：先行使别名不被模糊规则截胡成中间态；收尾兜底繁简混合文本
-# （名字规则把别名周围繁体字归一简体后，简体精确对才有机会命中）
+# 别名机制：精确对由 Entry.aliases 生成，繁体写法一并归一（RECORD_ONLY 的别名也生成：
+# 名字本身不归一，别名归一到它）。带 pre/post guard 的别名生成 guard 对而非精确对——
+# 别名位于更长他名内部时防子串误伤，guard 数据在 translations.py 的 Variant 上。
+# 利格鲁：其 guard 内嵌 f('鲁') 宽展开（[卢尔爾珥盧耳路露魯鲁]），s2t 覆盖不了。
+# 王选前日谭/最优纪行/王族诱拐案：繁体与日文原名同字，s2t 对会伤 name_ja/引用显示名/
+# gallery 文件名里的日文（as-is 模式枚举覆盖不了文件名类语境），只走 manual 简体精确对。
+_GUARDED_ALIASES = {"利格鲁", "王选前日谭", "最优纪行", "王族诱拐案"}
+
+
+def _variant(v):
+    return v if isinstance(v, translations.Variant) else None
+
+
+def _st_class(s):
+    """逐字生成 [简繁] 字符类：混简繁写法（达茲/達兹）一并覆盖。"""
+    return "".join(f"[{c}{t}]" if (t := s2t(c)) != c else c for c in s)
+
+
 translation_pairs = [
     (a2, e.name)
     for e in itertools.chain(translations.ENTRIES, translations.RECORD_ONLY)
-    for a in translations.alias_texts(e)
-    if a not in _GUARDED_ALIASES
-    for a2 in dict.fromkeys((a, s2t(a)))
+    for a in e.aliases
+    if not ((v := _variant(a)) and (v.pre or v.post))
+    for a0 in [a.text if isinstance(a, translations.Variant) else a]
+    if a0 not in _GUARDED_ALIASES
+    for a2 in dict.fromkeys((a0, s2t(a0)))
+] + [
+    (v.pre + _st_class(v.text) + v.post, e.name)
+    for e in itertools.chain(translations.ENTRIES, translations.RECORD_ONLY)
+    for a in e.aliases
+    if (v := _variant(a)) and (v.pre or v.post)
 ]
+# 精确对/guard 对在首尾各跑一遍：先行使别名不被模糊规则截胡成中间态；收尾兜底繁简混合文本
+# （名字规则把别名周围繁体字归一简体后，简体精确对才有机会命中）
 
 user_fixes["translation"] = base | {
     "generator": generator_more,
     # 一律归一到官方简中标准名
     "exceptions": base["exceptions"]
     | {
-        # NekoQuote 月表的日文原文字段（Lua 字符串）不归一；replace.py 自行编译，这里只给字符串
-        "inside": [r'(?m)^\s*(?:jq|jt)\s*=\s*"(?:[^"\\]|\\.)*"'],
+        "inside": [
+            # NekoQuote 月表的日文原文字段（Lua 字符串）不归一；replace.py 自行编译，这里只给字符串
+            r'(?m)^\s*(?:jq|jt)\s*=\s*"(?:[^"\\]|\\.)*"',
+            # 信息框日文原名字段不归一
+            r"(?m)^\s*\|\s*name_ja\s*=[^\n]*$",
+        ],
     },
     "replacements": list(translation_pairs)
     + [(p2o(p), p2n(p)) for p in translation_names]
