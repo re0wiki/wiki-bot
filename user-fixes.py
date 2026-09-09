@@ -513,7 +513,7 @@ translation_names = [
     e.pattern or e.name for e in translations.ENTRIES if e.fuzzy
 ]  # 数据在 translations.py
 
-translation_manual = [  # 手动添加的替换组（结构规则：模板替换/别名 guard 装不下的选择性展开）
+translation_manual = [  # 手动添加的替换组（模板替换；译名规则全部在 translations.py）
     (rf"{f('凛淋萍平苹')}{f('果')}", "{{Ringa}}"),
     (
         (
@@ -525,18 +525,10 @@ translation_manual = [  # 手动添加的替换组（结构规则：模板替换
     ),
     (f"{f('妖')}{f('精')}", "{{Yousei or Elf}}"),
     (r"(?<=半)\{\{(Seirei|Yousei) or Elf\}\}", "{{Elf}}"),
-    ("王选前日谭", "王选前日谈"),  # 仅简体：繁体 王選前日譚 与日文原名同字（name_ja/引用显示名/gallery 文件名），不得归一
-    ("最优纪行", "最优秀纪行"),  # 仅简体：日文原名 最優紀行 与繁体同字
-    ("王族诱拐案", "王族诱拐事件"),  # 仅简体：日文原名 王族誘拐案 与繁体同字
 ]
 # 别名机制：精确对由 Entry.aliases 生成，繁体写法一并归一（fuzzy=False 条目的别名也
 # 生成：名字本身不归一，别名归一到它）。带 pattern 的别名生成 guard 对（p2st 简繁展开，
 # 手写字符类原样保留），别名位于更长他名内部时防子串误伤。
-# 王选前日谭/最优纪行/王族诱拐案：繁体与日文原名同字，s2t 对会伤 name_ja/引用显示名/
-# gallery 文件名里的日文（as-is 模式枚举覆盖不了文件名类语境），只走 manual 简体精确对。
-_GUARDED_ALIASES = {"王选前日谭", "最优纪行", "王族诱拐案"}
-
-
 def _variant(v):
     return v if isinstance(v, translations.Variant) else None
 
@@ -547,7 +539,6 @@ translation_pairs = [
     for a in e.aliases
     if not ((v := _variant(a)) and v.pattern)
     for a0 in [a.text if isinstance(a, translations.Variant) else a]
-    if a0 not in _GUARDED_ALIASES
     for a2 in dict.fromkeys((a0, s2t(a0)))
 ] + [
     (p2st(v.pattern), e.name)
