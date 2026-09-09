@@ -623,15 +623,71 @@ def write_work_files(best):
     )
 
 
+def resolve_wip():
+    """prepare 前置：自动收尾 work/ 里的上轮残留项，再备新页。
+
+    按 wiki 最新状态分流（管线的编辑认 stamp 摘要前缀与同步标记两个痕迹，
+    循环任务的偶发编辑不算——冷页随时可能被主循环的 fix 类任务碰到）：
+    - zh 页无新编辑（agent 未编辑成，如 API 故障）→ 丢弃旧备料，按最新状态重备；
+    - 最新编辑是其他人（prepare 后有人类编辑）→ 丢弃旧备料重备，改动由新基线吸收
+      （人类在管线编辑之后再改的情况同样落这里：人工改动即是事实上的复核）；
+    - 含匹配同步标记（管线编辑完成但 done 未跑）→ 自动补跑 done 核验（verify_edit，
+      与 cmd_done 同一实现），通过则清场（补发 NOTIFY），不过则保留现场响亮失败；
+    - 最新编辑带 stamp 摘要却标记缺失/不匹配 → 怪异态，保留现场拒绝备页（人工排查）；
+    - 以上皆非（循环任务的偶发编辑，无管线编辑痕迹）→ 视为未编辑成，丢弃重备。
+    """
+    for wip_meta in sorted(WORK.glob("*.meta.json")):
+        slug = wip_meta.stem.rsplit(".", 2)[0]
+        meta = load_json(wip_meta, None)
+        assert meta is not None
+        r = api(
+            ZH_API,
+            prop="revisions",
+            titles=meta["title"],
+            rvprop="ids|user|comment|content",
+            rvslots="main",
+            rvlimit="1",
+        )
+        p = r["query"]["pages"][0]
+        if "missing" in p:
+            clean_work(slug)
+            print(f"wip 丢弃: {meta['title']}（页面已删除）")
+            continue
+        rev = p["revisions"][0]
+        markers = MARKER_RE.findall(rev["slots"]["main"]["content"])
+        if rev["revid"] == meta["zh_revid"] or (
+            rev.get("user") == BOT
+            and not rev.get("comment", "").startswith(SUMMARY_PREFIX)
+            and not markers
+        ):
+            clean_work(slug)
+            print(f"wip 丢弃: {meta['title']}（agent 未编辑成，按最新状态重备）")
+        elif rev.get("user") != BOT:
+            clean_work(slug)
+            print(
+                f"wip 丢弃: {meta['title']}（prepare 后有人类编辑，重备基线自动吸收）"
+            )
+        elif len(markers) == 1 and markers[0][0] == str(meta["en_revid"]):
+            verify_edit(slug, meta)  # 核验不过即响亮退出，现场保留
+            clean_work(slug)
+            print(f"wip 收尾: {meta['title']}（编辑完成但 done 未跑，核验通过）")
+            print(notify_line(meta))
+        elif rev.get("comment", "").startswith(SUMMARY_PREFIX):
+            sys.exit(
+                f"wip 异常: {meta['title']} 最新编辑是管线编辑（stamp 摘要）但同步标记缺失/不匹配"
+                f"（{[f'revid {m[0]}' for m in markers]!r}）——保留现场，人工排查"
+            )
+        else:
+            # 无标记、无 stamp 摘要的 bot 编辑 = 循环任务偶发编辑，agent 未编辑成
+            clean_work(slug)
+            print(f"wip 丢弃: {meta['title']}（循环任务偶发编辑，按最新状态重备）")
+
+
 def cmd_prepare():
     queue = load_json(QUEUE, None)
     if queue is None:
         sys.exit("queue.json 不存在，先跑 refresh")
-    wip = sorted(WORK.glob("*.meta.json"))
-    if wip:
-        sys.exit(
-            f"已有待处理工作项: {[p.stem.rsplit('.', 2)[0] for p in wip]}，先处理再 prepare"
-        )
+    resolve_wip()
 
     # walk：跳过已打标页；对未处理候选取实际冷度，陈旧冷度单调偏低（时间只往前走），
     # 故扫到「下一条陈旧冷度 ≥ 当前最优实际冷度」即可确定真队首；算出的实际冷度
@@ -740,8 +796,8 @@ def strip_todo(line):
     return "{{To do|" + "；".join(kept) + "}}"
 
 
-def cmd_done(slug):
-    """一页处理完成：机械核验 agent 的 wiki 编辑。
+def verify_edit(slug, meta):
+    """done 的机械核验（cmd_done 与 prepare 的 wip 收尾共用）；不过即响亮退出。
 
     核验（均以 prepare 时的 zh 现文与 conv 骨架为基线）：
     - 最新编辑是本账号，源码含且仅含一个同步标记且 revid 与 meta 一致；
@@ -749,11 +805,7 @@ def cmd_done(slug):
     - 正文内链目标（按 页面/文件/分类/语言链接 分类）与模板调用
       不超出 link_map ∪ 未解析名 ∪ conv 骨架 ∪ zh 现文的白名单；
     - 正文末尾挂了 [[Category:机翻待校对]]（人类校对后手动摘除）。
-    状态由源码标记承载，通过即输出 NOTIFY 行，无本地落盘。
     """
-    meta = load_json(WORK / f"{slug}.meta.json", None)
-    if meta is None:
-        sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
     r = api(
         ZH_API,
         prop="revisions",
@@ -818,6 +870,13 @@ def cmd_done(slug):
     if tpl_bad:
         sys.exit(f"模板校验失败: 新增 {sorted(tpl_bad)}")
 
+
+def cmd_done(slug):
+    """一页处理完成：机械核验 agent 的 wiki 编辑（verify_edit），通过即输出 NOTIFY 行。"""
+    meta = load_json(WORK / f"{slug}.meta.json", None)
+    if meta is None:
+        sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
+    verify_edit(slug, meta)
     clean_work(slug)
     print(f"done: {meta['title']}（en revid {meta['en_revid']}）")
     print(notify_line(meta))
