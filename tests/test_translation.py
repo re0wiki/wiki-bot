@@ -46,7 +46,6 @@ def test_standard_names_stable_under_full_rule_chain():
     assert not bad, f"以下标准名会被规则链二次改写（死规则）: {bad}"
 
 
-
 def test_beatrice_normalizes_to_official_name():
     """回归：「贝阿托莉丝」由 manual 表归一到官方简中「碧翠丝」。"""
     assert normalize("贝阿托莉丝") == "碧翠丝"
@@ -169,7 +168,6 @@ def test_pattern_matches_base_text():
         if e.pattern and not re.search(p2st(e.pattern), e.name)
     ]
     assert not bad, bad
-
 
 
 def test_aliases_normalize_to_entry_name():

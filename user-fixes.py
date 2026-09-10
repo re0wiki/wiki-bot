@@ -467,9 +467,7 @@ def p2st(pattern: str):
 
 # (pattern, 目标名) 对，数据在 translations.py；模板条目不生成名字规则
 translation_name_rules = [
-    (e.pattern or e.name, e.name)
-    for e in translations.ENTRIES
-    if "{{" not in e.name
+    (e.pattern or e.name, e.name) for e in translations.ENTRIES if "{{" not in e.name
 ]
 # 长匹配优先：短名规则排在长名规则后，防止短名吃掉长名内部（菈姆 命中 [[普菈姆|..]] 类）
 translation_name_rules.sort(key=lambda r: -len(r[1]))
