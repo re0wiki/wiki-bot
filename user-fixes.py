@@ -555,19 +555,23 @@ def _variant(v):
     return v if isinstance(v, translations.Variant) else None
 
 
-translation_pairs = [
-    (a2, e.name)
+# 长匹配优先：按别名原文长度降序（guard 对按 v.text，不是展开后的正则长度），
+# 防止短别名在长别名内部截胡成中间态（艾米/莉娅 抢在 艾米利娅/爱米莉娅 前）。
+_pair_items = [
+    (len(a2), a2, e.name)
     for e in translations.ENTRIES
     for a in e.aliases
     if not ((v := _variant(a)) and v.pattern)
     for a0 in [a.text if isinstance(a, translations.Variant) else a]
     for a2 in dict.fromkeys((a0, s2t(a0)))
 ] + [
-    (p2st(v.pattern), e.name)
+    (len(v.text), p2st(v.pattern), e.name)
     for e in translations.ENTRIES
     for a in e.aliases
     if (v := _variant(a)) and v.pattern
 ]
+_pair_items.sort(key=lambda x: -x[0])
+translation_pairs = [(pat, n) for _, pat, n in _pair_items]
 # 精确对/guard 对在首尾各跑一遍：先行使别名不被模糊规则截胡成中间态；收尾兜底繁简混合文本
 # （名字规则把别名周围繁体字归一简体后，简体精确对才有机会命中）
 

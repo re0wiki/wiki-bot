@@ -145,7 +145,6 @@ ENTRIES: list[Entry] = [
         ja="クリンド",
         en="Clind",
         cat="角色",
-        fuzzy=False,  # 三字模糊组把「格林特训」的 格林特 打成 库林德；真实变体只有 柯林特
         aliases=(
             V("柯林特", Source.FAN),
             V("克林德", Source.FAN),
@@ -443,8 +442,6 @@ ENTRIES: list[Entry] = [
         name="特姆兹",
         source=Source.OFFICIAL_HANS,
         aliases=(V("提姆兹", Source.OFFICIAL_HANT),),
-        fuzzy=False,
-        note="特/兹 属大组，p2o 展开误伤 威尔海姆丝毫（海姆丝）",
         ja="テムズ·アストレア",
         en="Thames",
         cat="角色",
@@ -696,7 +693,6 @@ ENTRIES: list[Entry] = [
         ja="テュフォン",
         en="Typhon",
         cat="角色",
-        fuzzy=False,  # 二字模糊组把 迪丰·特雷沃拉 的 迪丰 打成 提丰；无真实变体,
         aliases=(
             V("缇丰", Source.FAN),
             V("堤丰", Source.FAN),
@@ -833,7 +829,6 @@ ENTRIES: list[Entry] = [
     Entry(
         name="莱伊",
         source=Source.OFFICIAL_HANS,
-        pattern="莱伊(?!德)",
         ja="ライ·バテンカイトス",
         en="Lye",
         cat="角色",
@@ -939,8 +934,6 @@ ENTRIES: list[Entry] = [
             V("加列克", Source.FAN),
             V("贾雷克", Source.OFFICIAL_HANT),
         ),
-        fuzzy=False,
-        note="p2o 展开误伤 外加雷格鲁斯（加雷格）；只走精确对",
     ),
     Entry(
         name="塞赫美特",
@@ -982,15 +975,12 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         name="达德利",
-        pattern="达德利(?!亚)",  # 「达特利」只会是 到达特利亚斯 的跨界误配，不是真实变体
         source=Source.OFFICIAL_HANT,
         ja="ダドリー·ミロード",
         en="Dudley",
         cat="角色",
         full_name="达德利·米洛德",
-        aliases=(
-            V("达特里", Source.FAN),
-        ),
+        aliases=(V("达特里", Source.FAN),),
     ),
     Entry(
         name="达芙妮", source=Source.OFFICIAL_HANS, ja="ダフネ", en="Daphne", cat="角色"
@@ -1038,7 +1028,6 @@ ENTRIES: list[Entry] = [
         ja="ガストン",
         en="Ton",
         cat="角色",
-        fuzzy=False,  # 二字模糊组把动词 安顿 打成 阿顿；无真实变体
     ),
     Entry(
         name="雷格鲁斯",
@@ -1632,8 +1621,6 @@ ENTRIES: list[Entry] = [
         cat="角色",
         full_name="托尔多·卫兹礼",
         aliases=(V("托尔塔", Source.OFFICIAL_HANT),),
-        fuzzy=False,
-        note="托/多 同属特组，p2o 展开会命中 哈鲁特/多尔德 等大量他名；只走精确对",
     ),
     Entry(
         name="奔加姆",
@@ -1912,7 +1899,6 @@ ENTRIES: list[Entry] = [
             V("梅麗", Source.FAN, pattern="梅[丽利吕呂李莉裏里麗](?![奥奧欧歐])"),
         ),
         cat="角色",
-        fuzzy=False,  # p2o(梅莉)=[梅美麥麦][莉…] 会把 美丽 打成 梅莉；异写经别名 pattern 覆盖
     ),
     Entry(
         name="菜月昴",
@@ -2009,7 +1995,6 @@ ENTRIES: list[Entry] = [
         ja="ガーフィール·ティンゼル",
         full_name="加菲尔·丁赛尔",
         source=Source.OFFICIAL_HANS,
-        pattern="加菲尔(?!丝|特|艾)",
         en="Garfiel",
         aliases=(
             V("嘉飛爾", Source.FAN),
@@ -2021,7 +2006,6 @@ ENTRIES: list[Entry] = [
         ja="ラフィール·トンプソン",
         full_name="拉菲尔·汤普森",
         source=Source.OFFICIAL_HANS,
-        pattern="拉菲尔(?!丝|特|艾)",
         en="Rafiel",
     ),
     Entry(
@@ -2038,21 +2022,18 @@ ENTRIES: list[Entry] = [
             ),
             V("瑞吉尔", Source.FAN),
         ),
-        fuzzy=False,
         note="IF 线 菜月·雷吉尔；利格鲁 为民间译名（guard 精确对），瑞吉尔 为台版译名",
     ),
     Entry(
         name="佩特拉",
         ja="ペトラ·レイテ",
         source=Source.OFFICIAL_HANS,
-        pattern="佩特拉(?!其乌斯|姆)",
         en="Petra",
     ),
     Entry(
         name="拉姆",
         source=Source.OFFICIAL_HANS,
         en="Ram",
-        pattern="(?<!萨|伽|托|塞|贝|格|苏)拉姆(?!莉鲁)",
         ja="ラム",
         cat="角色",
         aliases=(V("菈姆", Source.FAN),),
@@ -2061,7 +2042,6 @@ ENTRIES: list[Entry] = [
         name="贝尔托",
         source=Source.OFFICIAL_HANT,
         en="Veltol",
-        pattern="(?<!帕)贝尔托",
         ja="ベルトール·アストレア",
         cat="角色",
         full_name="贝尔托·阿斯特雷亚",
@@ -2070,7 +2050,6 @@ ENTRIES: list[Entry] = [
         name="提修亚",
         source=Source.OFFICIAL_HANS,
         en="Tishua",
-        pattern="(?<!帕)提修亚",
         ja="ティシュア·アストレア",
         cat="角色",
         full_name="提修亚·阿斯特雷亚",
@@ -2086,7 +2065,6 @@ ENTRIES: list[Entry] = [
             V("凯蒂", Source.FAN),
         ),
         en="Ketty",
-        pattern="凯迪(?!尔|斯)",
         ja="ケティ·ムッタート",
         cat="角色",
     ),
@@ -2095,7 +2073,6 @@ ENTRIES: list[Entry] = [
         ja="ティビー·パールバトン",
         full_name="缇碧·帕尔巴顿",
         source=Source.OFFICIAL_HANS,
-        pattern="(?<!莱茵哈鲁)缇碧(?!翠)",
         en="Tivey",
         aliases=(
             V("提比", Source.FAN),
@@ -2108,7 +2085,6 @@ ENTRIES: list[Entry] = [
         ja="エルザ·グランヒルテ",
         full_name="艾尔莎·葛兰希尔黛",
         source=Source.OFFICIAL_HANS,
-        pattern="艾尔莎(?!幕)",
         en="Elsa",
         aliases=(V("艾尔萨", Source.FAN),),
     ),
@@ -2116,7 +2092,6 @@ ENTRIES: list[Entry] = [
         name="梅尔蒂",
         source=Source.OFFICIAL_HANT,
         en="Melty",
-        pattern="梅尔蒂(?!典)",
         ja="メルティ·プリスティス",
         cat="角色",
         full_name="梅尔蒂·布里司堤斯",
@@ -2126,7 +2101,6 @@ ENTRIES: list[Entry] = [
         ja="フレド·トンプソン",
         full_name="弗雷德·汤普森",
         source=Source.OFFICIAL_HANS,
-        pattern="弗雷德(?!斯|莉卡)",
         en="Fred",
     ),
     Entry(
@@ -2137,7 +2111,6 @@ ENTRIES: list[Entry] = [
             V("弗洛姆", Source.FAN),
             V("弗拉姆", Source.FAN),
         ),
-        pattern="(?<!丢)芙拉姆",
         ja="フラム·レメンディス",
         cat="角色",
         full_name="芙拉姆·莱蒙蒂斯",
@@ -2147,7 +2120,6 @@ ENTRIES: list[Entry] = [
         ja="フーリエ·ルグニカ",
         full_name="傅里叶·卢克尼卡",
         source=Source.OFFICIAL_HANS,
-        pattern="(?<!加)傅里叶",
         en="Fourier",
         aliases=(
             V("弗利艾", Source.FAN, pattern="(?<!加)弗利艾"),
@@ -2159,7 +2131,6 @@ ENTRIES: list[Entry] = [
         ja="ラッセル·フェロー",
         full_name="拉塞尔·菲洛",
         source=Source.OFFICIAL_HANS,
-        pattern="(?<!法)拉塞尔",
         en="Russell",
         aliases=(V("拉賽爾", Source.FAN),),
     ),
@@ -2167,7 +2138,6 @@ ENTRIES: list[Entry] = [
         name="多尔凯尔",
         source=Source.OFFICIAL_HANS,
         en="Dorkell",
-        pattern="(?<!佩)(?<!芙蕾)多尔凯尔(?!罗登|普里恩)",
         ja="ドルケル",
         cat="角色",
         aliases=(
@@ -2178,12 +2148,11 @@ ENTRIES: list[Entry] = [
             ),
         ),
     ),
-    Entry(name="伊娜", source=Source.OFFICIAL_HANS, pattern="(?<!罗)(?<!梅)伊娜"),
+    Entry(name="伊娜", source=Source.OFFICIAL_HANS),
     Entry(
         name="潘多拉",
         source=Source.OFFICIAL_HANS,
         en="Pandora",
-        pattern="潘多拉(?!顿)",
         ja="パンドラ",
         cat="角色",
         aliases=(V("潘朵拉", Source.FAN),),
@@ -2192,7 +2161,6 @@ ENTRIES: list[Entry] = [
         name="希尔菲",
         source=Source.OFFICIAL_HANS,
         en="Sylphy",
-        pattern="希尔菲(?!亚)",
         ja="シルフィ·エルマート",
         cat="角色",
         full_name="希尔菲·埃尔玛特",
@@ -2202,7 +2170,6 @@ ENTRIES: list[Entry] = [
         ja="リカード·ウェルキン",
         full_name="里卡多·威尔金",
         source=Source.OFFICIAL_HANS,
-        pattern="(?<!尤|德)里卡多(?!·霍夫曼)",
         en="Ricardo",
         aliases=(
             V("里卡德", Source.FAN),
@@ -2224,14 +2191,12 @@ ENTRIES: list[Entry] = [
         full_name="拉扎克·吉尔达克",
         source=Source.OFFICIAL_HANS,
         aliases=(V("拉札克", Source.OFFICIAL_HANT),),
-        pattern="(?<!米)拉扎克",
         en="Razak",
     ),
     Entry(
         name="福斯特",
         source=Source.OFFICIAL_HANT,
         en="Faust",
-        pattern="(?<!雷)福斯特",
         ja="ファウスト",
         cat="角色",
     ),
@@ -2239,7 +2204,6 @@ ENTRIES: list[Entry] = [
         name="格蕾丝",
         source=Source.OFFICIAL_HANT,
         en="Grace",
-        pattern="(?<!罗)格蕾丝",
         ja="グレイス·ミロード",
         cat="角色",
         full_name="格蕾丝·米洛德",
@@ -2270,14 +2234,11 @@ ENTRIES: list[Entry] = [
             V("阿尔内布", Source.FAN),
             V("亚尔聂博", Source.OFFICIAL_HANT),
         ),
-        fuzzy=False,
-        note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
         name="莉雅",
         source=Source.OFFICIAL_HANS,
         aliases=(V("莉娅", Source.FAN, pattern="(?<!莎)莉娅"),),
-        fuzzy=False,
         note="帕克/福尔图娜对爱蜜莉雅的称呼；莉娅 为常见变体，前字为 莎 时属 莎莉婭·费瑟兰（user-fixes guard 规则）",
     ),
     Entry(
@@ -2286,8 +2247,6 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANT,
         en="Yae",
         aliases=(V("娅艾", Source.FAN),),
-        fuzzy=False,
-        note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
         name="莱特",
@@ -2295,8 +2254,6 @@ ENTRIES: list[Entry] = [
         ja="レイテ",
         source=Source.OFFICIAL_HANS,
         aliases=(V("蕾缇", Source.FAN),),
-        fuzzy=False,
-        note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
         name="陶德",
@@ -2304,8 +2261,6 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         en="Todd",
         aliases=(V("托德", Source.FAN),),
-        fuzzy=False,
-        note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
         name="檀座",
@@ -2314,8 +2269,6 @@ ENTRIES: list[Entry] = [
         en="Tanza",
         cat="角色",
         aliases=(V("坦萨", Source.FAN), V("貚纱", Source.OFFICIAL_HANT)),
-        fuzzy=False,
-        note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
         name="保莉",
@@ -2323,8 +2276,6 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         en="Holly",
         aliases=(V("荷莉", Source.FAN), V("禾力", Source.OFFICIAL_HANT)),
-        fuzzy=False,
-        note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
         name="雷姆",
@@ -2333,22 +2284,16 @@ ENTRIES: list[Entry] = [
         en="Rem",
         cat="角色",
         aliases=(V("蕾姆", Source.FAN),),
-        fuzzy=False,
-        note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
         name="记忆回廊",
         source=Source.OFFICIAL_HANS,
         aliases=(V("记忆的回廊", Source.FAN),),
-        fuzzy=False,
-        note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(
         name="地狱·狙击",
         source=Source.FAN,
         aliases=(V("地狱狙击", Source.FAN),),
-        fuzzy=False,
-        note="2字短名/特判，只走精确对不进主列表",
     ),
     Entry(name="琉璃泪", source=Source.FAN, aliases=(V("流丽连", Source.FAN),)),
     Entry(
@@ -2362,9 +2307,7 @@ ENTRIES: list[Entry] = [
         ja="オットー·スーウェン",
         full_name="奥托·苏文",
         source=Source.OFFICIAL_HANS,
-        fuzzy=False,
         aliases=(V("欧托", Source.FAN),),
-        note="托 属多字组，p2o 展开误伤 奥多/欧德 等",
     ),
     Entry(
         name="修尔特",
@@ -2379,8 +2322,6 @@ ENTRIES: list[Entry] = [
     Entry(
         name="基尔提",
         source=Source.FAN,
-        fuzzy=False,
-        note="提 属多字组，p2o 展开误伤 基尔狄拉乌",
     ),
     Entry(
         name="阿斯特雷亚",
@@ -2393,15 +2334,11 @@ ENTRIES: list[Entry] = [
         name="蕾泽",
         ja="レーゼ",
         source=Source.OFFICIAL_HANT,
-        fuzzy=False,
-        note="泽 属杰泽佐组，p2o 展开与 雷佐 互撞并误伤 莱杰尔",
     ),
     Entry(
         name="雷佐",
         ja="ライゾー",
         source=Source.FAN,
-        fuzzy=False,
-        note="佐 属杰泽佐组，p2o 展开与 蕾泽 互撞并误伤 莱杰尔",
         aliases=(V("瑞佐", Source.OFFICIAL_HANT),),
     ),
     Entry(
@@ -2464,8 +2401,6 @@ ENTRIES: list[Entry] = [
                 pattern="(?<!多萝西)(?<!艾米莉)(?<!约书)(?<!贝)(?<!卡秋)阿奇",
             ),
         ),
-        fuzzy=False,
-        note="2字双组展开会误伤（特雷西亚基本→亚基命中）；只走 guard 精确对",
     ),
     Entry(
         name="缪斯",
@@ -2514,8 +2449,6 @@ ENTRIES: list[Entry] = [
             V("蒂娜", Source.FAN),
             V("提娜", Source.OFFICIAL_HANT, pattern="(?<!艾奇)(?<!福尔)提娜"),
         ),
-        fuzzy=False,
-        note="2字名模糊匹配全中普通词（皇帝那/不提那/贝蒂那/凯迪那）；只走 guard 精确对",
     ),
     Entry(
         name="迷尼亚",
@@ -2534,8 +2467,6 @@ ENTRIES: list[Entry] = [
             V("米路德", Source.FAN),
             V("米尔黛", Source.OFFICIAL_HANT),
         ),
-        fuzzy=False,
-        note="阿拉姆村；米尔多（Mild）是另一人，p2o 展开会误伤",
     ),
     Entry(
         name="达茨",
@@ -2546,8 +2477,6 @@ ENTRIES: list[Entry] = [
         aliases=(
             V("达兹", Source.OFFICIAL_HANT, pattern="(?<!格拉姆)(?<!芙兰)达兹(?!利)"),
         ),
-        fuzzy=False,
-        note="复原师；2字名只走 guard 精确对",
     ),
     Entry(
         name="卫兹礼",
@@ -2577,8 +2506,6 @@ ENTRIES: list[Entry] = [
         name="奥多",
         source=Source.OFFICIAL_HANS,
         aliases=(V("欧德", Source.FAN, pattern="欧德(?!古勒斯)"),),
-        fuzzy=False,
-        note="奥多·拉格纳（Od Laguna）；欧德 是 欧德古勒斯 前缀，走 guard 精确对",
     ),
     Entry(
         name="马斯卡莱德",
@@ -2822,7 +2749,6 @@ ENTRIES: list[Entry] = [
         name="多纳",
         source=Source.OFFICIAL_HANS,
         aliases=(V("德纳", Source.OFFICIAL_HANS, pattern="(?<!加)(?<!卡)(?<!雷)德纳"),),
-        fuzzy=False,
         note="术式 tier 前缀 埃尔/乌尔/阿尔·多纳；德纳 多为 加德纳/卡德纳 等他名子串",
     ),
     Entry(
@@ -2837,8 +2763,6 @@ ENTRIES: list[Entry] = [
         ja="フルフー",
         en="Frufoo",
         cat="角色",
-        fuzzy=False,
-        note="奥托的地龙；p2o 会把 加菲尔飞 打成 加弗尔芙，只走精确对",
     ),
     Entry(
         name="伊格莱西亚",
