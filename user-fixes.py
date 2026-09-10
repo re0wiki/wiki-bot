@@ -436,11 +436,6 @@ s2t = OpenCC("s2t.json").convert
 t2s = OpenCC("t2s.json").convert
 
 
-def p2n(pattern: str):
-    """返回传入的正则表达式对应的标准译名。"""
-    return re.sub(r"\(.*?\)|\?", "", pattern)
-
-
 def p2st(pattern: str):
     """简繁展开：正则中每个字面字符展开为 [简繁] 字符类。
 
@@ -470,13 +465,14 @@ def p2st(pattern: str):
     return "".join(out)
 
 
-translation_names = [
-    e.pattern or e.name
+# (pattern, 目标名) 对，数据在 translations.py；模板条目不生成名字规则
+translation_name_rules = [
+    (e.pattern or e.name, e.name)
     for e in translations.ENTRIES
-    if "{{" not in e.name  # 模板条目不生成名字规则
-]  # 数据在 translations.py
+    if "{{" not in e.name
+]
 # 长匹配优先：短名规则排在长名规则后，防止短名吃掉长名内部（菈姆 命中 [[普菈姆|..]] 类）
-translation_names.sort(key=lambda p: -len(p2n(p)))
+translation_name_rules.sort(key=lambda r: -len(r[1]))
 
 
 def _noncap(pattern):
@@ -495,7 +491,7 @@ def _variant(v):
 # 长名/长别名内部）；单趟语义下恒等转换也消耗文本。
 # 大 alternation 靠 regex 模块的 trie 优化（pwb 全库 import regex as re；stdlib re 逐位置
 # 顺序试探会慢三个数量级）。
-_name_items = [(len(p2n(p)), p2st(p), p2n(p)) for p in translation_names]
+_name_items = [(len(n), p2st(pat), n) for pat, n in translation_name_rules]
 _pair_items = [
     (len(a2), re.escape(a2), e.name)
     for e in translations.ENTRIES

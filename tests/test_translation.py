@@ -1,7 +1,7 @@
 """译名表（user-fixes.py translation fix）的离线一致性测试。
 
 不触碰 wiki；pywikibot.fixes 导入时会把 user-fixes.py exec 进自己的
-globals，因此 translation_names 等名字直接从 pywikibot.fixes 取。
+globals，因此 translation_name_rules 等名字直接从 pywikibot.fixes 取。
 """
 
 import importlib
@@ -15,9 +15,8 @@ fx = importlib.import_module("pywikibot.fixes")
 
 # translation 机制定义在 user-fixes.py，由 pwb/pywikibot/fixes.py 末尾 exec 进
 # 自己的 globals，静态检查不可见，故经 __dict__ 取。
-p2n: Any = fx.__dict__["p2n"]
 p2st: Any = fx.__dict__["p2st"]
-translation_names: list[str] = fx.__dict__["translation_names"]
+translation_name_rules: list[tuple[str, str]] = fx.__dict__["translation_name_rules"]
 
 # RULES 直接复用 re0_move 的构建结果，不再本地重复构造。
 RULES = load_module("re0_move", "src/scripts/re0_move.py").RULES
@@ -31,8 +30,8 @@ def normalize(title: str) -> str:
 
 
 def test_no_duplicate_names():
-    dup = [k for k, v in Counter(translation_names).items() if v > 1]
-    assert not dup, f"translation_names 存在重复条目: {dup}"
+    dup = [k for k, v in Counter(translation_name_rules).items() if v > 1]
+    assert not dup, f"translation_name_rules 存在重复条目: {dup}"
 
 
 def test_standard_names_stable_under_full_rule_chain():
@@ -42,15 +41,10 @@ def test_standard_names_stable_under_full_rule_chain():
     此时主表条目是误导性的死规则（如「贝阿托莉丝」曾被 manual 表
     覆盖为「碧翠丝」），应删除或改为注释说明。
     """
-    bad = [(p2n(p), normalize(p2n(p))) for p in translation_names]
+    bad = [(n, normalize(n)) for _, n in translation_name_rules]
     bad = [(std, out) for std, out in bad if out != std]
     assert not bad, f"以下标准名会被规则链二次改写（死规则）: {bad}"
 
-
-def test_p2n_strips_regex_constructs():
-    assert p2n("安娜(斯)?塔西亚") == "安娜塔西亚"
-    assert p2n("菜月·?昴") == "菜月·昴"
-    assert p2n("丹克(尔)?肯") == "丹克肯"
 
 
 def test_beatrice_normalizes_to_official_name():
@@ -176,16 +170,6 @@ def test_pattern_matches_base_text():
     ]
     assert not bad, bad
 
-
-def test_pattern_p2n_equals_entry_name():
-    """pattern 经 p2n 推导的替换目标必须等于条目名。
-
-    p2st(pattern) 匹配 name 只保证规则能命中，不保证目标正确：
-    可选组写法错误时（如 name=恩夏尔德 配 pattern=恩夏(?:尔)?德），
-    命中检查照样过，但 p2n 会把文本归一到不存在的名字。
-    """
-    bad = [(e.name, e.pattern) for e in ENTRIES if e.pattern and p2n(e.pattern) != e.name]
-    assert not bad, f"以下 pattern 的 p2n 推导与条目名不一致: {bad}"
 
 
 def test_aliases_normalize_to_entry_name():
