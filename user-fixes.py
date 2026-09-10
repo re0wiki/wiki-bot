@@ -515,6 +515,21 @@ translation_names = [
 # 长匹配优先：短名规则排在长名规则后，防止短名吃掉长名内部（菈姆 命中 [[普菈姆|..]] 类）
 translation_names.sort(key=lambda p: -len(p2n(p)))
 
+
+def _noncap(pattern):
+    """内层捕获组转非捕获：合成 alternation 后用 lastindex 定位是哪条规则命中。"""
+    return re.sub(r"\((?!\?)", "(?:", pattern)
+
+
+# 名字规则合成单趟 alternation：顺序 re.sub 链里恒等转换不消耗文本，短规则仍可命中
+# 长名内部；单趟扫描下同一位置只提交一次，配合长度降序即真正的长匹配优先。
+_name_targets = [p2n(p) for p in translation_names]
+_name_pattern = "|".join(f"({_noncap(p2o(p))})" for p in translation_names)
+
+
+def _name_sub(m):
+    return _name_targets[m.lastindex - 1]
+
 translation_manual = [  # 手动添加的替换组（模板替换；译名规则全部在 translations.py）
     (rf"{f('凛淋萍平苹')}{f('果')}", "{{Ringa}}"),
     (
@@ -566,7 +581,7 @@ user_fixes["translation"] = base | {
         ],
     },
     "replacements": list(translation_pairs)
-    + [(p2o(p), p2n(p)) for p in translation_names]
+    + [(_name_pattern, _name_sub)]
     + list(translation_manual)
     + list(translation_pairs),
 }
