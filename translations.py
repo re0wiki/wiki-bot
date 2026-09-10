@@ -1,7 +1,7 @@
 """译名表数据（唯一权威）。
 
 逻辑（f/p2o/p2n/替换链装配）在 user-fixes.py。本文件只放数据：
-- ENTRIES：标准译名表（顺序即替换链顺序，勿随意重排）；pattern 为非空时用于生成匹配规则；
+- ENTRIES：标准译名表（别名精确对按此顺序；名字规则生成时按目标长度降序、长匹配优先）；pattern 为非空时用于生成匹配规则；
   fuzzy=False 的条目不生成名字模糊规则（短名防误判/特判太麻烦不处理的），别名规则照常
 - SIMILAR_CHARS：相似字符组（手工维护，见 AGENTS.md 译名工作流）
 - aliases：相似字组够不着的显式别名（组内异写由 p2o 自动生成，勿重复登记）；pattern 挂 guard 正则（经 p2st 简繁展开，与标准名 pattern 的 p2o 相似组展开是两套，勿混用）
@@ -778,6 +778,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         name="达德利",
+        pattern="达德利(?!亚)",  # 「达特利」只会是 到达特利亚斯 的跨界误配，不是真实变体
         source=Source.OFFICIAL_HANT,
         ja="ダドリー·ミロード",
         en="Dudley",
