@@ -481,7 +481,12 @@ def _noncap(pattern):
 
 
 def expand_class_pattern(pattern):
-    """纯「字面字符 + 字符类」pattern 的全组合展开（撞名检测用）；含其他正则构造返回 None。"""
+    """pattern 的全组合展开：剥离零宽 lookaround 后，纯「字面+字符类」核心返回成员集。
+
+    lookaround 是零宽断言，不贡献消费字符，剥离不影响成员集（guard 对的核心即
+    其覆盖的写法集合）；核心含其他正则构造（组/量词等）时返回 None（不可枚举）。
+    """
+    pattern = re.sub(r"\(\?<?[=!][^)]*\)", "", pattern)
     options = []
     i = 0
     while i < len(pattern):
