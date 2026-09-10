@@ -1,11 +1,11 @@
 import inspect
 import itertools
-import re
 import sys
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
 
+import regex as re
 from opencc import OpenCC
 
 # 本文件由 pwb/pywikibot/fixes.py exec 加载（无 __file__、仓库根不在 sys.path），

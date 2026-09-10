@@ -529,6 +529,15 @@ wheels = [
 ]
 
 [[package]]
+name = "types-regex"
+version = "2026.9.3.20260903"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/ac/65/7a39af8705ba0685429e8306ce7cbc6d40be0658c36bb2330aefcca13815/types_regex-2026.9.3.20260903.tar.gz", hash = "sha256:eef82a0ae08806f32609fc4829fee845f98672dd6378834c34dec33bf8c60cf0", size = 13858, upload-time = "2026-09-03T06:36:49.602Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/8e/c7/571fb5dbfee06a57651d8af664dbda43409277b6f7ccff5df8fbeee526e3/types_regex-2026.9.3.20260903-py3-none-any.whl", hash = "sha256:d12a58823ba330497c4369fc47f9de028f5fd74036d3cfabb7732c69e88a5fd0", size = 11181, upload-time = "2026-09-03T06:36:48.605Z" },
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.16.0"
 source = { registry = "https://pypi.org/simple" }
@@ -571,6 +580,7 @@ dev = [
     { name = "pywikibot", extra = ["eventstreams", "google", "graphviz", "html", "http", "isbn", "memento", "mwoauth", "mysql", "tkinter", "wikitextparser"] },
     { name = "ruff" },
     { name = "ty" },
+    { name = "types-regex" },
 ]
 
 [package.metadata]
@@ -586,6 +596,7 @@ dev = [
     { name = "pywikibot", extras = ["html", "http", "google", "graphviz", "eventstreams", "isbn", "memento", "mwoauth", "mysql", "wikitextparser", "tkinter"], editable = "pwb" },
     { name = "ruff", specifier = ">=0.15.1" },
     { name = "ty", specifier = ">=0.0.17" },
+    { name = "types-regex", specifier = ">=2026.9.3.20260903" },
 ]
 
 [[package]]

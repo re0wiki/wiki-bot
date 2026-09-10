@@ -5,10 +5,10 @@ globals，因此 translation_names 等名字直接从 pywikibot.fixes 取。
 """
 
 import importlib
-import re
 from collections import Counter
 from typing import Any
 
+import regex as re
 from repo_loader import load_module
 
 fx = importlib.import_module("pywikibot.fixes")

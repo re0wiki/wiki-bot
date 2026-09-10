@@ -6,7 +6,7 @@ textlib.replaceExcept 在 marker 为空且不 allowoverlap 时走快速路径：
 行为与原版一致；NekoQuote 月表（jq/jt 行密集）上 10x+ 加速。
 """
 
-import re
+import regex as re
 
 from pywikibot import textlib
 
