@@ -115,8 +115,10 @@ def test_aliases_no_collision():
     bad = []
     for e in ENTRIES:
         for a in e.aliases:
-            if isinstance(a, translations.Variant) and a.pattern and (
-                members := expand_class_pattern(a.pattern)
+            if (
+                isinstance(a, translations.Variant)
+                and a.pattern
+                and (members := expand_class_pattern(a.pattern))
             ):
                 forms = members
             else:
@@ -192,9 +194,12 @@ def test_aliases_normalize_to_entry_name():
     是正确行为（标题不能含模板），不在此断言覆盖；其正文归一由
     fixes 替换链保证。
     """
+
     def forms_of(a):
-        if isinstance(a, translations.Variant) and a.pattern and (
-            m := expand_class_pattern(a.pattern)
+        if (
+            isinstance(a, translations.Variant)
+            and a.pattern
+            and (m := expand_class_pattern(a.pattern))
         ):
             return m
         return {a.text if isinstance(a, translations.Variant) else a}
