@@ -134,6 +134,8 @@ ENTRIES: list[Entry] = [
         ja="クリンド",
         en="Clind",
         cat="角色",
+        fuzzy=False,  # 三字模糊组把「格林特训」的 格林特 打成 库林德；真实变体只有 柯林特
+        aliases=(V("柯林特", Source.FAN),),
     ),
     Entry(
         name="历布莱",
