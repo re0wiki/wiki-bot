@@ -561,6 +561,7 @@ version = "1.0.0"
 source = { virtual = "." }
 dependencies = [
     { name = "opencc" },
+    { name = "regex" },
     { name = "tqdm" },
 ]
 
@@ -575,6 +576,7 @@ dev = [
 [package.metadata]
 requires-dist = [
     { name = "opencc", specifier = ">=1.2.0" },
+    { name = "regex", specifier = ">=2026.7.19" },
     { name = "tqdm", specifier = ">=4.67.3" },
 ]
 

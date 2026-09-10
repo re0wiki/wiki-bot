@@ -1,11 +1,11 @@
 import inspect
 import itertools
-import re
 import sys
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
 
+import regex as re
 from opencc import OpenCC
 
 # 本文件由 pwb/pywikibot/fixes.py exec 加载（无 __file__、仓库根不在 sys.path），
@@ -511,7 +511,9 @@ def p2st(pattern: str):
 
 
 translation_names = [
-    e.pattern or e.name for e in translations.ENTRIES if "{{" not in e.name  # 模板条目不生成名字规则
+    e.pattern or e.name
+    for e in translations.ENTRIES
+    if "{{" not in e.name  # 模板条目不生成名字规则
 ]  # 数据在 translations.py
 # 长匹配优先：短名规则排在长名规则后，防止短名吃掉长名内部（菈姆 命中 [[普菈姆|..]] 类）
 translation_names.sort(key=lambda p: -len(p2n(p)))
@@ -522,16 +524,42 @@ def _noncap(pattern):
     return re.sub(r"\((?!\?)", "(?:", pattern)
 
 
-# 名字规则合成单趟 alternation：顺序 re.sub 链里恒等转换不消耗文本，短规则仍可命中
-# 长名内部；单趟扫描下同一位置只提交一次，配合长度降序即真正的长匹配优先。
-# 展开走 p2st（仅简繁，窄）：相似组宽展开（p2o）的跨界误报结构性消除，
-# 其覆盖的历史变体已全部显式登记为别名（logs/variant_register.csv 评审落地）。
-_name_targets = [p2n(p) for p in translation_names]
-_name_pattern = "|".join(f"({_noncap(p2st(p))})" for p in translation_names)
+# 别名机制：精确对由 Entry.aliases 生成，繁体写法一并归一。带 pattern 的别名生成
+# guard 对（p2st 简繁展开，手写字符类原样保留），别名位于更长他名内部时防子串误伤。
+def _variant(v):
+    return v if isinstance(v, translations.Variant) else None
 
 
-def _name_sub(m):
-    return _name_targets[m.lastindex - 1]
+# 全部替换规则合成单趟 alternation：名字规则（p2st 简繁展开）与别名精确对/guard 对
+# 统一按目标/别名原文长度降序，同一位置只提交一次 = 真长匹配优先（短规则无法再命中
+# 长名/长别名内部）；单趟语义下恒等转换也消耗文本。p2o 相似组只服务 translation_manual。
+# 大 alternation 靠 regex 模块的 trie 优化（pwb 全库 import regex as re；stdlib re 逐位置
+# 顺序试探会慢三个数量级）。
+_name_items = [(len(p2n(p)), p2st(p), p2n(p)) for p in translation_names]
+_pair_items = [
+    (len(a2), re.escape(a2), e.name)
+    for e in translations.ENTRIES
+    for a in e.aliases
+    if not ((v := _variant(a)) and v.pattern)
+    for a0 in [a.text if isinstance(a, translations.Variant) else a]
+    for a2 in dict.fromkeys((a0, s2t(a0)))
+] + [
+    (len(v.text), p2st(v.pattern), e.name)
+    for e in translations.ENTRIES
+    for a in e.aliases
+    if (v := _variant(a)) and v.pattern
+]
+_alt_items = sorted(_name_items + _pair_items, key=lambda x: -x[0])
+_alt_targets = [n for _, _, n in _alt_items]
+_alt_pattern = "|".join(f"({_noncap(p)})" for _, p, _ in _alt_items)
+
+
+def _alt_sub(m):
+    return _alt_targets[m.lastindex - 1]
+
+
+# re0_move（标题归一）消费的别名对：与 alternation 同数据（别名子集、同排序键）。
+translation_pairs = [(p, n) for _, p, n in sorted(_pair_items, key=lambda x: -x[0])]
 
 
 translation_manual = [  # 手动添加的替换组（模板替换；译名规则全部在 translations.py）
@@ -548,34 +576,6 @@ translation_manual = [  # 手动添加的替换组（模板替换；译名规则
     (r"(?<=半)\{\{(Seirei|Yousei) or Elf\}\}", "{{Elf}}"),
 ]
 
-
-# 别名机制：精确对由 Entry.aliases 生成，繁体写法一并归一（fuzzy=False 条目的别名也
-# 生成：名字本身不归一，别名归一到它）。带 pattern 的别名生成 guard 对（p2st 简繁展开，
-# 手写字符类原样保留），别名位于更长他名内部时防子串误伤。
-def _variant(v):
-    return v if isinstance(v, translations.Variant) else None
-
-
-# 长匹配优先：按别名原文长度降序（guard 对按 v.text，不是展开后的正则长度），
-# 防止短别名在长别名内部截胡成中间态（艾米/莉娅 抢在 艾米利娅/爱米莉娅 前）。
-_pair_items = [
-    (len(a2), a2, e.name)
-    for e in translations.ENTRIES
-    for a in e.aliases
-    if not ((v := _variant(a)) and v.pattern)
-    for a0 in [a.text if isinstance(a, translations.Variant) else a]
-    for a2 in dict.fromkeys((a0, s2t(a0)))
-] + [
-    (len(v.text), p2st(v.pattern), e.name)
-    for e in translations.ENTRIES
-    for a in e.aliases
-    if (v := _variant(a)) and v.pattern
-]
-_pair_items.sort(key=lambda x: -x[0])
-translation_pairs = [(pat, n) for _, pat, n in _pair_items]
-# 精确对/guard 对在首尾各跑一遍：先行使别名不被模糊规则截胡成中间态；收尾兜底繁简混合文本
-# （名字规则把别名周围繁体字归一简体后，简体精确对才有机会命中）
-
 user_fixes["translation"] = base | {
     "generator": generator_more,
     # 一律归一到官方简中标准名
@@ -588,10 +588,7 @@ user_fixes["translation"] = base | {
             r"(?m)^\s*\|\s*name_ja\s*=[^\n]*$",
         ],
     },
-    "replacements": list(translation_pairs)
-    + [(_name_pattern, _name_sub)]
-    + list(translation_manual)
-    + list(translation_pairs),
+    "replacements": [(_alt_pattern, _alt_sub)] + list(translation_manual),
 }
 # endregion
 

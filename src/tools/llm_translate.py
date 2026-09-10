@@ -20,13 +20,13 @@ revid 为 - 表示无 en 源（zh 源码无 en 链接，或 en 页不存在）�
 
 import argparse
 import json
-import re
 import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
 from urllib.parse import quote
 
+import regex as re
 import requests
 
 ROOT = Path(__file__).resolve().parents[2]

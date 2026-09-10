@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "opencc>=1.2.0",
+    "regex>=2026.7.19",
     "tqdm>=4.67.3",
 ]
 

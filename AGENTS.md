@@ -32,7 +32,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `src/jobs/run_job.py` | 子进程包装：`build_cmd` 拼 `sys.executable pwb/pwb.py ...`（不用裸 `python`，PATH 上可能是无项目依赖的其他版本），自动加 `-always`（interwiki 加 `-auto -force`，transferbot 不加） |
 | `src/jobs/starts.py` | namespace → `-start:ns:!` 生成器参数。`ns_base`=主/project/template/category，`ns_more` 再加 module/mediawiki |
 | `user-config.py` | pywikibot 配置：family=re0, mylang=zh, 账号 IchiSanNi（只给 zh 配账号，外站匿名读——Fandom 现在跨站登录会互踢会话，见文件内注释） |
-| `user-fixes.py` | **核心资产**。自定义 fix 集：misc/date/anti-ve/para/gallery/heading/**translation**/HTML/syntax 等。`translation` 把几百个别名归一到标准译名：标准名经 `p2st()` 简繁展开合成单趟 alternation（长度降序、同位置只提交一次 = 真长匹配优先），别名精确对与 guard 同经 p2st；`f()`/`p2o()` 相似组宽展开只服务 `translation_manual` 模板规则；NekoQuote 月表的日文原文字段（jq/jt Lua 字符串）由 inside 异常保护不归一；译名数据已全部迁入 `translations.py` |
+| `user-fixes.py` | **核心资产**。自定义 fix 集：misc/date/anti-ve/para/gallery/heading/**translation**/HTML/syntax 等。`translation` 把几百个别名归一到标准译名：名字规则（`p2st()` 简繁展开）与别名精确对/guard 合成单趟 alternation（统一按目标/别名原文长度降序、同位置只提交一次 = 真长匹配优先），大 alternation 靠 regex 模块 trie 优化；`f()`/`p2o()` 相似组宽展开只服务 `translation_manual` 模板规则；NekoQuote 月表的日文原文字段（jq/jt Lua 字符串）由 inside 异常保护不归一；译名数据已全部迁入 `translations.py` |
 | `translations.py` | **译名表数据（唯一权威）**：`ENTRIES`（标准名 + pattern/ja/en/cat/full_name/aliases/note；aliases 元素为 `V(写法, Source.X)` 枚举标注（Source：OFFICIAL_HANS 官简/OFFICIAL_HANT 官繁/FAN 民间），别名位于更长他名内部时用 `pattern=` 写 guard 正则（经 p2st 简繁展开，手写字符类原样保留）；full_name=角色条目完整标题（全名或真名，称呼归到真名），仅供一次性移动与数据参考，不进替换链；别名精确对按表顺序，名字规则生成时按目标长度降序；name 含 `{{` 的模板条目不生成名字规则）+ `SIMILAR_CHARS`。纯数据无逻辑，供 user-fixes import 生成替换表，也供 LLM 翻译管线与 re0-corpus 审查管线直接消费 |
 | `src/scripts/` | 只放 pwb 按名解析的任务脚本（`re0_*` ×7，见下行；搜索路径由 user-config.py 的 `user_script_paths = ["src.scripts"]` 指定；find_filename 不递归子目录，放进子目录即退出解析） |
 | `src/tools/` | 非 pwb 的常驻/维护工具（直接 python 运行）：`recent_changes_watchdog.py`、诊断（`verify_wiki_access.py`/`test_pwb_throttle.py`）、翻译管线（`llm_translate.py`，见 docs/llm-translation.md）、审计（`dump_modules.py`/`template_inventory.py`/`template_complexity.py`/`recheck_template_usage.py`/`scan_title_prefixes.py`/`check_css_imports.py`/`audit_wikipedia_links.py`/`audit_langlinks.py`/`series_nav_audit.py`——系列导航 Tab 与 en prev/next 链一致性，见 docs/series-nav-sync.md） |
@@ -67,8 +67,9 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 
 ## pywikibot fork 的定制（rebase 上游时必须保留）
 
-每个定制一个独立提交（2026-07-27 起由单个大 commit 拆分；历史上另有 `import regex as re` 全库替换、requirements 加 regex、redirect offset、TokenWallet csrf-first、fixes 默认 generator 五个补丁，2026-07 验证不再必要后摘除——generator 已改为在 `src/jobs/jobs.py` 里显式传 `starts_base`；transferbot 搬运标记两个补丁 2026-08-13 随 re0_transferbot 换装摘除）：
+每个定制一个独立提交（2026-07-27 起由单个大 commit 拆分；历史上另有 redirect offset、TokenWallet csrf-first、fixes 默认 generator 等补丁，验证不再必要后摘除——generator 已改为在 `src/jobs/jobs.py` 里显式传 `starts_base`；transferbot 搬运标记两个补丁 2026-08-13 随 re0_transferbot 换装摘除）：
 
+- 全库 `import re` → `import regex as re`（80 文件机械替换，setup.py 除外）+ requirements.txt 加 regex：译名合并 alternation（1000+ 分支）靠 regex 的 trie 优化（stdlib re 逐位置顺序试探，167KB 页 8.9s → 0.03s）。regex 默认 VERSION0 与 re 行为对齐；本 fork 曾于 2025-12 至 2026-07 全量运行该补丁，当时仅为变宽 lookbehind 服务、改写定宽后摘除，2026-09 为 trie 性能恢复。
 - `textlib.py`：`replaceExcept` 加快速路径（marker 为空且不 allowoverlap 时）：异常区间预计算一次（合并排序），编辑后区间随 delta 平移，替代原版「每个候选匹配 × 每个异常正则」的全文重扫——保护行密集的页面（NekoQuote 月表，200KB）上 10x+ 加速。行为锚点测试在主仓 `tests/test_fork_replaceexcept.py`。
 - `textlib.py` + `fixes.py`：新增 `keep` 标签 = `<!--as-is-->...<!--/as-is-->` 注释对，textlib 加 regex，HTML/syntax/isbn/specialpages fixes 的 exceptions 里加 `keep` —— wiki 上可以用这对注释保护内容不被 bot 改。注释零渲染、可行内使用，行内内容整词包裹即可（如 `<!--as-is-->精灵<!--/as-is-->`）。标记不配平时该区域失去保护（静默失效，扫描时可查配平）。
 - `fixes.py`：HTML fix 把 `<br>` 归一到不闭合形式（MediaWiki 渲染等价，不闭合是本 wiki 惯例）。
