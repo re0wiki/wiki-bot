@@ -86,7 +86,7 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 ## 译名维护工作流（最常见的改动）
 
 1. 译名选取规则见 wiki 的 `ReZero Wiki:译名表`（官方简中 > 官方繁体 > 民间 > 保留英文）。bot 执行的唯一权威是 `user-fixes.py`；译名表页面由人工随性维护、无逐条同步义务（bot 的 fix:translation 会自动归一页面上的别名写法），已有条目的标题与内容本身即译名表的作用，不另建清单页。用户通过 GitHub Issues 报译名问题（模板：新增/修改译名、遗漏替换、错误替换），wiki 页面明确告诉用户「不要手动移动页面或替换文本，提议通过后 Bot 会批量修改」。
-2. 改译名 = 改 `translations.py` 的 `ENTRIES`：`name` 进主列表（标准名经 `p2st()` 简繁展开自动匹配简繁写法），**新变体一律登记 `aliases` 精确对**（须带 Source 来源标注；别名位于更长他名内部时用 `pattern=` 挂 guard，如 裘斯 `pattern="(?<!梅)裘斯"`——**guard 的作用验证要在 wiki 源码匹配**（官方语料 0 次不代表多余：无官方译名的实体本就不在语料里，如 `梅莉(?!奥)` 防 `角色:梅里欧·阿嘎玛`）；选择性展开用手写字符类表达，如 利格鲁/梅莉；不同日文名（真名/旧名/称呼）不互转，各自单记）。`translation_manual` 只剩模板替换规则。拿不准覆盖面的，先 `python main.py fix:translation -s` 干跑。繁体与日文原名同字的别名（王选前日谭/最优纪行/王族诱拐案 类）：wiki 上既有日文出现处已逐处 as-is 保护（出版信息、术语:王族诱拐事件 lead），**新增此类日文引用必须包 `<!--as-is-->`**，否则会被 s2t 对归一。标题含别名的页面由 `re0_move` 任务用同一张表自动移动，无需另行处理。
+2. 改译名 = 改 `translations.py` 的 `ENTRIES`：`name` 进主列表（标准名经 `p2st()` 简繁展开自动匹配简繁写法），**新变体一律登记 `aliases` 精确对**（须带 Source 来源标注；别名位于更长他名内部时用 `pattern=` 挂 guard，如 裘斯 `pattern="(?<!梅)裘斯"`；读音全组合类变体（ai-mi-li-ya→爱蜜莉雅 族）用 `pattern=` 写音位字符类一条收编（如 `V("艾米莉娅", FAN, pattern="[艾爱愛][米蜜][莉利][娅亚雅婭]")`），**先跑全历史碰撞扫描确认命中全在本族再启用**；guard 的作用验证要在 wiki 源码匹配**（官方语料 0 次不代表多余：无官方译名的实体本就不在语料里，如 `梅莉(?!奥)` 防 `角色:梅里欧·阿嘎玛`）；选择性展开用手写字符类表达，如 利格鲁/梅莉；不同日文名（真名/旧名/称呼）不互转，各自单记）。`translation_manual` 只剩模板替换规则。拿不准覆盖面的，先 `python main.py fix:translation -s` 干跑。繁体与日文原名同字的别名（王选前日谭/最优纪行/王族诱拐案 类）：wiki 上既有日文出现处已逐处 as-is 保护（出版信息、术语:王族诱拐事件 lead），**新增此类日文引用必须包 `<!--as-is-->`**，否则会被 s2t 对归一。标题含别名的页面由 `re0_move` 任务用同一张表自动移动，无需另行处理。
 3. 提交信息遵循 Conventional Commits：`feat(translation): add X` / `fix(translation): 旧 -> 新`。
 4. 模板条目（如 `{{Elf}}`）不生成名字规则（name 含 `{{` 自动排除），正文归一由 `translation_manual` 结构规则处理。
 

@@ -2385,17 +2385,8 @@ ENTRIES: list[Entry] = [
         ja="エミリア",
         en="Emilia",
         cat="角色",
-        aliases=(
-            V("艾米莉娅", Source.FAN),
-            V("艾米莉亚", Source.FAN),
-            V("艾米利娅", Source.FAN),
-            V("爱蜜莉娅", Source.FAN),
-            V("艾米丽娅", Source.FAN),
-            V("艾米莉婭", Source.FAN),
-            V("爱蜜莉亚", Source.FAN),
-            V("艾米利亚", Source.FAN),
-            V("爱米莉娅", Source.FAN),
-        ),
+        # ai-mi-li-ya 音位全组合（全历史碰撞扫描 11 种命中全在本族，无外溢）
+        aliases=(V("艾米莉娅", Source.FAN, pattern="[艾爱愛][米蜜][莉利][娅亚雅婭]"),),
     ),
     Entry(
         std=V("普勒阿得斯", Source.OFFICIAL_HANS),
