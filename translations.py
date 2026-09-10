@@ -561,6 +561,7 @@ ENTRIES: list[Entry] = [
         ja="テュフォン",
         en="Typhon",
         cat="角色",
+        fuzzy=False,  # 二字模糊组把 迪丰·特雷沃拉 的 迪丰 打成 提丰；无真实变体
     ),
     Entry(
         name="梯利爱娜",
@@ -833,6 +834,7 @@ ENTRIES: list[Entry] = [
         ja="ガストン",
         en="Ton",
         cat="角色",
+        fuzzy=False,  # 二字模糊组把动词 安顿 打成 阿顿；无真实变体
     ),
     Entry(
         name="雷格鲁斯",
@@ -1563,7 +1565,6 @@ ENTRIES: list[Entry] = [
         ja="ラインハルト·ヴァン·アストレア",
         full_name="莱因哈鲁特·梵·阿斯特雷亚",
         source=Source.OFFICIAL_HANS,
-        pattern="莱因哈鲁?特",
         en="Reinhard",
     ),
     Entry(
@@ -1759,7 +1760,7 @@ ENTRIES: list[Entry] = [
         ja="リカード·ウェルキン",
         full_name="里卡多·威尔金",
         source=Source.OFFICIAL_HANS,
-        pattern="(?<!尤|德)里卡多",
+        pattern="(?<!尤|德)里卡多(?!·霍夫曼)",
         en="Ricardo",
     ),
     Entry(
