@@ -2558,7 +2558,12 @@ ENTRIES: list[Entry] = [
         en="Appa",
         source=Source.FAN,
         cat="术语",
-        note="凛果 的标准译法是模板；正文归一由 translation_manual 结构规则处理",
+        aliases=(
+            V("淋果", Source.OFFICIAL_HANS),
+            V("凛果", Source.FAN),
+            V("萍果", Source.FAN),
+            V("平果", Source.FAN),
+        ),
     ),
     Entry(
         name="沙时间",

@@ -25,14 +25,14 @@ from pywikibot.fixes import (
 from pywikibot.pagegenerators import GeneratorFactory
 
 RULES = (
-    [(re.compile(o, re.IGNORECASE), n) for o, n in translation_pairs]
+    [(re.compile(o, re.IGNORECASE), n) for o, n in translation_pairs if "{{" not in n]
     + [(re.compile(p2st(pat), re.IGNORECASE), n) for pat, n in translation_name_rules]
     + [
         (re.compile(o, re.IGNORECASE), n)
         for o, n in translation_manual
         if "{{" not in n  # 产出模板调用的规则不能用于标题
     ]
-    + [(re.compile(o, re.IGNORECASE), n) for o, n in translation_pairs]
+    + [(re.compile(o, re.IGNORECASE), n) for o, n in translation_pairs if "{{" not in n]
 )
 ILLEGAL_TITLE_CHARS = re.compile(r"[#<>\[\]{}|]")
 

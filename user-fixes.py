@@ -537,7 +537,6 @@ translation_pairs = [(p, n) for _, p, n in sorted(_pair_items, key=lambda x: -x[
 
 
 translation_manual = [  # 手动添加的替换组（模板替换；译名规则全部在 translations.py）
-    (r"[凛凜平淋苹萍蘋]果", "{{Ringa}}"),
     (
         (
             "(?<!禁书与谜之)(?<!术语:)(?<!人工)(?<!自然)(?<!契约)(?<![大邪微准])"

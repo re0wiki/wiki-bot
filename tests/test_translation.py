@@ -173,10 +173,16 @@ def test_pattern_matches_base_text():
 
 
 def test_aliases_normalize_to_entry_name():
-    """别名经完整规则链必须归一到所属条目名（否则规则间互相覆盖）。"""
+    """别名经完整规则链必须归一到所属条目名（否则规则间互相覆盖）。
+
+    模板目标条目（{{Ringa}}/{{Elf}}）的别名在标题归一里被 {{ 过滤
+    是正确行为（标题不能含模板），不在此断言覆盖；其正文归一由
+    fixes 替换链保证。
+    """
     bad = [
         (a, e.name, normalize(a))
         for e in ENTRIES
+        if "{{" not in e.name
         for a in alias_texts(e)
         if normalize(a) != e.name
     ]
