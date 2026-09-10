@@ -15,7 +15,6 @@ fx = importlib.import_module("pywikibot.fixes")
 
 # translation 机制定义在 user-fixes.py，由 pwb/pywikibot/fixes.py 末尾 exec 进
 # 自己的 globals，静态检查不可见，故经 __dict__ 取。
-p2o: Any = fx.__dict__["p2o"]
 p2n: Any = fx.__dict__["p2n"]
 p2st: Any = fx.__dict__["p2st"]
 translation_names: list[str] = fx.__dict__["translation_names"]
@@ -52,13 +51,6 @@ def test_p2n_strips_regex_constructs():
     assert p2n("安娜(斯)?塔西亚") == "安娜塔西亚"
     assert p2n("菜月·?昴") == "菜月·昴"
     assert p2n("丹克(尔)?肯") == "丹克肯"
-
-
-def test_p2o_matches_alias_variants():
-    """p2o 生成的正则应覆盖相似字符与繁体变体。"""
-    pat = re.compile(p2o("碧翠丝"))
-    for variant in ("碧翠丝", "碧翠絲"):
-        assert pat.fullmatch(variant), variant
 
 
 def test_beatrice_normalizes_to_official_name():
@@ -180,7 +172,7 @@ def test_pattern_matches_base_text():
     ] + [
         f"{e.name} 的 pattern 不匹配 name"
         for e in ENTRIES
-        if e.pattern and not re.search(p2o(e.pattern), e.name)
+        if e.pattern and not re.search(p2st(e.pattern), e.name)
     ]
     assert not bad, bad
 

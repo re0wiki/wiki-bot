@@ -1,7 +1,5 @@
 import inspect
-import itertools
 import sys
-from collections import defaultdict
 from functools import partial
 from pathlib import Path
 
@@ -434,45 +432,8 @@ user_fixes["heading"] = base | {
 # endregion
 
 # region translation
-flatten = itertools.chain.from_iterable
 s2t = OpenCC("s2t.json").convert
 t2s = OpenCC("t2s.json").convert
-
-similar_chars = translations.SIMILAR_CHARS  # 数据在 translations.py
-
-
-class SimilarCharsMap(defaultdict):
-    """字符到相似字符的映射。"""
-
-    def __missing__(self, key):
-        """一个字符总是与它本身相似。"""
-        self[key] = key
-        return key
-
-
-sc_map = SimilarCharsMap()  # singleton
-sc_map |= {c: sc for sc in similar_chars for c in sc}
-
-
-def f(chars: str):
-    """
-    返回匹配相似字符的正则表达式。
-
-    短命名以方便大量使用。
-
-    :param chars: 任意个字符
-    :return: "[similar_chars]"
-    """
-    return (
-        "["
-        + "".join(sorted(set(flatten(sc_map[c] + s2t(sc_map[c]) for c in chars))))
-        + "]"
-    )
-
-
-def p2o(pattern: str):
-    """返回传入的正则表达式对应的所有可能译名对应的正则表达式。"""
-    return "".join(c if c in "?!(|)=<" else f(c) for c in pattern)
 
 
 def p2n(pattern: str):
@@ -483,10 +444,9 @@ def p2n(pattern: str):
 def p2st(pattern: str):
     """简繁展开：正则中每个字面字符展开为 [简繁] 字符类。
 
-    名字规则与别名规则统一走此窄展开（相似组宽展开 p2o 只服务 translation_manual
-    模板规则），防止 f('梅') 含 美 这类相似组把普通词卷进来；p2o 覆盖过的历史
-    变体已全部显式登记为别名。手写 [...] 字符类与转义原样保留（利格鲁 的宽组、
-    梅莉 的选择性展开靠手写类表达）。
+    名字规则与别名规则统一走此窄展开；相似组宽展开（会把普通词卷进来）已随
+    历史变体全部显式登记为别名而废弃删除。手写 [...] 字符类与转义原样保留
+    （利格鲁 的宽组、梅莉 的选择性展开靠手写类表达）。
     """
     out = []
     in_class = False
@@ -532,7 +492,7 @@ def _variant(v):
 
 # 全部替换规则合成单趟 alternation：名字规则（p2st 简繁展开）与别名精确对/guard 对
 # 统一按目标/别名原文长度降序，同一位置只提交一次 = 真长匹配优先（短规则无法再命中
-# 长名/长别名内部）；单趟语义下恒等转换也消耗文本。p2o 相似组只服务 translation_manual。
+# 长名/长别名内部）；单趟语义下恒等转换也消耗文本。
 # 大 alternation 靠 regex 模块的 trie 优化（pwb 全库 import regex as re；stdlib re 逐位置
 # 顺序试探会慢三个数量级）。
 _name_items = [(len(p2n(p)), p2st(p), p2n(p)) for p in translation_names]
@@ -581,16 +541,16 @@ translation_pairs = [(p, n) for _, p, n in sorted(_pair_items, key=lambda x: -x[
 
 
 translation_manual = [  # 手动添加的替换组（模板替换；译名规则全部在 translations.py）
-    (rf"{f('凛淋萍平苹')}{f('果')}", "{{Ringa}}"),
+    (r"[凛凜平淋苹萍蘋]果", "{{Ringa}}"),
     (
         (
             "(?<!禁书与谜之)(?<!术语:)(?<!人工)(?<!自然)(?<!契约)(?<![大邪微准])"
-            f"{f('精')}{f('灵')}"
+            "精[灵靈]"
             "(?!骑士|[术使])"
         ),
         "{{Seirei or Elf}}",
     ),
-    (f"{f('妖')}{f('精')}", "{{Yousei or Elf}}"),
+    ("妖精", "{{Yousei or Elf}}"),
     (r"(?<=半)\{\{(Seirei|Yousei) or Elf\}\}", "{{Elf}}"),
 ]
 
