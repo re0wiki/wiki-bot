@@ -2553,6 +2553,14 @@ ENTRIES: list[Entry] = [
         note="Elf 的标准译法是模板；正文归一由结构规则（{{Seirei or Elf}} 等）处理",
     ),
     Entry(
+        name="{{Ringa}}",
+        ja="リンガ",
+        en="Appa",
+        source=Source.FAN,
+        cat="术语",
+        note="凛果 的标准译法是模板；正文归一由 translation_manual 结构规则处理",
+    ),
+    Entry(
         name="沙时间",
         en="Sand Time",
         source=Source.OFFICIAL_HANS,
