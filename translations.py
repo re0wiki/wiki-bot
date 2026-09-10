@@ -1911,6 +1911,8 @@ ENTRIES: list[Entry] = [
             V("菜月·昴", Source.FAN),
             V("菜月昂", Source.FAN),
             V("菜月.昴", Source.FAN),
+            V("菜月，昴", Source.FAN),
+            V("菜月．昴", Source.FAN),
             V("莱月昴", Source.FAN),
         ),
     ),
