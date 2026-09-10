@@ -511,7 +511,7 @@ def p2st(pattern: str):
 
 
 translation_names = [
-    e.pattern or e.name for e in translations.ENTRIES if e.fuzzy
+    e.pattern or e.name for e in translations.ENTRIES if "{{" not in e.name  # 模板条目不生成名字规则
 ]  # 数据在 translations.py
 # 长匹配优先：短名规则排在长名规则后，防止短名吃掉长名内部（菈姆 命中 [[普菈姆|..]] 类）
 translation_names.sort(key=lambda p: -len(p2n(p)))
@@ -532,6 +532,7 @@ _name_pattern = "|".join(f"({_noncap(p2st(p))})" for p in translation_names)
 
 def _name_sub(m):
     return _name_targets[m.lastindex - 1]
+
 
 translation_manual = [  # 手动添加的替换组（模板替换；译名规则全部在 translations.py）
     (rf"{f('凛淋萍平苹')}{f('果')}", "{{Ringa}}"),

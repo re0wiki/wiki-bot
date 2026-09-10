@@ -180,7 +180,7 @@ def test_pattern_matches_base_text():
     ] + [
         f"{e.name} 的 pattern 不匹配 name"
         for e in ENTRIES
-        if e.pattern and e.fuzzy and not re.search(p2o(e.pattern), e.name)
+        if e.pattern and not re.search(p2o(e.pattern), e.name)
     ]
     assert not bad, bad
 

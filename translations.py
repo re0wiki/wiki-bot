@@ -2,9 +2,8 @@
 
 逻辑（f/p2o/p2n/替换链装配）在 user-fixes.py。本文件只放数据：
 - ENTRIES：标准译名表（别名精确对按此顺序；名字规则生成时按目标长度降序、长匹配优先）；pattern 为非空时用于生成匹配规则；
-  fuzzy=False 的条目不生成名字模糊规则（短名防误判/特判太麻烦不处理的），别名规则照常
 - SIMILAR_CHARS：相似字符组（手工维护，见 AGENTS.md 译名工作流）
-- aliases：相似字组够不着的显式别名（组内异写由 p2o 自动生成，勿重复登记）；pattern 挂 guard 正则（经 p2st 简繁展开，与标准名 pattern 的 p2o 相似组展开是两套，勿混用）
+- aliases：显式别名（名字规则只做 p2st 简繁展开，非简繁的异写一律登记在此）；pattern 挂 guard 正则（经 p2st 简繁展开），别名位于更长他名内部时防子串误伤
 ja/en/cat 供 LLM 翻译参考（英翻中提取英文词即可定位译名）（re0-corpus 侧审查管线也读本文件），尽力填充、可空。
 """
 
@@ -38,9 +37,6 @@ class Entry(NamedTuple):
     )
     source: Source | None = None  # 标准名自身来源
     aliases: tuple[Variant, ...] = ()  # 显式别名（组外异写）：V(写法, Source.X)
-    fuzzy: bool = (
-        True  # False = 不生成名字模糊规则（p2o 展开），别名精确对/guard 对照常生成
-    )
     note: str = ""
 
 
@@ -1885,7 +1881,6 @@ ENTRIES: list[Entry] = [
         full_name="菜月昴",
         source=Source.OFFICIAL_HANS,
         aliases=(V("斯巴鲁", Source.FAN),),
-        fuzzy=False,  # p2o(昴)=[昴昂] 会把 昂扬/昂贵 打成 昴
         cat="角色",
         note="行文短名；条目页为 菜月昴",
     ),
@@ -2603,7 +2598,6 @@ ENTRIES: list[Entry] = [
         name="{{Elf}}",
         en="Elf",
         source=Source.FAN,
-        fuzzy=False,
         cat="术语",
         note="Elf 的标准译法是模板；正文归一由结构规则（{{Seirei or Elf}} 等）处理",
     ),
@@ -2775,7 +2769,6 @@ ENTRIES: list[Entry] = [
         note="姓：泽尔加·伊格莱西亚、鲁达·伊格莱西亚",
     ),
     Entry(
-        fuzzy=False,
         name="罗姆",
         source=Source.OFFICIAL_HANT,
         ja="ロム",
@@ -2784,7 +2777,6 @@ ENTRIES: list[Entry] = [
         note="巴尔加·克罗姆威尔 的通称（ロム）；与 罗姆爷（ロム爺）不互转",
     ),
     Entry(
-        fuzzy=False,
         name="巴尔加",
         ja="バルガ",
         source=Source.OFFICIAL_HANS,
@@ -2793,7 +2785,6 @@ ENTRIES: list[Entry] = [
         note="罗姆爷 真名 巴尔加·克罗姆威尔；称呼与真名不互转",
     ),
     Entry(
-        fuzzy=False,
         name="加斯顿",
         source=Source.OFFICIAL_HANS,
         aliases=(V("葛斯顿", Source.FAN),),
@@ -2803,7 +2794,6 @@ ENTRIES: list[Entry] = [
         note="阿顿 真名；称呼与真名不互转",
     ),
     Entry(
-        fuzzy=False,
         name="拉珍斯",
         aliases=(
             V("拉琴斯", Source.FAN),
@@ -2816,7 +2806,6 @@ ENTRIES: list[Entry] = [
         note="阿珍 真名；称呼与真名不互转",
     ),
     Entry(
-        fuzzy=False,
         name="汉巴力",
         en="Camberley",
         ja="カンバリー",
@@ -2830,7 +2819,6 @@ ENTRIES: list[Entry] = [
         note="阿汉 真名（官简）；汉巴利 为台版写法",
     ),
     Entry(
-        fuzzy=False,
         name="雷德",
         source=Source.OFFICIAL_HANS,
         en="Reid",
@@ -2841,7 +2829,6 @@ ENTRIES: list[Entry] = [
         note="雷伊德 为台版译名；雷德 本身不归一（格莱德/芙蕾德 等他名子串风险）",
     ),
     Entry(
-        fuzzy=False,
         name="卢安娜",
         ja="ルアンナ·アストレア",
         source=Source.OFFICIAL_HANS,
@@ -2852,7 +2839,6 @@ ENTRIES: list[Entry] = [
         ),
     ),
     Entry(
-        fuzzy=False,
         name="狄加",
         source=Source.OFFICIAL_HANT,
         en="Tiga",
@@ -2861,14 +2847,12 @@ ENTRIES: list[Entry] = [
         full_name="狄加·拉雷恩",
     ),
     Entry(
-        fuzzy=False,
         name="沃尔夫",
         source=Source.OFFICIAL_HANT,
         ja="ウォルフ",
         cat="角色",
     ),
     Entry(
-        fuzzy=False,
         name="雷诺",
         ja="レノ·レックス",
         full_name="雷诺·雷克斯",
@@ -2876,7 +2860,6 @@ ENTRIES: list[Entry] = [
         en="Leno",
     ),
     Entry(
-        fuzzy=False,
         name="菲鲁特",
         source=Source.OFFICIAL_HANS,
         en="Felt",
@@ -2884,7 +2867,6 @@ ENTRIES: list[Entry] = [
         cat="角色",
     ),
     Entry(
-        fuzzy=False,
         name="弗尔多",
         source=Source.OFFICIAL_HANS,
         aliases=(V("佛鲁德", Source.OFFICIAL_HANT),),
@@ -2894,7 +2876,6 @@ ENTRIES: list[Entry] = [
         full_name="弗尔多·卢克尼卡",
     ),
     Entry(
-        fuzzy=False,
         name="蜜蜜",
         source=Source.OFFICIAL_HANS,
         aliases=(V("咪咪", Source.OFFICIAL_HANT),),
@@ -2904,7 +2885,6 @@ ENTRIES: list[Entry] = [
         full_name="蜜蜜·帕尔巴顿",
     ),
     Entry(
-        fuzzy=False,
         name="托托",
         source=Source.OFFICIAL_HANT,
         ja="トト",
@@ -2912,21 +2892,18 @@ ENTRIES: list[Entry] = [
         cat="角色",
     ),
     Entry(
-        fuzzy=False,
         name="贝利",
         ja="ベリ·ハイネルガ",
         source=Source.FAN,
         en="Beli",
     ),
     Entry(
-        fuzzy=False,
         name="克莱茵",
         ja="クレイン·ドナヒュー",
         source=Source.FAN,
         en="Crane",
     ),
     Entry(
-        fuzzy=False,
         name="克雷茵",
         source=Source.FAN,
         ja="クライン·ユークリウス",
@@ -2935,9 +2912,8 @@ ENTRIES: list[Entry] = [
         full_name="克莱因·尤克历乌斯",
         note="台版译作 克萊因，与 克莱茵（クレイン·ドナヒュー）台版同名；不同角色不互转",
     ),
-    Entry(fuzzy=False, name="亚雷", source=Source.FAN),
+    Entry(name="亚雷", source=Source.FAN),
     Entry(
-        fuzzy=False,
         name="艾达",
         source=Source.OFFICIAL_HANT,
         ja="エッダ·レイファスト",
@@ -2946,7 +2922,6 @@ ENTRIES: list[Entry] = [
         full_name="艾达·雷法斯特",
     ),
     Entry(
-        fuzzy=False,
         name="海伦",
         source=Source.OFFICIAL_HANT,
         ja="へレイン·ガットネス",
@@ -2955,7 +2930,6 @@ ENTRIES: list[Entry] = [
         full_name="海伦·盖特尼斯",
     ),
     Entry(
-        fuzzy=False,
         name="柯林",
         source=Source.OFFICIAL_HANT,
         ja="コリン·ラブリル",
@@ -2964,7 +2938,6 @@ ENTRIES: list[Entry] = [
         full_name="柯林·拉布里尔",
     ),
     Entry(
-        fuzzy=False,
         name="格林",
         source=Source.OFFICIAL_HANS,
         en="Grimm",
@@ -2973,7 +2946,6 @@ ENTRIES: list[Entry] = [
         full_name="格林·法先",
     ),
     Entry(
-        fuzzy=False,
         name="柯蕾特",
         source=Source.OFFICIAL_HANT,
         en="Colette",
@@ -2981,7 +2953,6 @@ ENTRIES: list[Entry] = [
         cat="角色",
     ),
     Entry(
-        fuzzy=False,
         name="萨德",
         source=Source.OFFICIAL_HANT,
         en="Sado",
@@ -2989,7 +2960,6 @@ ENTRIES: list[Entry] = [
         cat="角色",
     ),
     Entry(
-        fuzzy=False,
         name="莉亚拉",
         source=Source.OFFICIAL_HANS,
         en="Reala",
@@ -2999,7 +2969,6 @@ ENTRIES: list[Entry] = [
         note="婚前名 莉西亚·霆杰尔（不同日文名）另记录，不互转",
     ),
     Entry(
-        fuzzy=False,
         name="赫莱茵",
         source=Source.FAN,
         aliases=(V("希艾因", Source.OFFICIAL_HANT),),
@@ -3008,9 +2977,8 @@ ENTRIES: list[Entry] = [
         cat="角色",
         full_name="赫莱茵·亚兹",
     ),
-    Entry(fuzzy=False, name="哈莱因", source=Source.FAN),
+    Entry(name="哈莱因", source=Source.FAN),
     Entry(
-        fuzzy=False,
         name="威茨",
         ja="ヴァイツ·ログン",
         full_name="威茨·罗根",
@@ -3019,7 +2987,6 @@ ENTRIES: list[Entry] = [
         en="Weitz",
     ),
     Entry(
-        fuzzy=False,
         name="库娜",
         ja="クーナ·シュドラク",
         source=Source.OFFICIAL_HANS,
@@ -3027,7 +2994,6 @@ ENTRIES: list[Entry] = [
         en="Kuna",
     ),
     Entry(
-        fuzzy=False,
         name="莉西亚",
         ja="リーシア·ティンゼル",
         source=Source.OFFICIAL_HANS,
@@ -3036,9 +3002,8 @@ ENTRIES: list[Entry] = [
         aliases=(V("莉希亚", Source.OFFICIAL_HANT),),
         note="莉亚拉 婚前名 莉西亚·霆杰尔（リーシア·ティンゼル，加菲尔与弗雷德莉卡之母）",
     ),
-    Entry(fuzzy=False, name="卢西安", source=Source.FAN),
+    Entry(name="卢西安", source=Source.FAN),
     Entry(
-        fuzzy=False,
         name="阿尔",
         full_name="阿尔迪巴兰",
         source=Source.OFFICIAL_HANS,
@@ -3047,7 +3012,6 @@ ENTRIES: list[Entry] = [
         cat="角色",
     ),
     Entry(
-        fuzzy=False,
         name="佛格",
         source=Source.OFFICIAL_HANT,
         ja="フォッグ",
@@ -3055,7 +3019,6 @@ ENTRIES: list[Entry] = [
         cat="角色",
     ),
     Entry(
-        fuzzy=False,
         name="比恩",
         source=Source.OFFICIAL_HANS,
         ja="ビーン·アーガイル",
@@ -3064,7 +3027,6 @@ ENTRIES: list[Entry] = [
         full_name="比恩·阿盖尔",
     ),
     Entry(
-        fuzzy=False,
         name="罗伊",
         source=Source.OFFICIAL_HANS,
         ja="ロイ·アルファルド",
@@ -3073,14 +3035,12 @@ ENTRIES: list[Entry] = [
         full_name="罗伊·阿尔法德",
     ),
     Entry(
-        fuzzy=False,
         name="奈基",
         ja="ネイジ·ロックハート",
         source=Source.FAN,
         en="Neiji",
     ),
     Entry(
-        fuzzy=False,
         name="米尔多",
         source=Source.FAN,
         ja="ミルド",
@@ -3088,9 +3048,8 @@ ENTRIES: list[Entry] = [
         cat="角色",
         note="台版 米爾德 与 米尔德 撞车，不归一",
     ),
-    Entry(fuzzy=False, name="泰戈", source=Source.OFFICIAL_HANS, note="戈加斯·泰戈"),
+    Entry(name="泰戈", source=Source.OFFICIAL_HANS, note="戈加斯·泰戈"),
     Entry(
-        fuzzy=False,
         name="合辛",
         en="Hoshin",
         ja="ホーシン",
@@ -3098,7 +3057,6 @@ ENTRIES: list[Entry] = [
         note="安娜塔西亚·合辛",
     ),
     Entry(
-        fuzzy=False,
         name="奥斯曼",
         en="Osman",
         ja="オスマン",
@@ -3106,7 +3064,6 @@ ENTRIES: list[Entry] = [
         note="迪克尔·奥斯曼",
     ),
     Entry(
-        fuzzy=False,
         name="跋利耶尔",
         en="Barielle",
         ja="バーリエル",
@@ -3114,7 +3071,6 @@ ENTRIES: list[Entry] = [
         note="普莉希拉·跋利耶尔",
     ),
     Entry(
-        fuzzy=False,
         name="菲利克斯",
         source=Source.OFFICIAL_HANS,
         ja="フェリックス·アーガイル",
@@ -3124,7 +3080,6 @@ ENTRIES: list[Entry] = [
         note="菲莉丝 真名；称呼与真名不互转（菲莉丝 不归一过来，这里也不归一过去）",
     ),
     Entry(
-        fuzzy=False,
         name="阿盖尔",
         en="Argyle",
         ja="アーガイル",
@@ -3132,7 +3087,6 @@ ENTRIES: list[Entry] = [
         note="菲利克斯·阿盖尔",
     ),
     Entry(
-        fuzzy=False,
         name="克罗姆威尔",
         en="Cromwell",
         ja="クロムウェル",
@@ -3140,19 +3094,16 @@ ENTRIES: list[Entry] = [
         note="巴尔加·克罗姆威尔",
     ),
     Entry(
-        fuzzy=False,
         name="法乌塞",
         source=Source.OFFICIAL_HANS,
         note="古力姆·法乌塞",
     ),
     Entry(
-        fuzzy=False,
         name="亚伯克斯",
         source=Source.OFFICIAL_HANS,
         note="文森特·亚伯克斯",
     ),
     Entry(
-        fuzzy=False,
         name="阿尔法德",
         en="Alphard",
         ja="アルファルド",
@@ -3161,7 +3112,6 @@ ENTRIES: list[Entry] = [
         note="罗伊·阿尔法德",
     ),
     Entry(
-        fuzzy=False,
         name="菲洛",
         en="Fellow",
         ja="フェロー",
@@ -3170,13 +3120,11 @@ ENTRIES: list[Entry] = [
         note="拉塞尔·菲洛",
     ),
     Entry(
-        fuzzy=False,
         name="利罗迪特",
         source=Source.OFFICIAL_HANS,
         note="戈加斯·利罗迪特",
     ),
     Entry(
-        fuzzy=False,
         name="切格夫",
         en="Zergev",
         ja="ツェルゲフ",
@@ -3185,7 +3133,6 @@ ENTRIES: list[Entry] = [
         note="波尔多·切格夫",
     ),
     Entry(
-        fuzzy=False,
         name="切格夫队",
         en="Zergev Squadron",
         aliases=(V("卓格夫小队", Source.FAN), V("切格夫小队", Source.FAN)),
@@ -3193,7 +3140,6 @@ ENTRIES: list[Entry] = [
         cat="术语",
     ),
     Entry(
-        fuzzy=False,
         name="麦克马洪",
         en="McMahon",
         ja="マクマホン",
@@ -3201,21 +3147,20 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         note="麦克罗托夫·麦克马洪",
     ),
-    Entry(fuzzy=False, name="戈亚", source=Source.OFFICIAL_HANS, note="术式名"),
-    Entry(fuzzy=False, name="芙拉", source=Source.OFFICIAL_HANS, note="术式名"),
-    Entry(fuzzy=False, name="修玛", source=Source.OFFICIAL_HANS, note="术式名"),
-    Entry(fuzzy=False, name="流星", source=Source.OFFICIAL_HANS, note="术式名"),
-    Entry(fuzzy=False, name="纱幕", source=Source.OFFICIAL_HANS, note="术式名"),
-    Entry(fuzzy=False, name="渡门", source=Source.OFFICIAL_HANS, note="术式名"),
-    Entry(fuzzy=False, name="吉瓦尔德", source=Source.OFFICIAL_HANS, note="术式名"),
-    Entry(fuzzy=False, name="姆拉克", source=Source.OFFICIAL_HANS, note="术式名"),
-    Entry(fuzzy=False, name="维塔", source=Source.OFFICIAL_HANS, note="术式名"),
-    Entry(fuzzy=False, name="百人一太刀", source=Source.OFFICIAL_HANS, note="术式名"),
-    Entry(fuzzy=False, name="绝对零度", source=Source.OFFICIAL_HANS, note="术式名"),
-    Entry(fuzzy=False, name="冰之花", source=Source.OFFICIAL_HANS, note="术式名"),
-    Entry(fuzzy=False, name="冰兵", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="戈亚", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="芙拉", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="修玛", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="流星", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="纱幕", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="渡门", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="吉瓦尔德", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="姆拉克", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="维塔", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="百人一太刀", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="绝对零度", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="冰之花", source=Source.OFFICIAL_HANS, note="术式名"),
+    Entry(name="冰兵", source=Source.OFFICIAL_HANS, note="术式名"),
     Entry(
-        fuzzy=False,
         name="伊芙桑特",
         en="Yvsant",
         ja="イヴサント",
@@ -3224,7 +3169,6 @@ ENTRIES: list[Entry] = [
         note="姓：雷哈雷·伊芙桑特",
     ),
     Entry(
-        fuzzy=False,
         name="佩札",
         en="Pezza",
         ja="ペッツァ",
@@ -3233,7 +3177,6 @@ ENTRIES: list[Entry] = [
         note="姓：娜南納·佩札",
     ),
     Entry(
-        fuzzy=False,
         name="佩西特",
         en="Peitiet",
         ja="ペイシット",
@@ -3243,7 +3186,6 @@ ENTRIES: list[Entry] = [
         note="姓：高朗",
     ),
     Entry(
-        fuzzy=False,
         name="冯达尔冯",
         en="Fondalfon",
         ja="フォンダルフォン",
@@ -3253,7 +3195,6 @@ ENTRIES: list[Entry] = [
         note="姓：贝尔斯特兹",
     ),
     Entry(
-        fuzzy=False,
         name="加巴特",
         en="Gabbat",
         ja="ガバット",
@@ -3262,7 +3203,6 @@ ENTRIES: list[Entry] = [
         note="姓：莱斯利·加巴特",
     ),
     Entry(
-        fuzzy=False,
         name="加洛",
         en="Garo",
         ja="ガロ",
@@ -3271,7 +3211,6 @@ ENTRIES: list[Entry] = [
         note="姓：海登·加洛",
     ),
     Entry(
-        fuzzy=False,
         name="卡拉德",
         en="Kallard",
         ja="カラード",
@@ -3280,7 +3219,6 @@ ENTRIES: list[Entry] = [
         note="姓：鲁斯贝尔",
     ),
     Entry(
-        fuzzy=False,
         name="史匹格",
         en="Spiegel",
         ja="シュピーゲル",
@@ -3289,7 +3227,6 @@ ENTRIES: list[Entry] = [
         note="姓：托利德·史匹格",
     ),
     Entry(
-        fuzzy=False,
         name="哈亚塔",
         en="Hayata",
         ja="ハヤタ",
@@ -3298,7 +3235,6 @@ ENTRIES: list[Entry] = [
         note="姓：奧爾戈·哈亞塔",
     ),
     Entry(
-        fuzzy=False,
         name="因普森",
         en="Impusen",
         ja="インプセン",
@@ -3307,7 +3243,6 @@ ENTRIES: list[Entry] = [
         note="姓：法里德·因普森",
     ),
     Entry(
-        fuzzy=False,
         name="图耶里科",
         en="Tuérico",
         ja="トゥエリコ",
@@ -3316,7 +3251,6 @@ ENTRIES: list[Entry] = [
         note="姓：諾艾爾·圖耶里科",
     ),
     Entry(
-        fuzzy=False,
         name="埃尔玛特",
         en="Elmart",
         ja="エルマート",
@@ -3325,7 +3259,6 @@ ENTRIES: list[Entry] = [
         note="姓：希尔菲",
     ),
     Entry(
-        fuzzy=False,
         name="塔拉斯克",
         en="Tarask",
         ja="タラスク",
@@ -3334,7 +3267,6 @@ ENTRIES: list[Entry] = [
         note="姓：歐魯佐·塔拉斯克",
     ),
     Entry(
-        fuzzy=False,
         name="多纳修",
         en="Donahue",
         ja="ドナヒュー",
@@ -3343,7 +3275,6 @@ ENTRIES: list[Entry] = [
         note="姓：克萊因",
     ),
     Entry(
-        fuzzy=False,
         name="天膳",
         en="Tenzen",
         ja="テンゼン",
@@ -3352,7 +3283,6 @@ ENTRIES: list[Entry] = [
         note="姓：不二樓·天膳、八重·天膳",
     ),
     Entry(
-        fuzzy=False,
         name="奎尔",
         en="Quayle",
         ja="クウェイル",
@@ -3361,7 +3291,6 @@ ENTRIES: list[Entry] = [
         note="姓：埃德蒙·奎爾",
     ),
     Entry(
-        fuzzy=False,
         name="奥雷利",
         en="Aurélie",
         ja="オーレリー",
@@ -3371,7 +3300,6 @@ ENTRIES: list[Entry] = [
         note="姓：卡秋娅、贾马尔",
     ),
     Entry(
-        fuzzy=False,
         name="威尔金",
         en="Welkin",
         ja="ウェルキン",
@@ -3380,7 +3308,6 @@ ENTRIES: list[Entry] = [
         note="姓：里卡多",
     ),
     Entry(
-        fuzzy=False,
         name="威斯密",
         en="Wesmi",
         ja="ウエズミ",
@@ -3389,7 +3316,6 @@ ENTRIES: list[Entry] = [
         note="姓：哈馬亞魯·威斯密",
     ),
     Entry(
-        fuzzy=False,
         name="安丝莉姆",
         en="Anthurium",
         ja="アンスリウム",
@@ -3398,7 +3324,6 @@ ENTRIES: list[Entry] = [
         note="姓：莉可莉丝",
     ),
     Entry(
-        fuzzy=False,
         name="尤里托",
         en="Yulitô",
         ja="ユリトー",
@@ -3407,7 +3332,6 @@ ENTRIES: list[Entry] = [
         note="姓：米克利·尤里托",
     ),
     Entry(
-        fuzzy=False,
         name="巴罗内斯",
         en="Baroness",
         ja="バロネス",
@@ -3416,7 +3340,6 @@ ENTRIES: list[Entry] = [
         note="姓：李奧納多·巴羅內斯",
     ),
     Entry(
-        fuzzy=False,
         name="布里司堤斯",
         en="Pristis",
         ja="プリスティス",
@@ -3425,7 +3348,6 @@ ENTRIES: list[Entry] = [
         note="姓：梅尔蒂、梅尔蒂 (虚假的王选候补)",
     ),
     Entry(
-        fuzzy=False,
         name="帕尔巴顿",
         en="Pearlbaton",
         ja="パールバトン",
@@ -3434,7 +3356,6 @@ ENTRIES: list[Entry] = [
         note="姓：缇碧、蜜蜜、黑塔罗",
     ),
     Entry(
-        fuzzy=False,
         name="帕金",
         en="Parkin",
         ja="パーキン",
@@ -3443,7 +3364,6 @@ ENTRIES: list[Entry] = [
         note="姓：馬卡利斯特",
     ),
     Entry(
-        fuzzy=False,
         name="彭德尔顿",
         en="Pendleton",
         ja="ペンダルトン",
@@ -3452,7 +3372,6 @@ ENTRIES: list[Entry] = [
         note="姓：乔拉",
     ),
     Entry(
-        fuzzy=False,
         name="恩狄米翁",
         en="Endymion",
         ja="エンデュミオン",
@@ -3461,7 +3380,6 @@ ENTRIES: list[Entry] = [
         note="姓：基利安",
     ),
     Entry(
-        fuzzy=False,
         name="戈德温",
         en="Godwin",
         ja="ゴドウィン",
@@ -3471,7 +3389,6 @@ ENTRIES: list[Entry] = [
         note="姓：拉米亚",
     ),
     Entry(
-        fuzzy=False,
         name="托内立可",
         en="Tonerico",
         ja="トネリコ",
@@ -3480,7 +3397,6 @@ ENTRIES: list[Entry] = [
         note="姓：希洛洛",
     ),
     Entry(
-        fuzzy=False,
         name="拉布里尔",
         en="Lavril",
         ja="ラブリル",
@@ -3489,7 +3405,6 @@ ENTRIES: list[Entry] = [
         note="姓：柯林",
     ),
     Entry(
-        fuzzy=False,
         name="拉雷恩",
         en="Rauleon",
         ja="ラウレオン",
@@ -3498,7 +3413,6 @@ ENTRIES: list[Entry] = [
         note="姓：狄加、狄加 (虚假的王选候补)",
     ),
     Entry(
-        fuzzy=False,
         name="方古",
         en="Fang",
         ja="ファング",
@@ -3508,7 +3422,6 @@ ENTRIES: list[Entry] = [
         note="姓：陶德·方古",
     ),
     Entry(
-        fuzzy=False,
         name="曼内斯库",
         en="Manesque",
         ja="マネスク",
@@ -3517,7 +3430,6 @@ ENTRIES: list[Entry] = [
         note="姓：帕拉迪奥·曼內斯庫",
     ),
     Entry(
-        fuzzy=False,
         name="杜拉克罗伊",
         en="Dracroy",
         ja="ドラクロイ",
@@ -3527,7 +3439,6 @@ ENTRIES: list[Entry] = [
         note="姓：塞丽娜",
     ),
     Entry(
-        fuzzy=False,
         name="格尔达里奥",
         en="Goldario",
         ja="ゴルダリオ",
@@ -3536,7 +3447,6 @@ ENTRIES: list[Entry] = [
         note="姓：特里奧拉·格爾達里奧、維特克·格爾達里奧",
     ),
     Entry(
-        fuzzy=False,
         name="梅埃尔",
         en="Meyer",
         ja="メイエル",
@@ -3546,7 +3456,6 @@ ENTRIES: list[Entry] = [
         note="姓：琉兹 (复制体)、琉兹 (本体)",
     ),
     Entry(
-        fuzzy=False,
         name="梅拉乌",
         en="Melahau",
         ja="メラハウ",
@@ -3559,7 +3468,6 @@ ENTRIES: list[Entry] = [
         note="姓：库乌德",
     ),
     Entry(
-        fuzzy=False,
         name="梅根",
         en="Megan",
         ja="メイガン",
@@ -3568,7 +3476,6 @@ ENTRIES: list[Entry] = [
         note="姓：修堤·梅根",
     ),
     Entry(
-        fuzzy=False,
         name="梅特利",
         en="Metley",
         ja="メトレイ",
@@ -3577,7 +3484,6 @@ ENTRIES: list[Entry] = [
         note="姓：赞克·梅特利",
     ),
     Entry(
-        fuzzy=False,
         name="楚萨迪",
         en="Trussardi",
         ja="トラサルディ",
@@ -3586,7 +3492,6 @@ ENTRIES: list[Entry] = [
         note="姓：戴纳斯",
     ),
     Entry(
-        fuzzy=False,
         name="欧尔森",
         en="Olsen",
         ja="オールセン",
@@ -3595,7 +3500,6 @@ ENTRIES: list[Entry] = [
         note="姓：尼柯·歐爾森",
     ),
     Entry(
-        fuzzy=False,
         name="欧鲁克斯",
         en="Orcos",
         ja="オルコス",
@@ -3604,7 +3508,6 @@ ENTRIES: list[Entry] = [
         note="姓：維克特·歐魯克斯",
     ),
     Entry(
-        fuzzy=False,
         name="法先",
         en="Fauzen",
         ja="ファウゼン",
@@ -3613,7 +3516,6 @@ ENTRIES: list[Entry] = [
         note="姓：格林",
     ),
     Entry(
-        fuzzy=False,
         name="法布雷斯",
         en="Fabless",
         ja="ファブレス",
@@ -3622,7 +3524,6 @@ ENTRIES: list[Entry] = [
         note="姓：葛利奇",
     ),
     Entry(
-        fuzzy=False,
         name="泽佩斯",
         en="Zeppes",
         ja="ゼッペス",
@@ -3631,7 +3532,6 @@ ENTRIES: list[Entry] = [
         note="姓：奧利佛·澤佩斯",
     ),
     Entry(
-        fuzzy=False,
         name="洛克哈特",
         en="Lockhart",
         ja="ロックハート",
@@ -3640,7 +3540,6 @@ ENTRIES: list[Entry] = [
         note="姓：涅吉·洛克哈特",
     ),
     Entry(
-        fuzzy=False,
         name="海聂鲁革",
         en="Hainelga",
         ja="ハイネルガ",
@@ -3649,7 +3548,6 @@ ENTRIES: list[Entry] = [
         note="姓：貝里·海聶魯革",
     ),
     Entry(
-        fuzzy=False,
         name="瓦尔海特",
         en="Wahrheit",
         ja="ヴァールハイト",
@@ -3658,7 +3556,6 @@ ENTRIES: list[Entry] = [
         note="姓：萊納·瓦爾海特",
     ),
     Entry(
-        fuzzy=False,
         name="盖特尼斯",
         en="Gatness",
         ja="ガットネス",
@@ -3667,7 +3564,6 @@ ENTRIES: list[Entry] = [
         note="姓：海伦",
     ),
     Entry(
-        fuzzy=False,
         name="穆塔特",
         en="Muttart",
         ja="ムッタート",
@@ -3680,7 +3576,6 @@ ENTRIES: list[Entry] = [
         note="姓：凯迪",
     ),
     Entry(
-        fuzzy=False,
         name="米桑轧",
         en="Missanga",
         ja="ミサンガ",
@@ -3689,7 +3584,6 @@ ENTRIES: list[Entry] = [
         note="姓：伊德拉",
     ),
     Entry(
-        fuzzy=False,
         name="米洛德",
         en="Miload",
         ja="ミロード",
@@ -3698,7 +3592,6 @@ ENTRIES: list[Entry] = [
         note="姓：安妮罗泽、格蕾丝、达德利",
     ),
     Entry(
-        fuzzy=False,
         name="罗根",
         en="Rogen",
         ja="ログン",
@@ -3707,7 +3600,6 @@ ENTRIES: list[Entry] = [
         note="姓：威茨",
     ),
     Entry(
-        fuzzy=False,
         name="美列登",
         ja="メレテー",
         source=Source.FAN,
@@ -3715,7 +3607,6 @@ ENTRIES: list[Entry] = [
         note="姓：古恩·美列登",
     ),
     Entry(
-        fuzzy=False,
         name="肯纳修",
         en="Kenash",
         ja="ケナシュ",
@@ -3724,7 +3615,6 @@ ENTRIES: list[Entry] = [
         note="姓：伊戈尔",
     ),
     Entry(
-        fuzzy=False,
         name="艾迪兹",
         en="Edditz",
         ja="エディッツ",
@@ -3733,7 +3623,6 @@ ENTRIES: list[Entry] = [
         note="姓：比克拉姆·艾迪茲",
     ),
     Entry(
-        fuzzy=False,
         name="艾雷梅特",
         en="Element",
         ja="エレメント",
@@ -3742,7 +3631,6 @@ ENTRIES: list[Entry] = [
         note="姓：莎克拉、莎克拉 (虚假的王选候补)",
     ),
     Entry(
-        fuzzy=False,
         name="莫雷洛",
         en="Morello",
         ja="モレロ",
@@ -3751,7 +3639,6 @@ ENTRIES: list[Entry] = [
         note="姓：古斯塔夫",
     ),
     Entry(
-        fuzzy=False,
         name="费兹",
         en="Fitts",
         ja="フィッツ",
@@ -3760,7 +3647,6 @@ ENTRIES: list[Entry] = [
         note="姓：巴罗伊",
     ),
     Entry(
-        fuzzy=False,
         name="费瑟兰",
         en="Featherrun",
         ja="フェザーラン",
@@ -3769,7 +3655,6 @@ ENTRIES: list[Entry] = [
         note="姓：多蘿蒂婭·費瑟蘭、希多妮婭·費瑟蘭、希魯蒂婭·費瑟蘭、欧尔尼娅·費瑟蘭、莎莉婭·費瑟蘭、赫罗西欧·費瑟蘭",
     ),
     Entry(
-        fuzzy=False,
         name="赫蒂娅",
         en="Hetia",
         ja="ヘティア",
@@ -3778,7 +3663,6 @@ ENTRIES: list[Entry] = [
         note="姓：米蕾耶·赫蒂婭",
     ),
     Entry(
-        fuzzy=False,
         name="赫鲁斯特伊",
         en="Holstoy",
         ja="ホルストイ",
@@ -3787,7 +3671,6 @@ ENTRIES: list[Entry] = [
         note="姓：格拉姆达特",
     ),
     Entry(
-        fuzzy=False,
         name="迪亚尔莫",
         en="Dialmo",
         ja="ディアルモ",
@@ -3796,7 +3679,6 @@ ENTRIES: list[Entry] = [
         note="姓：古打·迪亞爾莫",
     ),
     Entry(
-        fuzzy=False,
         name="道森",
         en="Dawson",
         ja="ドーソン",
@@ -3805,7 +3687,6 @@ ENTRIES: list[Entry] = [
         note="姓：克拉格雷爾·道森",
     ),
     Entry(
-        fuzzy=False,
         name="里兹本",
         en="Lisbon",
         ja="リズボン",
@@ -3814,7 +3695,6 @@ ENTRIES: list[Entry] = [
         note="姓：玛洛妮",
     ),
     Entry(
-        fuzzy=False,
         name="里施",
         en="Risch",
         ja="リッシュ",
@@ -3823,7 +3703,6 @@ ENTRIES: list[Entry] = [
         note="姓：卡德蒙、普拉姆、菈庫莎",
     ),
     Entry(
-        fuzzy=False,
         name="金",
         en="Gold",
         ja="ゴールド",
@@ -3833,7 +3712,6 @@ ENTRIES: list[Entry] = [
         note="姓：奇夏·金",
     ),
     Entry(
-        fuzzy=False,
         name="阿南西",
         en="Arnancy",
         ja="アーナンシー",
@@ -3842,7 +3720,6 @@ ENTRIES: list[Entry] = [
         note="姓：皮波特",
     ),
     Entry(
-        fuzzy=False,
         name="阿嘎玛",
         ja="アガマ",
         source=Source.FAN,
@@ -3850,7 +3727,6 @@ ENTRIES: list[Entry] = [
         note="姓：梅里欧·阿嘎玛",
     ),
     Entry(
-        fuzzy=False,
         name="阿姆陆",
         en="Amule",
         ja="アムル",
@@ -3859,7 +3735,6 @@ ENTRIES: list[Entry] = [
         note="姓：多鲁特洛",
     ),
     Entry(
-        fuzzy=False,
         name="阿德加德",
         en="Adgard",
         aliases=(V("阿德加尔德", Source.FAN),),
@@ -3869,7 +3744,6 @@ ENTRIES: list[Entry] = [
         note="姓：維格·阿德加德",
     ),
     Entry(
-        fuzzy=False,
         name="阿拉姆",
         en="Arlam",
         ja="アーラム",
@@ -3878,7 +3752,6 @@ ENTRIES: list[Entry] = [
         note="姓：米路德",
     ),
     Entry(
-        fuzzy=False,
         name="阿格利",
         en="Agri",
         ja="アグリ",
@@ -3887,7 +3760,6 @@ ENTRIES: list[Entry] = [
         note="姓：忠甸·阿格利",
     ),
     Entry(
-        fuzzy=False,
         name="雷克斯",
         en="Rex",
         ja="レックス",
@@ -3896,7 +3768,6 @@ ENTRIES: list[Entry] = [
         note="姓：雷诺",
     ),
     Entry(
-        fuzzy=False,
         name="雷根德拉",
         en="Regundra",
         ja="レグンドラ",
@@ -3905,7 +3776,6 @@ ENTRIES: list[Entry] = [
         note="姓：蒂亞朵菈·雷根德拉",
     ),
     Entry(
-        fuzzy=False,
         name="雷法斯特",
         en="Rayfast",
         ja="レイファスト",
@@ -3914,7 +3784,6 @@ ENTRIES: list[Entry] = [
         note="姓：艾达",
     ),
     Entry(
-        fuzzy=False,
         name="霍华德",
         en="Hyatt",
         ja="ハイアット",
@@ -3923,7 +3792,6 @@ ENTRIES: list[Entry] = [
         note="姓：罗格蕾丝·霍華德",
     ),
     Entry(
-        fuzzy=False,
         name="霍夫曼",
         en="Hoffman",
         ja="ホフマン",
@@ -3932,7 +3800,6 @@ ENTRIES: list[Entry] = [
         note="姓：李凯尔特、阿珍",
     ),
     Entry(
-        fuzzy=False,
         name="马哥吉",
         en="Magoji",
         ja="マゴージ",
@@ -3941,7 +3808,6 @@ ENTRIES: list[Entry] = [
         note="姓：利夫坦",
     ),
     Entry(
-        fuzzy=False,
         name="马迪逊",
         en="Madison",
         ja="マディソン",
@@ -3951,7 +3817,6 @@ ENTRIES: list[Entry] = [
         note="姓：曼弗雷德",
     ),
     Entry(
-        fuzzy=False,
         name="乌鲁拉特",
         en="Ulrat",
         ja="ウルラート",
@@ -3960,7 +3825,6 @@ ENTRIES: list[Entry] = [
         note="姓：塔爾可·烏魯拉特",
     ),
     Entry(
-        fuzzy=False,
         name="亚兹",
         en="Yatz",
         ja="ヤッツ",
@@ -3969,7 +3833,6 @@ ENTRIES: list[Entry] = [
         note="姓：赫莱茵",
     ),
     Entry(
-        fuzzy=False,
         name="伊斯坦",
         en="Eastern",
         ja="イースタン",
@@ -3978,7 +3841,6 @@ ENTRIES: list[Entry] = [
         note="姓：奔加姆",
     ),
     Entry(
-        fuzzy=False,
         name="提美格里福",
         en="Temeglyph",
         ja="テメグリフ",
@@ -3987,7 +3849,6 @@ ENTRIES: list[Entry] = [
         note="巴鲁罗伊·提美格里福；官简内部不一致：EX4 提美格里福×15 vs vol22 特梅格里夫×3，取多",
     ),
     Entry(
-        fuzzy=False,
         name="菲尔米",
         en="Fermi",
         ja="フエルミ",
@@ -3996,7 +3857,6 @@ ENTRIES: list[Entry] = [
         note="历布莱·菲尔米",
     ),
     Entry(
-        fuzzy=False,
         name="莱蒙蒂斯",
         en="Remendis",
         ja="レメンディス",
@@ -4005,7 +3865,6 @@ ENTRIES: list[Entry] = [
         note="卡罗尔/芙拉姆/格拉希丝·莱蒙蒂斯",
     ),
     Entry(
-        fuzzy=False,
         name="克莱因",
         ja="クレイン·ドナヒュー",
         full_name="克莱因·多纳修",
@@ -4014,7 +3873,6 @@ ENTRIES: list[Entry] = [
         note="与 克雷茵·尤克历乌斯 的官简全名 克莱因·尤克历乌斯 撞名，勿互转",
     ),
     Entry(
-        fuzzy=False,
         name="依亚",
         en="Ia",
         aliases=(V("伊娅", Source.FAN),),
@@ -4024,7 +3882,6 @@ ENTRIES: list[Entry] = [
         source=Source.FAN,
     ),
     Entry(
-        fuzzy=False,
         name="尤加尔德",
         ja="ユーガルド·ヴォラキア",
         full_name="尤加尔德·佛拉基亚",
@@ -4032,7 +3889,6 @@ ENTRIES: list[Entry] = [
         source=Source.FAN,
     ),
     Entry(
-        fuzzy=False,
         name="菲尔欧蕾",
         ja="フィルオーレ",
         full_name="菲尔欧蕾·卢克尼卡",
@@ -4040,7 +3896,6 @@ ENTRIES: list[Entry] = [
         source=Source.FAN,
     ),
     Entry(
-        fuzzy=False,
         name="菈库莎",
         ja="ラクシャ·リッシュ",
         full_name="菈库莎·里施",
@@ -4048,7 +3903,6 @@ ENTRIES: list[Entry] = [
         source=Source.FAN,
     ),
     Entry(
-        fuzzy=False,
         name="马卡利斯特",
         ja="マカリスタ·パーキン",
         full_name="马卡利斯特·帕金",
@@ -4056,7 +3910,6 @@ ENTRIES: list[Entry] = [
         source=Source.FAN,
     ),
     Entry(
-        fuzzy=False,
         name="露梅拉",
         en="Lumera",
         ja="ルーメラ",
@@ -4065,7 +3918,6 @@ ENTRIES: list[Entry] = [
         note="依亚 全名 露梅拉·依亚·尤克历乌斯 的首段；corpus 无覆盖",
     ),
     Entry(
-        fuzzy=False,
         name="罗什",
         aliases=(V("罗希", Source.FAN),),
         full_name="罗什·帕尔巴顿",

@@ -33,7 +33,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `src/jobs/starts.py` | namespace → `-start:ns:!` 生成器参数。`ns_base`=主/project/template/category，`ns_more` 再加 module/mediawiki |
 | `user-config.py` | pywikibot 配置：family=re0, mylang=zh, 账号 IchiSanNi（只给 zh 配账号，外站匿名读——Fandom 现在跨站登录会互踢会话，见文件内注释） |
 | `user-fixes.py` | **核心资产**。自定义 fix 集：misc/date/anti-ve/para/gallery/heading/**translation**/HTML/syntax 等。`translation` 把几百个别名归一到标准译名：标准名经 `p2st()` 简繁展开合成单趟 alternation（长度降序、同位置只提交一次 = 真长匹配优先），别名精确对与 guard 同经 p2st；`f()`/`p2o()` 相似组宽展开只服务 `translation_manual` 模板规则；NekoQuote 月表的日文原文字段（jq/jt Lua 字符串）由 inside 异常保护不归一；译名数据已全部迁入 `translations.py` |
-| `translations.py` | **译名表数据（唯一权威）**：`ENTRIES`（标准名 + pattern/ja/en/cat/full_name/aliases/note；aliases 元素为 `V(写法, Source.X)` 枚举标注（Source：OFFICIAL_HANS 官简/OFFICIAL_HANT 官繁/FAN 民间），别名位于更长他名内部时用 `pattern=` 写 guard 正则（经 p2st 简繁展开，手写字符类原样保留）；full_name=角色条目完整标题（全名或真名，称呼归到真名），仅供一次性移动与数据参考，不进替换链；`fuzzy=False` 不生成名字规则（短名防误判/特判不处理，别名规则照常）；别名精确对按表顺序，名字规则生成时按目标长度降序）+ `SIMILAR_CHARS`。纯数据无逻辑，供 user-fixes import 生成替换表，也供 LLM 翻译管线与 re0-corpus 审查管线直接消费 |
+| `translations.py` | **译名表数据（唯一权威）**：`ENTRIES`（标准名 + pattern/ja/en/cat/full_name/aliases/note；aliases 元素为 `V(写法, Source.X)` 枚举标注（Source：OFFICIAL_HANS 官简/OFFICIAL_HANT 官繁/FAN 民间），别名位于更长他名内部时用 `pattern=` 写 guard 正则（经 p2st 简繁展开，手写字符类原样保留）；full_name=角色条目完整标题（全名或真名，称呼归到真名），仅供一次性移动与数据参考，不进替换链；别名精确对按表顺序，名字规则生成时按目标长度降序；name 含 `{{` 的模板条目不生成名字规则）+ `SIMILAR_CHARS`。纯数据无逻辑，供 user-fixes import 生成替换表，也供 LLM 翻译管线与 re0-corpus 审查管线直接消费 |
 | `src/scripts/` | 只放 pwb 按名解析的任务脚本（`re0_*` ×7，见下行；搜索路径由 user-config.py 的 `user_script_paths = ["src.scripts"]` 指定；find_filename 不递归子目录，放进子目录即退出解析） |
 | `src/tools/` | 非 pwb 的常驻/维护工具（直接 python 运行）：`recent_changes_watchdog.py`、诊断（`verify_wiki_access.py`/`test_pwb_throttle.py`）、翻译管线（`llm_translate.py`，见 docs/llm-translation.md）、审计（`dump_modules.py`/`template_inventory.py`/`template_complexity.py`/`recheck_template_usage.py`/`scan_title_prefixes.py`/`check_css_imports.py`/`audit_wikipedia_links.py`/`audit_langlinks.py`/`series_nav_audit.py`——系列导航 Tab 与 en prev/next 链一致性，见 docs/series-nav-sync.md） |
 | `src/oneoff/` | 一次性脚本归档（含 429 探测 `probe_*`，重跑传完整路径） |
@@ -84,9 +84,9 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 ## 译名维护工作流（最常见的改动）
 
 1. 译名选取规则见 wiki 的 `ReZero Wiki:译名表`（官方简中 > 官方繁体 > 民间 > 保留英文）。bot 执行的唯一权威是 `user-fixes.py`；译名表页面由人工随性维护、无逐条同步义务（bot 的 fix:translation 会自动归一页面上的别名写法），已有条目的标题与内容本身即译名表的作用，不另建清单页。用户通过 GitHub Issues 报译名问题（模板：新增/修改译名、遗漏替换、错误替换），wiki 页面明确告诉用户「不要手动移动页面或替换文本，提议通过后 Bot 会批量修改」。
-2. 改译名 = 改 `translations.py` 的 `ENTRIES`：`name` 进主列表（标准名经 `p2st()` 简繁展开自动匹配简繁写法），**新变体一律登记 `aliases` 精确对**（须带 Source 来源标注；别名位于更长他名内部时用 `pattern=` 挂 guard，如 裘斯 `pattern="(?<!梅)裘斯"`；选择性展开用手写字符类表达，如 利格鲁/梅莉；不同日文名（真名/旧名/称呼）不互转，各自以 fuzzy=False 单记）。`SIMILAR_CHARS`/`p2o()` 不再服务名字规则（只供 `translation_manual` 模板规则），**不要再为新变体扩相似组**。`fuzzy=False` 用于明确不生成名字规则的条目（2 字短名、特判不处理等；其繁体写法也不会自动归一，需要时登记别名）。`translation_manual` 只剩模板替换规则。拿不准覆盖面的，先 `python main.py fix:translation -s` 干跑。繁体与日文原名同字的别名（王选前日谭/最优纪行/王族诱拐案 类）：wiki 上既有日文出现处已逐处 as-is 保护（出版信息、术语:王族诱拐事件 lead），**新增此类日文引用必须包 `<!--as-is-->`**，否则会被 s2t 对归一。标题含别名的页面由 `re0_move` 任务用同一张表自动移动，无需另行处理。
+2. 改译名 = 改 `translations.py` 的 `ENTRIES`：`name` 进主列表（标准名经 `p2st()` 简繁展开自动匹配简繁写法），**新变体一律登记 `aliases` 精确对**（须带 Source 来源标注；别名位于更长他名内部时用 `pattern=` 挂 guard，如 裘斯 `pattern="(?<!梅)裘斯"`；选择性展开用手写字符类表达，如 利格鲁/梅莉；不同日文名（真名/旧名/称呼）不互转，各自单记）。`SIMILAR_CHARS`/`p2o()` 不再服务名字规则（只供 `translation_manual` 模板规则），**不要再为新变体扩相似组**。`translation_manual` 只剩模板替换规则。拿不准覆盖面的，先 `python main.py fix:translation -s` 干跑。繁体与日文原名同字的别名（王选前日谭/最优纪行/王族诱拐案 类）：wiki 上既有日文出现处已逐处 as-is 保护（出版信息、术语:王族诱拐事件 lead），**新增此类日文引用必须包 `<!--as-is-->`**，否则会被 s2t 对归一。标题含别名的页面由 `re0_move` 任务用同一张表自动移动，无需另行处理。
 3. 提交信息遵循 Conventional Commits：`feat(translation): add X` / `fix(translation): 旧 -> 新`。
-4. 「特判太麻烦、明确不处理」的条目用 `fuzzy=False` 登记（不生成名字规则），别删。
+4. 模板条目（如 `{{Elf}}`）不生成名字规则（name 含 `{{` 自动排除），正文归一由 `translation_manual` 结构规则处理。
 
 ## 新增自动化：进 fix 表还是单建脚本
 
