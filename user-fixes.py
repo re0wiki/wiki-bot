@@ -1,11 +1,11 @@
 import inspect
 import itertools
+import re
 import sys
 from collections import defaultdict
 from functools import partial
 from pathlib import Path
 
-import regex as re
 from opencc import OpenCC
 
 # 本文件由 pwb/pywikibot/fixes.py exec 加载（无 __file__、仓库根不在 sys.path），
@@ -554,23 +554,26 @@ _alt_targets = [n for _, _, n in _alt_items]
 _alt_pattern = "|".join(f"({_noncap(p)})" for _, p, _ in _alt_items)
 
 
-def _alt_sub(m):
-    target = _alt_targets[m.lastindex - 1]
-    if m.group() != target:
-        _alt_sub.pairs.add((m.group(), target))
-    return target
+class _AltSub:
+    """alternation 命中分发 + 摘要协议（pwb generate_summary 读 take_summary_pairs）。"""
+
+    def __init__(self, targets):
+        self._targets = targets
+        self._pairs = set()
+
+    def __call__(self, m):
+        target = self._targets[m.lastindex - 1]
+        if m.group() != target:
+            self._pairs.add((m.group(), target))
+        return target
+
+    def take_summary_pairs(self):
+        """replace.py 摘要协议：回读本页实际命中对并清空（编辑摘要 -原文 +目标）。"""
+        pairs, self._pairs = self._pairs, set()
+        return pairs
 
 
-_alt_sub.pairs = set()
-
-
-def _take_summary_pairs():
-    """replace.py 摘要协议：回读本页实际命中对并清空（编辑摘要 -原文 +目标）。"""
-    pairs, _alt_sub.pairs = _alt_sub.pairs, set()
-    return pairs
-
-
-_alt_sub.take_summary_pairs = _take_summary_pairs
+_alt_sub = _AltSub(_alt_targets)
 
 
 # re0_move（标题归一）消费的别名对：与 alternation 同数据（别名子集、同排序键）。

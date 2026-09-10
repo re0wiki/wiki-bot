@@ -7,7 +7,7 @@
 新标题含非法字符的、目标已存在且不是指回当前页的重定向的（需人工合并）。
 """
 
-import regex as re
+import re
 
 import pywikibot as pwb
 import pywikibot.config
