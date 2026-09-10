@@ -481,11 +481,12 @@ def p2n(pattern: str):
 
 
 def p2st(pattern: str):
-    """别名的简繁展开：正则中每个字面字符展开为 [简繁] 字符类。
+    """简繁展开：正则中每个字面字符展开为 [简繁] 字符类。
 
-    与 p2o（相似组宽展开，用于标准名）分工：别名只做简繁展开（窄），防止
-    f('梅') 含 美 这类相似组把普通词卷进来。手写 [...] 字符类与转义原样保留
-    （利格鲁 的宽组、梅莉 的选择性展开靠手写类表达）。
+    名字规则与别名规则统一走此窄展开（相似组宽展开 p2o 只服务 translation_manual
+    模板规则），防止 f('梅') 含 美 这类相似组把普通词卷进来；p2o 覆盖过的历史
+    变体已全部显式登记为别名。手写 [...] 字符类与转义原样保留（利格鲁 的宽组、
+    梅莉 的选择性展开靠手写类表达）。
     """
     out = []
     in_class = False
@@ -523,8 +524,10 @@ def _noncap(pattern):
 
 # 名字规则合成单趟 alternation：顺序 re.sub 链里恒等转换不消耗文本，短规则仍可命中
 # 长名内部；单趟扫描下同一位置只提交一次，配合长度降序即真正的长匹配优先。
+# 展开走 p2st（仅简繁，窄）：相似组宽展开（p2o）的跨界误报结构性消除，
+# 其覆盖的历史变体已全部显式登记为别名（logs/variant_register.csv 评审落地）。
 _name_targets = [p2n(p) for p in translation_names]
-_name_pattern = "|".join(f"({_noncap(p2o(p))})" for p in translation_names)
+_name_pattern = "|".join(f"({_noncap(p2st(p))})" for p in translation_names)
 
 
 def _name_sub(m):
