@@ -467,7 +467,7 @@ def p2st(pattern: str):
 
 # (pattern, 目标名) 对，数据在 translations.py；模板条目不生成名字规则
 translation_name_rules = [
-    (e.pattern or e.name, e.name) for e in translations.ENTRIES if "{{" not in e.name
+    (e.std.pattern or e.std.text, e.std.text) for e in translations.ENTRIES if "{{" not in e.std.text
 ]
 # 长匹配优先：短名规则排在长名规则后，防止短名吃掉长名内部（菈姆 命中 [[普菈姆|..]] 类）
 translation_name_rules.sort(key=lambda r: -len(r[1]))
@@ -491,14 +491,14 @@ def _variant(v):
 # 顺序试探会慢三个数量级）。
 _name_items = [(len(n), p2st(pat), n) for pat, n in translation_name_rules]
 _pair_items = [
-    (len(a2), re.escape(a2), e.name)
+    (len(a2), re.escape(a2), e.std.text)
     for e in translations.ENTRIES
     for a in e.aliases
     if not ((v := _variant(a)) and v.pattern)
     for a0 in [a.text if isinstance(a, translations.Variant) else a]
     for a2 in dict.fromkeys((a0, s2t(a0)))
 ] + [
-    (len(v.text), p2st(v.pattern), e.name)
+    (len(v.text), p2st(v.pattern), e.std.text)
     for e in translations.ENTRIES
     for a in e.aliases
     if (v := _variant(a)) and v.pattern

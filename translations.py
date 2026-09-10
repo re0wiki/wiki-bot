@@ -36,18 +36,6 @@ class Entry(NamedTuple):
     aliases: tuple[Variant, ...] = ()  # 显式别名（组外异写）：V(写法, Source.X)
     note: str = ""
 
-    @property
-    def name(self) -> str:
-        return self.std.text
-
-    @property
-    def pattern(self) -> str:
-        return self.std.pattern
-
-    @property
-    def source(self) -> Source:
-        return self.std.source
-
 
 def alias_texts(e: Entry) -> tuple[str, ...]:
     """别名的纯文本形式（剥离 Variant 标注）。"""
