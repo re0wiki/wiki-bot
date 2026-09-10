@@ -480,6 +480,30 @@ def _noncap(pattern):
     return re.sub(r"\((?!\?)", "(?:", pattern)
 
 
+def expand_class_pattern(pattern):
+    """纯「字面字符 + 字符类」pattern 的全组合展开（撞名检测用）；含其他正则构造返回 None。"""
+    options = []
+    i = 0
+    while i < len(pattern):
+        c = pattern[i]
+        if c == "[":
+            j = pattern.index("]", i)
+            body = pattern[i + 1 : j]
+            if not body or any(ch in body for ch in "^-\\"):
+                return None
+            options.append(list(body))
+            i = j + 1
+        elif c in "\\?*+|(){}^$.=":
+            return None
+        else:
+            options.append([c])
+            i += 1
+    out = [""]
+    for chars in options:
+        out = [prefix + c for prefix in out for c in chars]
+    return set(out)
+
+
 # 别名机制：精确对由 Entry.aliases 生成，繁体写法一并归一。带 pattern 的别名生成
 # guard 对（p2st 简繁展开，手写字符类原样保留），别名位于更长他名内部时防子串误伤。
 def _variant(v):

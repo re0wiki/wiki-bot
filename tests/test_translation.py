@@ -16,6 +16,7 @@ fx = importlib.import_module("pywikibot.fixes")
 # translation 机制定义在 user-fixes.py，由 pwb/pywikibot/fixes.py 末尾 exec 进
 # 自己的 globals，静态检查不可见，故经 __dict__ 取。
 p2st: Any = fx.__dict__["p2st"]
+expand_class_pattern: Any = fx.__dict__["expand_class_pattern"]
 translation_name_rules: list[tuple[str, str]] = fx.__dict__["translation_name_rules"]
 
 # RULES 直接复用 re0_move 的构建结果，不再本地重复构造。
@@ -105,17 +106,29 @@ def test_entries_no_duplicate_names():
 
 
 def test_aliases_no_collision():
-    """别名：不重复登记、不撞任何标准名。"""
+    """别名：不重复登记、不撞任何标准名。
+
+    带字符类 pattern 的别名不抽取代表形，展开全部组合逐个检测。
+    """
     names = {e.std.text for e in ENTRIES}
     seen = {}
     bad = []
     for e in ENTRIES:
-        for a in alias_texts(e):
-            if a in names:
-                bad.append(f"{a}（{e.std.text} 的别名）撞标准名")
-            if a in seen:
-                bad.append(f"{a} 重复登记于 {seen[a]} 与 {e.std.text}")
-            seen[a] = e.std.text
+        for a in e.aliases:
+            if isinstance(a, translations.Variant) and a.pattern and (
+                members := expand_class_pattern(a.pattern)
+            ):
+                forms = members
+            else:
+                forms = {a.text if isinstance(a, translations.Variant) else a}
+            for f in forms:
+                if f == e.std.text:
+                    continue  # pattern 覆盖本家标准名（如音位类含标准拼写），非碰撞
+                if f in names:
+                    bad.append(f"{f}（{e.std.text} 的别名）撞标准名")
+                if f in seen:
+                    bad.append(f"{f} 重复登记于 {seen[f]} 与 {e.std.text}")
+                seen[f] = e.std.text
     assert not bad, bad
 
 
@@ -179,12 +192,20 @@ def test_aliases_normalize_to_entry_name():
     是正确行为（标题不能含模板），不在此断言覆盖；其正文归一由
     fixes 替换链保证。
     """
+    def forms_of(a):
+        if isinstance(a, translations.Variant) and a.pattern and (
+            m := expand_class_pattern(a.pattern)
+        ):
+            return m
+        return {a.text if isinstance(a, translations.Variant) else a}
+
     bad = [
-        (a, e.std.text, normalize(a))
+        (f, e.std.text, normalize(f))
         for e in ENTRIES
         if "{{" not in e.std.text
-        for a in alias_texts(e)
-        if normalize(a) != e.std.text
+        for a in e.aliases
+        for f in forms_of(a)
+        if normalize(f) != e.std.text
     ]
     assert not bad, f"以下别名未归一到条目名: {bad}"
 
