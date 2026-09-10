@@ -177,6 +177,17 @@ def test_pattern_matches_base_text():
     assert not bad, bad
 
 
+def test_pattern_p2n_equals_entry_name():
+    """pattern 经 p2n 推导的替换目标必须等于条目名。
+
+    p2st(pattern) 匹配 name 只保证规则能命中，不保证目标正确：
+    可选组写法错误时（如 name=恩夏尔德 配 pattern=恩夏(?:尔)?德），
+    命中检查照样过，但 p2n 会把文本归一到不存在的名字。
+    """
+    bad = [(e.name, e.pattern) for e in ENTRIES if e.pattern and p2n(e.pattern) != e.name]
+    assert not bad, f"以下 pattern 的 p2n 推导与条目名不一致: {bad}"
+
+
 def test_aliases_normalize_to_entry_name():
     """别名经完整规则链必须归一到所属条目名（否则规则间互相覆盖）。"""
     bad = [
