@@ -555,7 +555,22 @@ _alt_pattern = "|".join(f"({_noncap(p)})" for _, p, _ in _alt_items)
 
 
 def _alt_sub(m):
-    return _alt_targets[m.lastindex - 1]
+    target = _alt_targets[m.lastindex - 1]
+    if m.group() != target:
+        _alt_sub.pairs.add((m.group(), target))
+    return target
+
+
+_alt_sub.pairs = set()
+
+
+def _take_summary_pairs():
+    """replace.py 摘要协议：回读本页实际命中对并清空（编辑摘要 -原文 +目标）。"""
+    pairs, _alt_sub.pairs = _alt_sub.pairs, set()
+    return pairs
+
+
+_alt_sub.take_summary_pairs = _take_summary_pairs
 
 
 # re0_move（标题归一）消费的别名对：与 alternation 同数据（别名子集、同排序键）。
