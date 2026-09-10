@@ -130,7 +130,9 @@ def test_std_name_source_precedence():
     for e in ENTRIES:
         for a in e.aliases:
             if e.std.source == S.OFFICIAL_HANT and a.source == S.OFFICIAL_HANS:
-                bad.append(f"官繁标准名 {e.std.text} 有官简别名 {a.text}（应提升为标准名）")
+                bad.append(
+                    f"官繁标准名 {e.std.text} 有官简别名 {a.text}（应提升为标准名）"
+                )
     assert not bad, bad
 
 
@@ -189,7 +191,11 @@ def test_aliases_normalize_to_entry_name():
 
 def test_all_entry_names_stable_under_full_rule_chain():
     """所有条目名（含 fuzzy=False）在完整规则链下幂等。"""
-    bad = [(e.std.text, normalize(e.std.text)) for e in ENTRIES if normalize(e.std.text) != e.std.text]
+    bad = [
+        (e.std.text, normalize(e.std.text))
+        for e in ENTRIES
+        if normalize(e.std.text) != e.std.text
+    ]
     assert not bad, f"以下条目名会被规则链二次改写: {bad}"
 
 
@@ -213,4 +219,6 @@ def test_full_name_consistency():
                 f"{e.std.text}: full_name 的姓段 {sur} 不在表中"
             )
         else:
-            assert e.full_name in by_name, f"{e.std.text}: full_name {e.full_name} 不在表中"
+            assert e.full_name in by_name, (
+                f"{e.std.text}: full_name {e.full_name} 不在表中"
+            )
