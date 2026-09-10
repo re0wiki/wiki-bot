@@ -115,14 +115,8 @@ def test_aliases_no_collision():
     bad = []
     for e in ENTRIES:
         for a in e.aliases:
-            if (
-                isinstance(a, translations.Variant)
-                and a.pattern
-                and (members := expand_class_pattern(a.pattern))
-            ):
-                forms = members
-            else:
-                forms = {a.text if isinstance(a, translations.Variant) else a}
+            s = a.text if isinstance(a, translations.Variant) else a
+            forms = expand_class_pattern(s) or {s}
             for f in forms:
                 if f == e.std.text:
                     continue  # pattern 覆盖本家标准名（如音位类含标准拼写），非碰撞
@@ -171,15 +165,8 @@ def test_variant_annotations_valid():
 
 
 def test_pattern_matches_base_text():
-    """一致性：pattern 必须能匹配其基准形态（别名 pattern 匹配 text，条目 pattern 匹配 name）。"""
+    """一致性：条目 pattern 必须能匹配其规范名（别名 text/pattern 已合并，无别名侧断言）。"""
     bad = [
-        f"{e.std.text} 的别名 {a.text} pattern 不匹配"
-        for e in ENTRIES
-        for a in e.aliases
-        if isinstance(a, translations.Variant)
-        and a.pattern
-        and not re.search(p2st(a.pattern), a.text)
-    ] + [
         f"{e.std.text} 的 pattern 不匹配 name"
         for e in ENTRIES
         if e.std.pattern and not re.search(p2st(e.std.pattern), e.std.text)
@@ -196,13 +183,8 @@ def test_aliases_normalize_to_entry_name():
     """
 
     def forms_of(a):
-        if (
-            isinstance(a, translations.Variant)
-            and a.pattern
-            and (m := expand_class_pattern(a.pattern))
-        ):
-            return m
-        return {a.text if isinstance(a, translations.Variant) else a}
+        s = a.text if isinstance(a, translations.Variant) else a
+        return expand_class_pattern(s) or {s}
 
     bad = [
         (f, e.std.text, normalize(f))

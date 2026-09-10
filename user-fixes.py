@@ -509,17 +509,23 @@ def expand_class_pattern(pattern):
     return set(out)
 
 
-# 别名机制：精确对由 Entry.aliases 生成，繁体写法一并归一。带 pattern 的别名生成
-# guard 对（p2st 简繁展开，手写字符类原样保留），别名位于更长他名内部时防子串误伤。
+# 别名机制：精确对由 Entry.aliases 生成，繁体写法一并归一。正则形式的别名
+# （text 含字符类或 lookaround）生成 guard 对（p2st 简繁展开，手写字符类原样保留），
+# 别名位于更长他名内部时防子串误伤。
 def _variant(v):
     return v if isinstance(v, translations.Variant) else None
 
 
-def _match_len(v):
-    """别名匹配的排序长度：可枚举 pattern 用展开成员长（与代表形选取无关），否则按 text。"""
-    if v.pattern and (members := expand_class_pattern(v.pattern)):
+def _regex_form(s):
+    """别名 text 是否为正则形式（含字符类或 lookaround）。"""
+    return "[" in s or "(?" in s
+
+
+def _match_len(s):
+    """别名匹配的排序长度：可枚举形式用展开成员长，否则按字面长。"""
+    if members := expand_class_pattern(s):
         return len(next(iter(members)))
-    return len(v.text)
+    return len(s)
 
 
 # 全部替换规则合成单趟 alternation：名字规则（p2st 简繁展开）与别名精确对/guard 对
@@ -532,14 +538,14 @@ _pair_items = [
     (len(a2), re.escape(a2), e.std.text)
     for e in translations.ENTRIES
     for a in e.aliases
-    if not ((v := _variant(a)) and v.pattern)
     for a0 in [a.text if isinstance(a, translations.Variant) else a]
+    if not _regex_form(a0)
     for a2 in dict.fromkeys((a0, s2t(a0)))
 ] + [
-    (_match_len(v), p2st(v.pattern), e.std.text)
+    (_match_len(v.text), p2st(v.text), e.std.text)
     for e in translations.ENTRIES
     for a in e.aliases
-    if (v := _variant(a)) and v.pattern
+    if (v := _variant(a)) and _regex_form(v.text)
 ]
 _alt_items = sorted(_name_items + _pair_items, key=lambda x: -x[0])
 _alt_targets = [n for _, _, n in _alt_items]
