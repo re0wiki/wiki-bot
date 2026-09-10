@@ -510,6 +510,13 @@ def _variant(v):
     return v if isinstance(v, translations.Variant) else None
 
 
+def _match_len(v):
+    """别名匹配的排序长度：可枚举 pattern 用展开成员长（与代表形选取无关），否则按 text。"""
+    if v.pattern and (members := expand_class_pattern(v.pattern)):
+        return len(next(iter(members)))
+    return len(v.text)
+
+
 # 全部替换规则合成单趟 alternation：名字规则（p2st 简繁展开）与别名精确对/guard 对
 # 统一按目标/别名原文长度降序，同一位置只提交一次 = 真长匹配优先（短规则无法再命中
 # 长名/长别名内部）；单趟语义下恒等转换也消耗文本。
@@ -524,7 +531,7 @@ _pair_items = [
     for a0 in [a.text if isinstance(a, translations.Variant) else a]
     for a2 in dict.fromkeys((a0, s2t(a0)))
 ] + [
-    (len(v.text), p2st(v.pattern), e.std.text)
+    (_match_len(v), p2st(v.pattern), e.std.text)
     for e in translations.ENTRIES
     for a in e.aliases
     if (v := _variant(a)) and v.pattern
