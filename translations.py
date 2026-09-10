@@ -120,13 +120,24 @@ ENTRIES: list[Entry] = [
         ),
         en="Heinkel",
     ),
-    Entry(name="伽那库斯", source=Source.FAN, cat="术语"),
+    Entry(
+        name="伽那库斯",
+        source=Source.FAN,
+        cat="术语",
+        aliases=(V("加纳克斯", Source.FAN),),
+    ),
     Entry(
         name="佛拉基亚",
         ja="ヴォラキア",
         source=Source.OFFICIAL_HANS,
         en="Vollachia",
         cat="术语",
+        aliases=(
+            V("弗拉基亚", Source.FAN),
+            V("沃拉基亚", Source.FAN),
+            V("沃拉奇亚", Source.FAN),
+            V("佛拉奇亚", Source.FAN),
+        ),
     ),
     Entry(
         name="库林德",
@@ -135,7 +146,10 @@ ENTRIES: list[Entry] = [
         en="Clind",
         cat="角色",
         fuzzy=False,  # 三字模糊组把「格林特训」的 格林特 打成 库林德；真实变体只有 柯林特
-        aliases=(V("柯林特", Source.FAN),),
+        aliases=(
+            V("柯林特", Source.FAN),
+            V("克林德", Source.FAN),
+        ),
     ),
     Entry(
         name="历布莱",
@@ -152,6 +166,7 @@ ENTRIES: list[Entry] = [
         full_name="卡佩拉·艾美拉达·卢克尼卡",
         source=Source.OFFICIAL_HANS,
         en="Capella",
+        aliases=(V("卡佩菈", Source.FAN),),
     ),
     Entry(
         name="艾美拉达",
@@ -160,6 +175,12 @@ ENTRIES: list[Entry] = [
         en="Emerada",
         cat="角色",
         full_name="艾美拉达·卢克尼卡",
+        aliases=(
+            V("爱梅拉妲", Source.FAN),
+            V("愛梅拉妲", Source.FAN),
+            V("埃梅拉达", Source.FAN),
+            V("爱美拉达", Source.FAN),
+        ),
     ),
     Entry(
         name="卡吉雷斯",
@@ -177,7 +198,13 @@ ENTRIES: list[Entry] = [
         cat="角色",
         full_name="卡尔朗·阿斯特雷亚",
     ),
-    Entry(name="卡尔斯腾", en="Karsten", ja="カルステン", source=Source.OFFICIAL_HANS),
+    Entry(
+        name="卡尔斯腾",
+        en="Karsten",
+        ja="カルステン",
+        source=Source.OFFICIAL_HANS,
+        aliases=(V("卡尔斯滕", Source.FAN),),
+    ),
     Entry(
         name="卡德蒙",
         ja="カドモン·リッシュ",
@@ -185,7 +212,16 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         en="Kadomon",
     ),
-    Entry(name="卡拉拉基", source=Source.OFFICIAL_HANS, en="Kararagi", cat="术语"),
+    Entry(
+        name="卡拉拉基",
+        source=Source.OFFICIAL_HANS,
+        en="Kararagi",
+        cat="术语",
+        aliases=(
+            V("卡拉拉奇", Source.FAN),
+            V("卡拉拉吉", Source.FAN),
+        ),
+    ),
     Entry(
         name="卡什采尔平原",
         source=Source.OFFICIAL_HANS,
@@ -208,8 +244,15 @@ ENTRIES: list[Entry] = [
         ja="カーミラ",
         en="Carmilla",
         cat="角色",
+        aliases=(V("卡蜜拉", Source.FAN),),
     ),
-    Entry(name="古斯提克", source=Source.OFFICIAL_HANS, en="Gusteko", cat="术语"),
+    Entry(
+        name="古斯提克",
+        source=Source.OFFICIAL_HANS,
+        en="Gusteko",
+        cat="术语",
+        aliases=(V("古斯提科", Source.FAN),),
+    ),
     Entry(
         name="斯特莱德",
         ja="ストライド·ヴォラキア",
@@ -224,13 +267,29 @@ ENTRIES: list[Entry] = [
         ja="セシルス·セグムント",
         en="Cecilus",
         cat="角色",
+        aliases=(
+            V("塞西尔斯", Source.FAN),
+            V("塞西爾斯", Source.FAN),
+            V("瑟希魯斯", Source.FAN),
+            V("瑟希鲁斯", Source.FAN),
+            V("賽西魯斯", Source.FAN),
+            V("赛西尔斯", Source.FAN),
+            V("賽西爾斯", Source.FAN),
+            V("瑟西魯斯", Source.FAN),
+        ),
     ),
     Entry(
         name="塞格蒙德",
         en="Segmunt",
         ja="セグムント",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("塞格姆多", Source.OFFICIAL_HANT),),
+        aliases=(
+            V("塞格姆多", Source.OFFICIAL_HANT),
+            V("赛格蒙德", Source.FAN),
+            V("赛格蒙特", Source.FAN),
+            V("塞格蒙特", Source.FAN),
+            V("賽格蒙特", Source.FAN),
+        ),
     ),
     Entry(
         name="夏乌拉",
@@ -245,6 +304,10 @@ ENTRIES: list[Entry] = [
         ja="シャクナール",
         en="Shaknar",
         cat="角色",
+        aliases=(
+            V("夏库纳尔", Source.FAN),
+            V("夏庫納爾", Source.FAN),
+        ),
     ),
     Entry(
         name="多鲁特洛",
@@ -281,6 +344,11 @@ ENTRIES: list[Entry] = [
         ja="ユリウス·ユークリウス",
         source=Source.OFFICIAL_HANS,
         en="Julius",
+        aliases=(
+            V("尤里乌斯", Source.FAN),
+            V("尤里烏斯", Source.FAN),
+            V("尤利乌斯", Source.FAN),
+        ),
     ),
     Entry(
         name="尤克历乌斯",
@@ -327,8 +395,24 @@ ENTRIES: list[Entry] = [
         en="Crusch",
         cat="角色",
         full_name="库珥修·卡尔斯腾",
+        aliases=(
+            V("克鲁修", Source.FAN),
+            V("库尔修", Source.FAN),
+            V("库鲁修", Source.FAN),
+            V("克鲁奇", Source.FAN),
+        ),
     ),
-    Entry(name="库鲁刚", source=Source.FAN, ja="クルガン", en="Kurgan", cat="角色"),
+    Entry(
+        name="库鲁刚",
+        source=Source.FAN,
+        ja="クルガン",
+        en="Kurgan",
+        cat="角色",
+        aliases=(
+            V("库尔刚", Source.FAN),
+            V("庫爾剛", Source.FAN),
+        ),
+    ),
     Entry(
         name="弗里格尔",
         source=Source.OFFICIAL_HANS,
@@ -393,6 +477,7 @@ ENTRIES: list[Entry] = [
         en="Plum",
         cat="角色",
         full_name="普拉姆·里施",
+        aliases=(V("普菈姆", Source.FAN),),
     ),
     Entry(
         name="普莉希拉",
@@ -400,8 +485,20 @@ ENTRIES: list[Entry] = [
         full_name="普莉希拉·跋利耶尔",
         source=Source.OFFICIAL_HANS,
         en="Priscilla",
+        aliases=(V("普利希拉", Source.FAN),),
     ),
-    Entry(name="普莉斯卡", source=Source.OFFICIAL_HANS),
+    Entry(
+        name="普莉斯卡",
+        source=Source.OFFICIAL_HANS,
+        aliases=(
+            V("普里斯卡", Source.FAN),
+            V("普莉絲卡", Source.FAN),
+            V("普莉丝卡", Source.FAN),
+            V("普丽斯卡", Source.FAN),
+            V("普利斯卡", Source.FAN),
+            V("普利絲卡", Source.FAN),
+        ),
+    ),
     Entry(
         name="李凯尔特",
         ja="リッケルト·ホフマン",
@@ -427,6 +524,10 @@ ENTRIES: list[Entry] = [
         en="Grassis",
         cat="角色",
         full_name="格拉希丝·莱蒙蒂斯",
+        aliases=(
+            V("葛拉西絲", Source.FAN),
+            V("格拉希斯", Source.FAN),
+        ),
     ),
     Entry(
         name="梅卡多",
@@ -435,6 +536,7 @@ ENTRIES: list[Entry] = [
         en="Meckart",
         cat="角色",
         full_name="梅卡多·卡尔斯腾",
+        aliases=(V("梅卡德", Source.FAN),),
     ),
     Entry(
         name="梅娜",
@@ -457,7 +559,15 @@ ENTRIES: list[Entry] = [
         en="Ornea",
     ),
     Entry(
-        name="欧米茄", source=Source.OFFICIAL_HANS, ja="オメガ", en="Omega", cat="角色"
+        name="欧米茄",
+        source=Source.OFFICIAL_HANS,
+        ja="オメガ",
+        en="Omega",
+        cat="角色",
+        aliases=(
+            V("欧米伽", Source.FAN),
+            V("歐米伽", Source.FAN),
+        ),
     ),
     Entry(
         name="汉娜",
@@ -471,6 +581,11 @@ ENTRIES: list[Entry] = [
         full_name="波尔多·切格夫",
         source=Source.OFFICIAL_HANS,
         en="Bordeaux",
+        aliases=(
+            V("波爾德", Source.FAN),
+            V("波尔德", Source.FAN),
+            V("波鲁多", Source.FAN),
+        ),
     ),
     Entry(
         name="波尔肯尼卡",
@@ -478,6 +593,10 @@ ENTRIES: list[Entry] = [
         ja="ボルカニカ",
         en="Volcanica",
         cat="角色",
+        aliases=(
+            V("波尔卡尼卡", Source.FAN),
+            V("波爾卡尼卡", Source.FAN),
+        ),
     ),
     Entry(
         name="泰玛艾", source=Source.OFFICIAL_HANT, ja="テマエ", en="Temae", cat="角色"
@@ -489,10 +608,20 @@ ENTRIES: list[Entry] = [
         en="Theresia",
         cat="角色",
         full_name="特雷西亚·梵·阿斯特雷亚",
+        aliases=(
+            V("特蕾西亚", Source.FAN),
+            V("特蕾西亞", Source.FAN),
+            V("特蕾西娅", Source.FAN),
+            V("特蕾希雅", Source.FAN),
+            V("特蕾西雅", Source.FAN),
+        ),
     ),
     Entry(
         name="玛洛妮",
-        aliases=(V("玛萝涅", Source.FAN),),
+        aliases=(
+            V("玛萝涅", Source.FAN),
+            V("马罗妮", Source.FAN),
+        ),
         ja="マローネ·リズボン",
         full_name="玛洛妮·里兹本",
         source=Source.OFFICIAL_HANT,
@@ -504,6 +633,7 @@ ENTRIES: list[Entry] = [
         full_name="琉兹·梅埃尔",
         source=Source.OFFICIAL_HANS,
         en="Ryuzu",
+        aliases=(V("硫兹", Source.FAN),),
     ),
     Entry(
         name="琉加",
@@ -539,7 +669,11 @@ ENTRIES: list[Entry] = [
         ja="ベアトリス",
         en="Beatrice",
         cat="角色",
-        aliases=(V("贝阿托莉丝", Source.FAN), V("贝翠丝", Source.FAN)),
+        aliases=(
+            V("贝阿托莉丝", Source.FAN),
+            V("贝翠丝", Source.FAN),
+            V("碧翠斯", Source.FAN),
+        ),
     ),
     Entry(
         name="米塞尔",
@@ -554,6 +688,7 @@ ENTRIES: list[Entry] = [
         full_name="约书亚·尤克历乌斯",
         source=Source.OFFICIAL_HANS,
         en="Joshua",
+        aliases=(V("约修亚", Source.FAN),),
     ),
     Entry(
         name="提丰",
@@ -561,7 +696,12 @@ ENTRIES: list[Entry] = [
         ja="テュフォン",
         en="Typhon",
         cat="角色",
-        fuzzy=False,  # 二字模糊组把 迪丰·特雷沃拉 的 迪丰 打成 提丰；无真实变体
+        fuzzy=False,  # 二字模糊组把 迪丰·特雷沃拉 的 迪丰 打成 提丰；无真实变体,
+        aliases=(
+            V("缇丰", Source.FAN),
+            V("堤丰", Source.FAN),
+            V("緹豐", Source.FAN),
+        ),
     ),
     Entry(
         name="梯利爱娜",
@@ -571,7 +711,9 @@ ENTRIES: list[Entry] = [
         en="Tiriena",
         cat="角色",
     ),
-    Entry(name="梅札斯", source=Source.OFFICIAL_HANS),
+    Entry(
+        name="梅札斯", source=Source.OFFICIAL_HANS, aliases=(V("梅瑟斯", Source.FAN),)
+    ),
     Entry(
         name="罗姆爷",
         full_name="巴尔加·克罗姆威尔",
@@ -587,8 +729,18 @@ ENTRIES: list[Entry] = [
         full_name="埃佐·加德纳",
         source=Source.OFFICIAL_HANS,
         en="Ezzo",
+        aliases=(V("艾佐", Source.FAN),),
     ),
-    Entry(name="加德纳", en="Cadner", ja="カドナー", source=Source.FAN),
+    Entry(
+        name="加德纳",
+        en="Cadner",
+        ja="カドナー",
+        source=Source.FAN,
+        aliases=(
+            V("卡德纳", Source.FAN),
+            V("卡多納", Source.FAN),
+        ),
+    ),
     Entry(name="艾力欧尔大森林", source=Source.OFFICIAL_HANS, en="Elior Forest"),
     Entry(
         name="艾姬多娜",
@@ -596,8 +748,9 @@ ENTRIES: list[Entry] = [
         ja="エキドナ",
         en="Echidna",
         cat="角色",
+        aliases=(V("艾奇多娜", Source.FAN),),
     ),
-    Entry(name="爱蜜", source=Source.OFFICIAL_HANS),
+    Entry(name="爱蜜", source=Source.OFFICIAL_HANS, aliases=(V("艾米", Source.FAN),)),
     Entry(
         name="艾黑亚湿地",
         source=Source.OFFICIAL_HANS,
@@ -609,6 +762,17 @@ ENTRIES: list[Entry] = [
         ja="フレデリカ·バウマン",
         en="Frederica",
         cat="角色",
+        aliases=(
+            V("芙蕾德莉卡", Source.FAN),
+            V("法蘭黛莉卡", Source.FAN),
+            V("法兰黛莉卡", Source.FAN),
+            V("芙蕾黛莉卡", Source.FAN),
+            V("弗雷德丽卡", Source.FAN),
+            V("芙蕾德里卡", Source.FAN),
+            V("芙蕾德利卡", Source.FAN),
+            V("弗雷德里卡", Source.FAN),
+            V("芙蕾德丽卡", Source.FAN),
+        ),
     ),
     Entry(
         name="鲍曼",
@@ -616,6 +780,7 @@ ENTRIES: list[Entry] = [
         ja="バウマン",
         source=Source.OFFICIAL_HANS,
         pattern="鲍(尔)?曼",
+        aliases=(V("鲍尔曼", Source.FAN),),
     ),
     Entry(
         name="荒地的合辛",
@@ -630,6 +795,7 @@ ENTRIES: list[Entry] = [
         en="Lycoris",
         cat="角色",
         full_name="莉可莉丝·安丝莉姆",
+        aliases=(V("莉可丽丝", Source.FAN),),
     ),
     Entry(
         name="莉莉安娜",
@@ -645,6 +811,10 @@ ENTRIES: list[Entry] = [
         en="Sakura",
         cat="角色",
         full_name="莎克拉·艾雷梅特",
+        aliases=(
+            V("萨克拉", Source.FAN),
+            V("萨库拉", Source.FAN),
+        ),
     ),
     Entry(
         name="莎缇菈",
@@ -652,6 +822,13 @@ ENTRIES: list[Entry] = [
         ja="サテラ",
         en="Satella",
         cat="角色",
+        aliases=(
+            V("莎缇拉", Source.FAN),
+            V("莎提拉", Source.FAN),
+            V("纱提拉", Source.FAN),
+            V("莎緹拉", Source.FAN),
+            V("沙提拉", Source.FAN),
+        ),
     ),
     Entry(
         name="莱伊",
@@ -693,6 +870,12 @@ ENTRIES: list[Entry] = [
         en="Ferris",
         cat="角色",
         full_name="菲莉丝·阿盖尔",
+        aliases=(
+            V("菲利斯", Source.FAN),
+            V("菲利丝", Source.FAN),
+            V("菲莉斯", Source.FAN),
+            V("菲利絲", Source.FAN),
+        ),
     ),
     Entry(
         name="萨尔姆",
@@ -716,12 +899,21 @@ ENTRIES: list[Entry] = [
         ja="ディアス·レプンツォ·エレマンソ·オプレーン·ファッツバルム六世",
         en="Dias",
         cat="角色",
+        aliases=(
+            V("迪亚斯", Source.FAN),
+            V("迪亞斯", Source.FAN),
+        ),
     ),
     Entry(
         name="西里乌斯",
         ja="シリウス·ロマネコンティ",
         source=Source.OFFICIAL_HANS,
         en="Sirius",
+        aliases=(
+            V("席里乌斯", Source.FAN),
+            V("西莉乌斯", Source.FAN),
+            V("敘呂厄斯", Source.FAN),
+        ),
     ),
     Entry(
         name="罗曼尼康帝",
@@ -756,6 +948,12 @@ ENTRIES: list[Entry] = [
         ja="セクメト",
         en="Sekhmet",
         cat="角色",
+        aliases=(
+            V("赛赫麦特", Source.FAN),
+            V("塞赫麦特", Source.FAN),
+            V("赛赫梅特", Source.FAN),
+            V("賽赫麥特", Source.FAN),
+        ),
     ),
     Entry(
         name="赫克托耳",
@@ -763,7 +961,10 @@ ENTRIES: list[Entry] = [
         ja="ヘクトール",
         en="Hector",
         cat="角色",
-        aliases=(V("赫克特", Source.OFFICIAL_HANT),),
+        aliases=(
+            V("赫克特", Source.OFFICIAL_HANT),
+            V("赫克托尔", Source.FAN),
+        ),
     ),
     Entry(
         name="赫罗西欧",
@@ -787,6 +988,9 @@ ENTRIES: list[Entry] = [
         en="Dudley",
         cat="角色",
         full_name="达德利·米洛德",
+        aliases=(
+            V("达特里", Source.FAN),
+        ),
     ),
     Entry(
         name="达芙妮", source=Source.OFFICIAL_HANS, ja="ダフネ", en="Daphne", cat="角色"
@@ -845,6 +1049,7 @@ ENTRIES: list[Entry] = [
         aliases=(
             V("雷古勒斯", Source.OFFICIAL_HANT),
             V("雷格勒斯", Source.FAN),
+            V("雷古鲁斯", Source.FAN),
         ),
         note="字序调换（格鲁/古勒）p2o 覆盖不了，走精确对",
     ),
@@ -853,15 +1058,36 @@ ENTRIES: list[Entry] = [
         en="Corneas",
         ja="コルニアス",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("柯尔尼亚斯", Source.OFFICIAL_HANT),),
+        aliases=(
+            V("柯尔尼亚斯", Source.OFFICIAL_HANT),
+            V("柯尼亚斯", Source.FAN),
+        ),
     ),
-    Entry(name="鲁伊", ja="ルイ·アルネブ", source=Source.OFFICIAL_HANS, en="Rui"),
+    Entry(
+        name="鲁伊",
+        ja="ルイ·アルネブ",
+        source=Source.OFFICIAL_HANS,
+        en="Rui",
+        aliases=(
+            V("露伊", Source.FAN),
+            V("路伊", Source.FAN),
+            V("路易", Source.FAN),
+        ),
+    ),
     Entry(
         name="卢克尼卡",
         ja="ルグニカ",
         source=Source.OFFICIAL_HANS,
         en="Lugunica",
         cat="术语",
+        aliases=(
+            V("露格尼卡", Source.FAN),
+            V("鲁古尼卡", Source.FAN),
+            V("卢古尼卡", Source.FAN),
+            V("鲁格尼卡", Source.FAN),
+            V("鲁谷尼卡", Source.FAN),
+            V("卢格尼卡", Source.FAN),
+        ),
     ),
     Entry(
         name="马可仕",
@@ -884,8 +1110,18 @@ ENTRIES: list[Entry] = [
         full_name="黑塔罗·帕尔巴顿",
         source=Source.OFFICIAL_HANS,
         en="Hetaro",
+        aliases=(V("黑塔洛", Source.FAN),),
     ),
-    Entry(name="基尔狄拉乌", source=Source.OFFICIAL_HANS, en="Witchbeast", cat="术语"),
+    Entry(
+        name="基尔狄拉乌",
+        source=Source.OFFICIAL_HANS,
+        en="Witchbeast",
+        cat="术语",
+        aliases=(
+            V("基尔提拉乌", Source.FAN),
+            V("基爾提拉烏", Source.FAN),
+        ),
+    ),
     Entry(
         name="巴登凯托斯",
         en="Batenkaitos",
@@ -898,11 +1134,23 @@ ENTRIES: list[Entry] = [
         name="特利亚斯",
         en="Trias",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("特里亚斯", Source.FAN),),
+        aliases=(
+            V("特里亚斯", Source.FAN),
+            V("托利亞斯", Source.FAN),
+            V("托利亚斯", Source.FAN),
+        ),
         note="威尔海姆旧姓",
     ),
     Entry(
-        name="欧德古勒斯", source=Source.FAN, ja="オドグラス", en="Odglass", cat="角色"
+        name="欧德古勒斯",
+        source=Source.FAN,
+        ja="オドグラス",
+        en="Odglass",
+        cat="角色",
+        aliases=(
+            V("歐德格拉斯", Source.FAN),
+            V("欧德古拉斯", Source.FAN),
+        ),
     ),
     Entry(name="埃尔纱幕", source=Source.FAN),
     Entry(
@@ -910,7 +1158,11 @@ ENTRIES: list[Entry] = [
         en="Tinzel",
         ja="ティンゼル",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("汀泽尔", Source.FAN), V("霆杰尔", Source.FAN)),
+        aliases=(
+            V("汀泽尔", Source.FAN),
+            V("霆杰尔", Source.FAN),
+            V("汀塞尔", Source.FAN),
+        ),
         note="加菲尔·丁赛尔",
     ),
     Entry(
@@ -934,7 +1186,14 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         en="Costuul",
         cat="术语",
-        aliases=(V("克斯泽尔", Source.FAN),),
+        aliases=(
+            V("克斯泽尔", Source.FAN),
+            V("柯司兹尔", Source.FAN),
+            V("柯斯兹尔", Source.FAN),
+            V("柯司茲爾", Source.FAN),
+            V("寇斯兹尔", Source.FAN),
+            V("柯丝兹尔", Source.FAN),
+        ),
     ),
     Entry(
         name="福尔图娜",
@@ -942,6 +1201,12 @@ ENTRIES: list[Entry] = [
         ja="フォルトナ",
         en="Fortuna",
         cat="角色",
+        aliases=(
+            V("菲尔托娜", Source.FAN),
+            V("福尔图纳", Source.FAN),
+            V("佛爾特娜", Source.FAN),
+            V("福尔托娜", Source.FAN),
+        ),
     ),
     Entry(name="汤普森", en="Thompson", ja="トンプソン", source=Source.OFFICIAL_HANS),
     Entry(
@@ -967,11 +1232,13 @@ ENTRIES: list[Entry] = [
         ja="ザーレスティア",
         en="Zarestia",
         cat="角色",
+        aliases=(V("塞蕾丝提雅", Source.FAN),),
     ),
     Entry(
         name="禁书与谜之精灵",
         source=Source.FAN,
         en="Re:Zero Forbidden Book and the Mysterious Spirit",
+        aliases=(V("禁书与迷之精灵", Source.FAN),),
     ),
     Entry(
         name="弗洛普",
@@ -994,6 +1261,7 @@ ENTRIES: list[Entry] = [
         ja="ロウアン·セグムント",
         source=Source.OFFICIAL_HANS,
         en="Rowan",
+        aliases=(V("罗安", Source.FAN),),
     ),
     Entry(
         name="贾马尔",
@@ -1004,7 +1272,15 @@ ENTRIES: list[Entry] = [
         full_name="贾马尔·奥雷利",
     ),
     Entry(name="瓜拉尔", source=Source.OFFICIAL_HANS, en="Guaral", cat="术语"),
-    Entry(name="巴德哈姆", source=Source.OFFICIAL_HANS),
+    Entry(
+        name="巴德哈姆",
+        source=Source.OFFICIAL_HANS,
+        aliases=(
+            V("巴多海姆", Source.FAN),
+            V("巴德海姆", Source.FAN),
+            V("巴多哈姆", Source.FAN),
+        ),
+    ),
     Entry(
         name="托斯卡",
         ja="トスカ·アストレア",
@@ -1018,18 +1294,26 @@ ENTRIES: list[Entry] = [
         en="Lamia",
         cat="角色",
         full_name="拉米亚·戈德温",
+        aliases=(V("拉米娅", Source.FAN),),
     ),
     Entry(
         name="弗兰德斯",
         source=Source.OFFICIAL_HANS,
         en="Flanders",
-        aliases=(V("芙兰达兹", Source.FAN),),
+        aliases=(
+            V("芙兰达兹", Source.FAN),
+            V("佛兰德斯", Source.FAN),
+        ),
     ),
     Entry(
         name="米杰尔达",
         ja="ミゼルダ·シュドラク",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("米杰耳怛", Source.OFFICIAL_HANT),),
+        aliases=(
+            V("米杰耳怛", Source.OFFICIAL_HANT),
+            V("米泽尔妲", Source.FAN),
+            V("米泽尔达", Source.FAN),
+        ),
         en="Mizelda",
     ),
     Entry(
@@ -1037,13 +1321,21 @@ ENTRIES: list[Entry] = [
         en="Shudrak",
         ja="シュドラク",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("貅德拉格", Source.OFFICIAL_HANT),),
+        aliases=(
+            V("貅德拉格", Source.OFFICIAL_HANT),
+            V("修德拉克", Source.FAN),
+            V("修多拉克", Source.FAN),
+        ),
     ),
     Entry(
         name="塔里塔",
         ja="タリッタ·シュドラク",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("塔立塔", Source.OFFICIAL_HANT),),
+        aliases=(
+            V("塔立塔", Source.OFFICIAL_HANT),
+            V("塔丽塔", Source.FAN),
+            V("塔莉塔", Source.FAN),
+        ),
         en="Taritta",
     ),
     Entry(
@@ -1062,6 +1354,7 @@ ENTRIES: list[Entry] = [
         ja="ズィクル·オスマン",
         source=Source.OFFICIAL_HANS,
         en="Zikr",
+        aliases=(V("槜克尔", Source.FAN),),
     ),
     Entry(
         name="高朗",
@@ -1095,7 +1388,10 @@ ENTRIES: list[Entry] = [
         en="Mishigure",
         ja="ミシグレ",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("魅时雨", Source.OFFICIAL_HANT),),
+        aliases=(
+            V("魅时雨", Source.OFFICIAL_HANT),
+            V("米西格蕾", Source.FAN),
+        ),
     ),
     Entry(
         name="古斯塔夫",
@@ -1126,11 +1422,21 @@ ENTRIES: list[Entry] = [
         full_name="塞丽娜·杜拉克罗伊",
         source=Source.FAN,
         en="Serena",
+        aliases=(
+            V("瑟莉娜", Source.FAN),
+            V("赛莉娜", Source.FAN),
+            V("賽麗娜", Source.FAN),
+            V("赛丽娜", Source.FAN),
+            V("塞利纳", Source.FAN),
+        ),
     ),
     Entry(
         name="卡楚娅",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("卡秋娅", Source.FAN),),
+        aliases=(
+            V("卡秋娅", Source.FAN),
+            V("卡楚雅", Source.FAN),
+        ),
         ja="カチュア·オーレリー",
         en="Katya",
         cat="角色",
@@ -1143,11 +1449,18 @@ ENTRIES: list[Entry] = [
         en="Farsale",
         cat="角色",
         full_name="法尔塞路·卢克尼卡",
-        aliases=(V("法赛鲁", Source.OFFICIAL_HANT),),
+        aliases=(
+            V("法赛鲁", Source.OFFICIAL_HANT),
+            V("法尔赛路", Source.FAN),
+            V("法尔塞尔", Source.FAN),
+        ),
     ),
     Entry(
         name="奇夏",
-        aliases=(V("茶沙", Source.FAN),),
+        aliases=(
+            V("茶沙", Source.FAN),
+            V("齐夏", Source.FAN),
+        ),
         ja="チシャ·ゴールド",
         source=Source.OFFICIAL_HANS,
         en="Chisha",
@@ -1173,34 +1486,57 @@ ENTRIES: list[Entry] = [
         full_name="巴鲁罗伊·提美格里福",
         source=Source.OFFICIAL_HANS,
         en="Balleroy",
+        aliases=(
+            V("巴尔罗伊", Source.FAN),
+            V("巴爾羅伊", Source.FAN),
+        ),
     ),
     Entry(
         name="蒙哥罗",
         ja="モグロ·ハガネ",
         source=Source.OFFICIAL_HANS,
         en="Moguro",
+        aliases=(V("莫古洛", Source.FAN),),
     ),
-    Entry(name="哈格奈", en="Hagane", ja="ハガネ", source=Source.OFFICIAL_HANS),
+    Entry(
+        name="哈格奈",
+        en="Hagane",
+        ja="ハガネ",
+        source=Source.OFFICIAL_HANS,
+        aliases=(
+            V("哈葛内", Source.FAN),
+            V("哈葛內", Source.FAN),
+        ),
+    ),
     Entry(
         name="古尔比",
         ja="グルービー·ガムレット",
         source=Source.OFFICIAL_HANS,
         en="Groovy",
+        aliases=(
+            V("葛路比", Source.FAN),
+            V("古鲁比", Source.FAN),
+            V("格鲁比", Source.FAN),
+        ),
     ),
     Entry(
         name="加姆莱特",
         en="Gumlet",
         ja="ガムレット",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("格姆雷特", Source.FAN),),
+        aliases=(
+            V("格姆雷特", Source.FAN),
+            V("加姆雷特", Source.FAN),
+        ),
     ),
     Entry(
         name="罗德利格斯",
         ja="ロドリゲス",
         source=Source.OFFICIAL_HANT,
         en="Rodriguez",
+        aliases=(V("罗德里格斯", Source.FAN),),
     ),
-    Entry(name="塞尔连", source=Source.FAN),
+    Entry(name="塞尔连", source=Source.FAN, aliases=(V("塞路连", Source.FAN),)),
     Entry(
         name="曼弗雷德",
         source=Source.OFFICIAL_HANT,
@@ -1221,6 +1557,7 @@ ENTRIES: list[Entry] = [
         ja="マデリン·エッシャルト",
         source=Source.OFFICIAL_HANS,
         en="Madelyn",
+        aliases=(V("马德林", Source.FAN),),
     ),
     Entry(
         name="恩夏尔德",
@@ -1228,6 +1565,11 @@ ENTRIES: list[Entry] = [
         ja="エッシャルト",
         source=Source.OFFICIAL_HANS,
         pattern="恩夏尔德?",
+        aliases=(
+            V("艾沙尔", Source.FAN),
+            V("艾夏尔特", Source.FAN),
+            V("艾莎尔特", Source.FAN),
+        ),
     ),
     Entry(
         name="奥尔巴特",
@@ -1253,13 +1595,18 @@ ENTRIES: list[Entry] = [
         ja="カフマ·イルルクス",
         source=Source.OFFICIAL_HANS,
         en="Kafma",
+        aliases=(V("卡夫玛", Source.FAN),),
     ),
     Entry(
         name="伊鲁鲁克斯",
         en="Irulux",
         ja="イルルクス",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("依鲁鲁库斯", Source.OFFICIAL_HANT),),
+        aliases=(
+            V("依鲁鲁库斯", Source.OFFICIAL_HANT),
+            V("伊鲁克斯", Source.FAN),
+            V("伊鲁库斯", Source.FAN),
+        ),
         pattern="伊鲁鲁?克斯",
     ),
     Entry(
@@ -1296,7 +1643,13 @@ ENTRIES: list[Entry] = [
         cat="角色",
         full_name="奔加姆·伊斯坦",
     ),
-    Entry(name="迪德利", ja="ディドリー", source=Source.OFFICIAL_HANT, en="Didorii"),
+    Entry(
+        name="迪德利",
+        ja="ディドリー",
+        source=Source.OFFICIAL_HANT,
+        en="Didorii",
+        aliases=(V("迪多莉", Source.FAN),),
+    ),
     Entry(
         name="拉兹克鲁",
         source=Source.OFFICIAL_HANT,
@@ -1317,6 +1670,7 @@ ENTRIES: list[Entry] = [
         full_name="希洛洛·托内立可",
         source=Source.OFFICIAL_HANT,
         en="Shiroro",
+        aliases=(V("希罗罗", Source.FAN),),
     ),
     Entry(
         name="伊戈尔",
@@ -1325,12 +1679,17 @@ ENTRIES: list[Entry] = [
         en="Igor",
         cat="角色",
         full_name="伊戈尔·肯纳修",
+        aliases=(V("伊格爾", Source.FAN),),
     ),
     Entry(
         name="罗格蕾丝",
         ja="ログレス·ハイアット",
         source=Source.FAN,
         en="Logres",
+        aliases=(
+            V("羅格雷斯", Source.FAN),
+            V("罗格雷斯", Source.FAN),
+        ),
     ),
     Entry(
         name="玛卡利斯塔",
@@ -1357,6 +1716,10 @@ ENTRIES: list[Entry] = [
         en="Lusbel",
         cat="角色",
         full_name="路斯贝尔·卡拉德",
+        aliases=(
+            V("鲁斯贝尔", Source.FAN),
+            V("魯斯貝爾", Source.FAN),
+        ),
     ),
     Entry(
         name="基利安",
@@ -1373,6 +1736,7 @@ ENTRIES: list[Entry] = [
         ja="ウビルク",
         en="Ubilk",
         cat="角色",
+        aliases=(V("乌比尔克", Source.FAN),),
     ),
     Entry(
         name="荷奈特",
@@ -1380,6 +1744,7 @@ ENTRIES: list[Entry] = [
         ja="ホーネット",
         en="Hornet",
         cat="角色",
+        aliases=(V("霍奈特", Source.FAN),),
     ),
     Entry(
         name="伊德拉",
@@ -1388,6 +1753,7 @@ ENTRIES: list[Entry] = [
         en="Idra",
         cat="角色",
         full_name="伊德拉·米桑轧",
+        aliases=(V("伊多拉", Source.FAN),),
     ),
     Entry(
         name="玛里乌里",
@@ -1448,6 +1814,7 @@ ENTRIES: list[Entry] = [
         en="Gionis",
         cat="角色",
         full_name="吉奥尼斯·卢克尼卡",
+        aliases=(V("吉歐尼斯", Source.FAN),),
     ),
     Entry(
         name="兰德哈鲁",
@@ -1456,6 +1823,10 @@ ENTRIES: list[Entry] = [
         en="Randohal",
         cat="角色",
         full_name="兰德哈鲁·卢克尼卡",
+        aliases=(
+            V("兰德哈尔", Source.FAN),
+            V("蘭德哈爾", Source.FAN),
+        ),
     ),
     Entry(
         name="杰比聂尔",
@@ -1478,7 +1849,12 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         en="Chaosflame",
         cat="术语",
-        aliases=(V("混沌之炎", Source.FAN),),
+        aliases=(
+            V("混沌之炎", Source.FAN),
+            V("卡欧斯弗雷姆", Source.FAN),
+            V("卡歐斯弗萊姆", Source.FAN),
+            V("卡欧斯弗莱姆", Source.FAN),
+        ),
     ),
     Entry(
         name="梅佐雷亚",
@@ -1494,6 +1870,7 @@ ENTRIES: list[Entry] = [
         ja="ライゼル",
         en="Reisel",
         cat="角色",
+        aliases=(V("莱泽尔", Source.FAN),),
     ),
     Entry(
         name="巴罗伊",
@@ -1504,7 +1881,15 @@ ENTRIES: list[Entry] = [
         full_name="巴罗伊·费兹",
     ),
     Entry(
-        name="波多尔德", ja="ポートルート", en="Portroute", source=Source.OFFICIAL_HANS
+        name="波多尔德",
+        ja="ポートルート",
+        en="Portroute",
+        source=Source.OFFICIAL_HANS,
+        aliases=(
+            V("波特尔特", Source.FAN),
+            V("波特魯特", Source.FAN),
+            V("波特鲁特", Source.FAN),
+        ),
     ),
     Entry(
         name="昴",
@@ -1536,6 +1921,12 @@ ENTRIES: list[Entry] = [
         en="Natsuki Subaru",
         pattern="菜月(·)?昴",
         cat="角色",
+        aliases=(
+            V("菜月·昴", Source.FAN),
+            V("菜月昂", Source.FAN),
+            V("菜月.昴", Source.FAN),
+            V("莱月昴", Source.FAN),
+        ),
     ),
     Entry(
         name="安娜塔西亚",
@@ -1543,12 +1934,24 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         pattern="安娜(斯)?塔西亚",
         en="Anastasia",
+        aliases=(
+            V("安娜斯塔西娅", Source.FAN),
+            V("安娜斯塔西亚", Source.FAN),
+            V("安娜斯塔西婭", Source.FAN),
+            V("安娜塔西娅", Source.FAN),
+        ),
     ),
     Entry(
         name="培提奇乌斯",
         ja="ペテルギウス·ロマネコンティ",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("贝特鲁吉乌斯", Source.OFFICIAL_HANT),),
+        aliases=(
+            V("贝特鲁吉乌斯", Source.OFFICIAL_HANT),
+            V("培提尔其乌斯", Source.FAN),
+            V("培提其乌斯", Source.FAN),
+            V("培提尔奇乌斯", Source.FAN),
+            V("培堤其乌斯", Source.FAN),
+        ),
         pattern="培提(尔)?奇乌?斯",
         en="Petelgeuse",
     ),
@@ -1559,6 +1962,7 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         pattern="威尔海(鲁)?姆",
         en="Wilhelm",
+        aliases=(V("维尔海姆", Source.FAN),),
     ),
     Entry(
         name="莱因哈鲁特",
@@ -1566,6 +1970,15 @@ ENTRIES: list[Entry] = [
         full_name="莱因哈鲁特·梵·阿斯特雷亚",
         source=Source.OFFICIAL_HANS,
         en="Reinhard",
+        aliases=(
+            V("莱茵哈鲁特", Source.FAN),
+            V("萊茵哈魯特", Source.FAN),
+            V("莱因哈德", Source.FAN),
+            V("莱因哈路特", Source.FAN),
+            V("莱因哈特", Source.FAN),
+            V("菜因哈鲁特", Source.FAN),
+            V("萊茵哈鲁特", Source.FAN),
+        ),
     ),
     Entry(
         name="罗兹瓦尔",
@@ -1574,6 +1987,10 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         pattern="罗兹瓦尔?",
         en="Roswaal",
+        aliases=(
+            V("罗斯瓦尔", Source.FAN),
+            V("罗丝瓦尔", Source.FAN),
+        ),
     ),
     Entry(
         name="帕尔米拉",
@@ -1582,6 +1999,10 @@ ENTRIES: list[Entry] = [
         pattern="帕尔?米拉",
         ja="パルミラ",
         cat="角色",
+        aliases=(
+            V("帕米拉", Source.FAN),
+            V("帕蜜拉", Source.FAN),
+        ),
     ),
     Entry(
         name="加菲尔",
@@ -1590,6 +2011,10 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         pattern="加菲尔(?!丝|特|艾)",
         en="Garfiel",
+        aliases=(
+            V("嘉飛爾", Source.FAN),
+            V("嘉飞尔", Source.FAN),
+        ),
     ),
     Entry(
         name="拉菲尔",
@@ -1630,6 +2055,7 @@ ENTRIES: list[Entry] = [
         pattern="(?<!萨|伽|托|塞|贝|格|苏)拉姆(?!莉鲁)",
         ja="ラム",
         cat="角色",
+        aliases=(V("菈姆", Source.FAN),),
     ),
     Entry(
         name="贝尔托",
@@ -1648,12 +2074,17 @@ ENTRIES: list[Entry] = [
         ja="ティシュア·アストレア",
         cat="角色",
         full_name="提修亚·阿斯特雷亚",
+        aliases=(V("提修雅", Source.FAN),),
     ),
     Entry(
         name="凯迪",
         full_name="凯迪·穆塔特",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("凯地", Source.OFFICIAL_HANT),),
+        aliases=(
+            V("凯地", Source.OFFICIAL_HANT),
+            V("凯缇", Source.FAN),
+            V("凯蒂", Source.FAN),
+        ),
         en="Ketty",
         pattern="凯迪(?!尔|斯)",
         ja="ケティ·ムッタート",
@@ -1666,6 +2097,11 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         pattern="(?<!莱茵哈鲁)缇碧(?!翠)",
         en="Tivey",
+        aliases=(
+            V("提比", Source.FAN),
+            V("堤比", Source.FAN),
+            V("缇比", Source.FAN),
+        ),
     ),
     Entry(
         name="艾尔莎",
@@ -1674,6 +2110,7 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         pattern="艾尔莎(?!幕)",
         en="Elsa",
+        aliases=(V("艾尔萨", Source.FAN),),
     ),
     Entry(
         name="梅尔蒂",
@@ -1696,7 +2133,10 @@ ENTRIES: list[Entry] = [
         name="芙拉姆",
         source=Source.OFFICIAL_HANT,
         en="Flam",
-        aliases=(V("弗洛姆", Source.FAN),),
+        aliases=(
+            V("弗洛姆", Source.FAN),
+            V("弗拉姆", Source.FAN),
+        ),
         pattern="(?<!丢)芙拉姆",
         ja="フラム·レメンディス",
         cat="角色",
@@ -1721,6 +2161,7 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         pattern="(?<!法)拉塞尔",
         en="Russell",
+        aliases=(V("拉賽爾", Source.FAN),),
     ),
     Entry(
         name="多尔凯尔",
@@ -1745,6 +2186,7 @@ ENTRIES: list[Entry] = [
         pattern="潘多拉(?!顿)",
         ja="パンドラ",
         cat="角色",
+        aliases=(V("潘朵拉", Source.FAN),),
     ),
     Entry(
         name="希尔菲",
@@ -1762,6 +2204,10 @@ ENTRIES: list[Entry] = [
         source=Source.OFFICIAL_HANS,
         pattern="(?<!尤|德)里卡多(?!·霍夫曼)",
         en="Ricardo",
+        aliases=(
+            V("里卡德", Source.FAN),
+            V("李嘉图", Source.FAN),
+        ),
     ),
     Entry(
         name="杰乌斯",
@@ -1797,8 +2243,17 @@ ENTRIES: list[Entry] = [
         ja="グレイス·ミロード",
         cat="角色",
         full_name="格蕾丝·米洛德",
+        aliases=(V("葛蕾丝", Source.FAN),),
     ),
-    Entry(name="拉尔丰", ja="ラルフォン", source=Source.OFFICIAL_HANS),
+    Entry(
+        name="拉尔丰",
+        ja="ラルフォン",
+        source=Source.OFFICIAL_HANS,
+        aliases=(
+            V("拉尔冯", Source.FAN),
+            V("拉爾馮", Source.FAN),
+        ),
+    ),
     Entry(
         name="视风加护",
         source=Source.OFFICIAL_HANS,
@@ -1916,6 +2371,10 @@ ENTRIES: list[Entry] = [
         ja="シュルト·バーリエル",
         full_name="修尔特·跋利耶尔",
         source=Source.OFFICIAL_HANS,
+        aliases=(
+            V("舒尔特", Source.FAN),
+            V("舒爾特", Source.FAN),
+        ),
     ),
     Entry(
         name="基尔提",
@@ -1923,7 +2382,13 @@ ENTRIES: list[Entry] = [
         fuzzy=False,
         note="提 属多字组，p2o 展开误伤 基尔狄拉乌",
     ),
-    Entry(name="阿斯特雷亚", en="Astrea", ja="アストレア", source=Source.OFFICIAL_HANS),
+    Entry(
+        name="阿斯特雷亚",
+        en="Astrea",
+        ja="アストレア",
+        source=Source.OFFICIAL_HANS,
+        aliases=(V("阿斯特蕾亚", Source.FAN),),
+    ),
     Entry(
         name="蕾泽",
         ja="レーゼ",
@@ -1939,7 +2404,12 @@ ENTRIES: list[Entry] = [
         note="佐 属杰泽佐组，p2o 展开与 蕾泽 互撞并误伤 莱杰尔",
         aliases=(V("瑞佐", Source.OFFICIAL_HANT),),
     ),
-    Entry(name="米蒂安", ja="ミディアム·オコーネル", source=Source.OFFICIAL_HANS),
+    Entry(
+        name="米蒂安",
+        ja="ミディアム·オコーネル",
+        source=Source.OFFICIAL_HANS,
+        aliases=(V("米迪安", Source.FAN),),
+    ),
     Entry(
         name="阿拉基亚",
         ja="アラキア",
@@ -1955,7 +2425,11 @@ ENTRIES: list[Entry] = [
     Entry(
         name="贝亚子",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("贝阿子", Source.FAN), V("碧翠子", Source.FAN)),
+        aliases=(
+            V("贝阿子", Source.FAN),
+            V("碧翠子", Source.FAN),
+            V("贝雅子", Source.FAN),
+        ),
     ),
     Entry(
         name="爱蜜莉雅炭",
@@ -2004,7 +2478,10 @@ ENTRIES: list[Entry] = [
     Entry(
         name="施瓦兹",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("舒瓦茨", Source.FAN),),
+        aliases=(
+            V("舒瓦茨", Source.FAN),
+            V("施瓦茨", Source.FAN),
+        ),
         note="乐师 夏美·施瓦茨",
     ),
     Entry(
@@ -2018,7 +2495,11 @@ ENTRIES: list[Entry] = [
     Entry(
         name="奥尔菲",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("欧菲尔", Source.FAN),),
+        aliases=(
+            V("欧菲尔", Source.FAN),
+            V("欧尔菲", Source.FAN),
+            V("歐爾菲", Source.FAN),
+        ),
         ja="オルフェ",
         en="Orphe",
         cat="角色",
@@ -2081,7 +2562,15 @@ ENTRIES: list[Entry] = [
         en="Granhiert",
         ja="グランヒルテ",
         source=Source.OFFICIAL_HANS,
-        aliases=(V("格兰希尔特", Source.FAN),),
+        aliases=(
+            V("格兰希尔特", Source.FAN),
+            V("葛兰希尔特", Source.FAN),
+            V("格蘭希爾特", Source.FAN),
+            V("葛兰西尔特", Source.FAN),
+            V("葛蘭希爾特", Source.FAN),
+            V("葛蘭西爾特", Source.FAN),
+            V("格兰西尔特", Source.FAN),
+        ),
         note="艾尔莎·葛兰希尔黛；同名酒品牌",
     ),
     Entry(
@@ -2214,6 +2703,17 @@ ENTRIES: list[Entry] = [
         ja="エミリア",
         en="Emilia",
         cat="角色",
+        aliases=(
+            V("艾米莉娅", Source.FAN),
+            V("艾米莉亚", Source.FAN),
+            V("艾米利娅", Source.FAN),
+            V("爱蜜莉娅", Source.FAN),
+            V("艾米丽娅", Source.FAN),
+            V("艾米莉婭", Source.FAN),
+            V("爱蜜莉亚", Source.FAN),
+            V("艾米利亚", Source.FAN),
+            V("爱米莉娅", Source.FAN),
+        ),
     ),
     Entry(
         name="普勒阿得斯",
@@ -2312,6 +2812,11 @@ ENTRIES: list[Entry] = [
         ja="ギルダーク",
         source=Source.OFFICIAL_HANS,
         note="马可仕·吉尔达克",
+        aliases=(
+            V("吉尔达库", Source.FAN),
+            V("基爾達克", Source.FAN),
+            V("基尔达克", Source.FAN),
+        ),
     ),
     Entry(
         name="多纳",
