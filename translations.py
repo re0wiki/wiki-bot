@@ -22,18 +22,14 @@ ENTRIES: list[Entry] = [
         std="丝碧卡",
         ja="スピカ",
         en="Spica",
-        aliases=(
-            "丝琵卡",
-            "斯皮卡",
-        ),
+        aliases=("[丝斯絲][琵皮碧]卡",),
     ),
     Entry(
         std="亨克尔",
         ja="ハインケル·アストレア",
         en="Heinkel",
         aliases=(
-            "海因克尔",
-            "海因凯尔",
+            "海因[克凯凱]尔",
             "海因格",
         ),
         note="全名 亨克尔·阿斯特雷亚",
@@ -47,22 +43,14 @@ ENTRIES: list[Entry] = [
         std="佛拉基亚",
         ja="ヴォラキア",
         en="Vollachia",
-        aliases=(
-            "弗拉基亚",
-            "沃拉基亚",
-            "沃拉奇亚",
-            "佛拉奇亚",
-        ),
+        aliases=("[佛弗沃]拉[基奇]亚",),
         note="术语",
     ),
     Entry(
         std="库林德",
         ja="クリンド",
         en="Clind",
-        aliases=(
-            "柯林特",
-            "克林德",
-        ),
+        aliases=("[克库庫柯]林[德特]",),
         note="角色",
     ),
     Entry(
@@ -83,12 +71,7 @@ ENTRIES: list[Entry] = [
         std="艾美拉达",
         ja="エメラダ·ルグニカ",
         en="Emerada",
-        aliases=(
-            "爱梅拉妲",
-            "愛梅拉妲",
-            "埃梅拉达",
-            "爱美拉达",
-        ),
+        aliases=("[埃愛爱艾][梅美]拉[妲达達]",),
         note="角色；全名 艾美拉达·卢克尼卡",
     ),
     Entry(
@@ -119,10 +102,7 @@ ENTRIES: list[Entry] = [
     Entry(
         std="卡拉拉基",
         en="Kararagi",
-        aliases=(
-            "卡拉拉奇",
-            "卡拉拉吉",
-        ),
+        aliases=("卡拉拉[吉基奇]",),
         note="术语",
     ),
     Entry(
@@ -163,29 +143,14 @@ ENTRIES: list[Entry] = [
         std="塞西鲁斯",
         ja="セシルス·セグムント",
         en="Cecilus",
-        aliases=(
-            "塞西尔斯",
-            "塞西爾斯",
-            "瑟希魯斯",
-            "瑟希鲁斯",
-            "賽西魯斯",
-            "赛西尔斯",
-            "賽西爾斯",
-            "瑟西魯斯",
-        ),
+        aliases=("[塞瑟賽赛][希西][尔爾魯鲁]斯",),
         note="角色",
     ),
     Entry(
         std="塞格蒙德",
         ja="セグムント",
         en="Segmunt",
-        aliases=(
-            "塞格姆多",
-            "赛格蒙德",
-            "赛格蒙特",
-            "塞格蒙特",
-            "賽格蒙特",
-        ),
+        aliases=("[塞賽赛]格[姆蒙][多德特]",),
     ),
     Entry(
         std="夏乌拉",
@@ -197,10 +162,7 @@ ENTRIES: list[Entry] = [
         std="夏克纳尔",
         ja="シャクナール",
         en="Shaknar",
-        aliases=(
-            "夏库纳尔",
-            "夏庫納爾",
-        ),
+        aliases=("夏[克库庫][納纳][尔爾]",),
         note="角色",
     ),
     Entry(
@@ -214,9 +176,8 @@ ENTRIES: list[Entry] = [
         ja="キリタカ·ミューズ",
         en="Kiritaka",
         aliases=(
-            "基利塔卡",
+            "[基奇][利力]塔卡",
             "桐鹰",
-            "奇利塔卡",
         ),
         note="全名 奇力塔卡·缪斯",
     ),
@@ -236,11 +197,7 @@ ENTRIES: list[Entry] = [
         std="由里乌斯",
         ja="ユリウス·ユークリウス",
         en="Julius",
-        aliases=(
-            "尤里乌斯",
-            "尤里烏斯",
-            "尤利乌斯",
-        ),
+        aliases=("[尤由][利裏里][乌烏]斯",),
     ),
     Entry(
         std="尤克历乌斯",
@@ -267,10 +224,7 @@ ENTRIES: list[Entry] = [
         std="库乌德",
         ja="コンウッド·メラハウ",
         en="Conwood",
-        aliases=(
-            "康伍德",
-            "康吾德",
-        ),
+        aliases=("[库庫康][乌伍吾烏]德",),
         note="角色；全名 库乌德·梅拉乌",
     ),
     Entry(
@@ -283,32 +237,21 @@ ENTRIES: list[Entry] = [
         std="库珥修",
         ja="クルシュ·カルステン",
         en="Crusch",
-        aliases=(
-            "克鲁修",
-            "库尔修",
-            "库鲁修",
-            "克鲁奇",
-        ),
+        aliases=("[克库庫][尔爾珥魯鲁][修奇]",),
         note="角色；全名 库珥修·卡尔斯腾",
     ),
     Entry(
         std="库鲁刚",
         ja="クルガン",
         en="Kurgan",
-        aliases=(
-            "库尔刚",
-            "庫爾剛",
-        ),
+        aliases=("[库庫][尔爾魯鲁][刚剛]",),
         note="角色",
     ),
     Entry(
         std="弗里格尔",
         ja="フリューゲル",
         en="Flugel",
-        aliases=(
-            "弗琉盖尔",
-            "富鲁盖尔",
-        ),
+        aliases=("[富弗][琉裏里魯鲁][格盖蓋]尔",),
         note="角色",
     ),
     Entry(
@@ -342,10 +285,7 @@ ENTRIES: list[Entry] = [
         std="斯宾克斯",
         ja="スピンクス",
         en="Sphinx",
-        aliases=(
-            "斯芬克丝",
-            "史芬克丝",
-        ),
+        aliases=("[史斯][宾芬賓]克[丝斯絲]",),
         note="角色",
     ),
     Entry(
@@ -364,14 +304,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="普莉斯卡",
-        aliases=(
-            "普里斯卡",
-            "普莉絲卡",
-            "普莉丝卡",
-            "普丽斯卡",
-            "普利斯卡",
-            "普利絲卡",
-        ),
+        aliases=("普[丽利莉裏里麗][丝斯絲]卡",),
     ),
     Entry(
         std="李凯尔特",
@@ -396,10 +329,7 @@ ENTRIES: list[Entry] = [
         std="格拉希丝",
         ja="グラシス·レメンディス",
         en="Grassis",
-        aliases=(
-            "葛拉西絲",
-            "格拉希斯",
-        ),
+        aliases=("[格葛]拉[希西][丝斯絲]",),
         note="角色；全名 格拉希丝·莱蒙蒂斯",
     ),
     Entry(
@@ -430,10 +360,7 @@ ENTRIES: list[Entry] = [
         std="欧米茄",
         ja="オメガ",
         en="Omega",
-        aliases=(
-            "欧米伽",
-            "歐米伽",
-        ),
+        aliases=("[欧歐]米[伽茄]",),
         note="角色",
     ),
     Entry(
@@ -445,21 +372,14 @@ ENTRIES: list[Entry] = [
         std="波尔多",
         ja="ボルドー·ツェルゲフ",
         en="Bordeaux",
-        aliases=(
-            "波爾德",
-            "波尔德",
-            "波鲁多",
-        ),
+        aliases=("波[尔爾魯鲁][多德]",),
         note="全名 波尔多·切格夫",
     ),
     Entry(
         std="波尔肯尼卡",
         ja="ボルカニカ",
         en="Volcanica",
-        aliases=(
-            "波尔卡尼卡",
-            "波爾卡尼卡",
-        ),
+        aliases=("波[尔爾][卡肯]尼卡",),
         note="角色",
     ),
     Entry(
@@ -472,23 +392,14 @@ ENTRIES: list[Entry] = [
         std="特雷西亚",
         ja="テレシア·ヴァン·アストレア",
         en="Theresia",
-        aliases=(
-            "特蕾西亚",
-            "特蕾西亞",
-            "特蕾西娅",
-            "特蕾希雅",
-            "特蕾西雅",
-        ),
+        aliases=("特[蕾雷][希西][亚亞娅婭雅]",),
         note="角色；全名 特雷西亚·梵·阿斯特雷亚",
     ),
     Entry(
         std="玛洛妮",
         ja="マローネ·リズボン",
         en="Marone",
-        aliases=(
-            "玛萝涅",
-            "马罗妮",
-        ),
+        aliases=("[玛瑪馬马][洛罗羅萝蘿][妮涅]",),
         note="全名 玛洛妮·里兹本",
     ),
     Entry(
@@ -531,8 +442,7 @@ ENTRIES: list[Entry] = [
         en="Beatrice",
         aliases=(
             "贝阿托莉丝",
-            "贝翠丝",
-            "碧翠斯",
+            "[碧貝贝]翠[丝斯絲]",
         ),
         note="角色",
     ),
@@ -552,11 +462,7 @@ ENTRIES: list[Entry] = [
         std="提丰",
         ja="テュフォン",
         en="Typhon",
-        aliases=(
-            "缇丰",
-            "堤丰",
-            "緹豐",
-        ),
+        aliases=("[堤提緹缇][丰豐]",),
         note="角色",
     ),
     Entry(
@@ -587,10 +493,7 @@ ENTRIES: list[Entry] = [
         std="加德纳",
         ja="カドナー",
         en="Cadner",
-        aliases=(
-            "卡德纳",
-            "卡多納",
-        ),
+        aliases=("[加卡][多德][納纳]",),
     ),
     Entry(
         std="艾力欧尔大森林",
@@ -615,17 +518,7 @@ ENTRIES: list[Entry] = [
         std="弗雷德莉卡",
         ja="フレデリカ·バウマン",
         en="Frederica",
-        aliases=(
-            "芙蕾德莉卡",
-            "法蘭黛莉卡",
-            "法兰黛莉卡",
-            "芙蕾黛莉卡",
-            "弗雷德丽卡",
-            "芙蕾德里卡",
-            "芙蕾德利卡",
-            "弗雷德里卡",
-            "芙蕾德丽卡",
-        ),
+        aliases=("[弗法芙][兰蕾蘭雷][德黛][丽利莉裏里麗]卡",),
         note="角色",
     ),
     Entry(
@@ -656,23 +549,14 @@ ENTRIES: list[Entry] = [
         std="莎克拉",
         ja="サクラ·エレメント",
         en="Sakura",
-        aliases=(
-            "萨克拉",
-            "萨库拉",
-        ),
+        aliases=("[莎萨薩][克库庫]拉",),
         note="角色；全名 莎克拉·艾雷梅特",
     ),
     Entry(
         std="莎缇菈",
         ja="サテラ",
         en="Satella",
-        aliases=(
-            "莎缇拉",
-            "莎提拉",
-            "纱提拉",
-            "莎緹拉",
-            "沙提拉",
-        ),
+        aliases=("[沙紗纱莎][提緹缇][拉菈]",),
         note="角色",
     ),
     Entry(
@@ -705,12 +589,7 @@ ENTRIES: list[Entry] = [
         std="菲莉丝",
         ja="フェリックス·アーガイル",
         en="Ferris",
-        aliases=(
-            "菲利斯",
-            "菲利丝",
-            "菲莉斯",
-            "菲利絲",
-        ),
+        aliases=("菲[利莉][丝斯絲]",),
         note="角色；全名 菲莉丝·阿盖尔",
     ),
     Entry(
@@ -729,21 +608,14 @@ ENTRIES: list[Entry] = [
         std="蒂亚斯",
         ja="ディアス·レプンツォ·エレマンソ·オプレーン·ファッツバルム六世",
         en="Dias",
-        aliases=(
-            "迪亚斯",
-            "迪亞斯",
-        ),
+        aliases=("[蒂迪][亚亞]斯",),
         note="角色",
     ),
     Entry(
         std="西里乌斯",
         ja="シリウス·ロマネコンティ",
         en="Sirius",
-        aliases=(
-            "席里乌斯",
-            "西莉乌斯",
-            "敘呂厄斯",
-        ),
+        aliases=("[席敘西][呂莉裏里][乌厄烏]斯",),
     ),
     Entry(
         std="罗曼尼康帝",
@@ -760,22 +632,14 @@ ENTRIES: list[Entry] = [
         std="加雷克",
         ja="ギャレク·トンプソン",
         en="Garek",
-        aliases=(
-            "加列克",
-            "贾雷克",
-        ),
+        aliases=("[加賈贾][列雷]克",),
         note="角色；全名 加雷克·汤普森",
     ),
     Entry(
         std="塞赫美特",
         ja="セクメト",
         en="Sekhmet",
-        aliases=(
-            "赛赫麦特",
-            "塞赫麦特",
-            "赛赫梅特",
-            "賽赫麥特",
-        ),
+        aliases=("[塞賽赛]赫[梅美麥麦]特",),
         note="角色",
     ),
     Entry(
@@ -860,11 +724,7 @@ ENTRIES: list[Entry] = [
         std="雷格鲁斯",
         ja="レグルス·コルニアス",
         en="Regulus",
-        aliases=(
-            "雷古勒斯",
-            "雷格勒斯",
-            "雷古鲁斯",
-        ),
+        aliases=("雷[古格][勒魯鲁]斯",),
         note="角色；字序调换（格鲁/古勒），走精确对",
     ),
     Entry(
@@ -880,24 +740,13 @@ ENTRIES: list[Entry] = [
         std="鲁伊",
         ja="ルイ·アルネブ",
         en="Rui",
-        aliases=(
-            "露伊",
-            "路伊",
-            "路易",
-        ),
+        aliases=("[路露魯鲁][伊易]",),
     ),
     Entry(
         std="卢克尼卡",
         ja="ルグニカ",
         en="Lugunica",
-        aliases=(
-            "露格尼卡",
-            "鲁古尼卡",
-            "卢古尼卡",
-            "鲁格尼卡",
-            "鲁谷尼卡",
-            "卢格尼卡",
-        ),
+        aliases=("[卢盧露魯鲁][克古格谷]尼卡",),
         note="术语",
     ),
     Entry(
@@ -923,10 +772,7 @@ ENTRIES: list[Entry] = [
     Entry(
         std="基尔狄拉乌",
         en="Witchbeast",
-        aliases=(
-            "基尔提拉乌",
-            "基爾提拉烏",
-        ),
+        aliases=("基[尔爾][提狄]拉[乌烏]",),
         note="术语",
     ),
     Entry(
@@ -943,21 +789,14 @@ ENTRIES: list[Entry] = [
     Entry(
         std="特利亚斯",
         en="Trias",
-        aliases=(
-            "特里亚斯",
-            "托利亞斯",
-            "托利亚斯",
-        ),
+        aliases=("[托特][利裏里][亚亞]斯",),
         note="威尔海姆旧姓",
     ),
     Entry(
         std="欧德古勒斯",
         ja="オドグラス",
         en="Odglass",
-        aliases=(
-            "歐德格拉斯",
-            "欧德古拉斯",
-        ),
+        aliases=("[欧歐]德[古格][勒拉]斯",),
         note="角色",
     ),
     Entry(
@@ -967,11 +806,7 @@ ENTRIES: list[Entry] = [
         std="丁赛尔",
         ja="ティンゼル",
         en="Tinzel",
-        aliases=(
-            "汀泽尔",
-            "霆杰尔",
-            "汀塞尔",
-        ),
+        aliases=("[丁汀霆][傑塞杰泽澤賽赛]尔",),
         note="加菲尔·丁赛尔",
     ),
     Entry(
@@ -989,26 +824,14 @@ ENTRIES: list[Entry] = [
     Entry(
         std="科斯茨尔",
         en="Costuul",
-        aliases=(
-            "克斯泽尔",
-            "柯司兹尔",
-            "柯斯兹尔",
-            "柯司茲爾",
-            "寇斯兹尔",
-            "柯丝兹尔",
-        ),
+        aliases=("[克寇柯科][丝司斯絲][兹泽澤茨茲][尔爾]",),
         note="术语",
     ),
     Entry(
         std="福尔图娜",
         ja="フォルトナ",
         en="Fortuna",
-        aliases=(
-            "菲尔托娜",
-            "福尔图纳",
-            "佛爾特娜",
-            "福尔托娜",
-        ),
+        aliases=("[佛福菲][尔爾][图圖托特][娜納纳]",),
         note="角色",
     ),
     Entry(
@@ -1079,11 +902,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="巴德哈姆",
-        aliases=(
-            "巴多海姆",
-            "巴德海姆",
-            "巴多哈姆",
-        ),
+        aliases=("巴[多德][哈海]姆",),
     ),
     Entry(
         std="托斯卡",
@@ -1100,49 +919,31 @@ ENTRIES: list[Entry] = [
     Entry(
         std="弗兰德斯",
         en="Flanders",
-        aliases=(
-            "芙兰达兹",
-            "佛兰德斯",
-        ),
+        aliases=("[佛弗芙]兰[德达達][兹斯茲]",),
     ),
     Entry(
         std="米杰尔达",
         ja="ミゼルダ·シュドラク",
         en="Mizelda",
-        aliases=(
-            "米杰耳怛",
-            "米泽尔妲",
-            "米泽尔达",
-        ),
+        aliases=("米[傑杰泽澤][尔爾耳][妲怛达達]",),
     ),
     Entry(
         std="修德拉格",
         ja="シュドラク",
         en="Shudrak",
-        aliases=(
-            "貅德拉格",
-            "修德拉克",
-            "修多拉克",
-        ),
+        aliases=("[修貅][多德]拉[克格]",),
     ),
     Entry(
         std="塔里塔",
         ja="タリッタ·シュドラク",
         en="Taritta",
-        aliases=(
-            "塔立塔",
-            "塔丽塔",
-            "塔莉塔",
-        ),
+        aliases=("塔[丽立莉裏里麗]塔",),
     ),
     Entry(
         std="乌塔卡塔",
         ja="ウタカタ·シュドラク",
         en="Utakata",
-        aliases=(
-            "乌卡塔卡",
-            "巫它卡它",
-        ),
+        aliases=("[乌巫烏][卡塔它][卡塔][卡塔它]",),
         note="角色",
     ),
     Entry(
@@ -1210,23 +1011,14 @@ ENTRIES: list[Entry] = [
         std="塞丽娜",
         ja="セリーナ·ドラクロイ",
         en="Serena",
-        aliases=(
-            "瑟莉娜",
-            "赛莉娜",
-            "賽麗娜",
-            "赛丽娜",
-            "塞利纳",
-        ),
+        aliases=("[塞瑟賽赛][丽利莉麗][娜納纳]",),
         note="全名 塞丽娜·杜拉克罗伊",
     ),
     Entry(
         std="卡楚娅",
         ja="カチュア·オーレリー",
         en="Katya",
-        aliases=(
-            "卡秋娅",
-            "卡楚雅",
-        ),
+        aliases=("卡[楚秋][娅婭雅]",),
         note="角色；全名 卡楚娅·奥雷利",
     ),
     Entry(
@@ -1235,8 +1027,7 @@ ENTRIES: list[Entry] = [
         en="Farsale",
         aliases=(
             "法赛鲁",
-            "法尔赛路",
-            "法尔塞尔",
+            "法尔[塞賽赛][尔爾路]",
         ),
         note="角色；全名 法尔塞路·卢克尼卡",
     ),
@@ -1244,10 +1035,7 @@ ENTRIES: list[Entry] = [
         std="奇夏",
         ja="チシャ·ゴールド",
         en="Chisha",
-        aliases=(
-            "茶沙",
-            "齐夏",
-        ),
+        aliases=("[奇茶齊齐][夏沙]",),
     ),
     Entry(
         std="秀佐",
@@ -1265,10 +1053,7 @@ ENTRIES: list[Entry] = [
         std="巴鲁罗伊",
         ja="バルロイ·テメグリフ",
         en="Balleroy",
-        aliases=(
-            "巴尔罗伊",
-            "巴爾羅伊",
-        ),
+        aliases=("巴[尔爾魯鲁][罗羅]伊",),
         note="全名 巴鲁罗伊·提美格里福",
     ),
     Entry(
@@ -1281,29 +1066,19 @@ ENTRIES: list[Entry] = [
         std="哈格奈",
         ja="ハガネ",
         en="Hagane",
-        aliases=(
-            "哈葛内",
-            "哈葛內",
-        ),
+        aliases=("哈[格葛][內内奈]",),
     ),
     Entry(
         std="古尔比",
         ja="グルービー·ガムレット",
         en="Groovy",
-        aliases=(
-            "葛路比",
-            "古鲁比",
-            "格鲁比",
-        ),
+        aliases=("[古格葛][尔爾路魯鲁]比",),
     ),
     Entry(
         std="加姆莱特",
         ja="ガムレット",
         en="Gumlet",
-        aliases=(
-            "格姆雷特",
-            "加姆雷特",
-        ),
+        aliases=("[加格]姆[莱萊雷]特",),
     ),
     Entry(
         std="罗德利格斯",
@@ -1340,8 +1115,7 @@ ENTRIES: list[Entry] = [
         aliases=(
             "恩夏尔(?!德)",
             "艾沙尔",
-            "艾夏尔特",
-            "艾莎尔特",
+            "[恩艾][夏莎]尔[德特]",
         ),
     ),
     Entry(
@@ -1372,8 +1146,7 @@ ENTRIES: list[Entry] = [
         en="Irulux",
         aliases=(
             "依鲁鲁库斯",
-            "伊鲁克斯",
-            "伊鲁库斯",
+            "伊鲁[克库庫]斯",
         ),
     ),
     Entry(
@@ -1438,10 +1211,7 @@ ENTRIES: list[Entry] = [
         std="罗格蕾丝",
         ja="ログレス·ハイアット",
         en="Logres",
-        aliases=(
-            "羅格雷斯",
-            "罗格雷斯",
-        ),
+        aliases=("[罗羅]格[蕾雷][丝斯絲]",),
     ),
     Entry(
         std="玛卡利斯塔",
@@ -1455,20 +1225,14 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="慕斯兰",
-        aliases=(
-            "姆斯朗",
-            "穆斯兰",
-        ),
+        aliases=("[姆慕穆]斯[兰朗蘭]",),
         note="慕斯兰·卡拉德",
     ),
     Entry(
         std="路斯贝尔",
         ja="ルスベル·カラード",
         en="Lusbel",
-        aliases=(
-            "鲁斯贝尔",
-            "魯斯貝爾",
-        ),
+        aliases=("[路魯鲁]斯[貝贝][尔爾]",),
         note="角色；全名 路斯贝尔·卡拉德",
     ),
     Entry(
@@ -1508,10 +1272,7 @@ ENTRIES: list[Entry] = [
         std="马泽里安",
         ja="マゼラン·スーウェン",
         en="Mazeran",
-        aliases=(
-            "马泽兰",
-            "马杰朗",
-        ),
+        aliases=("马[傑杰泽澤][兰朗蘭]",),
         note="角色；全名 马泽里安·苏文",
     ),
     Entry(
@@ -1551,10 +1312,7 @@ ENTRIES: list[Entry] = [
         std="兰德哈鲁",
         ja="ランドハル·ルグニカ",
         en="Randohal",
-        aliases=(
-            "兰德哈尔",
-            "蘭德哈爾",
-        ),
+        aliases=("[兰蘭]德哈[尔爾魯鲁]",),
         note="角色；全名 兰德哈鲁·卢克尼卡",
     ),
     Entry(
@@ -1574,9 +1332,7 @@ ENTRIES: list[Entry] = [
         en="Chaosflame",
         aliases=(
             "混沌之炎",
-            "卡欧斯弗雷姆",
-            "卡歐斯弗萊姆",
-            "卡欧斯弗莱姆",
+            "卡[欧歐]斯[弗福][莱萊雷]姆",
         ),
         note="术语",
     ),
@@ -1604,11 +1360,7 @@ ENTRIES: list[Entry] = [
         std="波多尔德",
         ja="ポートルート",
         en="Portroute",
-        aliases=(
-            "波特尔特",
-            "波特魯特",
-            "波特鲁特",
-        ),
+        aliases=("波[多特][尔爾魯鲁][德特]",),
     ),
     Entry(
         std="昴",
@@ -1629,12 +1381,8 @@ ENTRIES: list[Entry] = [
         ja="ナツキ·スバル",
         en="Natsuki Subaru",
         aliases=(
-            "菜月·昴",
-            "菜月昂",
-            "菜月.昴",
-            "菜月，昴",
-            "菜月．昴",
-            "莱月昴",
+            "菜月[.·，．]昴",
+            "[莱菜萊]月[昂昴]",
         ),
         note="角色",
     ),
@@ -1643,9 +1391,7 @@ ENTRIES: list[Entry] = [
         ja="アナスタシア·ホーシン",
         en="Anastasia",
         aliases=(
-            "安娜斯塔西娅",
-            "安娜斯塔西亚",
-            "安娜斯塔西婭",
+            "安娜斯塔西[亚亞娅婭]",
             "安娜塔西娅",
         ),
     ),
@@ -1654,11 +1400,8 @@ ENTRIES: list[Entry] = [
         ja="ペテルギウス·ロマネコンティ",
         en="Petelgeuse",
         aliases=(
-            "贝特鲁吉乌斯",
-            "培提尔其乌斯",
-            "培提其乌斯",
-            "培提尔奇乌斯",
-            "培堤其乌斯",
+            "[培貝贝][提特][尔爾魯鲁][其吉奇]乌斯",
+            "培[堤提][其奇]乌斯",
         ),
     ),
     Entry(
@@ -1673,13 +1416,8 @@ ENTRIES: list[Entry] = [
         ja="ラインハルト·ヴァン·アストレア",
         en="Reinhard",
         aliases=(
-            "莱茵哈鲁特",
-            "萊茵哈魯特",
-            "莱因哈德",
-            "莱因哈路特",
-            "莱因哈特",
-            "菜因哈鲁特",
-            "萊茵哈鲁特",
+            "[莱菜萊][因茵]哈[路魯鲁]特",
+            "莱因哈[德特]",
         ),
         note="全名 莱因哈鲁特·梵·阿斯特雷亚",
     ),
@@ -1689,8 +1427,7 @@ ENTRIES: list[Entry] = [
         en="Roswaal",
         aliases=(
             "罗兹瓦(?!尔)",
-            "罗斯瓦尔",
-            "罗丝瓦尔",
+            "罗[丝兹斯絲茲]瓦尔",
         ),
         note="全名 罗兹瓦尔·L·梅札斯",
     ),
@@ -1698,20 +1435,14 @@ ENTRIES: list[Entry] = [
         std="帕尔米拉",
         ja="パルミラ",
         en="Palmyra",
-        aliases=(
-            "帕米拉",
-            "帕蜜拉",
-        ),
+        aliases=("帕[米蜜]拉",),
         note="角色",
     ),
     Entry(
         std="加菲尔",
         ja="ガーフィール·ティンゼル",
         en="Garfiel",
-        aliases=(
-            "嘉飛爾",
-            "嘉飞尔",
-        ),
+        aliases=("[加嘉][菲飛飞][尔爾]",),
         note="全名 加菲尔·丁赛尔",
     ),
     Entry(
@@ -1759,22 +1490,14 @@ ENTRIES: list[Entry] = [
         std="凯迪",
         ja="ケティ·ムッタート",
         en="Ketty",
-        aliases=(
-            "凯地",
-            "凯缇",
-            "凯蒂",
-        ),
+        aliases=("凯[地緹缇蒂迪]",),
         note="角色；全名 凯迪·穆塔特",
     ),
     Entry(
         std="缇碧",
         ja="ティビー·パールバトン",
         en="Tivey",
-        aliases=(
-            "提比",
-            "堤比",
-            "缇比",
-        ),
+        aliases=("[堤提緹缇][比碧]",),
         note="全名 缇碧·帕尔巴顿",
     ),
     Entry(
@@ -1800,10 +1523,7 @@ ENTRIES: list[Entry] = [
         std="芙拉姆",
         ja="フラム·レメンディス",
         en="Flam",
-        aliases=(
-            "弗洛姆",
-            "弗拉姆",
-        ),
+        aliases=("[弗芙][拉洛]姆",),
         note="角色；全名 芙拉姆·莱蒙蒂斯",
     ),
     Entry(
@@ -1850,10 +1570,7 @@ ENTRIES: list[Entry] = [
         std="里卡多",
         ja="リカード·ウェルキン",
         en="Ricardo",
-        aliases=(
-            "里卡德",
-            "李嘉图",
-        ),
+        aliases=("[李裏里][卡嘉][图圖多德]",),
         note="全名 里卡多·威尔金",
     ),
     Entry(
@@ -1886,27 +1603,18 @@ ENTRIES: list[Entry] = [
     Entry(
         std="拉尔丰",
         ja="ラルフォン",
-        aliases=(
-            "拉尔冯",
-            "拉爾馮",
-        ),
+        aliases=("拉[尔爾][丰冯豐馮]",),
     ),
     Entry(
         std="视风加护",
-        aliases=(
-            "风见的加护",
-            "视风的加护",
-        ),
+        aliases=("[視视風风][見见風风]的加护",),
         note="术语；库珥修的加护",
     ),
     Entry(
         std="阿内芙",
         ja="アルネブ",
         en="Arneb",
-        aliases=(
-            "阿尔内布",
-            "亚尔聂博",
-        ),
+        aliases=("[亚亞阿]尔[內内聂聶][博布]",),
     ),
     Entry(
         std="莉雅",
@@ -1935,20 +1643,14 @@ ENTRIES: list[Entry] = [
         std="檀座",
         ja="タンザ",
         en="Tanza",
-        aliases=(
-            "坦萨",
-            "貚纱",
-        ),
+        aliases=("[坦檀貚][座紗纱萨薩]",),
         note="角色",
     ),
     Entry(
         std="保莉",
         ja="ホーリィ·シュドラク",
         en="Holly",
-        aliases=(
-            "荷莉",
-            "禾力",
-        ),
+        aliases=("[保禾荷][力莉]",),
     ),
     Entry(
         std="雷姆",
@@ -1986,10 +1688,7 @@ ENTRIES: list[Entry] = [
     Entry(
         std="修尔特",
         ja="シュルト·バーリエル",
-        aliases=(
-            "舒尔特",
-            "舒爾特",
-        ),
+        aliases=("[修舒][尔爾]特",),
         note="全名 修尔特·跋利耶尔",
     ),
     Entry(
@@ -2027,11 +1726,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="贝亚子",
-        aliases=(
-            "贝阿子",
-            "碧翠子",
-            "贝雅子",
-        ),
+        aliases=("[碧貝贝][亚亞翠阿雅]子",),
     ),
     Entry(
         std="爱蜜莉雅炭",
@@ -2059,39 +1754,26 @@ ENTRIES: list[Entry] = [
         std="缪斯",
         ja="ミューズ",
         en="Muse",
-        aliases=(
-            "谬丝",
-            "谬兹",
-        ),
+        aliases=("[繆缪謬谬][丝兹斯絲茲]",),
         note="奇力塔卡·缪斯/缪斯商会",
     ),
     Entry(
         std="施瓦兹",
-        aliases=(
-            "舒瓦茨",
-            "施瓦茨",
-        ),
+        aliases=("[施舒]瓦[兹茨茲]",),
         note="乐师 夏美·施瓦茨",
     ),
     Entry(
         std="艾力欧尔",
         ja="エリオール",
         en="Elior",
-        aliases=(
-            "艾利奥尔",
-            "艾利欧尔",
-        ),
+        aliases=("艾[利力][奥奧欧歐]尔",),
         note="艾力欧尔大森林",
     ),
     Entry(
         std="奥尔菲",
         ja="オルフェ",
         en="Orphe",
-        aliases=(
-            "欧菲尔",
-            "欧尔菲",
-            "歐爾菲",
-        ),
+        aliases=("[奥奧欧歐][尔爾菲][尔爾菲]",),
         note="角色",
     ),
     Entry(
@@ -2113,10 +1795,7 @@ ENTRIES: list[Entry] = [
         std="米尔德",
         ja="ミルデ·アーラム",
         en="Milde",
-        aliases=(
-            "米路德",
-            "米尔黛",
-        ),
+        aliases=("米[尔爾路][德黛]",),
         note="角色；全名 米尔德·阿拉姆",
     ),
     Entry(
@@ -2137,15 +1816,7 @@ ENTRIES: list[Entry] = [
         std="葛兰希尔黛",
         ja="グランヒルテ",
         en="Granhiert",
-        aliases=(
-            "格兰希尔特",
-            "葛兰希尔特",
-            "格蘭希爾特",
-            "葛兰西尔特",
-            "葛蘭希爾特",
-            "葛蘭西爾特",
-            "格兰西尔特",
-        ),
+        aliases=("[格葛][兰蘭][希西][尔爾][特黛]",),
         note="艾尔莎·葛兰希尔黛；同名酒品牌",
     ),
     Entry(
@@ -2235,12 +1906,7 @@ ENTRIES: list[Entry] = [
         std="{{Ringa}}",
         ja="リンガ",
         en="Appa",
-        aliases=(
-            "淋果",
-            "凛果",
-            "萍果",
-            "平果",
-        ),
+        aliases=("[凛凜平淋萍]果",),
         note="术语",
     ),
     Entry(
@@ -2312,10 +1978,7 @@ ENTRIES: list[Entry] = [
         std="梵·阿斯特雷亚",
         ja="ヴァン·アストレア",
         en="van Astrea",
-        aliases=(
-            "范·阿斯特雷亚",
-            "范·阿斯特雷亞",
-        ),
+        aliases=("[梵範范]·阿斯特雷[亚亞]",),
         note="阿斯特雷亚家姓氏段；范/梵 均不在任何相似组，只走全名段精确对；范 的繁体 wiki 用 范（OpenCC s2t 误产 範），故繁体写法显式登记",
     ),
     Entry(
@@ -2347,11 +2010,7 @@ ENTRIES: list[Entry] = [
         std="吉尔达克",
         ja="ギルダーク",
         en="Gildark",
-        aliases=(
-            "吉尔达库",
-            "基爾達克",
-            "基尔达克",
-        ),
+        aliases=("[吉基][尔爾][达達][克库庫]",),
         note="马可仕·吉尔达克",
     ),
     Entry(
@@ -2363,12 +2022,7 @@ ENTRIES: list[Entry] = [
         std="弗尔芙",
         ja="フルフー",
         en="Frufoo",
-        aliases=(
-            "芙鲁芙",
-            "弗鲁弗",
-            "弗鲁夫",
-            "忽尔芙",
-        ),
+        aliases=("[弗忽芙][尔爾魯鲁][夫弗芙]",),
         note="角色",
     ),
     Entry(
@@ -2400,21 +2054,14 @@ ENTRIES: list[Entry] = [
         std="拉珍斯",
         ja="ラチンス",
         en="Rachins",
-        aliases=(
-            "拉琴斯",
-            "拉钦斯",
-        ),
+        aliases=("拉[欽珍琴钦]斯",),
         note="角色；阿珍 真名；称呼与真名不互转",
     ),
     Entry(
         std="汉巴力",
         ja="カンバリー",
         en="Camberley",
-        aliases=(
-            "坎伯里",
-            "康巴利",
-            "汉巴利",
-        ),
+        aliases=("[坎康汉漢][伯巴][利力裏里]",),
         note="角色；阿汉 真名（官简）；汉巴利 为台版写法",
     ),
     Entry(
@@ -2428,10 +2075,7 @@ ENTRIES: list[Entry] = [
         std="卢安娜",
         ja="ルアンナ·アストレア",
         en="Louanna",
-        aliases=(
-            "露安娜",
-            "露昂娜",
-        ),
+        aliases=("[卢盧露][安昂]娜",),
     ),
     Entry(
         std="狄加",
@@ -2682,10 +2326,7 @@ ENTRIES: list[Entry] = [
     Entry(
         std="切格夫队",
         en="Zergev Squadron",
-        aliases=(
-            "卓格夫小队",
-            "切格夫小队",
-        ),
+        aliases=("[切卓]格夫小队",),
         note="术语",
     ),
     Entry(
@@ -2974,10 +2615,7 @@ ENTRIES: list[Entry] = [
         std="梅拉乌",
         ja="メラハウ",
         en="Melahau",
-        aliases=(
-            "梅拉豪",
-            "梅拉浩",
-        ),
+        aliases=("梅拉[乌浩烏豪]",),
         note="角色；姓：库乌德",
     ),
     Entry(
