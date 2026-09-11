@@ -108,7 +108,7 @@ def test_entries_no_duplicate_names():
 def test_aliases_no_collision():
     """别名：不重复登记、不撞任何标准名。
 
-    带字符类 pattern 的别名不抽取代表形，展开全部组合逐个检测。
+    带字符类写法的别名不抽取代表形，展开全部组合逐个检测。
     """
     names = {e.std.text for e in ENTRIES}
     seen = {}
@@ -161,16 +161,6 @@ def test_variant_annotations_valid():
                 continue
             if not isinstance(a.source, translations.Source):
                 bad.append(f"{e.std.text} 的别名 {a.text} source={a.source!r}")
-    assert not bad, bad
-
-
-def test_pattern_matches_base_text():
-    """一致性：条目 pattern 必须能匹配其规范名（别名 text/pattern 已合并，无别名侧断言）。"""
-    bad = [
-        f"{e.std.text} 的 pattern 不匹配 name"
-        for e in ENTRIES
-        if e.std.pattern and not re.search(p2st(e.std.pattern), e.std.text)
-    ]
     assert not bad, bad
 
 

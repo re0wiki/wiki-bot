@@ -1,8 +1,8 @@
 """译名表数据（唯一权威）。
 
 逻辑（p2st/替换链装配）在 user-fixes.py。本文件只放数据：
-- ENTRIES：标准译名表（别名精确对按此顺序；名字规则生成时按目标长度降序、长匹配优先）；pattern 非空时用于生成匹配规则；
-- aliases：显式别名（名字规则只做 p2st 简繁展开，非简繁的异写一律登记在此）；pattern 挂 guard 正则（经 p2st 简繁展开），别名位于更长他名内部时防子串误伤
+- ENTRIES：标准译名表（别名精确对按此顺序；名字规则生成时按目标长度降序、长匹配优先）；
+- aliases：显式别名（名字规则只做 p2st 简繁展开，非简繁的异写一律登记在此）；写法需挂 guard 正则或字符类时直接把正则形式作为别名 text（经 p2st 简繁展开），别名位于更长他名内部时防子串误伤
 ja/en/cat 供 LLM 翻译参考（英翻中提取英文词即可定位译名）（re0-corpus 侧审查管线也读本文件），尽力填充、可空。
 """
 
@@ -19,7 +19,6 @@ class Source(StrEnum):
 class Variant(NamedTuple):
     text: str  # 写法（字面）或匹配模式（含 `[`/`(?` 正则构造时按正则解释，经 p2st 简繁展开）
     source: Source
-    pattern: str = ""  # 仅 std 使用：规范名的可选匹配器（别名一律把 pattern 并入 text）
 
 
 V = Variant
@@ -671,7 +670,7 @@ ENTRIES: list[Entry] = [
         ),
     ),
     Entry(
-        std=V("鲍曼", Source.OFFICIAL_HANS, pattern="鲍(尔)?曼"),
+        std=V("鲍曼", Source.OFFICIAL_HANS),
         ja="バウマン",
         en="Baumann",
         aliases=(V("鲍尔曼", Source.FAN),),
@@ -1402,10 +1401,11 @@ ENTRIES: list[Entry] = [
         aliases=(V("马德林", Source.FAN),),
     ),
     Entry(
-        std=V("恩夏尔德", Source.OFFICIAL_HANS, pattern="恩夏尔德?"),
+        std=V("恩夏尔德", Source.OFFICIAL_HANS),
         ja="エッシャルト",
         en="Eschart",
         aliases=(
+            V("恩夏尔(?!德)", Source.FAN),
             V("艾沙尔", Source.FAN),
             V("艾夏尔特", Source.FAN),
             V("艾莎尔特", Source.FAN),
@@ -1418,7 +1418,7 @@ ENTRIES: list[Entry] = [
         cat="角色",
     ),
     Entry(
-        std=V("丹克肯", Source.OFFICIAL_HANS, pattern="丹克(尔)?肯"),
+        std=V("丹克肯", Source.OFFICIAL_HANS),
         ja="ダンクルケン",
         en="Dunkelkenn",
         note="奥尔巴特·丹克肯",
@@ -1434,7 +1434,7 @@ ENTRIES: list[Entry] = [
         aliases=(V("卡夫玛", Source.FAN),),
     ),
     Entry(
-        std=V("伊鲁鲁克斯", Source.OFFICIAL_HANS, pattern="伊鲁鲁?克斯"),
+        std=V("伊鲁鲁克斯", Source.OFFICIAL_HANS),
         ja="イルルクス",
         en="Irulux",
         aliases=(
@@ -1550,7 +1550,7 @@ ENTRIES: list[Entry] = [
         full_name="基利安·恩狄米翁",
     ),
     Entry(
-        std=V("乌比克", Source.OFFICIAL_HANS, pattern="乌比(尔)?克"),
+        std=V("乌比克", Source.OFFICIAL_HANS),
         ja="ウビルク",
         en="Ubilk",
         cat="角色",
@@ -1710,7 +1710,7 @@ ENTRIES: list[Entry] = [
         aliases=(V("梅[丽利吕呂李莉裏里麗](?![奥奧欧歐])", Source.FAN),),
     ),
     Entry(
-        std=V("菜月昴", Source.OFFICIAL_HANS, pattern="菜月(·)?昴"),
+        std=V("菜月昴", Source.OFFICIAL_HANS),
         ja="ナツキ·スバル",
         en="Natsuki Subaru",
         cat="角色",
@@ -1724,7 +1724,7 @@ ENTRIES: list[Entry] = [
         ),
     ),
     Entry(
-        std=V("安娜塔西亚", Source.OFFICIAL_HANS, pattern="安娜(斯)?塔西亚"),
+        std=V("安娜塔西亚", Source.OFFICIAL_HANS),
         ja="アナスタシア·ホーシン",
         en="Anastasia",
         aliases=(
@@ -1735,7 +1735,7 @@ ENTRIES: list[Entry] = [
         ),
     ),
     Entry(
-        std=V("培提奇乌斯", Source.OFFICIAL_HANS, pattern="培提(尔)?奇乌?斯"),
+        std=V("培提奇乌斯", Source.OFFICIAL_HANS),
         ja="ペテルギウス·ロマネコンティ",
         en="Petelgeuse",
         aliases=(
@@ -1747,7 +1747,7 @@ ENTRIES: list[Entry] = [
         ),
     ),
     Entry(
-        std=V("威尔海姆", Source.OFFICIAL_HANS, pattern="威尔海(鲁)?姆"),
+        std=V("威尔海姆", Source.OFFICIAL_HANS),
         ja="ヴィルヘルム·ヴァン·アストレア",
         en="Wilhelm",
         full_name="威尔海姆·梵·阿斯特雷亚",
@@ -1769,17 +1769,18 @@ ENTRIES: list[Entry] = [
         ),
     ),
     Entry(
-        std=V("罗兹瓦尔", Source.OFFICIAL_HANS, pattern="罗兹瓦尔?"),
+        std=V("罗兹瓦尔", Source.OFFICIAL_HANS),
         ja="ロズワール·K·メイザース",
         en="Roswaal",
         full_name="罗兹瓦尔·L·梅札斯",
         aliases=(
+            V("罗兹瓦(?!尔)", Source.FAN),
             V("罗斯瓦尔", Source.FAN),
             V("罗丝瓦尔", Source.FAN),
         ),
     ),
     Entry(
-        std=V("帕尔米拉", Source.FAN, pattern="帕尔?米拉"),
+        std=V("帕尔米拉", Source.FAN),
         ja="パルミラ",
         en="Palmyra",
         cat="角色",
