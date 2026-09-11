@@ -1387,6 +1387,12 @@ ENTRIES: list[Entry] = [
         note="角色",
     ),
     Entry(
+        std="菜月",
+        ja="ナツキ",
+        en="Natsuki",
+        note="角色；菜月家姓氏（昴、雷吉尔 IF 线等）",
+    ),
+    Entry(
         std="安娜塔西亚",
         ja="アナスタシア·ホーシン",
         en="Anastasia",

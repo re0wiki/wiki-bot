@@ -15,9 +15,15 @@ def test_glossary_hit_and_format():
 
 
 def test_glossary_ambiguous_surface_dropped():
-    """ナツキ 是 菜月家多人共用（昴/雷吉尔），不得注入。"""
+    """エキドナ 是两个不同角色的 ja 原名（强欲魔女 艾姬多娜 / 人工精灵 围巾多娜），不得注入。"""
+    out = glossary_lines(["エキドナとの会話"])
+    assert "\nエキドナ =" not in out
+
+
+def test_glossary_surname_injected():
+    """姓氏面注入（ナツキ=菜月），与 修德拉格/阿斯特雷亚 等姓氏条目一致。"""
     out = glossary_lines(["ナツキ·リゲルの誕生日"])
-    assert "\nナツキ =" not in out
+    assert "\nナツキ = 菜月\n" in out
     assert "ナツキ·リゲル = 雷吉尔" in out
 
 
