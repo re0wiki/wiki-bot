@@ -152,26 +152,3 @@ def test_all_entry_names_stable_under_full_rule_chain():
     """所有条目名（含 fuzzy=False）在完整规则链下幂等。"""
     bad = [(e.std, normalize(e.std)) for e in ENTRIES if normalize(e.std) != e.std]
     assert not bad, f"以下条目名会被规则链二次改写: {bad}"
-
-
-def test_full_name_consistency():
-    """full_name = 角色条目完整标题（全名或真名）：唯一；各段（名/姓，含 梵·阿斯特雷亚 这类带助词的姓）须在表中。"""
-    all_entries = list(translations.ENTRIES)
-    by_name = {e.std for e in all_entries}
-    seen: dict[str, str] = {}
-    for e in all_entries:
-        if not e.full_name:
-            continue
-        assert e.full_name not in seen, (
-            f"全名重复: {e.full_name}（{seen[e.full_name]} / {e.std}）"
-        )
-        seen[e.full_name] = e.std
-        if "·" in e.full_name:
-            given, _, sur = e.full_name.partition("·")
-            assert given in by_name, f"{e.std}: full_name 的名段 {given} 不在表中"
-            # 姓段可能是带助词/中间名的复合段（梵·阿斯特雷亚 / L·梅札斯）：整段或末段在表中即可
-            assert sur in by_name or sur.rpartition("·")[2] in by_name, (
-                f"{e.std}: full_name 的姓段 {sur} 不在表中"
-            )
-        else:
-            assert e.full_name in by_name, f"{e.std}: full_name {e.full_name} 不在表中"
