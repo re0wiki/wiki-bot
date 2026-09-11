@@ -1,11 +1,9 @@
 import inspect
-import itertools
-import re
 import sys
-from collections import defaultdict
 from functools import partial
 from pathlib import Path
 
+import regex as re
 from opencc import OpenCC
 
 # 本文件由 pwb/pywikibot/fixes.py exec 加载（无 __file__、仓库根不在 sys.path），
@@ -86,6 +84,7 @@ user_fixes["misc"] = base | {
         (mid_dots, mid_dot),
         ("－－", "——"),
         (r"<!---->|￼", ""),
+        ("其[他它她]", "其他"),  # 用字归一（非译名，不属 translation fix）
         ("“", "「"),
         ("”", "」"),
         ("【", "『"),
@@ -433,138 +432,163 @@ user_fixes["heading"] = base | {
 # endregion
 
 # region translation
-flatten = itertools.chain.from_iterable
 s2t = OpenCC("s2t.json").convert
 t2s = OpenCC("t2s.json").convert
 
-similar_chars = translations.SIMILAR_CHARS  # 数据在 translations.py
 
+def p2st(pattern: str):
+    """简繁展开：正则中每个字面字符展开为 [简繁] 字符类。
 
-class SimilarCharsMap(defaultdict):
-    """字符到相似字符的映射。"""
-
-    def __missing__(self, key):
-        """一个字符总是与它本身相似。"""
-        self[key] = key
-        return key
-
-
-sc_map = SimilarCharsMap()  # singleton
-sc_map |= {c: sc for sc in similar_chars for c in sc}
-
-
-def f(chars: str):
+    名字规则与别名规则统一走此窄展开；相似组宽展开（会把普通词卷进来）已随
+    历史变体全部显式登记为别名而废弃删除。手写 [...] 字符类只写简体即可：
+    类内每个字符自动补 s2t 繁体（利格鲁 的宽组、梅莉 的选择性展开靠手写类表达）。
     """
-    返回匹配相似字符的正则表达式。
+    out = []
+    in_class = False
+    seen = set()  # 当前类内已输出字符（补繁体后去重）
+    i = 0
+    while i < len(pattern):
+        c = pattern[i]
+        if c == "\\" and i + 1 < len(pattern):
+            out.append(pattern[i : i + 2])
+            i += 2
+            continue
+        if c == "[":
+            in_class = True
+            seen.clear()
+            out.append(c)
+        elif c == "]":
+            in_class = False
+            out.append(c)
+        elif in_class:
+            for ch in dict.fromkeys((c, s2t(c))):
+                if ch not in seen:
+                    seen.add(ch)
+                    out.append(ch)
+        else:
+            t = s2t(c)
+            out.append(f"[{c}{t}]" if t != c else c)
+        i += 1
+    return "".join(out)
 
-    短命名以方便大量使用。
 
-    :param chars: 任意个字符
-    :return: "[similar_chars]"
+# (标准名, 目标名) 生成名字规则，数据在 translations.py；模板条目不生成名字规则
+translation_name_rules = [
+    (e.std, e.std) for e in translations.ENTRIES if "{{" not in e.std
+]
+# 长匹配优先：短名规则排在长名规则后，防止短名吃掉长名内部（菈姆 命中 [[普菈姆|..]] 类）
+translation_name_rules.sort(key=lambda r: -len(r[1]))
+
+
+def _noncap(pattern):
+    """内层捕获组转非捕获：合成 alternation 后用 lastindex 定位是哪条规则命中。"""
+    return re.sub(r"\((?!\?)", "(?:", pattern)
+
+
+def expand_class_pattern(pattern):
+    """pattern 的全组合展开：剥离零宽 lookaround 后，纯「字面+字符类」核心返回成员集。
+
+    lookaround 是零宽断言，不贡献消费字符，剥离不影响成员集（guard 对的核心即
+    其覆盖的写法集合）；核心含其他正则构造（组/量词等）时返回 None（不可枚举）。
     """
-    return (
-        "["
-        + "".join(sorted(set(flatten(sc_map[c] + s2t(sc_map[c]) for c in chars))))
-        + "]"
-    )
+    pattern = re.sub(r"\(\?<?[=!][^)]*\)", "", pattern)
+    options = []
+    i = 0
+    while i < len(pattern):
+        c = pattern[i]
+        if c == "[":
+            j = pattern.index("]", i)
+            body = pattern[i + 1 : j]
+            if not body or any(ch in body for ch in "^-\\"):
+                return None
+            options.append(list(body))
+            i = j + 1
+        elif c in "\\?*+|(){}^$.=":
+            return None
+        else:
+            options.append([c])
+            i += 1
+    out = [""]
+    for chars in options:
+        out = [prefix + c for prefix in out for c in chars]
+    return set(out)
 
 
-def p2o(pattern: str):
-    """返回传入的正则表达式对应的所有可能译名对应的正则表达式。"""
-    return "".join(c if c in "?!(|)=<" else f(c) for c in pattern)
+# 别名机制：精确对由 Entry.aliases 生成，繁体写法一并归一。正则形式的别名
+# （写法含字符类或 lookaround）生成 guard 对（p2st 简繁展开，手写字符类原样保留），
+# 别名位于更长他名内部时防子串误伤。
+def _regex_form(s):
+    """别名写法是否为正则形式（含字符类或 lookaround）。"""
+    return "[" in s or "(?" in s
 
 
-def p2n(pattern: str):
-    """返回传入的正则表达式对应的标准译名。"""
-    return re.sub(r"\(.*?\)|\?", "", pattern)
+def _match_len(s):
+    """别名匹配的排序长度：可枚举形式用展开成员长，否则按字面长。"""
+    if members := expand_class_pattern(s):
+        return len(next(iter(members)))
+    return len(s)
 
 
-translation_names = [
-    e.pattern or e.name for e in translations.ENTRIES if e.main
-]  # 数据在 translations.py
+# 全部替换规则合成单趟 alternation：名字规则（p2st 简繁展开）与别名精确对/guard 对
+# 统一按目标/别名原文长度降序，同一位置只提交一次 = 真长匹配优先（短规则无法再命中
+# 长名/长别名内部）；单趟语义下恒等转换也消耗文本。
+# 大 alternation 靠 regex 模块的 trie 优化（pwb 全库 import regex as re；stdlib re 逐位置
+# 顺序试探会慢三个数量级）。
+_name_items = [(len(n), p2st(pat), n) for pat, n in translation_name_rules]
+_pair_items = [
+    (len(a2), re.escape(a2), e.std)
+    for e in translations.ENTRIES
+    for a in e.aliases
+    if not _regex_form(a)
+    for a2 in dict.fromkeys((a, s2t(a)))
+] + [
+    (_match_len(a), p2st(a), e.std)
+    for e in translations.ENTRIES
+    for a in e.aliases
+    if _regex_form(a)
+]
+_alt_items = sorted(_name_items + _pair_items, key=lambda x: -x[0])
+_alt_targets = [n for _, _, n in _alt_items]
+_alt_pattern = "|".join(f"({_noncap(p)})" for _, p, _ in _alt_items)
 
-translation_manual = [  # 手动添加的替换组（结构规则：模板替换/防误伤 lookaround/选择性展开）
-    (rf"{f('凛淋萍平苹')}{f('果')}", "{{Ringa}}"),
+
+class _AltSub:
+    """alternation 命中分发 + 摘要协议（pwb generate_summary 读 take_summary_pairs）。"""
+
+    def __init__(self, targets):
+        self._targets = targets
+        self._pairs = set()
+
+    def __call__(self, m):
+        target = self._targets[m.lastindex - 1]
+        if m.group() != target:
+            self._pairs.add((m.group(), target))
+        return target
+
+    def take_summary_pairs(self):
+        """replace.py 摘要协议：回读本页实际命中对并清空（编辑摘要 -原文 +目标）。"""
+        pairs, self._pairs = self._pairs, set()
+        return pairs
+
+
+_alt_sub = _AltSub(_alt_targets)
+
+
+# re0_move（标题归一）消费的别名对：与 alternation 同数据（别名子集、同排序键）。
+translation_pairs = [(p, n) for _, p, n in sorted(_pair_items, key=lambda x: -x[0])]
+
+
+translation_manual = [  # 手动添加的替换组（模板替换；译名规则全部在 translations.py）
     (
         (
             "(?<!禁书与谜之)(?<!术语:)(?<!人工)(?<!自然)(?<!契约)(?<![大邪微准])"
-            f"{f('精')}{f('灵')}"
+            "精[灵靈]"
             "(?!骑士|[术使])"
         ),
         "{{Seirei or Elf}}",
     ),
-    (f"{f('妖')}{f('精')}", "{{Yousei or Elf}}"),
+    ("妖精", "{{Yousei or Elf}}"),
     (r"(?<=半)\{\{(Seirei|Yousei) or Elf\}\}", "{{Elf}}"),
-    ("斯巴[鲁魯]", "昴"),  # 不用 f() 展开：茨(≈斯)巴 尔(≈鲁) 会误判「法茨巴尔穆」
-    (f"梅{f('莉')}(?!{f('奥')})", "梅莉"),  # 防「梅里欧·阿嘎玛」误伤
-    (r"(?<!莎)莉[娅婭]", "莉雅"),  # 莉娅→莉雅；前字 莎 时属 莎莉婭·费瑟兰
-    (
-        r"(?<!多萝西)(?<!艾米莉)(?<!约书)(?<!贝)(?<!卡秋)[亚亞][齐齊]|(?<!多萝西)(?<!艾米莉)(?<!约书)(?<!贝)(?<!卡秋)阿[奇齊]",
-        "亚奇",
-    ),  # 亚齐/阿奇→亚奇，guard 沿自记录
-    (r"(?<!艾奇)(?<!福尔)提娜", "缇娜"),  # 提娜→缇娜，guard 沿自记录
-    (r"(?<!加)弗利艾", "傅里叶"),  # 弗利艾→傅里叶，guard 沿自记录
-    (r"[欧歐]德(?!古勒斯)", "奥多"),  # 欧德→奥多；欧德古勒斯 是另一存在
-    (
-        r"(?<!格拉姆)(?<!芙兰)达[兹茲](?!利)",
-        "达茨",
-    ),  # 达兹→达茨，guard 沿自记录（芙兰达兹 是 弗兰德斯 的别名）
-    (
-        r"(?<!加)(?<!卡)(?<!雷)德[纳納]",
-        "多纳",
-    ),  # 德纳→多纳；加德纳/卡德纳/雷德纳斯 是他名
-    (
-        r"(?<!佩)(?<!芙蕾)多尔肯(?!罗登|普里恩)",
-        "多尔凯尔",
-    ),  # 多尔肯→多尔凯尔，guard 沿自记录
-    (r"卡[萝蘿](?!尔|爾)", "卡罗尔"),  # 卡萝尔 是同一人的完整变体，由别名精确对先行归一
-    (
-        "王选前日谭",
-        "王选前日谈",
-    ),  # 仅简体：繁体 王選前日譚 与日文原名同字（name_ja/引用显示名），不得归一
-    ("最优纪行", "最优秀纪行"),  # 仅简体：日文原名 最優紀行 与繁体同字
-    ("王族诱拐案", "王族诱拐事件"),  # 仅简体：日文原名 王族誘拐案 与繁体同字
-    (
-        rf"(?<!阿)(?<!弗)利格{f('鲁')}(?!卡|姆)",
-        "雷吉尔",
-    ),  # 利格鲁→雷吉尔，guard 沿自记录（弗利格鲁 属 弗里格尔 变体）
-    ("文森(?!特)", "文森特"),  # 台版名 文森；防吃 文森特 前缀
-    (
-        "穆塔(?!特)",
-        "穆塔特",
-    ),  # 民间写法 穆塔；防吃 穆塔特 前缀（穆塔多 已由别名精确对先行转换）
-    (r"(?<!梅)裘斯", "杰乌斯"),  # 裘斯→杰乌斯；梅裘斯 是他名（guard 沿自记录）
-    (f"其{f('他它她')}", "其他"),  # 用字归一（非译名）
-]
-# 有别名在更长的他名内部出现（子串误伤）或繁体形式与日文原名同字的，不走精确对生成，在上面用规则处理
-_GUARDED_ALIASES = {
-    "莉娅",
-    "亚齐",
-    "阿奇",
-    "提娜",
-    "弗利艾",
-    "欧德",
-    "达兹",
-    "德纳",
-    "多尔肯",
-    "卡萝",
-    "利格鲁",
-    "文森",
-    "穆塔",
-    "裘斯",
-    "王选前日谭",
-    "最优纪行",
-    "王族诱拐案",
-}
-# Entry.aliases 生成精确对，繁体写法一并归一（RECORD_ONLY 的别名也生成：名字本身不归一，别名归一到它）
-# 精确对在首尾各跑一遍：先行使别名不被模糊规则截胡成中间态；收尾兜底繁简混合文本
-# （名字规则把别名周围繁体字归一简体后，简体精确对才有机会命中）
-translation_pairs = [
-    (a2, e.name)
-    for e in itertools.chain(translations.ENTRIES, translations.RECORD_ONLY)
-    for a in translations.alias_texts(e)
-    if a not in _GUARDED_ALIASES
-    for a2 in dict.fromkeys((a, s2t(a)))
 ]
 
 user_fixes["translation"] = base | {
@@ -572,18 +596,15 @@ user_fixes["translation"] = base | {
     # 一律归一到官方简中标准名
     "exceptions": base["exceptions"]
     | {
-        # NekoQuote 月表的日文原文字段（Lua 字符串）不归一；replace.py 自行编译，这里只给字符串
-        "inside": [r'(?m)^\s*(?:jq|jt)\s*=\s*"(?:[^"\\]|\\.)*"'],
+        "inside": [
+            # NekoQuote 月表的日文原文字段（Lua 字符串）不归一；replace.py 自行编译，这里只给字符串
+            r'(?m)^\s*(?:jq|jt)\s*=\s*"(?:[^"\\]|\\.)*"',
+            # 信息框日文原名字段不归一
+            r"(?m)^\s*\|\s*name_ja\s*=[^\n]*$",
+        ],
     },
-    "replacements": list(translation_pairs)
-    + [(p2o(p), p2n(p)) for p in translation_names]
-    + list(translation_manual)
-    + list(translation_pairs),
+    "replacements": [(_alt_pattern, _alt_sub)] + list(translation_manual),
 }
-_ = [
-    e.pattern or e.name for e in translations.RECORD_ONLY
-]  # 特判太麻烦的，不处理；数据在 translations.py
-
 # endregion
 
 fixes: dict

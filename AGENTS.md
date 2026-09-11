@@ -32,8 +32,8 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | `src/jobs/run_job.py` | 子进程包装：`build_cmd` 拼 `sys.executable pwb/pwb.py ...`（不用裸 `python`，PATH 上可能是无项目依赖的其他版本），自动加 `-always`（interwiki 加 `-auto -force`，transferbot 不加） |
 | `src/jobs/starts.py` | namespace → `-start:ns:!` 生成器参数。`ns_base`=主/project/template/category，`ns_more` 再加 module/mediawiki |
 | `user-config.py` | pywikibot 配置：family=re0, mylang=zh, 账号 IchiSanNi（只给 zh 配账号，外站匿名读——Fandom 现在跨站登录会互踢会话，见文件内注释） |
-| `user-fixes.py` | **核心资产**。自定义 fix 集：misc/date/anti-ve/para/gallery/heading/**translation**/HTML/syntax 等。`translation` 用「相似字符 → 正则」机制（`f()`/`p2o()`/`p2n()`）把几百个别名归一到标准译名；NekoQuote 月表的日文原文字段（jq/jt Lua 字符串）由 inside 异常保护不归一；译名数据已全部迁入 `translations.py` |
-| `translations.py` | **译名表数据（唯一权威）**：`ENTRIES`（标准名 + pattern/ja/en/cat/full_name/aliases/note；aliases 元素为 `V(写法, Source.X[, Part.X])` 枚举标注（Source：OFFICIAL_HANS 官简/OFFICIAL_HANT 官繁/FAN 民间；Part：GIVEN 名/FAMILY 姓/FULL 全名）；full_name=角色条目完整标题（全名或真名，称呼归到真名），仅供一次性移动与数据参考，不进替换链；顺序即替换链顺序）+ `RECORD_ONLY`（特判不处理）+ `SIMILAR_CHARS`。纯数据无逻辑，供 user-fixes import 生成替换表，也供 LLM 翻译管线与 re0-corpus 审查管线直接消费 |
+| `user-fixes.py` | **核心资产**。自定义 fix 集：misc/date/anti-ve/para/gallery/heading/**translation**/HTML/syntax 等。`translation` 把几百个别名归一到标准译名：名字规则（`p2st()` 简繁展开）与别名精确对/guard 合成单趟 alternation（统一按目标/别名原文长度降序、同位置只提交一次 = 真长匹配优先），大 alternation 靠 regex 模块 trie 优化；NekoQuote 月表的日文原文字段（jq/jt Lua 字符串）由 inside 异常保护不归一；译名数据已全部迁入 `translations.py` |
+| `translations.py` | **译名表数据（唯一权威）**：`ENTRIES`（std=标准名 + ja/en/aliases/note；aliases 为写法字符串元组，guard 正则/字符类直接作为写法文本（只写简体：p2st 对裸字符与手写类内字符都自动补 s2t 繁体）；note=自由注释（分类/全名/称呼关系等），不进任何消费链；别名精确对按表顺序，名字规则生成时按目标长度降序；name 含 `{{` 的模板条目不生成名字规则）。纯数据无逻辑，供 user-fixes import 生成替换表，也供 LLM 翻译管线与 re0-corpus 审查管线直接消费 |
 | `src/scripts/` | 只放 pwb 按名解析的任务脚本（`re0_*` ×7，见下行；搜索路径由 user-config.py 的 `user_script_paths = ["src.scripts"]` 指定；find_filename 不递归子目录，放进子目录即退出解析） |
 | `src/tools/` | 非 pwb 的常驻/维护工具（直接 python 运行）：`recent_changes_watchdog.py`、诊断（`verify_wiki_access.py`/`test_pwb_throttle.py`）、翻译管线（`llm_translate.py`，见 docs/llm-translation.md）、审计（`dump_modules.py`/`template_inventory.py`/`template_complexity.py`/`recheck_template_usage.py`/`scan_title_prefixes.py`/`check_css_imports.py`/`audit_wikipedia_links.py`/`audit_langlinks.py`/`series_nav_audit.py`——系列导航 Tab 与 en prev/next 链一致性，见 docs/series-nav-sync.md） |
 | `src/oneoff/` | 一次性脚本归档（含 429 探测 `probe_*`，重跑传完整路径） |
@@ -67,8 +67,10 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 
 ## pywikibot fork 的定制（rebase 上游时必须保留）
 
-每个定制一个独立提交（2026-07-27 起由单个大 commit 拆分；历史上另有 `import regex as re` 全库替换、requirements 加 regex、redirect offset、TokenWallet csrf-first、fixes 默认 generator 五个补丁，2026-07 验证不再必要后摘除——generator 已改为在 `src/jobs/jobs.py` 里显式传 `starts_base`；transferbot 搬运标记两个补丁 2026-08-13 随 re0_transferbot 换装摘除）：
+每个定制一个独立提交（2026-07-27 起由单个大 commit 拆分；历史上另有 redirect offset、TokenWallet csrf-first、fixes 默认 generator 等补丁，验证不再必要后摘除——generator 已改为在 `src/jobs/jobs.py` 里显式传 `starts_base`；transferbot 搬运标记两个补丁 2026-08-13 随 re0_transferbot 换装摘除）：
 
+- 全库 `import re` → `import regex as re`（80 文件机械替换，setup.py 除外）+ requirements.txt 加 regex：译名合并 alternation（1000+ 分支）靠 regex 的 trie 优化（stdlib re 逐位置顺序试探，167KB 页 8.9s → 0.03s）。regex 默认 VERSION0 与 re 行为对齐；本 fork 曾于 2025-12 至 2026-07 全量运行该补丁，当时仅为变宽 lookbehind 服务、改写定宽后摘除，2026-09 为 trie 性能恢复。
+- `replace.py`：`generate_summary` 支持 callable 替换的 `take_summary_pairs()` 协议——回读本页实际命中的（原文， 目标）对并清空；合并 alternation 的编辑摘要打印真实转换（-菲爾歐蕾 +菲尔欧蕾）而非整条 pattern。
 - `textlib.py`：`replaceExcept` 加快速路径（marker 为空且不 allowoverlap 时）：异常区间预计算一次（合并排序），编辑后区间随 delta 平移，替代原版「每个候选匹配 × 每个异常正则」的全文重扫——保护行密集的页面（NekoQuote 月表，200KB）上 10x+ 加速。行为锚点测试在主仓 `tests/test_fork_replaceexcept.py`。
 - `textlib.py` + `fixes.py`：新增 `keep` 标签 = `<!--as-is-->...<!--/as-is-->` 注释对，textlib 加 regex，HTML/syntax/isbn/specialpages fixes 的 exceptions 里加 `keep` —— wiki 上可以用这对注释保护内容不被 bot 改。注释零渲染、可行内使用，行内内容整词包裹即可（如 `<!--as-is-->精灵<!--/as-is-->`）。标记不配平时该区域失去保护（静默失效，扫描时可查配平）。
 - `fixes.py`：HTML fix 把 `<br>` 归一到不闭合形式（MediaWiki 渲染等价，不闭合是本 wiki 惯例）。
@@ -84,9 +86,9 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 ## 译名维护工作流（最常见的改动）
 
 1. 译名选取规则见 wiki 的 `ReZero Wiki:译名表`（官方简中 > 官方繁体 > 民间 > 保留英文）。bot 执行的唯一权威是 `user-fixes.py`；译名表页面由人工随性维护、无逐条同步义务（bot 的 fix:translation 会自动归一页面上的别名写法），已有条目的标题与内容本身即译名表的作用，不另建清单页。用户通过 GitHub Issues 报译名问题（模板：新增/修改译名、遗漏替换、错误替换），wiki 页面明确告诉用户「不要手动移动页面或替换文本，提议通过后 Bot 会批量修改」。
-2. 改译名 = 改 `translations.py` 的 `ENTRIES`：`name` 进主列表（`p2o()` 自动生成别名正则），`aliases` 登记组外异写精确对（须带 Variant 来源/段标注；不同日文名（真名/旧名/称呼）不互转，入 RECORD_ONLY 单记），`main=False` 用于 2 字短名（**不做模糊匹配**，只登记已知别名——2 字 p2o 展开的命中几乎全是普通词，实测「贝蒂那里」被打成 贝缇娜）、或两个字落在同一相似组（p2o 组合爆炸，实测命中 哈鲁特/亚基 等他名/普通词）等防误判场景。覆盖新变体优先扩 `SIMILAR_CHARS` 相似组让 `p2o()` 自动生成（如 伊/易 组覆盖 路易→鲁伊）；正则级结构规则（lookaround 防误伤、字序调换、模板替换）留在 `user-fixes.py` 的 `translation_manual` 内联段。拿不准相似字符覆盖面的，先 `python main.py fix:translation -s` 干跑。标题含别名的页面由 `re0_move` 任务用同一张表自动移动，无需另行处理。
+2. 改译名 = 改 `translations.py` 的 `ENTRIES`：`std` 进主列表（标准名经 `p2st()` 简繁展开自动匹配简繁写法），**新变体一律登记 `aliases` 精确对**（写法字符串；别名位于更长他名内部时 guard 直接写进写法文本，如 `"(?<!梅)裘斯"`；读音全组合类变体（ai-mi-li-ya→爱蜜莉雅 族）写音位字符类一条收编（如 `"[艾爱][米蜜][莉利][娅亚雅]"`，类内只写简体、p2st 自动补繁），**先跑全历史碰撞扫描确认命中全在本族再启用**；guard 的作用验证要在 wiki 源码匹配**（官方语料 0 次不代表多余：无官方译名的实体本就不在语料里，如 `梅莉(?!奥)` 防 `角色:梅里欧·阿嘎玛`）；选择性展开用手写字符类表达，如 利格鲁/梅莉；不同日文名（真名/旧名/称呼）不互转，各自单记）。`translation_manual` 只剩模板替换规则。拿不准覆盖面的，先 `python main.py fix:translation -s` 干跑。繁体与日文原名同字的别名（王选前日谭/最优纪行/王族诱拐案 类）：wiki 上既有日文出现处已逐处 as-is 保护（出版信息、术语:王族诱拐事件 lead），**新增此类日文引用必须包 `<!--as-is-->`**，否则会被 s2t 对归一。标题含别名的页面由 `re0_move` 任务用同一张表自动移动，无需另行处理。
 3. 提交信息遵循 Conventional Commits：`feat(translation): add X` / `fix(translation): 旧 -> 新`。
-4. `_` 清单（「特判太麻烦、明确不处理」）数据在 `translations.py` 的 `RECORD_ONLY`，别删。
+4. 模板条目（如 `{{Elf}}`）不生成名字规则（name 含 `{{` 自动排除），正文归一由 `translation_manual` 结构规则处理。
 
 ## 新增自动化：进 fix 表还是单建脚本
 

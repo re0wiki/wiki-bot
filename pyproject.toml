@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
     "opencc>=1.2.0",
+    "regex>=2026.7.19",
     "tqdm>=4.67.3",
 ]
 
@@ -27,6 +28,11 @@ per-file-target-version = { "src/tools/recent_changes_watchdog.py" = "py311" }
 "user-fixes.py" = ["F821"]
 # langs 等类属性字典是 pywikibot family 文件的既定写法。
 "families/*.py" = ["RUF012"]
+
+# 裸 pytest 只收 tests/：仓库里允许存在带顶层执行逻辑的 test_ 前缀工具脚本
+# （如 src/tools/test_pwb_throttle.py），全树收集会 import 并引爆其副作用。
+[tool.pytest.ini_options]
+testpaths = ["tests"]
 
 # ty 无法静态解析 PEP 660 editable finder，需显式把 submodule 根目录加入搜索路径
 # （仅影响 import 解析）。exclude 控制检查范围：pywikibot 是上游代码，
@@ -53,4 +59,5 @@ dev = [
     "pytest>=8.0.0",
     "ruff>=0.15.1",
     "ty>=0.0.17",
+    "types-regex>=2026.9.3.20260903",
 ]

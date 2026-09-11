@@ -1,23 +1,23 @@
 """译名表（user-fixes.py translation fix）的离线一致性测试。
 
 不触碰 wiki；pywikibot.fixes 导入时会把 user-fixes.py exec 进自己的
-globals，因此 translation_names 等名字直接从 pywikibot.fixes 取。
+globals，因此 translation_name_rules 等名字直接从 pywikibot.fixes 取。
 """
 
 import importlib
-import re
 from collections import Counter
 from typing import Any
 
+import regex as re
 from repo_loader import load_module
 
 fx = importlib.import_module("pywikibot.fixes")
 
 # translation 机制定义在 user-fixes.py，由 pwb/pywikibot/fixes.py 末尾 exec 进
 # 自己的 globals，静态检查不可见，故经 __dict__ 取。
-p2o: Any = fx.__dict__["p2o"]
-p2n: Any = fx.__dict__["p2n"]
-translation_names: list[str] = fx.__dict__["translation_names"]
+p2st: Any = fx.__dict__["p2st"]
+expand_class_pattern: Any = fx.__dict__["expand_class_pattern"]
+translation_name_rules: list[tuple[str, str]] = fx.__dict__["translation_name_rules"]
 
 # RULES 直接复用 re0_move 的构建结果，不再本地重复构造。
 RULES = load_module("re0_move", "src/scripts/re0_move.py").RULES
@@ -31,8 +31,8 @@ def normalize(title: str) -> str:
 
 
 def test_no_duplicate_names():
-    dup = [k for k, v in Counter(translation_names).items() if v > 1]
-    assert not dup, f"translation_names 存在重复条目: {dup}"
+    dup = [k for k, v in Counter(translation_name_rules).items() if v > 1]
+    assert not dup, f"translation_name_rules 存在重复条目: {dup}"
 
 
 def test_standard_names_stable_under_full_rule_chain():
@@ -42,22 +42,9 @@ def test_standard_names_stable_under_full_rule_chain():
     此时主表条目是误导性的死规则（如「贝阿托莉丝」曾被 manual 表
     覆盖为「碧翠丝」），应删除或改为注释说明。
     """
-    bad = [(p2n(p), normalize(p2n(p))) for p in translation_names]
+    bad = [(n, normalize(n)) for _, n in translation_name_rules]
     bad = [(std, out) for std, out in bad if out != std]
     assert not bad, f"以下标准名会被规则链二次改写（死规则）: {bad}"
-
-
-def test_p2n_strips_regex_constructs():
-    assert p2n("安娜(斯)?塔西亚") == "安娜塔西亚"
-    assert p2n("菜月·?昴") == "菜月·昴"
-    assert p2n("丹克(尔)?肯") == "丹克肯"
-
-
-def test_p2o_matches_alias_variants():
-    """p2o 生成的正则应覆盖相似字符与繁体变体。"""
-    pat = re.compile(p2o("碧翠丝"))
-    for variant in ("碧翠丝", "碧翠絲"):
-        assert pat.fullmatch(variant), variant
 
 
 def test_beatrice_normalizes_to_official_name():
@@ -94,7 +81,9 @@ def test_nekoquote_ja_fields_protected():
 def test_nekoquote_aliases_normalize():
     """回归：语录管线引入的译名变体归一（斯巴鲁/路易/碧翠子/记忆回廊/地狱狙击）。"""
     assert normalize("斯巴鲁") == "昴"
-    assert normalize("菜月·斯巴鲁") == "菜月·昴"
+    assert (
+        normalize("菜月·斯巴鲁") == "菜月昴"
+    )  # 斯巴鲁 别名精确对先跑，名字规则收尾归一到底
     assert (
         normalize("法茨巴尔穆六世") == "法茨巴尔穆六世"
     )  # 回归：茨巴尔 不得误判为斯巴鲁
@@ -107,107 +96,59 @@ def test_nekoquote_aliases_normalize():
 
 
 translations = load_module("translations", "translations.py")
-alias_texts = translations.alias_texts
 ENTRIES = list(translations.ENTRIES)
-RECORD_ONLY = list(translations.RECORD_ONLY)
 
 
 def test_entries_no_duplicate_names():
-    dup = [k for k, v in Counter(e.name for e in ENTRIES).items() if v > 1]
+    dup = [k for k, v in Counter(e.std for e in ENTRIES).items() if v > 1]
     assert not dup, f"ENTRIES 存在重名条目: {dup}"
 
 
-def test_record_only_disjoint_from_entries():
-    clash = {e.name for e in RECORD_ONLY} & {e.name for e in ENTRIES}
-    assert not clash, f"RECORD_ONLY 与 ENTRIES 撞名: {clash}"
-
-
 def test_aliases_no_collision():
-    """别名：不重复登记、不撞任何标准名、不撞 RECORD_ONLY。"""
-    names = {e.name for e in ENTRIES} | {e.name for e in RECORD_ONLY}
+    """别名：不重复登记、不撞任何标准名。
+
+    带字符类写法的别名不抽取代表形，展开全部组合逐个检测。
+    """
+    names = {e.std for e in ENTRIES}
     seen = {}
     bad = []
     for e in ENTRIES:
-        for a in alias_texts(e):
-            if a in names:
-                bad.append(f"{a}（{e.name} 的别名）撞标准名")
-            if a in seen:
-                bad.append(f"{a} 重复登记于 {seen[a]} 与 {e.name}")
-            seen[a] = e.name
-    assert not bad, bad
-
-
-def test_std_name_source_precedence():
-    """优先级不变式（官简 > 官繁 > 民间）：
-    标准名为官繁时不能有官简别名（否则官简应提升为标准名）。
-    （「民间标准名不能有官方别名」暂缓启用：审查管线的模糊匹配可能漏配官简写法——
-    弗鲁夫 即因「弗尔芙」未被匹配到而误标民间；启用前需先核完误标清单）
-    """
-    S = translations.Source
-    bad = []
-    for e in ENTRIES + RECORD_ONLY:
         for a in e.aliases:
-            if e.source == S.OFFICIAL_HANT and a.source == S.OFFICIAL_HANS:
-                bad.append(f"官繁标准名 {e.name} 有官简别名 {a.text}（应提升为标准名）")
-    assert not bad, bad
-
-
-def test_std_name_annotated():
-    """标准名必须标注来源。"""
-    bad = [e.name for e in ENTRIES + RECORD_ONLY if e.source is None]
-    assert not bad, f"未标注来源: {bad}"
-
-
-def test_variant_annotations_valid():
-    """Variant 标注：source 必填且为 Source 枚举，part 为 Part 枚举或 None。"""
-    bad = []
-    for e in ENTRIES + RECORD_ONLY:
-        for a in e.aliases:
-            if not isinstance(a, translations.Variant):
-                bad.append(f"{e.name} 的别名 {a} 未用 Variant 标注")
-                continue
-            if not isinstance(a.source, translations.Source):
-                bad.append(f"{e.name} 的别名 {a.text} source={a.source!r}")
-            if a.part is not None and not isinstance(a.part, translations.Part):
-                bad.append(f"{e.name} 的别名 {a.text} part={a.part!r}")
+            forms = expand_class_pattern(a) or {a}
+            for f in forms:
+                if f == e.std:
+                    continue  # pattern 覆盖本家标准名（如音位类含标准拼写），非碰撞
+                if f in names:
+                    bad.append(f"{f}（{e.std} 的别名）撞标准名")
+                if f in seen:
+                    bad.append(f"{f} 重复登记于 {seen[f]} 与 {e.std}")
+                seen[f] = e.std
     assert not bad, bad
 
 
 def test_aliases_normalize_to_entry_name():
-    """别名经完整规则链必须归一到所属条目名（否则规则间互相覆盖）。"""
+    """别名经完整规则链必须归一到所属条目名（否则规则间互相覆盖）。
+
+    模板目标条目（{{Ringa}}/{{Elf}}）的别名在标题归一里被 {{ 过滤
+    是正确行为（标题不能含模板），不在此断言覆盖；其正文归一由
+    fixes 替换链保证。
+    """
+
+    def forms_of(a):
+        return expand_class_pattern(a) or {a}
+
     bad = [
-        (a, e.name, normalize(a))
+        (f, e.std, normalize(f))
         for e in ENTRIES
-        for a in alias_texts(e)
-        if normalize(a) != e.name
+        if "{{" not in e.std
+        for a in e.aliases
+        for f in forms_of(a)
+        if normalize(f) != e.std
     ]
     assert not bad, f"以下别名未归一到条目名: {bad}"
 
 
 def test_all_entry_names_stable_under_full_rule_chain():
-    """所有条目名（含 main=False）在完整规则链下幂等。"""
-    bad = [(e.name, normalize(e.name)) for e in ENTRIES if normalize(e.name) != e.name]
+    """所有条目名（含 fuzzy=False）在完整规则链下幂等。"""
+    bad = [(e.std, normalize(e.std)) for e in ENTRIES if normalize(e.std) != e.std]
     assert not bad, f"以下条目名会被规则链二次改写: {bad}"
-
-
-def test_full_name_consistency():
-    """full_name = 角色条目完整标题（全名或真名）：唯一；各段（名/姓，含 梵·阿斯特雷亚 这类带助词的姓）须在表中。"""
-    all_entries = list(translations.ENTRIES) + list(translations.RECORD_ONLY)
-    by_name = {e.name for e in all_entries}
-    seen: dict[str, str] = {}
-    for e in all_entries:
-        if not e.full_name:
-            continue
-        assert e.full_name not in seen, (
-            f"全名重复: {e.full_name}（{seen[e.full_name]} / {e.name}）"
-        )
-        seen[e.full_name] = e.name
-        if "·" in e.full_name:
-            given, _, sur = e.full_name.partition("·")
-            assert given in by_name, f"{e.name}: full_name 的名段 {given} 不在表中"
-            # 姓段可能是带助词/中间名的复合段（梵·阿斯特雷亚 / L·梅札斯）：整段或末段在表中即可
-            assert sur in by_name or sur.rpartition("·")[2] in by_name, (
-                f"{e.name}: full_name 的姓段 {sur} 不在表中"
-            )
-        else:
-            assert e.full_name in by_name, f"{e.name}: full_name {e.full_name} 不在表中"

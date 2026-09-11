@@ -28,7 +28,7 @@ def test_no_rule_no_pure_variant_move():
 
 
 def test_rules_exclude_template_producing_entries():
-    """产出模板调用的 manual 规则（{{...}}）不能用于标题。"""
+    """产出模板调用的规则（manual 或模板目标的别名对）不能用于标题。"""
     assert all("{{" not in name for _, name in mv.RULES)
 
 

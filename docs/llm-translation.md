@@ -27,7 +27,7 @@ refresh（重建选页队列）→ prepare（取队首、机械转换备料）�
 5. 内链目标替换：resolve_links 映射（en 标题 → zh 同名页 → 跟随重定向——与 fixing-redirects 同链路等效，此处离线单遍完成）把 `[[X]]` 改写为 `[[zh 最终目标|X]]`，显示文字留 agent 翻译；解析失败（en 有 zh 无）保留 en 原名并列进报告；
 6. **信息框字段级合并**（`merge_structure`，zh 策展内容不丢）：zh 同名参数值含中文（已策展）→ 保留 zh 行，英文残留/空值 → 用 en 转换值；zh 独有参数行（isbn_ko/painter/voice_zh_* 等）块尾保留；zh 有 image_a/n/g/c 分媒介图库时丢弃 en 的单 image 参数；previous/next 与 character 的 name_ja_romaji（fix:para 删除对象）永不带回；zh 独有的整个信息框（en 无对应）整块前置保留。
 
-译名归一不在转换层——LLM 按译名表翻译，残留别名由主循环的 fix:translation 对成稿机械兜底。
+译名归一不在转换层——LLM 按译名表翻译，残留别名由主循环的 fix:translation 对成稿机械兜底。已裁决专名（译名表 en 字段=英文写法）由 prepare 词边界精确匹配 en 正文，命中且该 en 面未作为骨架内链显示文字出现（内链已覆盖的不重复注入）的写入 `{slug}.nouns.txt` 并在 stdout 列出（stdout 注入 agent prompt），译文须使用——这是 nouns.jsonl 毕业词回灌 LLM 的通道。
 
 ## 选页：编辑者冷度
 
@@ -70,7 +70,7 @@ prepare 的 walk 逐页读 zh 源码解析标记（源码本来必读）：
 - 标记 revid 与 en 当前一致 → 跳过；**不一致即自动复活**重入处理（追更路径由此承载）。无 en 链接时 en 侧 revid 视为 `-`——zh 原创页后来加了 en 链接、悬空链接的 en 页被创建，都走 revid 不一致复活，无需专门分支。
 - 无标记 → 处理；其中机械可判定的两种情况由 prepare 直接打标记跳过：无 en 源（标记 revid 为 `-`）、en 仅标题骨架（剥离后正文无一超过 20 字符的非标题行）。「en 无增量」由 agent 判断后 `skip <slug> [理由]` 打标记。
 
-prepare 有 wip 守卫：`work/` 里已有未完成项时拒绝再备新页。
+prepare 的 wip 自动收尾：`work/` 里有上轮残留项时先按 wiki 最新状态分流再备新页。管线编辑认两个痕迹：stamp 摘要前缀（`LLM(K3):`）与同步标记——循环任务（fix:translation 等）对冷页的偶发编辑不算管线编辑。分流：zh 页无新编辑（agent 未编辑成，如 API 故障）、最新编辑是其他人（prepare 后有人类编辑，含人类在管线编辑后再改——人工改动即事实上的复核）、或最新编辑是无痕迹的本账号偶发编辑 → 丢弃旧备料按最新状态重备（改动由新基线自动吸收）；含匹配同步标记（管线编辑完成但 done 未跑）→ 自动补跑 done 核验（`verify_edit`，与 cmd_done 同一实现），通过则清场并补发 NOTIFY，不过则保留现场响亮失败；带 stamp 摘要却标记缺失/不匹配的怪异态保留现场、拒绝备页，留人工排查。
 
 ## 页面构成规则（agent 编辑时遵守，done 逐项核验）
 
@@ -96,7 +96,7 @@ prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 
 
 ## agent 翻译规则
 
-- **直接编辑 zh 页**（pywikibot 普通编辑，bot=False minor=False），产出整页新源码；编辑前以重读的最新源码为基础（prepare 后若有人类编辑，将其改动融入处理，不要覆盖）。摘要与同步标记用 `stamp <slug>` 子命令输出的两行原样使用（第一行填摘要，第二行放正文末尾、原位替换已有标记）。完成后 `done <slug>` 核验。
+- **直接编辑 zh 页**（pywikibot 普通编辑，bot=False minor=False），产出整页新源码；编辑前重读页面最新源码，与 `{slug}.zh.txt` 不一致即中止本轮（不尝试融合改动——下 tick prepare 会以最新状态自动重备吸收）。摘要与同步标记用 `stamp <slug>` 子命令输出的两行原样使用（第一行填摘要，第二行放正文末尾、原位替换已有标记）。完成后 `done <slug>` 核验。
 - 页首/页尾按「页面构成规则」保留；**正文以 `{slug}.conv.txt` 半成品骨架为基础**（结构转换与字段合并已由 prepare 机械完成，见「机械转换层」节）——agent 只做翻译：
   - prose 段落、参数里的英文散文值、内链显示文字、未归一的标题（映射表外的如 `Chapters`）；引号用「」，人名/专名用 wiki 通行译名（残留别名由主循环 fix:translation 兜底）；
   - 骨架里含中文的 zh 策展内容（信息框合并保留的字段等）原样不动；
@@ -107,7 +107,7 @@ prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 
 ## 状态与产出
 
 - 处理状态由**条目源码末尾的同步标记**承载（见「同步标记」节）——随页面走、格式可演进。机器判定只看同步标记；编辑摘要（`LLM(K3): revid <en_revid>（…）`）是人类可读的说明，也是模型型号的记录处——换模型只改摘要前缀，按摘要扫描即可重建「哪页是哪个型号翻的」清单（用于换模型后的质量分层重翻、缺陷归因）。
-- `.cache/llm_translate/`（gitignored）：`queue.json`（选页队列）、`work/`（进行中的工作文件）、`nouns.jsonl`（**未登记专名清单**——LLM 翻译时遇到译名表查无的专名逐条追加，攒一批后人工裁决登记进 `user-fixes.py`，由 fix:translation 全站归一；不主动推送）。
+- `.cache/llm_translate/`（gitignored）：`queue.json`（选页队列）、`work/`（进行中的工作文件）、`nouns.jsonl`（**未登记专名清单**——LLM 翻译时遇到译名表查无的专名逐条追加，攒一批后人工裁决登记进译名表（`translations.py`），由 fix:translation 全站归一存量、prepare 专名注入回灌增量；不主动推送）。
 
 ## 运行形态
 
