@@ -126,6 +126,46 @@ login_name = bp.login_name(username)  # → "IchiSanNi@pywikibot"
 加 `formatversion=2` 可让响应没有数字键，解析更干净。完整可跑代码见 `src/tools/verify_wiki_access.py`。
 **login POST 也必须走带 429 退避的重试封装**，不能裸发——否则一被限速连登录都过不去（实测踩过）。
 
+## Fandom 外部视频（video/youtube）导入
+
+Fandom 的「从 YouTube 导入视频」不是文件上传，产出的是无扩展名的伪文件页
+（`mime=video/youtube`，文件实体只有缩略图，真实播放走 YouTube embed）。
+pywikibot `FilePage` 构造对无扩展名标题直接 `ValueError`，跨站搬运必须走
+Fandom 自己的导入端点（Special:NewFiles「添加视频」按钮的前端调用，见
+ResourceLoader 模块 `ext.fandom.specialVideos.js`；Nirvana 内部接口，无文档）：
+
+```python
+from urllib.parse import urlencode
+from pywikibot.comms import http
+
+uri = site.scriptpath() + "/wikia.php?" + urlencode(
+    {"controller": r"Fandom\Video\IngestionController", "method": "uploadVideo"}
+)
+r = http.request(site, uri, method="POST",  # 复用 pywikibot 已登录会话
+                 data={"url": f"https://www.youtube.com/watch?v={video_id}",
+                       "token": <新鲜 csrf token>})
+# 成功: {"status": "Your video has been added.", "success": true}
+# 失败: HTTP 400 {"status": 400, "error": "...BadRequestException", "details": ...}
+```
+
+实测要点（2026-09-11）：
+
+- en 侧视频的 YouTube `videoId` 从 `prop=imageinfo&iiprop=metadata` 匿名读
+  （metadata 里还有 duration）。全部识别口径：`list=allimages&aiprop=mime`
+  过滤 `video/youtube`。
+- 创建的文件页**标题与正文自动取自 YouTube 当前值**（标题=视频标题、
+  正文=视频简介），日志 comment 固定「视频已创建」。
+- **标题冲突不覆盖也不报错**：目标标题已存在（哪怕只是重定向页）时自动
+  加 `-2` 后缀另建——要按原名重建必须先删掉占位页。
+- 端点可能是异步的：success 返回后 imageinfo 立即可查（实测同步生效），
+  但若查不到等几秒再查。
+- **csrf token 必须现取，不能用 `site.tokens["csrf"]` 的缓存**：token 绑定
+  会话，Fandom 跨站流量互踢后 pywikibot 自愈重登换新会话，TokenWallet
+  缓存不感知轮换，继续发旧 token 会被 400「Request must be POSTed and
+  provide a valid edit token」；裸调 `meta=tokens&type=csrf`（simple_request）
+  则先经 userinfo 比对触发自愈重登、返回新会话 token（re0_image 的
+  `fresh_csrf()`）。token 类失败重取后重试一次即可恢复。
+
 ## 实测结论与坑
 
 - 搜索"菜月昴"能命中 `角色:菜月·昴` 等页（Fandom 搜索对别名友好），但 `intitle:` 语法无效；`insource:` 也不支持（`site.search('insource:"Init"')` 返回 0 但字符串其实遍地都是）。信任任何搜索语法前先用已知真/已知假查询 sanity check。2026-08-19 再踩：`insource:/\{\{To do\|/` 返回 0 而源码扫描实测 107 页带参数——且当时手里就有已知真样本（13 卷刚写入的 `{{To do|由 K3 翻译…}}`）却没拿它验证查询。**查模板/文本用法的权威方式只有扫源码**（categorymembers/allpages 枚举 + `rvprop=content` ≤50/批），搜索语法返回 0 一律视为「查询不可信」而非「不存在」。

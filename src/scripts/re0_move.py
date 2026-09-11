@@ -1,10 +1,13 @@
 """标题命中 translation 规则的页面，自动移动到简体标准名（留重定向）。
 
 与 replace -fix:translation 共用 user-fixes.py 的同一张译名表，译名表更新时
-无需两边同步。正文替换与标题均一律归一到简体（标题惯例只认简体，前缀同理，见 AGENTS.md）。
+无需两边同步。正文替换与标题均一律归一到简体（标题惯例只认简体，前缀同理，见 AGENTS.md）：
+含繁体字的标题做纯繁简移动（否则 fixing-redirects 解析到繁体存储标题，
+与 fix:translation 来回拉锯）。
 
 跳过：重定向页、产出模板调用的规则（{{...}}）、伪命名空间前缀会变化的、
-新标题含非法字符的、目标已存在且不是指回当前页的重定向的（需人工合并）。
+新标题含非法字符的、目标已存在且不是指回当前页的重定向的（需人工合并）、
+File 空间无有效扩展名的标题（Fandom 外部视频，见 is_external_video）。
 """
 
 import regex as re
@@ -37,14 +40,26 @@ RULES = (
 ILLEGAL_TITLE_CHARS = re.compile(r"[#<>\[\]{}|]")
 
 
+def is_external_video(title: str, extensions) -> bool:
+    """File 标题无有效扩展名 = Fandom 从 YouTube 导入的外部视频。
+
+    这类标题即外语原文名（YouTube 原标题）：译名归一会产生半简半日的
+    四不像标题，且破坏 re0_image 的跨站同名比对（2026-09-06 手动带 File
+    生成器参数误跑，一批视频被移成中文名后重新同步修复）。循环任务的
+    生成器不含 File 空间，此防护针对手动带参误跑。
+    """
+    *_, ext = title.rpartition(".")
+    return ext.lower() not in extensions
+
+
 def resolve_move(
     old: str, rules: list[tuple[re.Pattern, str]] = RULES
 ) -> tuple[str | None, str | None]:
     """计算标题归一结果（纯函数，可离线测试）。
 
     返回 (新标题, 跳过原因)：
-    - (None, None)：标题无需移动
-    - (新标题, None)：可以移动
+    - (None, None)：标题无需移动（已全简体且规则未命中）
+    - (新标题, None)：可以移动（规则命中，或含繁体字做纯繁简移动）
     - (新标题, 原因)：需跳过（伪命名空间前缀变化 / 新标题含非法字符）。
       其余跳过条件（目标已存在）依赖 wiki，留在 MoveBot 里判断。
     """
@@ -53,9 +68,10 @@ def resolve_move(
     )  # 标题先归一简体再套规则：正文的繁体保留语义不适用于标题（标题惯例只认简体），且繁体标题可能是与日文原名同字的写法
     for pattern, name in rules:
         new = pattern.sub(lambda _, n=name: n, new)
-    if new == t2s(old):  # 规则未命中：不做纯繁简移动
+    if new == old:  # 已全简体且规则未命中
         return None, None
-    if ":" in old and old.split(":", 1)[0] != new.split(":", 1)[0]:
+    if ":" in old and t2s(old).split(":", 1)[0] != new.split(":", 1)[0]:
+        # 规则把前缀改成另一个伪命名空间才跳过；t2s 本身的前缀归一照常移动
         return new, "伪命名空间前缀变化"
     if ILLEGAL_TITLE_CHARS.search(new):
         return new, "新标题含非法字符"
@@ -68,6 +84,10 @@ class MoveBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
     def treat_page(self) -> None:
         page = self.current_page
         if page.isRedirectPage():
+            return
+        if page.namespace() == 6 and is_external_video(
+            page.title(with_ns=False), page.site.file_extensions
+        ):
             return
         old = page.title()
         new, skip = resolve_move(old)

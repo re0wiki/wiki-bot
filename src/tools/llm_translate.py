@@ -24,7 +24,6 @@ import sys
 import time
 from datetime import UTC, datetime
 from pathlib import Path
-from urllib.parse import quote
 
 import regex as re
 import requests
@@ -674,7 +673,7 @@ def resolve_wip():
     - 最新编辑是其他人（prepare 后有人类编辑）→ 丢弃旧备料重备，改动由新基线吸收
       （人类在管线编辑之后再改的情况同样落这里：人工改动即是事实上的复核）；
     - 含匹配同步标记（管线编辑完成但 done 未跑）→ 自动补跑 done 核验（verify_edit，
-      与 cmd_done 同一实现），通过则清场（补发 NOTIFY），不过则保留现场响亮失败；
+      与 cmd_done 同一实现），通过则清场，不过则保留现场响亮失败；
     - 最新编辑带 stamp 摘要却标记缺失/不匹配 → 怪异态，保留现场拒绝备页（人工排查）；
     - 以上皆非（循环任务的偶发编辑，无管线编辑痕迹）→ 视为未编辑成，丢弃重备。
     """
@@ -713,7 +712,6 @@ def resolve_wip():
             verify_edit(slug, meta)  # 核验不过即响亮退出，现场保留
             clean_work(slug)
             print(f"wip 收尾: {meta['title']}（编辑完成但 done 未跑，核验通过）")
-            print(notify_line(meta))
         elif rev.get("comment", "").startswith(SUMMARY_PREFIX):
             sys.exit(
                 f"wip 异常: {meta['title']} 最新编辑是管线编辑（stamp 摘要）但同步标记缺失/不匹配"
@@ -773,33 +771,35 @@ def cold_dur(meta):
     return f"{days / 365:.1f} 年" if days >= 365 else f"{max(days // 30, 1)} 个月"
 
 
-def std_summary(meta):
-    """标准编辑摘要（纯人类可读信息；机器校验只看源码里的同步标记）。"""
-    return f"{SUMMARY_PREFIX}{meta['en_revid']}（{cold_dur(meta)}无人类编辑）"
-
-
 def cat_pages(cat):
     """分类的 pages 数（categoryinfo 一次查询；分类不存在时 0）。"""
     r = api(ZH_API, prop="categoryinfo", titles=cat)
     return r["query"]["pages"][0].get("categoryinfo", {}).get("pages", 0)
 
 
-def notify_line(meta):
+def backlog_stats(tagged):
+    """待修撰/机翻待校对积压统计（预测本次编辑后的值：编辑必挂机翻待校对，
+    现文已挂则不变；待修撰与全站总数不受本编辑影响）。"""
     todo, proof = cat_pages(CATEGORY), cat_pages(PROOFREAD_CAT)
+    proof += 0 if tagged else 1
     total = api(ZH_API, meta="siteinfo", siprop="statistics")["query"]["statistics"][
         "articles"
     ]
-    zh = f"https://rezero.fandom.com/zh/wiki/{quote(meta['title'], safe='/:')}"
-    en = f"https://rezero.fandom.com/wiki/{quote(meta['en_title'], safe='/:')}"
-    cat = f"https://rezero.fandom.com/zh/wiki/{quote(CATEGORY, safe='/:')}"
-    proof_cat = f"https://rezero.fandom.com/zh/wiki/{quote(PROOFREAD_CAT, safe='/:')}"
-    stats = (
-        f"[待修撰]({cat}) {todo} 条（占全站条目 {todo / max(total, 1) * 100:.1f}%）；"
-        f"[机翻待校对]({proof_cat}) {proof} 条（占待修撰 {proof / max(todo, 1) * 100:.1f}%）"
-    )
     return (
-        f"NOTIFY: [{meta['title']}]({zh}) {cold_dur(meta)}无人类编辑，"
-        f"已由 Bot 根据 [en:{meta['en_title']}]({en}) 自动更新。{stats}"
+        f"待修撰 {todo} 条占全站 {todo / max(total, 1) * 100:.1f}%，"
+        f"机翻待校对 {proof} 条占待修撰 {proof / max(todo, 1) * 100:.1f}%"
+    )
+
+
+def std_summary(meta, tagged):
+    """标准编辑摘要（纯人类可读信息；机器校验只看源码里的同步标记）。
+
+    tagged = zh 现文是否已挂机翻待校对分类（积压统计据此预测编辑后的值）。
+    """
+    return (
+        f"{SUMMARY_PREFIX}{meta['en_revid']}"
+        f"（{cold_dur(meta)}无人类编辑，据 [[en:{meta['en_title']}]] 自动更新；"
+        f"{backlog_stats(tagged)}）"
     )
 
 
@@ -914,14 +914,13 @@ def verify_edit(slug, meta):
 
 
 def cmd_done(slug):
-    """一页处理完成：机械核验 agent 的 wiki 编辑（verify_edit），通过即输出 NOTIFY 行。"""
+    """一页处理完成：机械核验 agent 的 wiki 编辑（verify_edit），通过即清场。"""
     meta = load_json(WORK / f"{slug}.meta.json", None)
     if meta is None:
         sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
     verify_edit(slug, meta)
     clean_work(slug)
     print(f"done: {meta['title']}（en revid {meta['en_revid']}）")
-    print(notify_line(meta))
 
 
 def cmd_stamp(slug):
@@ -929,7 +928,9 @@ def cmd_stamp(slug):
     meta = load_json(WORK / f"{slug}.meta.json", None)
     if meta is None:
         sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
-    print(std_summary(meta))
+    zh_old = (WORK / f"{slug}.zh.txt").read_text(encoding="utf-8")
+    tagged = bool(re.search(r"\[\[Category:机翻待校对\]\]", zh_old, re.IGNORECASE))
+    print(std_summary(meta, tagged))
     print(f"<!-- LLM: revid {meta['en_revid']}; {now_iso()} -->")
 
 

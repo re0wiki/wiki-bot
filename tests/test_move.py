@@ -22,9 +22,20 @@ def test_traditional_title_presimplified_before_rules():
     assert mv.resolve_move("术语:王族誘拐案") == ("术语:王族诱拐事件", None)
 
 
-def test_no_rule_no_pure_variant_move():
-    """规则未命中时不做纯繁简移动（既有繁体标题保持原样）。"""
-    assert mv.resolve_move("小说:劍鬼戰歌") == (None, None)
+def test_pure_variant_move_when_title_has_traditional():
+    """含繁体字的标题做纯繁简移动（fixing-redirects 会解析到繁体存储标题，
+    不移则与 fix:translation 来回拉锯）。"""
+    assert mv.resolve_move("小说:劍鬼戰歌") == ("小说:剑鬼战歌", None)
+
+
+def test_pure_variant_move_with_identity_rule_hit():
+    """名字规则恒等命中 + 其余部分繁体：同样移动。"""
+    assert mv.resolve_move("术语:費瑟蘭姐妹") == ("术语:费瑟兰姐妹", None)
+
+
+def test_t2s_only_prefix_change_is_allowed():
+    """前缀仅被 t2s 归一（術語→术语）不是伪命名空间变化。"""
+    assert mv.resolve_move("術語:某某") == ("术语:某某", None)
 
 
 def test_rules_exclude_template_producing_entries():
@@ -51,3 +62,29 @@ def test_illegal_chars_are_skipped():
     new, skip = mv.resolve_move("甲", rules)
     assert new == "乙#丙"
     assert skip == "新标题含非法字符"
+
+
+# region is_external_video（File 空间无有效扩展名 = Fandom 外部视频）
+EXTS = {"png", "jpg", "mp4", "webm"}
+
+
+def test_normal_file_not_external_video():
+    assert not mv.is_external_video("利格鲁头像.png", EXTS)
+    assert not mv.is_external_video("大塚真一郎 Art Works P123.JPG", {"jpg"})
+
+
+def test_no_extension_is_external_video():
+    assert mv.is_external_video(
+        "MF文庫J『Ｒｅ：ゼロから始める異世界生活Ex5 緋色姫譚』発売CM", EXTS
+    )
+
+
+def test_dot_in_name_without_extension_is_external_video():
+    """标题含点但尾部不是有效扩展名（如 YouTube 标题里的日期）也算视频。"""
+    assert mv.is_external_video(
+        "TVアニメ『Re-ゼロから始める異世界生活』2nd season PV｜2020.7.8 ON AIR START",
+        EXTS,
+    )
+
+
+# endregion

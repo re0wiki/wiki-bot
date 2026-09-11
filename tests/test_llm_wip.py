@@ -129,11 +129,29 @@ def test_resolve_wip_done_crash_auto_verifies(tmp_path, monkeypatch, capsys):
     work = make_work(tmp_path, monkeypatch)
     new_text = f"{{{{Init}}}}\n\n新文。\n\n[[Category:机翻待校对]]\n{MARKER}\n"
     stub_api(monkeypatch, make_rev(101, lt.BOT, new_text))
-    monkeypatch.setattr(lt, "notify_line", lambda meta: "NOTIFY: stub")
     lt.resolve_wip()
     assert not list(work.iterdir())
-    out = capsys.readouterr().out
-    assert "核验通过" in out and "NOTIFY: stub" in out
+    assert "核验通过" in capsys.readouterr().out
+
+
+def test_std_summary(monkeypatch):
+    """编辑摘要：en 源条目 + 预测编辑后的积压统计（未挂机翻待校对则 +1）。"""
+
+    def fake_api(base, **params):
+        if params.get("prop") == "categoryinfo":
+            n = {lt.CATEGORY: 100, lt.PROOFREAD_CAT: 40}[params["titles"]]
+            return {"query": {"pages": [{"categoryinfo": {"pages": n}}]}}
+        if params.get("meta") == "siteinfo":
+            return {"query": {"statistics": {"articles": 200}}}
+        raise AssertionError(params)
+
+    monkeypatch.setattr(lt, "api", fake_api)
+    s = lt.std_summary(META, tagged=False)
+    assert s.startswith("LLM(K3): revid 100（")
+    assert "无人类编辑，据 [[en:Test]] 自动更新；" in s
+    assert "待修撰 100 条占全站 50.0%，机翻待校对 41 条占待修撰 41.0%）" in s
+    s = lt.std_summary(META, tagged=True)
+    assert "机翻待校对 40 条占待修撰 40.0%）" in s
 
 
 # ------------------------------------------------------------ verify_edit
