@@ -22,9 +22,20 @@ def test_traditional_title_presimplified_before_rules():
     assert mv.resolve_move("术语:王族誘拐案") == ("术语:王族诱拐事件", None)
 
 
-def test_no_rule_no_pure_variant_move():
-    """规则未命中时不做纯繁简移动（既有繁体标题保持原样）。"""
-    assert mv.resolve_move("小说:劍鬼戰歌") == (None, None)
+def test_pure_variant_move_when_title_has_traditional():
+    """含繁体字的标题做纯繁简移动（fixing-redirects 会解析到繁体存储标题，
+    不移则与 fix:translation 来回拉锯）。"""
+    assert mv.resolve_move("小说:劍鬼戰歌") == ("小说:剑鬼战歌", None)
+
+
+def test_pure_variant_move_with_identity_rule_hit():
+    """名字规则恒等命中 + 其余部分繁体：同样移动。"""
+    assert mv.resolve_move("术语:費瑟蘭姐妹") == ("术语:费瑟兰姐妹", None)
+
+
+def test_t2s_only_prefix_change_is_allowed():
+    """前缀仅被 t2s 归一（術語→术语）不是伪命名空间变化。"""
+    assert mv.resolve_move("術語:某某") == ("术语:某某", None)
 
 
 def test_rules_exclude_template_producing_entries():
