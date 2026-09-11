@@ -440,11 +440,12 @@ def p2st(pattern: str):
     """简繁展开：正则中每个字面字符展开为 [简繁] 字符类。
 
     名字规则与别名规则统一走此窄展开；相似组宽展开（会把普通词卷进来）已随
-    历史变体全部显式登记为别名而废弃删除。手写 [...] 字符类与转义原样保留
-    （利格鲁 的宽组、梅莉 的选择性展开靠手写类表达）。
+    历史变体全部显式登记为别名而废弃删除。手写 [...] 字符类只写简体即可：
+    类内每个字符自动补 s2t 繁体（利格鲁 的宽组、梅莉 的选择性展开靠手写类表达）。
     """
     out = []
     in_class = False
+    seen = set()  # 当前类内已输出字符（补繁体后去重）
     i = 0
     while i < len(pattern):
         c = pattern[i]
@@ -454,10 +455,16 @@ def p2st(pattern: str):
             continue
         if c == "[":
             in_class = True
+            seen.clear()
+            out.append(c)
         elif c == "]":
             in_class = False
-        if in_class or c in "[]":
             out.append(c)
+        elif in_class:
+            for ch in dict.fromkeys((c, s2t(c))):
+                if ch not in seen:
+                    seen.add(ch)
+                    out.append(ch)
         else:
             t = s2t(c)
             out.append(f"[{c}{t}]" if t != c else c)
