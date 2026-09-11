@@ -29,6 +29,11 @@ per-file-target-version = { "src/tools/recent_changes_watchdog.py" = "py311" }
 # langs 等类属性字典是 pywikibot family 文件的既定写法。
 "families/*.py" = ["RUF012"]
 
+# 裸 pytest 只收 tests/：仓库里允许存在带顶层执行逻辑的 test_ 前缀工具脚本
+# （如 src/tools/test_pwb_throttle.py），全树收集会 import 并引爆其副作用。
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
 # ty 无法静态解析 PEP 660 editable finder，需显式把 submodule 根目录加入搜索路径
 # （仅影响 import 解析）。exclude 控制检查范围：pywikibot 是上游代码，
 # logs/ 是本地一次性脚本（已 gitignore），都不检查。
