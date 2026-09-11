@@ -601,7 +601,7 @@ def known_nouns(body, conv):
     for e in translations.ENTRIES:
         if not e.en or len(e.en) < 3 or not re.search(rf"\b{re.escape(e.en)}\b", body):
             continue
-        hits.append((e.en, e.std.text))
+        hits.append((e.en, e.std))
     hits.sort(key=lambda h: -len(h[0]))  # 稳定排序：等长保持表中先后顺序
     kept = []
     surfaces = []  # 全部胜出面（含被内链跳过的），用于子面抑制

@@ -34,7 +34,7 @@ def _build_glossary() -> dict[str, str]:
         if e.ja:
             s = e.ja.strip()
             if len(s) >= 2 and s not in _COMMON_WORD_SURFACES:
-                surf[s] = e.std.text if surf.get(s) in (None, e.std.text) else None
+                surf[s] = e.std if surf.get(s) in (None, e.std) else None
     exact = {k: v for k, v in surf.items() if v}
     # 再分段：不覆盖已有精确归属
     for e in translations.ENTRIES:
@@ -46,10 +46,10 @@ def _build_glossary() -> dict[str, str]:
                 continue
             if s in exact:
                 continue
-            if s in surf and surf[s] != e.std.text:
+            if s in surf and surf[s] != e.std:
                 surf[s] = None  # 歧义
             else:
-                surf[s] = e.std.text
+                surf[s] = e.std
     return {k: v for k, v in surf.items() if v}
 
 

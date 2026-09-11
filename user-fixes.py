@@ -467,7 +467,7 @@ def p2st(pattern: str):
 
 # (标准名, 目标名) 生成名字规则，数据在 translations.py；模板条目不生成名字规则
 translation_name_rules = [
-    (e.std.text, e.std.text) for e in translations.ENTRIES if "{{" not in e.std.text
+    (e.std, e.std) for e in translations.ENTRIES if "{{" not in e.std
 ]
 # 长匹配优先：短名规则排在长名规则后，防止短名吃掉长名内部（菈姆 命中 [[普菈姆|..]] 类）
 translation_name_rules.sort(key=lambda r: -len(r[1]))
@@ -508,14 +508,10 @@ def expand_class_pattern(pattern):
 
 
 # 别名机制：精确对由 Entry.aliases 生成，繁体写法一并归一。正则形式的别名
-# （text 含字符类或 lookaround）生成 guard 对（p2st 简繁展开，手写字符类原样保留），
+# （写法含字符类或 lookaround）生成 guard 对（p2st 简繁展开，手写字符类原样保留），
 # 别名位于更长他名内部时防子串误伤。
-def _variant(v):
-    return v if isinstance(v, translations.Variant) else None
-
-
 def _regex_form(s):
-    """别名 text 是否为正则形式（含字符类或 lookaround）。"""
+    """别名写法是否为正则形式（含字符类或 lookaround）。"""
     return "[" in s or "(?" in s
 
 
@@ -533,17 +529,16 @@ def _match_len(s):
 # 顺序试探会慢三个数量级）。
 _name_items = [(len(n), p2st(pat), n) for pat, n in translation_name_rules]
 _pair_items = [
-    (len(a2), re.escape(a2), e.std.text)
+    (len(a2), re.escape(a2), e.std)
     for e in translations.ENTRIES
     for a in e.aliases
-    for a0 in [a.text if isinstance(a, translations.Variant) else a]
-    if not _regex_form(a0)
-    for a2 in dict.fromkeys((a0, s2t(a0)))
+    if not _regex_form(a)
+    for a2 in dict.fromkeys((a, s2t(a)))
 ] + [
-    (_match_len(v.text), p2st(v.text), e.std.text)
+    (_match_len(a), p2st(a), e.std)
     for e in translations.ENTRIES
     for a in e.aliases
-    if (v := _variant(a)) and _regex_form(v.text)
+    if _regex_form(a)
 ]
 _alt_items = sorted(_name_items + _pair_items, key=lambda x: -x[0])
 _alt_targets = [n for _, _, n in _alt_items]
