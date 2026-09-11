@@ -4,7 +4,8 @@
 无需两边同步。正文替换与标题均一律归一到简体（标题惯例只认简体，前缀同理，见 AGENTS.md）。
 
 跳过：重定向页、产出模板调用的规则（{{...}}）、伪命名空间前缀会变化的、
-新标题含非法字符的、目标已存在且不是指回当前页的重定向的（需人工合并）。
+新标题含非法字符的、目标已存在且不是指回当前页的重定向的（需人工合并）、
+File 空间无有效扩展名的标题（Fandom 外部视频，见 is_external_video）。
 """
 
 import regex as re
@@ -35,6 +36,18 @@ RULES = (
     + [(re.compile(o, re.IGNORECASE), n) for o, n in translation_pairs if "{{" not in n]
 )
 ILLEGAL_TITLE_CHARS = re.compile(r"[#<>\[\]{}|]")
+
+
+def is_external_video(title: str, extensions) -> bool:
+    """File 标题无有效扩展名 = Fandom 从 YouTube 导入的外部视频。
+
+    这类标题即外语原文名（YouTube 原标题）：译名归一会产生半简半日的
+    四不像标题，且破坏 re0_image 的跨站同名比对（2026-09-06 手动带 File
+    生成器参数误跑，一批视频被移成中文名后重新同步修复）。循环任务的
+    生成器不含 File 空间，此防护针对手动带参误跑。
+    """
+    *_, ext = title.rpartition(".")
+    return ext.lower() not in extensions
 
 
 def resolve_move(
@@ -68,6 +81,10 @@ class MoveBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
     def treat_page(self) -> None:
         page = self.current_page
         if page.isRedirectPage():
+            return
+        if page.namespace() == 6 and is_external_video(
+            page.title(with_ns=False), page.site.file_extensions
+        ):
             return
         old = page.title()
         new, skip = resolve_move(old)

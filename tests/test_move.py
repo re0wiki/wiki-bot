@@ -51,3 +51,29 @@ def test_illegal_chars_are_skipped():
     new, skip = mv.resolve_move("甲", rules)
     assert new == "乙#丙"
     assert skip == "新标题含非法字符"
+
+
+# region is_external_video（File 空间无有效扩展名 = Fandom 外部视频）
+EXTS = {"png", "jpg", "mp4", "webm"}
+
+
+def test_normal_file_not_external_video():
+    assert not mv.is_external_video("利格鲁头像.png", EXTS)
+    assert not mv.is_external_video("大塚真一郎 Art Works P123.JPG", {"jpg"})
+
+
+def test_no_extension_is_external_video():
+    assert mv.is_external_video(
+        "MF文庫J『Ｒｅ：ゼロから始める異世界生活Ex5 緋色姫譚』発売CM", EXTS
+    )
+
+
+def test_dot_in_name_without_extension_is_external_video():
+    """标题含点但尾部不是有效扩展名（如 YouTube 标题里的日期）也算视频。"""
+    assert mv.is_external_video(
+        "TVアニメ『Re-ゼロから始める異世界生活』2nd season PV｜2020.7.8 ON AIR START",
+        EXTS,
+    )
+
+
+# endregion
