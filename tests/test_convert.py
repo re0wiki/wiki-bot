@@ -34,6 +34,63 @@ def test_convert_links_anchor():
     assert "[[角色:次要角色#Aheem Lavril|Aheem Lavril]]" in out
 
 
+def test_convert_links_case_fallback():
+    # cosmetic 的 cleanUpLinks 会把 [[Meteor|meteor]] 折叠成 [[meteor]]
+    # （MediaWiki 首字母大小写等价、管道冗余），映射键仍是 en 原标题大小写
+    mapping = {"Meteor": "术语:魔法器"}
+    assert lt.convert_links("a [[meteor]] b", mapping) == "a [[术语:魔法器|meteor]] b"
+    assert lt.convert_links("[[meteor|流星]]", mapping) == "[[术语:魔法器|流星]]"
+    # 回退也救不了的未解析名原样保留
+    assert lt.convert_links("[[mystery]]", mapping) == "[[mystery]]"
+
+
+# ------------------------------------------------------------ 信息框参数解析
+
+ZH_INLINE_BLOCK = """{{Infobox game | name = Re:从零开始的异世界生活 DEATH OR KISS
+
+| image = Death or Kiss.jpg
+| genre = Adventure
+| modes = }}"""
+
+CONV_GAME_BLOCK = """{{Infobox game
+| name = Re:Zero -DEATH OR KISS-
+| image = Death or Kiss.jpg
+| genre = Adventure
+| modes = }}"""
+
+
+def test_parse_params_inline_head_and_tail():
+    """粘在模板头/尾行的内联参数也解析出来（zh 常见写法）。"""
+    head, params, tail = lt.parse_params(ZH_INLINE_BLOCK)
+    assert head == "{{Infobox game"
+    assert tail == "}}"
+    assert [n for n, _ in params] == ["name", "image", "genre", "modes"]
+    assert lt.param_value(params[0][1]) == "Re:从零开始的异世界生活 DEATH OR KISS"
+    assert lt.param_value(params[-1][1]) == ""
+
+
+def test_parse_params_pipe_inside_link_not_split():
+    """链接显示文字里的 | 不是参数边界。"""
+    line = "{{Infobox game | name = [[术语:魔法器|魔法器]] 是核心 | image = a.jpg"
+    head, params = lt.split_head(line)
+    assert head == "{{Infobox game"
+    assert params == ["| name = [[术语:魔法器|魔法器]] 是核心", "| image = a.jpg"]
+
+
+def test_merge_infobox_zh_inline_head_curation():
+    """zh 策展字段粘在头行也能被合并保留（不再漏回 en 值）。"""
+    out = lt.merge_infobox(CONV_GAME_BLOCK, ZH_INLINE_BLOCK)
+    assert "| name = Re:从零开始的异世界生活 DEATH OR KISS" in out
+    assert "Re:Zero -DEATH OR KISS-" not in out
+
+
+def test_merge_infobox_zh_inline_tail_curation():
+    """zh 策展值粘在尾行（| modes = 单人 }}）同样参与合并。"""
+    zh = ZH_INLINE_BLOCK.replace("| modes = }}", "| modes = 单人 }}")
+    out = lt.merge_infobox(CONV_GAME_BLOCK, zh)
+    assert "| modes = 单人" in out
+
+
 # ------------------------------------------------------------ 信息框合并
 
 
