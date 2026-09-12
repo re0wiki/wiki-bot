@@ -1904,9 +1904,21 @@ ENTRIES: list[Entry] = [
         note="术语；13卷第七章题",
     ),
     Entry(
+        std="{{Seirei}}",
+        ja="精霊",
+        en="Spirit",
+        note="术语；标准译法是模板；正文归一由结构规则（{{Seirei or Elf}}）处理",
+    ),
+    Entry(
         std="{{Elf}}",
         en="Elf",
         note="术语；Elf 的标准译法是模板；正文归一由结构规则（{{Seirei or Elf}} 等）处理",
+    ),
+    Entry(
+        std="{{Yousei}}",
+        ja="妖精",
+        en="Fairy",
+        note="术语；邪精灵/妖精；标准译法是模板；正文归一由结构规则（{{Yousei or Elf}}）处理",
     ),
     Entry(
         std="{{Ringa}}",

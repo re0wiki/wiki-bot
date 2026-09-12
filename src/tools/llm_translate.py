@@ -684,7 +684,11 @@ def evaluate_candidate(item):
 
 
 def known_nouns(body, conv):
-    """en 正文中出现的已裁决专名（译名表 en 字段词边界精确匹配）→ 对照行。
+    """en 正文中出现的已裁决专名（译名表 en 字段词边界匹配）→ 对照行。
+
+    专名大小写敏感精确匹配；模板条目（std 含 `{{`，如 {{Seirei}}）的 en 是普通
+    名词，en 正文大小写不定，大小写不敏感。复数/变形不展开，一页一次命中即注入，
+    漏网形态由主循环 fix:translation 的 {{Seirei or Elf}} 类占位兜底。
 
     窄注入：只覆盖骨架内链未覆盖的词——标准名已是 conv 内链目标（[[名| 或
     [[名]]）的条目跳过，其译名 agent 从骨架直接可见，不重复注入。
@@ -696,7 +700,12 @@ def known_nouns(body, conv):
 
     hits = []
     for e in translations.ENTRIES:
-        if not e.en or len(e.en) < 3 or not re.search(rf"\b{re.escape(e.en)}\b", body):
+        if not e.en or len(e.en) < 3:
+            continue
+        # 模板条目（{{Seirei}} 等字词转换模板）的 en 是普通名词，en 正文大小写不定
+        # （实测小写居多），大小写不敏感匹配；专名保持精确匹配（防 Felt/felt 类误判）。
+        flags = re.IGNORECASE if "{{" in e.std else 0
+        if not re.search(rf"\b{re.escape(e.en)}\b", body, flags):
             continue
         hits.append((e.en, e.std))
     hits.sort(key=lambda h: -len(h[0]))  # 稳定排序：等长保持表中先后顺序
