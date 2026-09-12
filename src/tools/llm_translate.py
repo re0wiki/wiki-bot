@@ -5,7 +5,7 @@
 用法（仓库根目录）：
     uv run python src/tools/llm_translate.py refresh   # 重建选页队列（约 5 分钟，低频）
     uv run python src/tools/llm_translate.py prepare   # 取队首备料
-    uv run python src/tools/llm_translate.py stamp <slug>  # 打印编辑应用的标准摘要与同步标记
+    uv run python src/tools/llm_translate.py publish <slug>  # 基线比对+打标+保存 agent 新源码
     uv run python src/tools/llm_translate.py done <slug> [理由]  # 核验 wiki 编辑
     uv run python src/tools/llm_translate.py skip <slug> [理由]  # 无需内容编辑（打标记）
 
@@ -13,7 +13,8 @@
     <!-- LLM: revid <en_revid>; <ISO 时间> -->   （已同步到 en 该版本）
 revid 为 - 表示无 en 源（zh 源码无 en 链接，或 en 页不存在）。
 编辑（done）与跳过（skip/auto-skip）统一以标记落账——不怕本地状态丢失，格式变更
-只是普通编辑。本脚本对 wiki 的写入只有一处：skip/auto-skip 的机械打标记。
+只是普通编辑。本脚本对 wiki 的写入只有两处：publish（agent 新源码的机械保存）
+与 skip/auto-skip 的机械打标记。
 
 运行期数据全部在 .cache/llm_translate/（gitignored，跨运行状态——非 scratch）。
 """
@@ -23,6 +24,7 @@ import json
 import sys
 import time
 from datetime import UTC, datetime
+from itertools import pairwise
 from pathlib import Path
 
 import regex as re
@@ -357,12 +359,26 @@ def convert_template_names(text):
 
 
 def convert_links(text, mapping):
-    """en 内链目标 → zh 最终目标（resolve_links 的映射）；显示文字留给 agent 翻译。"""
+    """en 内链目标 → zh 最终目标（resolve_links 的映射）；显示文字留给 agent 翻译。
+
+    首字母大小写回退：前置 cosmetic 的 cleanUpLinks 会把 [[Meteor|meteor]]
+    折叠成 [[meteor]]（MediaWiki 首字母大小写等价、管道冗余），而映射键是
+    en 原标题的大小写，直接查找会漏。
+    """
 
     def repl(m):
         target, pipe = m.group(1).strip(), m.group(2)
-        if target in mapping:
-            return f"[[{mapping[target]}{pipe or '|' + target}]]"
+        hit = mapping.get(target)
+        if hit is None and target:
+            for variant in (
+                target[0].upper() + target[1:],
+                target[0].lower() + target[1:],
+            ):
+                hit = mapping.get(variant)
+                if hit is not None:
+                    break
+        if hit is not None:
+            return f"[[{hit}{pipe or '|' + target}]]"
         return m.group(0)
 
     return re.sub(r"\[\[([^\]|]+)(\|[^\]]*)?\]\]", repl, text)
@@ -394,17 +410,99 @@ def find_infoboxes(text):
     return out
 
 
+def split_top_pipes(text, curly):
+    """按顶层 | 切分（{{ 深度 1、[[]] 深度 0 处），每片以 | 起（首片除外）。
+
+    curly 为行首的 {{ 嵌套深度：头行（含 {{ 前缀）传 0，模板内部文本传 1。
+    模板自身的收尾 }} 不在此处理（curly 只增到 2 才减，深度 1 的 }} 原样跳过）。
+    """
+    square = 0
+    cuts = []
+    i = 0
+    while i < len(text):
+        two = text[i : i + 2]
+        if two == "{{":
+            curly += 1
+            i += 2
+            continue
+        if two == "}}" and curly > 1:
+            curly -= 1
+            i += 2
+            continue
+        if two == "[[":
+            square += 1
+            i += 2
+            continue
+        if two == "]]" and square:
+            square -= 1
+            i += 2
+            continue
+        if text[i] == "|" and curly == 1 and square == 0:
+            cuts.append(i)
+        i += 1
+    bounds = [0, *cuts, len(text)]
+    return [text[a:b] for a, b in pairwise(bounds)]
+
+
+def split_head(line):
+    """切头行：{{Infobox X | a = 1 | b = 2 → ("{{Infobox X", ["| a = 1", "| b = 2"])。"""
+    parts = split_top_pipes(line, 0)
+    return parts[0].rstrip(), [p.rstrip() for p in parts[1:] if p.strip()]
+
+
+def split_tail(line):
+    """切尾行：| a = 1 }} → (["| a = 1"], "}}")；无顶层模板收尾返回 ([], line)。"""
+    curly, square = 1, 0
+    i = 0
+    while i < len(line) - 1:
+        two = line[i : i + 2]
+        if two == "{{":
+            curly += 1
+            i += 2
+            continue
+        if two == "}}" and square == 0:
+            curly -= 1
+            if curly == 0:
+                before = line[:i].rstrip()
+                params = (
+                    [p.rstrip() for p in split_top_pipes(before, 1) if p.strip()]
+                    if before
+                    else []
+                )
+                return params, line[i:]
+            i += 2
+            continue
+        if two == "[[":
+            square += 1
+            i += 2
+            continue
+        if two == "]]" and square:
+            square -= 1
+            i += 2
+            continue
+        i += 1
+    return [], line
+
+
 def parse_params(block):
-    """信息框块 → (头行, [(参数名小写, 原始行列表)], 尾行)；值可多行（gallery 等）。"""
+    """信息框块 → (头行, [(参数名小写, 原始行列表)], 尾行)；值可多行（gallery 等）。
+
+    粘在头/尾行的内联参数（{{Infobox X | name = ...、| modes = }}）按顶层
+    | / }} 切开一并解析——zh 策展字段写在这种位置时也能被合并保留。
+    """
     lines = block.split("\n")
+    if len(lines) == 1:
+        return lines[0], [], lines[0]
+    head, head_params = split_head(lines[0])
+    tail_params, tail = split_tail(lines[-1])
     params = []
-    for line in lines[1:-1]:
+    for line in [*head_params, *lines[1:-1], *tail_params]:
         pm = re.match(r"^\|[ \t]*([A-Za-z_][\w -]*?)[ \t]*=", line)
         if pm:
             params.append((pm.group(1).lower(), [line]))
         elif params:
             params[-1][1].append(line)  # 续行（含空行）归前一参数
-    return lines[0], params, lines[-1]
+    return head, params, tail
 
 
 def param_value(lines):
@@ -504,7 +602,7 @@ def add_marker(text, marker):
 
 
 def stamp_page(title, revid, reason):
-    """机械打同步标记（skip/auto-skip 的唯一 wiki 写入）。"""
+    """机械打同步标记（skip/auto-skip 的 wiki 写入；内容编辑走 cmd_publish）。"""
     import pywikibot
 
     site = pywikibot.Site("zh", "re0")
@@ -651,30 +749,39 @@ def write_work_files(best):
         },
     )
     print(f"prepared: {title} (cold {cold[:10]}, en revid {en_revid})")
+    print(f"  slug: {slug}（publish/done/skip 用此名）")
     print(
         f"  conv skeleton: {len(conv)} chars（en body {len(body)} chars, "
         f"links: {len(mapping)} resolved, {len(unresolved)} unresolved）"
     )
-    print(
-        f"  agent 以 {WORK / f'{slug}.conv.txt'} 为基础翻译 prose；zh 策展字段已机械保留"
-    )
+    if unresolved:
+        print(f"  未解析内链（zh 无对应页，保留 en 原名）: {', '.join(unresolved)}")
     if nouns:
         print(f"  已裁决专名（见 {WORK / f'{slug}.nouns.txt'}，译文须使用）：")
         for n in nouns:
             print(f"    {n}")
+    # 骨架与 zh 现文全量注入 stdout（进 agent prompt），省两次读文件。
+    # 不设上限：Hermes 注入路径无截断（scheduler_script 全量捕获、scheduler_prompt
+    # 整体注入，仅有的 8000 字符截断在未使用的 context_from 路径）；Kimi 侧限制即
+    # 上下文窗口（k3 为 100 万 token，实测队列最大页 22.6 万字符 ≈9 万 token）；
+    # 超窗页面会以 API 错误响亮失败，那才是处理时机
+    print(f"===== {slug}.conv.txt（翻译基础骨架） =====")
+    print(conv)
+    print(f"===== {slug}.zh.txt（prepare 时 zh 现文，策展与原创段落判断用） =====")
+    print(zh_text)
 
 
 def resolve_wip():
     """prepare 前置：自动收尾 work/ 里的上轮残留项，再备新页。
 
-    按 wiki 最新状态分流（管线的编辑认 stamp 摘要前缀与同步标记两个痕迹，
-    循环任务的偶发编辑不算——冷页随时可能被主循环的 fix 类任务碰到）：
+    按 wiki 最新状态分流（管线的编辑认管线摘要前缀（SUMMARY_PREFIX）与同步标记
+    两个痕迹，循环任务的偶发编辑不算——冷页随时可能被主循环的 fix 类任务碰到）：
     - zh 页无新编辑（agent 未编辑成，如 API 故障）→ 丢弃旧备料，按最新状态重备；
     - 最新编辑是其他人（prepare 后有人类编辑）→ 丢弃旧备料重备，改动由新基线吸收
       （人类在管线编辑之后再改的情况同样落这里：人工改动即是事实上的复核）；
     - 含匹配同步标记（管线编辑完成但 done 未跑）→ 自动补跑 done 核验（verify_edit，
       与 cmd_done 同一实现），通过则清场，不过则保留现场响亮失败；
-    - 最新编辑带 stamp 摘要却标记缺失/不匹配 → 怪异态，保留现场拒绝备页（人工排查）；
+    - 最新编辑带管线摘要却标记缺失/不匹配 → 怪异态，保留现场拒绝备页（人工排查）；
     - 以上皆非（循环任务的偶发编辑，无管线编辑痕迹）→ 视为未编辑成，丢弃重备。
     """
     for wip_meta in sorted(WORK.glob("*.meta.json")):
@@ -714,11 +821,11 @@ def resolve_wip():
             print(f"wip 收尾: {meta['title']}（编辑完成但 done 未跑，核验通过）")
         elif rev.get("comment", "").startswith(SUMMARY_PREFIX):
             sys.exit(
-                f"wip 异常: {meta['title']} 最新编辑是管线编辑（stamp 摘要）但同步标记缺失/不匹配"
+                f"wip 异常: {meta['title']} 最新编辑是管线编辑（管线摘要）但同步标记缺失/不匹配"
                 f"（{[f'revid {m[0]}' for m in markers]!r}）——保留现场，人工排查"
             )
         else:
-            # 无标记、无 stamp 摘要的 bot 编辑 = 循环任务偶发编辑，agent 未编辑成
+            # 无标记、无管线摘要的 bot 编辑 = 循环任务偶发编辑，agent 未编辑成
             clean_work(slug)
             print(f"wip 丢弃: {meta['title']}（循环任务偶发编辑，按最新状态重备）")
 
@@ -867,7 +974,7 @@ def verify_edit(slug, meta):
         sys.exit(
             f"同步标记缺失或不匹配（期望 <!-- LLM: revid {want}; ... -->，"
             f"实际 {[f'revid {m[0]}' for m in markers]!r}）——"
-            "把 stamp 子命令输出的标记行加入正文末尾再保存"
+            "标记由 publish 机械打（agent 不手写）：重跑 publish <slug> 再 done"
         )
     new_text = MARKER_RE.sub("", rev["slots"]["main"]["content"])
 
@@ -913,6 +1020,69 @@ def verify_edit(slug, meta):
         sys.exit(f"模板校验失败: 新增 {sorted(tpl_bad)}")
 
 
+def ensure_proofread_cat(text):
+    """正文末尾挂 [[Category:机翻待校对]]（publish 机械处理）：已挂则不动，
+    尾部有分类段则并入，否则加在正文末（语言链接块之前）。"""
+    if re.search(r"\[\[Category:机翻待校对\]\]", text, re.IGNORECASE):
+        return text
+    lines = text.splitlines()
+    i = len(lines)
+    while i > 0 and (LANGLINK_LINE.match(lines[i - 1]) or not lines[i - 1].strip()):
+        i -= 1
+    body, tail = lines[:i], [line for line in lines[i:] if line.strip()]
+    cat = f"[[{PROOFREAD_CAT}]]"
+    if body and CATEGORY_LINE.match(body[-1]):
+        body.append(cat)  # 并入既有分类段
+    else:
+        body.extend(["", cat])
+    return "\n".join(body + ([""] if tail else []) + tail) + "\n"
+
+
+def finalize_new_text(new_text, en_revid):
+    """agent 新源码 → 落 wiki 的最终文本：正文末挂机翻待校对分类（已挂不动）、
+    剥除已有同步标记后正文末机械打标（全页恰一个由这里保证，agent 不写标记）。"""
+    stripped = MARKER_RE.sub("", new_text)
+    return add_marker(
+        ensure_proofread_cat(stripped), f"<!-- LLM: revid {en_revid}; {now_iso()} -->"
+    )
+
+
+def cmd_publish(slug):
+    """发布 agent 的新源码：基线比对 + 登录校验 + 标准摘要 + 机械打标保存。
+
+    agent 把整页新源码写进 work/<slug>.new.txt（不含同步标记）。wiki 最新
+    源码与 prepare 时 zh 现文不一致即响亮中止（不融合——下 tick prepare
+    以最新状态自动重备吸收）。
+    """
+    meta = load_json(WORK / f"{slug}.meta.json", None)
+    if meta is None:
+        sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
+    new_file = WORK / f"{slug}.new.txt"
+    if not new_file.exists():
+        sys.exit(f"找不到 {new_file}——先把整页新源码写入该文件（不含同步标记）")
+    new_text = new_file.read_text(encoding="utf-8")
+    live, _, _ = get_page(ZH_API, meta["title"])
+    zh_old = (WORK / f"{slug}.zh.txt").read_text(encoding="utf-8")
+    if live is None:
+        sys.exit(f"{meta['title']} 页面不存在（prepare 后被删除？），中止")
+    if live.rstrip("\n") != zh_old.rstrip("\n"):
+        sys.exit(
+            "基线不一致：wiki 最新源码与 prepare 时 zh 现文不符——"
+            "中止本轮（下 tick prepare 以最新状态自动重备吸收）"
+        )
+
+    import pywikibot
+
+    site = pywikibot.Site("zh", "re0")
+    site.login()
+    assert site.user() == BOT, f"登录账号异常: {site.user()}"
+    page = pywikibot.Page(site, meta["title"])
+    page.text = finalize_new_text(new_text, meta["en_revid"])
+    tagged = bool(re.search(r"\[\[Category:机翻待校对\]\]", zh_old, re.IGNORECASE))
+    page.save(summary=std_summary(meta, tagged), bot=False, minor=False)
+    print(f"published: {meta['title']}（en revid {meta['en_revid']}，待 done 核验）")
+
+
 def cmd_done(slug):
     """一页处理完成：机械核验 agent 的 wiki 编辑（verify_edit），通过即清场。"""
     meta = load_json(WORK / f"{slug}.meta.json", None)
@@ -921,17 +1091,6 @@ def cmd_done(slug):
     verify_edit(slug, meta)
     clean_work(slug)
     print(f"done: {meta['title']}（en revid {meta['en_revid']}）")
-
-
-def cmd_stamp(slug):
-    """打印编辑应使用的标准摘要（人类可读）与同步标记（正文末尾，done 核验后者）。"""
-    meta = load_json(WORK / f"{slug}.meta.json", None)
-    if meta is None:
-        sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
-    zh_old = (WORK / f"{slug}.zh.txt").read_text(encoding="utf-8")
-    tagged = bool(re.search(r"\[\[Category:机翻待校对\]\]", zh_old, re.IGNORECASE))
-    print(std_summary(meta, tagged))
-    print(f"<!-- LLM: revid {meta['en_revid']}; {now_iso()} -->")
 
 
 def cmd_skip(slug, reason):
@@ -957,7 +1116,7 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "cmd",
-        choices=["refresh", "prepare", "stamp", "done", "skip", "status"],
+        choices=["refresh", "prepare", "publish", "done", "skip", "status"],
     )
     ap.add_argument("slug", nargs="?")
     ap.add_argument("reason", nargs="?")
@@ -971,8 +1130,8 @@ if __name__ == "__main__":
     else:
         if not args.slug:
             ap.error(f"{args.cmd} 需要 slug 参数")
-        if args.cmd == "stamp":
-            cmd_stamp(args.slug)
+        if args.cmd == "publish":
+            cmd_publish(args.slug)
         elif args.cmd == "done":
             cmd_done(args.slug)
         else:
