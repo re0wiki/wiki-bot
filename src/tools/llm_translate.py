@@ -766,7 +766,7 @@ def write_work_files(best):
     if unresolved:
         print(f"  未解析内链（zh 无对应页，保留 en 原名）: {', '.join(unresolved)}")
     if nouns:
-        print(f"  已裁决专名（见 {WORK / f'{slug}.nouns.txt'}，译文须使用）：")
+        print("  已裁决专名（译文须使用）：")
         for n in nouns:
             print(f"    {n}")
     # 骨架与 zh 现文全量注入 stdout（进 agent prompt），省两次读文件。
@@ -774,9 +774,9 @@ def write_work_files(best):
     # 整体注入，仅有的 8000 字符截断在未使用的 context_from 路径）；Kimi 侧限制即
     # 上下文窗口（k3 为 100 万 token，实测队列最大页 22.6 万字符 ≈9 万 token）；
     # 超窗页面会以 API 错误响亮失败，那才是处理时机
-    print(f"===== {slug}.conv.txt（翻译基础骨架） =====")
+    print("===== 骨架 =====")
     print(conv)
-    print(f"===== {slug}.zh.txt（prepare 时 zh 现文，策展与原创段落判断用） =====")
+    print("===== zh 现文 =====")
     print(zh_text)
 
 
