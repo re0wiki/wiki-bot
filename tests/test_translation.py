@@ -108,6 +108,11 @@ def test_ja_kana_runs_protected():
     assert apply("{{Ruby-zh-ja|聖域|せいいき}}") == "{{Ruby-zh-ja|圣域|せいいき}}"
     # 中文词+括号日文注音：中文部分归一，注音不动
     assert apply("聖域（せいいき）") == "圣域（せいいき）"
+    # 顿号连通日文名内部枚举（水門都市残留組、プリステラ復興日誌 类误伤实例）
+    ja_enum = "（水門都市残留組、プリステラ復興日誌）"
+    assert apply(ja_enum) == ja_enum
+    # 纯中文顿号列举（无假名）不形成保护区，照常归一
+    assert apply("聖域、水門都市、王選") == "圣域、水门都市、王选"
 
 
 def test_nekoquote_aliases_normalize():
