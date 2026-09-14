@@ -3670,4 +3670,56 @@ ENTRIES: list[Entry] = [
     Entry(
         std="Noble", en="Noble", note="游戏:DEATH OR KISS 原创角色（贵族）。保留英文"
     ),
+    # ---- 高频通行术语（官方语料核验或 wiki 既有；prepare 注入用，aliases 留人工） ----
+    Entry(std="圣域", en="Sanctuary", note="术语。官方语料 771 处"),
+    Entry(
+        std="试炼",
+        en="Trial",
+        note="术语；圣域的试炼。官方语料 603 处；en 复数 Trials 不在注入匹配（词边界）",
+    ),
+    Entry(std="王选", en="Royal Selection", note="术语；王选。官方语料 371 处"),
+    Entry(std="魔女教", en="Witch Cult", note="术语。官方语料 937 处"),
+    Entry(
+        std="大罪司教",
+        en="Sin Archbishop",
+        note="术语；en 复数 Sin Archbishops 不在注入匹配（词边界）。官方语料 750 处",
+    ),
+    Entry(std="魔兽", ja="魔獣", en="Demon Beast", note="术语。官方语料 1350 处"),
+    Entry(std="剑圣", ja="剣聖", en="Sword Saint", note="术语/称号。官方语料 598 处"),
+    Entry(std="水门都市", en="Water City", note="术语；普利斯提拉。官方语料 103 处"),
+    Entry(
+        std="嫉妒魔女",
+        en="Witch of Envy",
+        note="角色/术语。官方语料 116 处（另 嫉妒的魔女 10 处）",
+    ),
+    Entry(std="大罪魔女", en="Witches", note="术语。官方语料 5 处"),
+    Entry(
+        std="魔女",
+        en="Witch",
+        note="术语；泛称。与 Witch Cult/Witch of Envy 共存时由注入的子面抑制处理",
+    ),
+    Entry(std="王国军", en="Royal Army", note="术语；卢克尼卡王国军。官方语料 105 处"),
+    Entry(std="加护", ja="加護", en="Divine Protection", note="术语。官方语料 369 处"),
+    Entry(std="权能", ja="権能", en="Authority", note="术语。官方语料 355 处"),
+    Entry(std="福音书", ja="福音書", en="Gospel", note="术语。官方语料 57 处"),
+    Entry(
+        std="普勒阿得斯监视塔",
+        en="Pleiades Watchtower",
+        note="术语；贤者隐居之塔。官方语料 110 处；wiki 条目名作 贤者塔（系衍生简称，非同词异写——官方行文作 ‘贤者’之塔，仅 4 处）",
+    ),
+    Entry(
+        std="圣域事件",
+        en="Sanctuary Incident",
+        note="术语；en-wiki 造事件名。语料无据，wiki 既有写法（术语:圣域事件）",
+    ),
+    Entry(
+        std="水门都市攻防战",
+        en="Battle for Priestella",
+        note="术语；en-wiki 造事件名。语料无据，wiki 既有写法",
+    ),
+    Entry(
+        std="大灾",
+        en="Great Disaster",
+        note="术语；第九章事件。语料无据（「大灾」语料命中均为泛指或四百年前大灾难，非该事件），wiki 既有写法",
+    ),
 ]
