@@ -85,7 +85,7 @@ prepare 的 wip 自动收尾：`work/` 里有上轮残留项时先按 wiki 最�
 6. 仅当 en 无增量（对照 en 全文判定，含发售日期/封面/出处等字段——zh 已是中文不代表无增量）且 zh 无英文残留时才不编辑：`skip <slug> "en 无增量"`，然后直接进报告步。
 7. **未登记专名当场自行裁决并登记进 `translations.py`**（一次登记全管线复利，下轮 prepare 自动注入）：
    - 先 grep `translations.py`（std/en/aliases）确认查无；
-   - 语料核验：生多个候选写法逐一精确计数——re0-corpus 仓库根 `python scripts/search.py "<候选>" --context 0`（实测中文参数经 uv 传入正常）或直接对 `corpus/merged/*.md`、`corpus/ex/*.md` 子串统计；官方简中内部不一致按出现次数最多裁决。全部候选零命中 → 自拟（参考表内同音节既有用字）。wiki 既有写法 ≠ 官方写法时 std 取官方（译名规则官方简中优先），wiki 写法记进 note 并在报告说明；
+   - 语料核验：生多个候选写法逐一精确计数——re0-corpus 仓库根 `python scripts/search.py "<候选>" --context 0`（实测中文参数经 uv 传入正常）或直接对 `corpus/merged/*.md`、`corpus/ex/*.md` 子串统计；官方简中内部不一致按出现次数最多裁决。全部候选零命中 → 自拟（参考表内同音节既有用字）。判「wiki 写法 ≠ 官方写法」前先确认两者是否同词——衍生简称/别名不构成冲突（如 普勒阿得斯监视塔 vs 贤者塔），同词异写才是冲突；确为冲突时 std 取官方（译名规则官方简中优先），wiki 写法记进 note 并在报告说明；
    - 登记：`ENTRIES` append `Entry(std=..., en=..., ja=..., note=...)`；ja 从 wiki 信息框 name_ja 取，查不到省略；note 写裁决依据（「官方：N 处」或「LLM 自拟，语料无据（候选 X/Y/Z 均 0）」）；
    - **绝不登记 aliases**：别名需全历史碰撞扫描，留人工——错误 std 配 alias 会让 fix:translation 把官方写法全站反向改写且不可见（re0-corpus docs/translation-audit.md 教训 1）。std-only 条目只生成繁→简归一，最坏是无害死规则；
    - 验收：`uv run pytest tests/test_translation.py -q` 全绿；每 tick 一个 commit `feat(translation): add X, Y（<页面>）`。官方出版覆盖滞后的条目由 re0-corpus names 管线新卷重跑兜底复审。
