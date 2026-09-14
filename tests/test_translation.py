@@ -78,6 +78,38 @@ def test_nekoquote_ja_fields_protected():
     assert 'jq = "死神加護の傷を負っている"' in text
 
 
+def test_ja_kana_runs_protected():
+    """含假名的 CJK 连段按日文语境整段保护，不归一（卷名/{{R}} 日文参数/日文引文）。
+
+    中文行文（无假名连段）与 Ruby-zh-ja 的中文参数（| 隔断）照常归一。
+    纯汉字日文引用（无假名可探测）不在此机制覆盖，靠 as-is 注释。
+    """
+    from pywikibot import textlib
+
+    fix: Any = fx.fixes["translation"]
+    exceptions = [re.compile(p) for p in fix["exceptions"]["inside"]]
+
+    def apply(text):
+        for old, repl in fix["replacements"]:
+            text = textlib.replaceExcept(
+                text, re.compile(old), repl, exceptions, caseInsensitive=True
+            )
+        return text
+
+    # 日文卷名括号（误伤实例：聖域と強欲の魔女 曾被归一成 圣域と）
+    ja_title = "(Ｒｅ：ゼロから始める異世界生活 第四章 聖域と強欲の魔女 14)"
+    assert apply(ja_title) == ja_title
+    # {{R}} 的日文原名参数
+    r_ja = "{{R|视风加护||風見の加護|Kazami no Kago}}"
+    assert apply(r_ja) == r_ja
+    # 中文行文照常归一
+    assert apply("聖域是第四章的舞台") == "圣域是第四章的舞台"
+    # Ruby-zh-ja 中文参数（| 与假名参数隔断）照常归一
+    assert apply("{{Ruby-zh-ja|聖域|せいいき}}") == "{{Ruby-zh-ja|圣域|せいいき}}"
+    # 中文词+括号日文注音：中文部分归一，注音不动
+    assert apply("聖域（せいいき）") == "圣域（せいいき）"
+
+
 def test_nekoquote_aliases_normalize():
     """回归：语录管线引入的译名变体归一（斯巴鲁/路易/碧翠子/记忆回廊/地狱狙击）。"""
     assert normalize("斯巴鲁") == "昴"
