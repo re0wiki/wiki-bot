@@ -1843,8 +1843,9 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="皮克塔特",
+        en="Picoutatte",
         aliases=("聘可塔特",),
-        note="水门都市邻近都市",
+        note="水门都市邻近都市。官方语料 10 处",
     ),
     Entry(
         std="避风加护",
@@ -3504,5 +3505,169 @@ ENTRIES: list[Entry] = [
         ja="黒狗",
         en="Black Dog",
         note="角色",
+    ),
+    # ---- LLM 翻译管线自裁决登记（官方语料精确计数优先，零命中自拟或保留英文；
+    #      aliases 一律留人工 + 全历史碰撞扫描，见 docs/llm-translation.md） ----
+    Entry(std="希玛", en="Shima", note="角色；琉兹复制体四长老之一。官方语料 165 处"),
+    Entry(std="阿尔玛", en="Alma", note="角色；琉兹复制体四长老之一。官方语料 6 处"),
+    Entry(std="毕尔玛", en="Bilma", note="角色；琉兹复制体四长老之一。官方语料 8 处"),
+    Entry(std="德尔玛", en="Delma", note="角色；琉兹复制体四长老之一。官方语料 2 处"),
+    Entry(
+        std="皮可",
+        ja="ピコ",
+        en="Pico",
+        note="角色；昴命名的无人格琉兹复制体。语料无据（候选 皮可/皮克/琵可；「皮克」均为 皮克塔特 子串），wiki 既有写法",
+    ),
+    Entry(
+        std="恶毒翁",
+        ja="悪辣翁",
+        en="Vicious Old Man",
+        note="奥尔巴特·丹克肯称号。官方语料 13 处",
+    ),
+    Entry(
+        std="战神",
+        en="War God",
+        note="库鲁刚称号（官方语料亦见「八臂战神」）。官方语料 6 处",
+    ),
+    Entry(
+        std="猎肠者", en="Bowel Hunter", note="艾尔莎·葛兰希尔黛称号。官方语料 27 处"
+    ),
+    Entry(std="神龙", en="Divine Dragon", note="波尔肯尼卡称号。官方语料 114 处"),
+    Entry(
+        std="九神将",
+        ja="九神将",
+        en="Nine Divine Generals",
+        note="术语；佛拉基亚帝国军精锐。官方语料 200 处",
+    ),
+    Entry(std="鲁普加纳", en="Lupugana", note="术语；佛拉基亚帝都。官方语料 13 处"),
+    Entry(
+        std="贤人会",
+        en="Council of Wise Men",
+        note="术语；卢克尼卡决策机构。官方语料 79 处；wiki 既有 贤者会议/贤人会议 两写法并存，待人工登记 alias 归一",
+    ),
+    Entry(
+        std="加菲",
+        en="Garf",
+        note="加菲尔昵称（拉姆/蜜蜜/莉亚拉等用）。官方语料 212 处",
+    ),
+    Entry(
+        std="戈加斯·泰戈",
+        ja="ゴージャス·タイガー",
+        en="Gorgeous Tiger",
+        note="加菲尔在普利斯提拉的自称（音译，原书自注 Gorgeous Tiger 意为「帅气之虎」，亦用「黄金之虎」）。官方语料；wiki 现作 华丽之虎，待人工裁决",
+    ),
+    Entry(
+        std="飞龙灾害",
+        en="Flying Dragon Cataclysm",
+        note="术语；瓜拉尔的飞龙袭击事件。语料无据（候选 飞龙灾害/飞龙灾厄/飞龙之灾 均 0），wiki 既有写法（角色:玛德琳·恩夏尔德）",
+    ),
+    Entry(
+        std="帕佩鲁特",
+        en="Pappelt",
+        note="术语；城镇（土蜘蛛事件地）。语料无据，wiki 既有写法（角色:土蜘蛛 帕佩鲁特镇）",
+    ),
+    Entry(
+        std="引导的加护",
+        en="Divine Protection of Guidance",
+        note="术语；奥托虚报的假加护名。语料无据（候选 引导的加护/引导之加护 均 0），LLM 自拟",
+    ),
+    Entry(
+        std="弗图尔平原",
+        en="Foutour Plains",
+        note="术语；卡尔斯腾领内平原。语料无据，LLM 自拟（弗系用字）",
+    ),
+    Entry(
+        std="莱因哈鲁特法",
+        en="Reinhard Law",
+        note="术语。语料无据，LLM 自拟（基底 莱因哈鲁特 官方语料 1279 处）",
+    ),
+    Entry(
+        std="罗兹瓦尔·D·梅札斯",
+        en="Roswaal D. Mathers",
+        note="角色；罗兹瓦尔先祖。语料无 D 形，LLM 自拟（沿 罗兹瓦尔·L·梅札斯 格式）",
+    ),
+    Entry(
+        std="格里莫尔监狱",
+        en="Grimour Prison",
+        note="游戏:Lost in Memories 监狱名。语料无据，LLM 自拟",
+    ),
+    Entry(
+        std="凯欧尔",
+        en="Keor",
+        note="游戏:Lost in Memories 原创角色（伯爵）。语料无据，LLM 自拟",
+    ),
+    Entry(
+        std="塔露兹",
+        en="Talutes",
+        note="游戏:Lost in Memories 甜点名。语料无据，LLM 自拟",
+    ),
+    Entry(
+        std="芙兰索娃",
+        en="Francoise",
+        note="游戏:Lost in Memories 水龙名。语料无据，LLM 自拟",
+    ),
+    Entry(
+        std="追忆村",
+        en="Remembrance Village",
+        note="游戏:Lost in Memories 场景名。语料无据，LLM 自拟",
+    ),
+    Entry(
+        std="忘却",
+        en="Oblivion",
+        note="游戏:Lost in Memories 恶灵名。语料无据，LLM 自拟",
+    ),
+    Entry(
+        std="再现者",
+        en="Reproducer",
+        note="游戏:Lost in Memories 灵魂体称呼。语料无据，LLM 自拟",
+    ),
+    Entry(
+        std="梦幻外科医",
+        en="Phantom Surgeons",
+        note="游戏:Lost in Memories 希蓉与莱拉旧称。语料无据，LLM 自拟",
+    ),
+    Entry(
+        std="阿加瑙IF",
+        en="Aganau IF",
+        note="游戏:Lost in Memories 章节名。语料无据，LLM 自拟",
+    ),
+    Entry(
+        std="犬鬼葬歌",
+        en="Dog Demon Funeral Song",
+        note="游戏:Lost in Memories 章节名。语料无据，LLM 自拟",
+    ),
+    Entry(
+        std="青炎之刻印",
+        en="The Engravement of the Blue Flame",
+        note="游戏:Lost in Memories 伊格莱西亚家传承印记。语料无据，LLM 自拟",
+    ),
+    Entry(
+        std="美女王总选举",
+        ja="美女王総選挙",
+        en="Beautiful Queen General Election",
+        note="游戏:DEATH OR KISS 评选活动名。语料无据，LLM 自拟",
+    ),
+    Entry(
+        std="Guineb",
+        en="Guineb",
+        note="术语；城市（奥托行商录）。语料无据（候选 吉尼布/圭尼布/吉涅布/奎尼布/吉内布 均 0），保留英文",
+    ),
+    Entry(
+        std="Aheem Lavril",
+        en="Aheem Lavril",
+        note="角色（奥托行商录）。语料无据，保留英文",
+    ),
+    Entry(
+        std="Hakuchuri",
+        en="Hakuchuri",
+        note="术语；阿斯特雷亚领主镇。语料无据，保留英文",
+    ),
+    Entry(
+        std="Adelheid", en="Adelheid", note="莱因哈鲁特男扮女装假名。语料无据，保留英文"
+    ),
+    Entry(std="Sasageru IF", en="Sasageru IF", note="IF 线名。语料无据，保留英文"),
+    Entry(std="Gordon", en="Gordon", note="游戏:DEATH OR KISS 原创角色。保留英文"),
+    Entry(
+        std="Noble", en="Noble", note="游戏:DEATH OR KISS 原创角色（贵族）。保留英文"
     ),
 ]
