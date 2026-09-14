@@ -53,13 +53,26 @@ def test_beatrice_normalizes_to_official_name():
     assert normalize("貝阿托莉絲") == "碧翠丝"
 
 
-def test_fix_unifies_traditional_to_simplified():
-    """正文替换一律归一到简体标准名。"""
+def test_fix_replaces_only_substantive_aliases():
+    """正文替换只改写与标准名有实质差异的别名；仅繁简差异的写法不改写。
+
+    繁简写法由 MediaWiki 简繁转换负责显示层归一（链接亦自动解析到简体页），
+    源码层归一毫无收益，只会误伤与繁体同形的日文（聖域/神龍/加護 等整类）。
+    """
     replacements: Any = fx.fixes["translation"]["replacements"]
-    new = "碧翠絲"
+    new = "碧翠絲"  # 繁体写法：不改写
     for old, repl in replacements:
         new = re.compile(old).sub(repl, new)
-    assert new == "碧翠丝"
+    assert new == "碧翠絲"
+    for text, want in [
+        ("贝阿托莉丝", "碧翠丝"),  # 实质别名：归一
+        ("貝阿托莉絲", "碧翠丝"),  # 实质别名的繁体：归一（MediaWiki 转换产不出标准名）
+        ("聖域是第四章的舞台", "聖域是第四章的舞台"),  # 繁体写法：不改写
+        ("库鲁刚", "库尔干"),  # 音位字符类别名：归一
+    ]:
+        for old, repl in replacements:
+            text = re.compile(old).sub(repl, text)
+        assert text == want
 
 
 def test_nekoquote_ja_fields_protected():
@@ -69,19 +82,21 @@ def test_nekoquote_ja_fields_protected():
     fix: Any = fx.fixes["translation"]
     # inside 异常是字符串（replace.py 自行编译）；textlib 里 str 是类别名，须先编译
     exceptions = [re.compile(p) for p in fix["exceptions"]["inside"]]
-    text = 'q = "死神加護",\n        jq = "死神加護の傷を負っている",'
+    text = 'q = "死神加護与贝阿托莉丝",\n        jq = "死神加護の傷とベアトリスを負っている",'
     for old, repl in fix["replacements"]:
         text = textlib.replaceExcept(
             text, re.compile(old), repl, exceptions, caseInsensitive=True
         )
-    assert 'q = "死神加护"' in text
-    assert 'jq = "死神加護の傷を負っている"' in text
+    # q（中文字段）：实质别名归一；繁简差异写法不改写（MediaWiki 转换负责显示）
+    assert 'q = "死神加護与碧翠丝"' in text
+    assert 'jq = "死神加護の傷とベアトリスを負っている"' in text
 
 
 def test_ja_kana_runs_protected():
-    """含假名的 CJK 连段按日文语境整段保护，不归一（卷名/{{R}} 日文参数/日文引文）。
+    """含假名的 CJK 连段按日文语境整段保护，实质别名在其中也不归一。
 
-    中文行文（无假名连段）与 Ruby-zh-ja 的中文参数（| 隔断）照常归一。
+    仅繁简差异的写法已由 _AltSub 的 t2s 判等不改写（本正则对它们是冗余保护）；
+    本正则兜的是实质别名出现在日文里的情况（最優紀行/王選前日譚 类）。
     纯汉字日文引用（无假名可探测）不在此机制覆盖，靠 as-is 注释。
     """
     from pywikibot import textlib
@@ -102,17 +117,15 @@ def test_ja_kana_runs_protected():
     # {{R}} 的日文原名参数
     r_ja = "{{R|视风加护||風見の加護|Kazami no Kago}}"
     assert apply(r_ja) == r_ja
-    # 中文行文照常归一
-    assert apply("聖域是第四章的舞台") == "圣域是第四章的舞台"
-    # Ruby-zh-ja 中文参数（| 与假名参数隔断）照常归一
-    assert apply("{{Ruby-zh-ja|聖域|せいいき}}") == "{{Ruby-zh-ja|圣域|せいいき}}"
-    # 中文词+括号日文注音：中文部分归一，注音不动
-    assert apply("聖域（せいいき）") == "圣域（せいいき）"
+    # 实质别名在假名连段内同样被兜住（日文书名）
+    assert apply("（アナスタシアの最優紀行）") == "（アナスタシアの最優紀行）"
     # 顿号连通日文名内部枚举（水門都市残留組、プリステラ復興日誌 类误伤实例）
     ja_enum = "（水門都市残留組、プリステラ復興日誌）"
     assert apply(ja_enum) == ja_enum
-    # 纯中文顿号列举（无假名）不形成保护区，照常归一
-    assert apply("聖域、水門都市、王選") == "圣域、水门都市、王选"
+    # 中文行文里的实质别名照常归一（含假名连段外的部分不受保护影响）
+    assert apply("库鲁刚登场，与贝阿托莉丝会合") == "库尔干登场，与碧翠丝会合"
+    # 实质别名的简体写法在中文行文里归一
+    assert apply("最优纪行是EX4") == "最优秀纪行是EX4"
 
 
 def test_nekoquote_aliases_normalize():
