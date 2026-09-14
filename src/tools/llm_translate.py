@@ -34,6 +34,10 @@ ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / ".cache" / "llm_translate"
 WORK = DATA / "work"
 QUEUE = DATA / "queue.json"
+# agent 规则的唯一事实源在 docs/llm-translation.md（cron prompt 不复制），
+# prepare 抽取该小节原样注入 stdout
+RULES_DOC = ROOT / "docs" / "llm-translation.md"
+RULES_HEADING = "## agent 规则"
 
 ZH_API = "https://rezero.fandom.com/zh/api.php"
 EN_API = "https://rezero.fandom.com/api.php"
@@ -725,6 +729,26 @@ def known_nouns(body, conv):
     return sorted(f"{en} = {name}" for en, name in kept)
 
 
+def agent_rules():
+    """docs/llm-translation.md 的 agent 规则小节原文（prepare 注入用）。
+
+    小节缺失/为空是配置错误，响亮失败——否则 agent 无规则可循。
+    """
+    lines = RULES_DOC.read_text(encoding="utf-8").splitlines()
+    for i, line in enumerate(lines):
+        if line.startswith(RULES_HEADING):
+            body = []
+            for rest in lines[i + 1 :]:
+                if rest.startswith("## "):
+                    break
+                body.append(rest)
+            section = "\n".join(body).strip()
+            if not section:
+                raise RuntimeError(f"{RULES_DOC} 的「{RULES_HEADING}」小节为空")
+            return section
+    raise RuntimeError(f"{RULES_DOC} 缺少「{RULES_HEADING}」小节")
+
+
 def write_work_files(best):
     """把队首候选的备料写进 work 目录（en 正文 / zh 现文 / conv 骨架 / meta），并打印摘要。"""
     cold, title, zh_text, zh_revid, en_title, en_revid, body = best
@@ -778,6 +802,8 @@ def write_work_files(best):
     print(conv)
     print("===== zh 现文 =====")
     print(zh_text)
+    print("===== agent 规则 =====")
+    print(agent_rules())
 
 
 def resolve_wip():

@@ -5,7 +5,7 @@ zh 站大部分条目处于未翻译/机翻/过时状态（全站 1657 页挂 `C
 
 ## 职责划分
 
-机械环节全部在 `src/tools/llm_translate.py`，LLM 只做一件事：翻译 prose。
+机械环节全部在 `src/tools/llm_translate.py`，LLM 只做两件事：翻译 prose、裁决登记表外专名。
 
 ```
 refresh（重建选页队列）→ prepare（取队首、机械转换备料）→ agent 产出新源码 → publish（基线比对+打标+保存）→ done（核验）
@@ -28,7 +28,7 @@ refresh（重建选页队列）→ prepare（取队首、机械转换备料）�
 5. 内链目标替换：resolve_links 映射（en 标题 → zh 同名页 → 跟随重定向——与 fixing-redirects 同链路等效，此处离线单遍完成）把 `[[X]]` 改写为 `[[zh 最终目标|X]]`，显示文字留 agent 翻译；映射查找带首字母大小写回退（前置 cosmetic 的 cleanUpLinks 会把 `[[Meteor|meteor]]` 折叠成 `[[meteor]]`，映射键是 en 原标题大小写）；解析失败（en 有 zh 无）保留 en 原名并列进报告；
 6. **信息框字段级合并**（`merge_structure`，zh 策展内容不丢）：zh 同名参数值含中文（已策展）→ 保留 zh 行，英文残留/空值 → 用 en 转换值；zh 独有参数行（isbn_ko/painter/voice_zh_* 等）块尾保留；粘在模板头/尾行的内联参数（`{{Infobox X | name = ...`、`| modes = }}`）按顶层 `|` / `}}` 切开，同样参与合并；zh 有 image_a/n/g/c 分媒介图库时丢弃 en 的单 image 参数；previous/next 与 character 的 name_ja_romaji（fix:para 删除对象）永不带回；zh 独有的整个信息框（en 无对应）整块前置保留。
 
-译名归一不在转换层——LLM 按译名表翻译，残留别名由主循环的 fix:translation 对成稿机械兜底。已裁决专名（译名表 en 字段=英文写法）由 prepare 词边界匹配 en 正文（专名大小写敏感；`{{Seirei}}`/`{{Elf}}` 等模板条目的 en 是普通名词，大小写不敏感，复数等变形不展开——漏网形态由 fix:translation 的占位模板兜底），命中且该 en 面未作为骨架内链显示文字出现（内链已覆盖的不重复注入）的写入 `{slug}.nouns.txt` 并在 stdout 列出（stdout 注入 agent prompt），译文须使用——这是 nouns.jsonl 毕业词回灌 LLM 的通道。
+译名归一不在转换层——LLM 按译名表翻译，残留别名由主循环的 fix:translation 对成稿机械兜底。已裁决专名（译名表 en 字段=英文写法）由 prepare 词边界匹配 en 正文（专名大小写敏感；`{{Seirei}}`/`{{Elf}}` 等模板条目的 en 是普通名词，大小写不敏感，复数等变形不展开——漏网形态由 fix:translation 的占位模板兜底），命中且该 en 面未作为骨架内链显示文字出现（内链已覆盖的不重复注入）的写入 `{slug}.nouns.txt` 并在 stdout 列出（stdout 注入 agent prompt），译文须使用——这是 agent 新登记专名回灌后续 tick 的通道。
 
 ## 选页：编辑者冷度
 
@@ -73,16 +73,23 @@ prepare 的 walk 逐页读 zh 源码解析标记（源码本来必读）：
 
 prepare 的 wip 自动收尾：`work/` 里有上轮残留项时先按 wiki 最新状态分流再备新页。管线编辑认两个痕迹：管线摘要前缀（`LLM(K3):`，publish/skip 的编辑摘要）与同步标记——循环任务（fix:translation 等）对冷页的偶发编辑不算管线编辑。分流：zh 页无新编辑（agent 未编辑成，如 API 故障）、最新编辑是其他人（prepare 后有人类编辑，含人类在管线编辑后再改——人工改动即事实上的复核）、或最新编辑是无痕迹的本账号偶发编辑 → 丢弃旧备料按最新状态重备（改动由新基线自动吸收）；含匹配同步标记（管线编辑完成但 done 未跑）→ 自动补跑 done 核验（`verify_edit`，与 cmd_done 同一实现），通过则清场，不过则保留现场响亮失败；带管线摘要却标记缺失/不匹配的怪异态保留现场、拒绝备页，留人工排查。
 
-## 页面构成规则（agent 编辑时遵守，done 逐项核验）
+## agent 规则（prepare 注入）
 
-agent 直接产出整页新源码。页首以 zh 现文为准机械保留，done 以 prepare 基线逐行比对：
+本节由 prepare 原样注入 agent prompt（唯一事实源——cron prompt 不复制本节，改 agent 规则只改这里）。agent 只做翻译与裁决；基线比对、登录校验、编辑摘要、机翻待校对分类与同步标记全在 publish 脚本内。
 
-- 页首：`{{Init}}`、`{{To do}}`、`{{Tab/...}}` 等行首模板块原样保留，**唯一允许的改动**是清理 `{{To do}}` 参数中的翻译类标注（机翻标记由 `[[Category:机翻待校对]]` 承载，`{{To do}}` 里的翻译标注是冗余）：K3 标注段与「本页翻译结果不准确…重新翻译」「AI翻译，待校对」等翻译任务类标注段（管线处理即完成其任务）按「；」分段丢弃，清空则还原裸 `{{To do}}`；**其他参数**（如「列表格式待整理」「内容待补充」）原样保留。裸 `{{To do}}` 不动（其 `Category:待修撰` 归入是队列数据源）。
-- 正文：翻译规则见下节。
-  - en 侧页首模板（如 `{{Parent Tab}}`）、页尾 `[[Category:...]]`、语言链接与 `==Navigation==` 导航区不带入（split_en_body 机械剥离）——分类由 Module:Init 按前缀/后缀自动打，语言链接以 zh 为准，系列导航由 Tab/* 承担。
-  - **`[[Category:机翻待校对]]` 由 publish 机械挂在正文末**（有分类段则并入；已挂不动）——人类校对后手动摘除；若管线再次处理（en 有新内容 = 新机翻内容）会重新挂上。agent 的新源码里不写分类。
-  - **同步标记由 publish 机械打在正文末**（语言链接块之前，剥除旧标记后全页恰一个）——agent 的新源码里不写标记。
-- 页尾：zh 现文的语言链接行保留（不增删、不改目标）；相对顺序由循环任务的 cosmetic_changes 归一。
+1. 以骨架（`{slug}.conv.txt` 内容已全量注入）为基础产出整页新源码，写入 `.cache/llm_translate/work/<slug>.new.txt`，然后 `uv run python src/tools/llm_translate.py publish <slug>` → `done <slug>`。publish 基线不通过（wiki 最新源码 ≠ prepare 时 zh 现文）即中止本轮，报告中说明即可，下 tick 自动重备吸收。done 失败按其输出修正：内容问题改 new.txt 后重跑 publish 再 done；反复失败保留工作文件并在报告中说明。
+2. 页首：`{{Init}}`/`{{To do}}`/`{{Tab/...}}` 等行首模板块原样保留；唯一允许的改动是清理 `{{To do}}` 参数中的翻译类标注——K3 标注段与「本页翻译结果不准确…重新翻译」「AI翻译，待校对」等翻译任务类标注段按「；」分段丢弃，清空则还原裸 `{{To do}}`；**其他参数**（如「列表格式待整理」「内容待补充」）原样保留，裸 `{{To do}}` 不动（其 `Category:待修撰` 归入是队列数据源）。
+3. 正文 = 翻译后的骨架。en 侧页首模板、页尾分类/语言链接、`==Navigation==` 导航区已被 prepare 剥离，不带回（分类由 Module:Init 自动打，系列导航由 Tab/* 承担）；`[[Category:机翻待校对]]` 与同步标记由 publish 挂载——新源码不写分类、不写标记。页尾 zh 现文的语言链接行原样保留（不增删、不改目标）。
+4. 内链已解析为 `[[zh 最终目标|原显示文字]]`：只翻译显示文字，不碰目标。解析失败的（en 有 zh 无）保留 en 原名并在报告中列出。
+5. 翻译：prose 段落、参数里的英文散文值、内链显示文字、未归一的标题；引号用「」；专名用注入的已裁决译名与 wiki 通行译名（残留别名由主循环 fix:translation 兜底）。骨架里含中文的 zh 策展内容（信息框合并保留的字段等）原样不动。zh 现文有而 en 没有的原创段落：质量良好的保留，质量低下的舍弃（可从页面历史恢复），报告中说明取舍。拿不准骨架转换时对照 `{slug}.body.en.txt`（en 原文）；`{slug}.zh.txt` 仅供原创段落裁决核对。
+6. 仅当 en 无增量（对照 en 全文判定，含发售日期/封面/出处等字段——zh 已是中文不代表无增量）且 zh 无英文残留时才不编辑：`skip <slug> "en 无增量"`，然后直接进报告步。
+7. **未登记专名当场自行裁决并登记进 `translations.py`**（一次登记全管线复利，下轮 prepare 自动注入）：
+   - 先 grep `translations.py`（std/en/aliases）确认查无；
+   - 语料核验：生多个候选写法逐一精确计数——re0-corpus 仓库根 `python scripts/search.py "<候选>" --context 0`（实测中文参数经 uv 传入正常）或直接对 `corpus/merged/*.md`、`corpus/ex/*.md` 子串统计；官方简中内部不一致按出现次数最多裁决。全部候选零命中 → 自拟（参考表内同音节既有用字）。wiki 既有写法 ≠ 官方写法时 std 取官方（译名规则官方简中优先），wiki 写法记进 note 并在报告说明；
+   - 登记：`ENTRIES` append `Entry(std=..., en=..., ja=..., note=...)`；ja 从 wiki 信息框 name_ja 取，查不到省略；note 写裁决依据（「官方：N 处」或「LLM 自拟，语料无据（候选 X/Y/Z 均 0）」）；
+   - **绝不登记 aliases**：别名需全历史碰撞扫描，留人工——错误 std 配 alias 会让 fix:translation 把官方写法全站反向改写且不可见（re0-corpus docs/translation-audit.md 教训 1）。std-only 条目只生成繁→简归一，最坏是无害死规则；
+   - 验收：`uv run pytest tests/test_translation.py -q` 全绿；每 tick 一个 commit `feat(translation): add X, Y（<页面>）`。官方出版覆盖滞后的条目由 re0-corpus names 管线新卷重跑兜底复审。
+8. 报告：处理/跳过了哪页、zh 原创段落取舍、新登记专名（如有）。
 
 ## 内链处理
 
@@ -95,21 +102,10 @@ prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 
 3. **白名单**：正文内链目标（按 页面/文件/分类/语言链接 分类）⊆ link_map ∪ 未解析名 ∪ zh 现文已有目标（文件另含骨架出现的，分类另含机翻待校对）；正文模板调用 ⊆ conv 骨架 ∪ zh 现文。另核验 `[[Category:机翻待校对]]` 必挂（漏挂拒绝）。
 4. **失败响亮**：核验不过非零退出，工作文件保留供排查；wiki 上的编辑由 agent 修正（重编 wiki）后重新 done。
 
-## agent 翻译规则
-
-- **产出整页新源码写入 `.cache/llm_translate/work/<slug>.new.txt`**，运行 `publish <slug>` 发布——基线比对（与 `{slug}.zh.txt` 不一致即中止本轮，不尝试融合改动——下 tick prepare 会以最新状态自动重备吸收）、登录校验、标准摘要、机翻待校对分类与同步标记全在脚本内。完成后 `done <slug>` 核验。
-- 页首/页尾按「页面构成规则」保留；**正文以 `{slug}.conv.txt` 半成品骨架为基础**（结构转换与字段合并已由 prepare 机械完成，见「机械转换层」节）——agent 只做翻译与 zh 原创段落裁决：
-  - prose 段落、参数里的英文散文值、内链显示文字、未归一的标题（映射表外的如 `Chapters`）；引号用「」，人名/专名用 wiki 通行译名（残留别名由主循环 fix:translation 兜底）；
-  - 骨架里含中文的 zh 策展内容（信息框合并保留的字段等）原样不动；
-  - **zh 现文有而 en 没有的原创段落**（详细剧情概括、攻略心得等）：**质量良好的保留**（置于对应位置，标题与行文按 zh 惯例整理），**质量低下的舍弃**（论坛体/流水账/口语评论）——舍弃内容可从页面历史恢复，在报告中说明即可；
-  - `{slug}.body.en.txt` 是骨架的生成源（en 原文，拿不准骨架某处转换是否正确时对照它），`{slug}.zh.txt` 是 prepare 时的 zh 现文（原创段落裁决与编辑前基线比对用）——两者仅供核对。
-- 仅当 en 无增量且 zh 无英文残留时才不编辑，直接 `skip`——「en 无增量」要对照 en 全文判定（含发售日期/封面/出处等字段），zh 已是中文不代表无增量。
-- 译名表查无的专名追加到 `.cache/llm_translate/nouns.jsonl`（page/term/origin/note 一行一条）。
-
 ## 状态与产出
 
 - 处理状态由**条目源码末尾的同步标记**承载（见「同步标记」节）——随页面走、格式可演进。机器判定只看同步标记；编辑摘要（`LLM(K3): revid <en_revid>（<时长>无人类编辑，据 [[en:<源条目>]] 自动更新；待修撰 N 条占全站 P%，机翻待校对 M 条占待修撰 Q%）`，统计为预测本次编辑后的值）是人类可读的说明，也是模型型号的记录处——换模型只改摘要前缀，按摘要扫描即可重建「哪页是哪个型号翻的」清单（用于换模型后的质量分层重翻、缺陷归因）。
-- `.cache/llm_translate/`（gitignored）：`queue.json`（选页队列）、`work/`（进行中的工作文件）、`nouns.jsonl`（**未登记专名清单**——LLM 翻译时遇到译名表查无的专名逐条追加，攒一批后人工裁决登记进译名表（`translations.py`），由 fix:translation 全站归一存量、prepare 专名注入回灌增量；不主动推送）。
+- `.cache/llm_translate/`（gitignored）：`queue.json`（选页队列）、`work/`（进行中的工作文件）。表外专名由 agent 当场裁决登记进 `translations.py`（见「agent 规则」节），登记历史在 git log。
 
 ## 运行形态
 
