@@ -241,11 +241,11 @@ ENTRIES: list[Entry] = [
         note="角色；全名 库珥修·卡尔斯腾",
     ),
     Entry(
-        std="库鲁刚",
+        std="库尔干",
         ja="クルガン",
         en="Kurgan",
         aliases=("库[尔鲁]刚",),
-        note="角色",
+        note="角色。官方语料 130 处",
     ),
     Entry(
         std="弗里格尔",
@@ -3527,7 +3527,7 @@ ENTRIES: list[Entry] = [
     Entry(
         std="战神",
         en="War God",
-        note="库鲁刚称号（官方语料亦见「八臂战神」）。官方语料 6 处",
+        note="库尔干称号（官方语料亦见「八臂战神」）。官方语料 6 处",
     ),
     Entry(
         std="猎肠者", en="Bowel Hunter", note="艾尔莎·葛兰希尔黛称号。官方语料 27 处"
@@ -3543,7 +3543,8 @@ ENTRIES: list[Entry] = [
     Entry(
         std="贤人会",
         en="Council of Wise Men",
-        note="术语；卢克尼卡决策机构。官方语料 79 处；wiki 既有 贤者会议/贤人会议 两写法并存，待人工登记 alias 归一",
+        aliases=("贤者会议", "贤人会议"),
+        note="术语；卢克尼卡决策机构。官方语料 79 处",
     ),
     Entry(
         std="加菲",
@@ -3554,7 +3555,8 @@ ENTRIES: list[Entry] = [
         std="戈加斯·泰戈",
         ja="ゴージャス·タイガー",
         en="Gorgeous Tiger",
-        note="加菲尔在普利斯提拉的自称（音译，原书自注 Gorgeous Tiger 意为「帅气之虎」，亦用「黄金之虎」）。官方语料；wiki 现作 华丽之虎，待人工裁决",
+        aliases=("华丽之虎", "华丽猛虎"),
+        note="加菲尔在普利斯提拉的自称（音译，原书自注 Gorgeous Tiger 意为「帅气之虎」，亦用「黄金之虎」）。官方语料 42 处",
     ),
     Entry(
         std="飞龙灾害",
@@ -3721,5 +3723,10 @@ ENTRIES: list[Entry] = [
         std="大灾",
         en="Great Disaster",
         note="术语；第九章事件。语料无据（「大灾」语料命中均为泛指或四百年前大灾难，非该事件），wiki 既有写法",
+    ),
+    Entry(
+        std="「贤者」之塔",
+        aliases=("贤者塔", "贤者之塔"),
+        note="术语；普勒阿得斯监视塔的衍生称呼。官方行文作 ‘贤者’之塔（4 处），wiki 引号规范作「」",
     ),
 ]
