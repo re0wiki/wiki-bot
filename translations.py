@@ -3669,9 +3669,6 @@ ENTRIES: list[Entry] = [
     ),
     Entry(std="Sasageru IF", en="Sasageru IF", note="IF 线名。语料无据，保留英文"),
     Entry(std="Gordon", en="Gordon", note="游戏:DEATH OR KISS 原创角色。保留英文"),
-    Entry(
-        std="Noble", en="Noble", note="游戏:DEATH OR KISS 原创角色（贵族）。保留英文"
-    ),
     # ---- 高频通行术语（官方语料核验或 wiki 既有；prepare 注入用，aliases 留人工） ----
     Entry(std="圣域", en="Sanctuary", note="术语。官方语料 771 处"),
     Entry(
