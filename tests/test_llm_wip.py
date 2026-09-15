@@ -190,3 +190,9 @@ def test_verify_edit_head_change_fails(tmp_path, monkeypatch):
     stub_api(monkeypatch, make_rev(101, lt.BOT, bad))
     with pytest.raises(SystemExit, match="页首"):
         lt.verify_edit("角色_测试", META)
+
+
+def test_agent_rules_injectable():
+    """agent 规则小节必须能从 docs/llm-translation.md 抽出（prepare 注入依赖它）。"""
+    section = lt.agent_rules()
+    assert "publish" in section and "translations.py" in section

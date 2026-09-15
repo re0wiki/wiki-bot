@@ -34,6 +34,10 @@ ROOT = Path(__file__).resolve().parents[2]
 DATA = ROOT / ".cache" / "llm_translate"
 WORK = DATA / "work"
 QUEUE = DATA / "queue.json"
+# agent 规则的唯一事实源在 docs/llm-translation.md（cron prompt 不复制），
+# prepare 抽取该小节原样注入 stdout
+RULES_DOC = ROOT / "docs" / "llm-translation.md"
+RULES_HEADING = "## agent 规则"
 
 ZH_API = "https://rezero.fandom.com/zh/api.php"
 EN_API = "https://rezero.fandom.com/api.php"
@@ -684,7 +688,11 @@ def evaluate_candidate(item):
 
 
 def known_nouns(body, conv):
-    """en 正文中出现的已裁决专名（译名表 en 字段词边界精确匹配）→ 对照行。
+    """en 正文中出现的已裁决专名（译名表 en 字段词边界匹配）→ 对照行。
+
+    专名大小写敏感精确匹配；模板条目（std 含 `{{`，如 {{Seirei}}）的 en 是普通
+    名词，en 正文大小写不定，大小写不敏感。复数/变形不展开，一页一次命中即注入，
+    漏网形态由主循环 fix:translation 的 {{Seirei or Elf}} 类占位兜底。
 
     窄注入：只覆盖骨架内链未覆盖的词——标准名已是 conv 内链目标（[[名| 或
     [[名]]）的条目跳过，其译名 agent 从骨架直接可见，不重复注入。
@@ -696,7 +704,12 @@ def known_nouns(body, conv):
 
     hits = []
     for e in translations.ENTRIES:
-        if not e.en or len(e.en) < 3 or not re.search(rf"\b{re.escape(e.en)}\b", body):
+        if not e.en or len(e.en) < 3:
+            continue
+        # 模板条目（{{Seirei}} 等字词转换模板）的 en 是普通名词，en 正文大小写不定
+        # （实测小写居多），大小写不敏感匹配；专名保持精确匹配（防 Felt/felt 类误判）。
+        flags = re.IGNORECASE if "{{" in e.std else 0
+        if not re.search(rf"\b{re.escape(e.en)}\b", body, flags):
             continue
         hits.append((e.en, e.std))
     hits.sort(key=lambda h: -len(h[0]))  # 稳定排序：等长保持表中先后顺序
@@ -714,6 +727,26 @@ def known_nouns(body, conv):
             continue  # en 面出现在内链显示文字中：该词已被链接覆盖，目标名 agent 可见
         kept.append((en, name))
     return sorted(f"{en} = {name}" for en, name in kept)
+
+
+def agent_rules():
+    """docs/llm-translation.md 的 agent 规则小节原文（prepare 注入用）。
+
+    小节缺失/为空是配置错误，响亮失败——否则 agent 无规则可循。
+    """
+    lines = RULES_DOC.read_text(encoding="utf-8").splitlines()
+    for i, line in enumerate(lines):
+        if line.startswith(RULES_HEADING):
+            body = []
+            for rest in lines[i + 1 :]:
+                if rest.startswith("## "):
+                    break
+                body.append(rest)
+            section = "\n".join(body).strip()
+            if not section:
+                raise RuntimeError(f"{RULES_DOC} 的「{RULES_HEADING}」小节为空")
+            return section
+    raise RuntimeError(f"{RULES_DOC} 缺少「{RULES_HEADING}」小节")
 
 
 def write_work_files(best):
@@ -757,7 +790,7 @@ def write_work_files(best):
     if unresolved:
         print(f"  未解析内链（zh 无对应页，保留 en 原名）: {', '.join(unresolved)}")
     if nouns:
-        print(f"  已裁决专名（见 {WORK / f'{slug}.nouns.txt'}，译文须使用）：")
+        print("  已裁决专名（译文须使用）：")
         for n in nouns:
             print(f"    {n}")
     # 骨架与 zh 现文全量注入 stdout（进 agent prompt），省两次读文件。
@@ -765,10 +798,12 @@ def write_work_files(best):
     # 整体注入，仅有的 8000 字符截断在未使用的 context_from 路径）；Kimi 侧限制即
     # 上下文窗口（k3 为 100 万 token，实测队列最大页 22.6 万字符 ≈9 万 token）；
     # 超窗页面会以 API 错误响亮失败，那才是处理时机
-    print(f"===== {slug}.conv.txt（翻译基础骨架） =====")
+    print("===== 骨架 =====")
     print(conv)
-    print(f"===== {slug}.zh.txt（prepare 时 zh 现文，策展与原创段落判断用） =====")
+    print("===== zh 现文 =====")
     print(zh_text)
+    print("===== agent 规则 =====")
+    print(agent_rules())
 
 
 def resolve_wip():

@@ -188,6 +188,7 @@ r = http.request(site, uri, method="POST",  # 复用 pywikibot 已登录会话
 ## MediaWiki Conversiontable
 
 - 自定义转换规则只解析 `-{ ... }-` 块；块外的说明/HTML 不影响规则加载。规则目标（`=>` 右侧）里的 `<!--as-is-->…<!--/as-is-->` 注释对用于保护繁体目标不被 bot 译名归一——注释随转换结果透传为惰性 HTML 注释，不可见、不影响转换（2026-08-22 实测）；简体键名保持裸写，随译名任务自动更新。
+- 规则键名（`=>` 左侧）不能包 `<!--as-is-->` 注释对：转换表解析器不剥注释，键名含注释的规则永不命中（2026-09-15 实测：全表 684 条裸键规则正常触发，唯一被包键名的规则不触发）。std 为模板的条目（`{{Ringa}}` 类）其别名做不了键名——裸写会被 fix:translation 归一成模板调用、包注释又不生效，两头都是死规则；这类词的简繁转换内联进模板源码解决（`-{zh-hans:…;zh-hant:…;}-`，实测在 Tooltip 参数内双向生效）。
 - `//` 注释必须写在分号**前**：`foo=>bar //注释;`。若写成 `foo=>bar; //注释`，MediaWiki 按分号切段后会把注释当作下一条规则 key 的前缀，导致下一条规则静默失效（2026-08-11 在 Fandom MediaWiki 1.43.9 实测；对应核心代码 `LanguageConverter::parseCachedTable()`）。
 - 排查某条规则是否生效，可用只读 API 对任意片段直接解析：`action=parse&text=<片段>&title=User:IchiSanNi/Sandbox&prop=text&contentmodel=wikitext&variant=zh-tw`；这能排除条目页缓存因素。
 - 修正转换表后，新解析会立即使用新规则，但既有条目仍可能命中旧 parser cache（2026-08-11 实测：转换表 13:35 UTC 更新后任意片段已生效，而 `page_touched=12:18 UTC` 的条目仍返回旧 HTML）；对受影响的条目做 `?action=purge`（或等待缓存自然失效）。
