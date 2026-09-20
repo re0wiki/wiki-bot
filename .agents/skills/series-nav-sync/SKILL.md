@@ -1,3 +1,9 @@
+---
+name: series-nav-sync
+description: "Use when 同步系列导航 Tab 与 en 站 prev/next 链（新话/新卷/合并/拆分）。SOP 与审计工具。"
+version: 1.0.0
+---
+
 # 系列导航（Tab/*）与 en 同步 SOP
 
 系列跳转（前后集/前后卷/前后篇）全部由 `Tab/*` 页首标签条承担，信息框不声明

@@ -61,7 +61,7 @@ def main() -> None:
         site.login()
         assert site.user() == "IchiSanNi"
 
-    # 全量取主空间源码（两阶段配方的库内封装，见 docs/wiki-access.md）
+    # 全量取主空间源码（两阶段配方的库内封装，见 .agents/skills/wiki-access/SKILL.md）
     gen = api.QueryGenerator(
         site=site,
         parameters={

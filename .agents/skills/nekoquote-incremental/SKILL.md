@@ -1,3 +1,9 @@
+---
+name: nekoquote-incremental
+description: "Use when 维护 NekoQuote 语录同步（月表/增量收录/排查回潮）。Runbook 与故障处理。"
+version: 1.0.0
+---
+
 # NekoQuote 增量收录 Runbook
 
 **2026-08-18 起主通道：循环任务 `nekoquote`（`src/scripts/re0_nekoquote.py`）全自动同步**——Discord bot token 拉中文服务器的 FBK 转发频道新消息（水位线 `.cache/nekoquote/sync_state.json`，全链成功才推进），复用 `src/nekoquote/` 包的解析与管线，随 main.py 循环执行、无需人工。以下手动导出流程保留为备份/排障手段（注意 EN 频道同为 FBK 转发，与中文频道**不互为独立兜底**；FBK/nitter 是共同单点）。

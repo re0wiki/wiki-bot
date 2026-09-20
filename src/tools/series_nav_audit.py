@@ -2,7 +2,7 @@
 
 用途：en 站新增/合并/拆分系列内容（剧集、漫画话数、短篇、音乐）后，
 zh 侧的 Tab 覆盖不会自动跟随——本工具产出待办清单。用法与背景见
-docs/series-nav-sync.md。
+.agents/skills/series-nav-sync/SKILL.md。
 
 两项检查：
 1. 覆盖（coverage）：en 每个 previous/next 目标的 zh 对应页，必须出现在

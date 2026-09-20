@@ -1,3 +1,9 @@
+---
+name: wiki-access
+description: "Use when 读写 re0 wiki 或编写任何 wiki 交互代码（含一次性脚本、裸 API）。读写配方、限速、实测坑。"
+version: 1.0.0
+---
+
 # wiki 读写配方（pywikibot 库方式 + 裸 API）
 
 读写 rezero.fandom.com（re0 family，12 个语言子站）的实测用法与坑。
@@ -169,19 +175,24 @@ r = http.request(site, uri, method="POST",  # 复用 pywikibot 已登录会话
 ## 实测结论与坑
 
 - 搜索"菜月昴"能命中 `角色:菜月·昴` 等页（Fandom 搜索对别名友好），但 `intitle:` 语法无效；`insource:` 也不支持（`site.search('insource:"Init"')` 返回 0 但字符串其实遍地都是）。信任任何搜索语法前先用已知真/已知假查询 sanity check。2026-08-19 再踩：`insource:/\{\{To do\|/` 返回 0 而源码扫描实测 107 页带参数——且当时手里就有已知真样本（13 卷刚写入的 `{{To do|由 K3 翻译…}}`）却没拿它验证查询。**查模板/文本用法的权威方式只有扫源码**（categorymembers/allpages 枚举 + `rvprop=content` ≤50/批），搜索语法返回 0 一律视为「查询不可信」而非「不存在」。
+- **Fandom 派生表（langlinks 等）的读取可能与页面源码不一致，且与 HTTP 缓存无关**（api.php 响应头 `no-store`、无 Age/X-Cache，已实证排除 CDN 缓存）。2026-08-08 观测：langlinks 对希洛洛返回过源码史上从未存在的值（Toneriko，115 个修订逐版验证源码始终是 Tonerico）、对菜月父母返回过「无 en 链接」（实际 2021-02 起就有，当天两页零编辑），数小时后零编辑自愈——指向 Fandom 基础设施侧的派生表重建/迁移，外部无法定位。**审计「页面有没有某链接/某分类」一律扫源码（rvprop=content），不依赖 langlinks/categories 等派生表**。
+- **信息框参数里的 `[[链接]]` 不进 links 表**（2026-08-13 实证：当时的 动画:第79集 等 4 页源码含 `| previous = [[X]]` 而 prop=links 无；2026-08-21 沙盒复证实证：新保存页面仅含 portable `<infobox>` 参数链接，等 60s 排除 job queue 延迟后 links 表仍为空）。机制是 portable infobox 扩展渲染参数值时不登记链接，与 #invoke 无关——`{{Init}}` 等 #invoke **输出**里的链接正常登记（同日实证：动画:第50集 links 表含 Init/Tab 模板族输出的子页链接，其 infobox 参数链接 小说:15卷 亦由模板输出带入）。`linkedPages()`/`prop=links`/`linkshere` 对 infobox 参数链接系统性漏报，依赖它们的工具（如上游 fixing_redirects）会永远漏改。链接审计/改写必须扫源码。其余任务已审计无此险（2026-08-13）：category remove/template replace（被操作对象均顶层调用）、redirect-do/br（redirect 表抽查一致）、interwiki/replace 各 fix/re0_move/noreferences（均源码驱动）。
+- `site.isInterwikiLink()` 会为命中的跨站前缀**构造目标 APISite**，其 `__init__` 固定 `login(cookie_only=True)` 发 userinfo 请求（zh 站 interwikimap 有 135 个外站前缀，wikipedia/wp 等指向 en.wikipedia.org；2026-09-05 实测墙内不可达，re0_fixing_redirects 每轮运行 SSL 重试直至崩溃）。判断「链接是否跨站」用 re0_fixing_redirects 的 `is_interwiki()`（只比前缀、零外站请求），不要调库方法。
 - Fandom API **不支持** `list=mostlinkedtemplates`；查模板引用量改用 `Page.embeddedin(total=N)` 逐个查。
 - `api.QueryGenerator` 带 `generator=` 时**逐页 yield page dict**（不是 `{"query": {"pages": {...}}}` 包裹结构）；不带 generator 时才是整包响应。解析前先确认用的是哪种形态。
 - `allcategories` 不支持 `acsort` 参数，返回条目也没有 `size` 键；分类规模用 `Category.categoryinfo`。
 - `site.namespaces` 迭代返回的是 int 键，取对象用 `site.namespaces[ns_id]`。
 - `Page.getVersionHistory()` 在 11.x 不存在；最新版本用 `page.latest_revision`，最早版本用裸 API（`rvdir=newer, rvlimit=1`）。
 - `Page.isRedirectPage()` 对 `#重定向 [[...]]` 的页面可能误报 `False`——信 wikitext 不信标志位。
-- **`embeddedin`/templatelinks = 0 不等于没人用**：`#tag:` 扩展内容和死模板 `<includeonly>` 里的调用不入 templatelinks。模板删除前审计流程（全站 dump 配方、分类法、删除清单）见 `docs/template-usage-audit.md`。
+- **`embeddedin`/templatelinks = 0 不等于没人用**：`#tag:` 扩展内容和死模板 `<includeonly>` 里的调用不入 templatelinks。模板删除前审计流程（全站 dump 配方、分类法、删除清单）见 template-usage-audit skill。
 - `RecentChangesPageGenerator` 返回有重复条目（同一编辑出现多次），统计时需去重。
+- MediaWiki API `formatversion=2` 下 recentchanges 的 `bot`/`new`/`minor` 键**恒存在**（值为 true/false），过滤必须判断值而不是键存在性——`"bot" not in c` 会把所有编辑都滤掉。
 - `generator=allpages` 配 `rvprop=content` 会被 Fandom 静默丢弃大部分页面的 revisions（只回页面壳、无报错、无截断提示，实测 2227 页只取回 253 页源码）。全站取源码用两阶段：先 `list=allpages` 枚举标题，再 `titles=` 按 50 个/批取 content。
   - 2026-08-18 复测：经 `api.QueryGenerator` 全量取回 10157/10157 页源码（与 `list=allpages` 标题集交叉验证零缺失）；同任务手搓 continue 分页（gaplimit=500 + content）则遇到某批响应缺 `continue` 字段静默截断（764/2206）。机制（`data/api/_generators.py`）：QueryGenerator 对 content 查询把批大小压到 `api_limit//10` 且 ≤250（匿名=50），上游注释明言 500/批 content 查询「sometimes result in server-side errors」——截断的触发条件是**响应体积**，不是分页协议；缺 continue 时 pywikibot 同样只能 break（协议无信号，任何客户端都检测不了）。结论：content 批查询手搓也压到 ≤50/批，并以「抓取页数 >= siteinfo articles 数」兜底断言截断（`src/tools/audit_wikipedia_links.py` 有此断言）。
 - `titles=` 大批（50 个）请求偶发返回 **HTTP 400 空响应体**（非毒标题——二分后每个子批都 200；也非 URL 超长）。降批到 25 + 指数退避重试即可，全量 dump 1 万页级别稳定。
 - 主空间 `allpages` 按字母序，CJK 前缀排在英文之后——采样统计前缀分布必须扫全量。
 - 写沙盒后可用 `curl 'https://rezero.fandom.com/zh/api.php?action=query&prop=revisions&titles=...&rvprop=content&rvslots=main&format=json'` 匿名验证结果。
+- **Fandom 登录会话对读路径不可靠**（2026-08-13 实证）：cookie jar 会话会被同账号的跨语言站流量服务端作废（互踢，见 user-config.py 注释），而 pywikibot `login()` 有 jar 即跳过重新认证——于是依赖 apihighlimits 的 500 titles/批 prop 查询会间歇 `toomanyvalues: limit is 50`（同一 jar 连跪数次、显式重新登录后秒恢复）。pywikibot 发现会话匿名时会打 `Logged in as 'IP' instead of '...'. Forcing re-login` 自愈，但可能发生在失败之后。规则：**读路径一律匿名可达**——列表查询（allpages/allimages 的 limit 参数匿名上限即 500）或 ≤50 titles/批的 prop 查询；批量存在性判断用「全量标题集内存比对」（~21 次列表请求）而非逐批 prop=info（50/批更多请求且 500/批不稳）。**写路径由两层自愈覆盖**：已缓存登录态时被踢，后续内嵌 userinfo 的响应会触发 `Logged in as 'IP' instead of '...'. Forcing re-login`；进程启动后首次取 userinfo 时已是匿名（无登录态可比对的盲区）由 fork 的 `need_right` 重登补丁兜底（见 pywikibot-update skill 的补丁清单）。两层都失败的兜底形态是响亮异常（badtoken/permission/NoUsername）→ 非零退出停机，不存在静默损坏。且互踢本身不稳定（同日 en 登录未再踢掉 zh 会话），被踢频率低于预期。
 - **限速（Fandom 已接入 Cloudflare）**：`user-config.py` 必须保持 `minthrottle >= 0.25`、`put_throttle >= 2`（当前 0.25/2）。读侧：单连接全速（RTT 锁死 ~3.8 req/s）3000 请求零 429，0.25 已处拐点、再低不会更快；写侧真正瓶颈是 MediaWiki 编辑限速（user 组 40 次/分，查 `userinfo?uiprop=ratelimits`），2s → 30 次/分。失速会被 Cloudflare 429 且 `Retry-After` 高达数千秒、pywikibot 无条件睡满（`maxthrottle` 管不住）。治理方式是不触发 429（配置限速），明确不给 fork 打 `retry_after` 钳制补丁。根因考据与「何时绕开 pywikibot」见 `docs/cloudflare-429.md`。
 - **批量编辑模式**（同一变换改多页）：优先 pywikibot（pagegenerators 扫描 → 本地分析出候选 → 循环 `save(bot=True)`）；裸 API 路线为备选：① 全量扫描（`list=allpages` + `prop=revisions` 取原文和 revid）→ ② 本地分析出候选清单 → ③ 循环编辑：login → csrf token → edit 带 `baserevid` 防冲突、`bot="1"` 抑制通知，写间隔 ≥1.5s（MediaWiki 编辑限速 user 组 40 次/分）。扫 28K+ 页用 `aplimit=max`（500）分批，勿逐页请求。
 
