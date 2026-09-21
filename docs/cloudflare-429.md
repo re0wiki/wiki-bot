@@ -1,7 +1,7 @@
 # Cloudflare 429（Fandom 限流）根因与对策
 
 Fandom 前端接 Cloudflare，按 **TLS 指纹 + 请求速率**限流。本文是实测根因记录；
-限速配置的日常结论见 `docs/wiki-access.md`「实测结论与坑」节。
+限速配置的日常结论见 wiki-access skill（`.agents/skills/wiki-access/SKILL.md`）「实测结论与坑」节。
 
 ## 已证伪的假设
 

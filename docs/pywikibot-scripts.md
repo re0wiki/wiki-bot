@@ -14,7 +14,7 @@ uv run python pwb/pwb.py <script> [生成器] [脚本选项] [-simulate]
 
 ## jobs 里已在用的
 
-`transferbot` / `interwiki` / `replace -fix:*` / `category remove` / `template` / `fixing_redirects` / `redirect` / `cosmetic_changes` / `noreferences` / `touch`——见 `src/src/jobs/jobs.py`，不赘述。
+`transferbot` / `interwiki` / `replace -fix:*` / `category remove` / `template` / `fixing_redirects` / `redirect` / `cosmetic_changes` / `noreferences` / `touch`——见 `src/jobs/jobs.py`，不赘述。
 
 ## 未入 jobs 但对常见任务有用的
 
@@ -83,7 +83,7 @@ uv run python pwb/pwb.py replace -automaticsummary \
 ```
 
 - `-exceptinside:` 的正则跳过跨语言链接内部（`[[en:...]]` 等），避免把外语链接文本替换掉。
-- 六个 `-start:ns:!` = `src/src/jobs/starts.py` 的 starts_more（主/project/template/category/module/mediawiki 全扫）。`-start::!` 注意是**双冒号**（空 ns 名 = 主空间）。
+- 六个 `-start:ns:!` = `src/jobs/starts.py` 的 starts_more（主/project/template/category/module/mediawiki 全扫）。`-start::!` 注意是**双冒号**（空 ns 名 = 主空间）。
 - 限定范围可用 `-transcludes:模板名` 或 `-page:X`（可多个）替代 `-start` 系列。
 - 先 `-page:某页` 单页验证 regex，再放开到全站——历史上删模板参数时 `[^}]*` 会跨行吃多，正确写法是 `[^}\n]*\n?`。
 - `-regex` 模式下替换串里 `\1` 引用捕获组；`-nocase` 对中文无意义可省。
@@ -135,6 +135,7 @@ uv run python pwb/pwb.py replace -automaticsummary \
 
 ## 注意
 
+- pwb.py 对**用法级失败**（脚本名拼错、replace 缺替换对、未知 pwb 参数）退出码仍为 0——`wrapper.py` 的 `execute()` 返回 False 只打印用法文档；只有未捕获异常（崩溃类：网络断开/登录失败/脚本 bug）才非零退出。因此 `run_job` 的「失败即退出」覆盖的是崩溃类失败；用法级失败要靠 `-simulate` 干跑先看输出。
 - replace 系脚本（replace/cosmetic_changes/noreferences 等走 textlib 的）都尊重 fork 加的 `as-is` 注释对保护（`<!--as-is-->…<!--/as-is-->`），不想被 bot 动的内容包进这对注释（行内内容整词包裹即可）。
-- `run_job` 子进程输出乱码的排查看 AGENTS.md「坑」节（PYTHONIOENCODING 条目）。
+- `run_job` 给子进程注入 `PYTHONIOENCODING=utf-8`、管道按 UTF-8 解码（见 AGENTS.md 架构地图 `run_job` 条目），勿移除。
 - 写入红线不变：测试只用 `User:IchiSanNi/沙盒`，批量写入需用户明确指示，绝不写 zh 以外语言站。

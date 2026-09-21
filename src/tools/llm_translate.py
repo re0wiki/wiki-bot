@@ -160,7 +160,11 @@ def scan_markers(titles):
 
 
 def creation_ts(title):
-    """创建时间（无人类编辑的 bot 搬运页的冷度）。"""
+    """创建时间（无人类编辑的 bot 搬运页的冷度）。
+
+    页面不存在（刚被删除，categorymembers 副本/派生表滞后仍列入成员）时
+    返回 None，由调用方决定取舍。
+    """
     r = api(
         ZH_API,
         prop="revisions",
@@ -169,7 +173,10 @@ def creation_ts(title):
         rvlimit="1",
         rvprop="ids|timestamp|user",
     )
-    rev = r["query"]["pages"][0]["revisions"][0]
+    revs = r["query"]["pages"][0].get("revisions")
+    if not revs:
+        return None
+    rev = revs[0]
     assert rev.get("user") == BOT, f"{title} 无人类编辑但创建者是 {rev.get('user')}"
     return rev["timestamp"]
 
@@ -207,7 +214,12 @@ def cmd_refresh():
             queue.append({"title": t, "cold": latest[t]})
     orphans = [t for t in members if t not in latest]
     for i, t in enumerate(orphans):
-        queue.append({"title": t, "cold": creation_ts(t)})
+        ts = creation_ts(t)
+        if ts is None:
+            # 成员表混入刚删除的页：不入队，下轮 refresh 成员表自愈后消失
+            print(f"skip: {t}（页面不存在，不入队）")
+            continue
+        queue.append({"title": t, "cold": ts})
         if (i + 1) % 50 == 0:
             print(f"orphans: {i + 1}/{len(orphans)}")
 

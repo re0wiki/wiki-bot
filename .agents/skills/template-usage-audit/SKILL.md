@@ -1,3 +1,9 @@
+---
+name: template-usage-audit
+description: "Use when 审计或删除 Fandom 模板前核查引用。embeddedin 局限、grep 三坑、分类法与删除流程。"
+version: 1.0.0
+---
+
 # 零引用模板审计（Fandom 模板删除前检查）
 
 背景：审查 `embeddedin()` 报告零引用的模板，决定删除还是保留。
