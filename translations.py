@@ -1671,6 +1671,8 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="地狱·狙击",
+        ja="ヘルズ·スナイプ",
+        en="Hell's Snipe",
         aliases=("地狱狙击",),
     ),
     Entry(
@@ -3737,4 +3739,25 @@ ENTRIES: list[Entry] = [
         en="Julia",
         note="角色；罗兹瓦尔·J·梅札斯 本名。语料无据（候选 茱莉亚/朱莉娅/朱莉亚/茱莉娅/朱利娅 均 0），wiki 既有写法（角色:罗兹瓦尔·J·梅札斯）",
     ),
+    Entry(
+        std="厄勒克特拉",
+        ja="エレクトラ",
+        en="Electra",
+        note="术语；普勒阿得斯监视塔第二层。官方：17 处（vol22-25）；wiki 旧写法 厄勒特克拉（语料 0），别名未登记留人工",
+    ),
+    Entry(std="爱蜜莉雅阵营", en="Emilia Camp", note="术语。官方：42 处"),
+    Entry(std="饿马王", en="Hungry Horse King", note="魔兽。官方：28 处（vol25）"),
+    Entry(
+        std="蕾拉妮",
+        ja="レイラニ",
+        en="Leilani",
+        note="角色；全名 蕾拉妮·阿尔奈尔；LLM 自拟，语料无据（候选 蕾拉妮/莱拉妮/雷拉妮/蕾拉尼 均 0）",
+    ),
+    Entry(
+        std="阿尔奈尔",
+        ja="アルナイル",
+        en="Alnair",
+        note="姓；蕾拉妮·阿尔奈尔；LLM 自拟，语料无据（候选 阿尔奈尔/阿尔娜伊尔/阿尔纳伊尔 均 0）；取天鹤座α星名惯译",
+    ),
+    Entry(std="卢克尼卡王室", en="Royal Family", note="术语。官方：4 处"),
 ]
