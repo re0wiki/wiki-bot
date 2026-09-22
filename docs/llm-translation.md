@@ -28,7 +28,7 @@ refresh（重建选页队列）→ prepare（取队首、机械转换备料）�
 5. 内链目标替换：resolve_links 映射（en 标题 → zh 同名页 → 跟随重定向——与 fixing-redirects 同链路等效，此处离线单遍完成）把 `[[X]]` 改写为 `[[zh 最终目标|X]]`，显示文字留 agent 翻译；映射查找带首字母大小写回退（前置 cosmetic 的 cleanUpLinks 会把 `[[Meteor|meteor]]` 折叠成 `[[meteor]]`，映射键是 en 原标题大小写）；解析失败（en 有 zh 无）保留 en 原名并列进报告；
 6. **信息框字段级合并**（`merge_structure`，zh 策展内容不丢）：zh 同名参数值含中文（已策展）→ 保留 zh 行，英文残留/空值 → 用 en 转换值；zh 独有参数行（isbn_ko/painter/voice_zh_* 等）块尾保留；粘在模板头/尾行的内联参数（`{{Infobox X | name = ...`、`| modes = }}`）按顶层 `|` / `}}` 切开，同样参与合并；zh 有 image_a/n/g/c 分媒介图库时丢弃 en 的单 image 参数；previous/next 与 character 的 name_ja_romaji（fix:para 删除对象）永不带回；zh 独有的整个信息框（en 无对应）整块前置保留。
 
-译名归一不在转换层——LLM 按译名表翻译，残留别名由主循环的 fix:translation 对成稿机械兜底。已裁决专名（译名表 en 字段=英文写法）由 prepare 词边界匹配 en 正文（专名大小写敏感；`{{Seirei}}`/`{{Elf}}` 等模板条目的 en 是普通名词，大小写不敏感，复数等变形不展开——漏网形态由 fix:translation 的占位模板兜底），命中且该 en 面未作为骨架内链显示文字出现（内链已覆盖的不重复注入）的写入 `{slug}.nouns.txt` 并在 stdout 列出（stdout 注入 agent prompt），译文须使用——这是 agent 新登记专名回灌后续 tick 的通道。
+译名归一不在转换层——LLM 按译名表翻译，残留别名由主循环的 fix:translation 对成稿机械兜底。已裁决专名（译名表 en 字段=英文写法）由 prepare 词边界匹配 en 正文（专名大小写敏感；`{{Seirei}}`/`{{Elf}}` 等模板条目的 en 是普通名词，大小写不敏感，复数等变形不展开——漏网形态由 fix:translation 的占位模板兜底），命中且该 en 面未作为骨架内链显示文字出现（内链已覆盖的不重复注入）的写入 `{slug}.nouns.txt` 并在 stdout 列出（stdout 注入 agent prompt），译文须使用——这是 agent 新登记专名回灌后续 tick 的通道。未登记专名候选（en 正文的大写词序列减去译名表 en 与句首虚词/标题词）同样注入 stdout，每条附 wiki 线索（候选命中骨架内链/en 链目标的给 zh 目标页及其信息框 name_ja，否则给 zh 站搜索 top1 标题与摘要）——agent 裁决登记（agent 规则 7）所需的 ja 与 wiki 既有写法证据随备料给出。
 
 ## 选页：编辑者冷度
 
@@ -83,12 +83,12 @@ prepare 的 wip 自动收尾：`work/` 里有上轮残留项时先按 wiki 最�
 4. 内链已解析为 `[[zh 最终目标|原显示文字]]`：只翻译显示文字，不碰目标。解析失败的（en 有 zh 无）保留 en 原名并在报告中列出。
 5. 翻译：prose 段落、参数里的英文散文值、内链显示文字、未归一的标题；引号用「」；专名用注入的已裁决译名与 wiki 通行译名（残留别名由主循环 fix:translation 兜底）。骨架里含中文的 zh 策展内容（信息框合并保留的字段等）原样不动。zh 现文有而 en 没有的原创段落：质量良好的保留，质量低下的舍弃（可从页面历史恢复），报告中说明取舍。拿不准骨架转换时对照 `{slug}.body.en.txt`（en 原文）；`{slug}.zh.txt` 仅供原创段落裁决核对。
 6. 仅当 en 无增量（对照 en 全文判定，含发售日期/封面/出处等字段——zh 已是中文不代表无增量）且 zh 无英文残留时才不编辑：`skip <slug> "en 无增量"`，然后直接进报告步。
-7. **未登记专名当场自行裁决并登记进 `translations.py`**（一次登记全管线复利，下轮 prepare 自动注入）：
+7. **未登记专名当场自行裁决并登记进 `translations.py`**（一次登记全管线复利，下轮 prepare 自动注入）。prepare 注入的「未登记专名候选」节已附 wiki 线索（zh 目标页 name_ja / zh 搜索命中摘要），ja 与 wiki 既有写法直接从线索取；候选节未覆盖到的专名按同一流程自行取证：
    - 先 grep `translations.py`（std/en/aliases）确认查无；
-   - 语料核验：生多个候选写法逐一精确计数——re0-corpus 仓库根 `python scripts/search.py "<候选>" --context 0`（实测中文参数经 uv 传入正常）或直接对 `corpus/merged/*.md`、`corpus/ex/*.md` 子串统计；官方简中内部不一致按出现次数最多裁决。全部候选零命中 → 自拟（参考表内同音节既有用字）。判「wiki 写法 ≠ 官方写法」前先确认两者是否同词——衍生简称/别名不构成冲突（如 普勒阿得斯监视塔 vs 贤者塔），同词异写才是冲突；确为冲突时 std 取官方（译名规则官方简中优先），wiki 写法记进 note 并在报告说明；
-   - 登记：`ENTRIES` append `Entry(std=..., en=..., ja=..., note=...)`；ja 从 wiki 信息框 name_ja 取，查不到省略；note 写裁决依据（「官方：N 处」或「LLM 自拟，语料无据（候选 X/Y/Z 均 0）」）；
+   - 语料核验：全部候选写法一次出齐精确计数——re0-corpus 仓库根 `python scripts/count_names.py 候选1 候选2 ...`（单趟扫 corpus/merged+ex，输出总数与分卷明细）；官方简中内部不一致按出现次数最多裁决。全部候选零命中 → 自拟（参考表内同音节既有用字）。判「wiki 写法 ≠ 官方写法」前先确认两者是否同词——衍生简称/别名不构成冲突（如 普勒阿得斯监视塔 vs 贤者塔），同词异写才是冲突；确为冲突时 std 取官方（译名规则官方简中优先），wiki 写法记进 note 并在报告说明；
+   - 登记：`ENTRIES` 末尾 `]` 前 append `Entry(std=..., en=..., ja=..., note=...)`；ja 用注入线索的 name_ja，线索没有的省略；note 写裁决依据（「官方：N 处」或「LLM 自拟，语料无据（候选 X/Y/Z 均 0）」）；
    - **绝不登记 aliases**：别名需全历史碰撞扫描，留人工——错误 std 配 alias 会让 fix:translation 把官方写法全站反向改写且不可见（re0-corpus docs/translation-audit.md 教训 1）。std-only 条目只生成繁→简归一，最坏是无害死规则；
-   - 验收：`uv run pytest tests/test_translation.py -q` 全绿；每 tick 一个 commit `feat(translation): add X, Y（<页面>）`。官方出版覆盖滞后的条目由 re0-corpus names 管线新卷重跑兜底复审。
+   - 验收：`uv run pytest tests/test_translation.py -q` 全绿；每 tick 一个 commit `feat(translation): add X, Y（<页面>）`——commit 消息用 write_file 写 `scratch/_msg_<slug>.txt` 再 `git commit -F`（文件名带 slug，防止沿用旧消息文件）。官方出版覆盖滞后的条目由 re0-corpus names 管线新卷重跑兜底复审。
 8. 报告：处理/跳过了哪页、zh 原创段落取舍、新登记专名（如有）。
 
 ## 内链处理
