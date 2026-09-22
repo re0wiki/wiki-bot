@@ -50,10 +50,7 @@ cd wiki-bot 仓库根
 
 ```
 EN Discord 导出（Discrub JSON）
-  → p8_discord_merge.py：extract → p8_tweets.json（src=dc_en/dc_en_fbk）
-  → p8_translate.py：K3 补译 → p8_zh.json
-  → p8_normalize.py：translation fix 规则归一
-  → p8_build.py：lua_base + raw 合流 → p8/lua/*.lua
-  → p8_verify_rt.py：既有条目零缺失校验
-  → p8_deploy3.py：增量部署（vs p8/lua_live）
+  → merge.py：parse 解析（三路全扫）+ 新推入 tweets.json
+  → chain.py 链：translate.py（K3 补译 → zh.json）→ build.py（lua_base + raw 合流 → lua/）
+    → verify_rt.py（既有条目零缺失校验）→ deploy.py（增量部署，vs lua_live）
 ```

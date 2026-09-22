@@ -1,7 +1,7 @@
 """手动增量合流：Discrub 导出目录 → 新推入库 → 全链。
 
-用法：python -m nekoquote.merge [导出目录]（默认 Desktop\\tappei_tweets）
-自动通道（scripts/re0_nekoquote.py 循环任务）之外的备份/排障手段。
+用法：python -m src.nekoquote.merge [导出目录]（默认 Desktop\\tappei_tweets）
+自动通道（src/scripts/re0_nekoquote.py 循环任务）之外的备份/排障手段。
 幂等：已入库 id 跳过，可反复对同一导出跑。
 """
 

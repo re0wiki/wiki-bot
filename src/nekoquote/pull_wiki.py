@@ -3,7 +3,7 @@
 月表条目两个来源都只在构建期读本地数据——lua_base 零变换重放、zh.json/tweets.json
 经 merge_raw 重新生成（见 build.py）——因此 wiki 侧直接改月表（如 {{Seirei or Elf}}
 复核消歧，fix:translation 也会命中月表 jt 字段里的「妖精」等词）不落回本地，
-下轮增量同步重建即回潮。wiki 侧改完后跑 `uv run python -m nekoquote.pull_wiki`。
+下轮增量同步重建即回潮。wiki 侧改完后跑 `uv run python -m src.nekoquote.pull_wiki`。
 
 字段归属与 merge_raw 对称（仅对 lua_base 之外的月份逐字段回写；lua_base 月份
 由整文件刷新覆盖——其条目是 P8 时代管线生成的，加工逻辑与 raw_tweet_entry 不同，

@@ -1,6 +1,6 @@
 # pywikibot 自带脚本速查
 
-原则：**能直接用 `pwb/pywikibot/scripts/` 里的现成脚本就别手写**。手写只用于现成脚本确实覆盖不了的场景（如 `src/scripts/re0_*.py` 那几个）。
+原则：**能直接用 `pwb/scripts/` 里的现成脚本就别手写**。手写只用于现成脚本确实覆盖不了的场景（如 `src/scripts/re0_*.py` 那几个）。
 
 运行方式（仓库根目录）：
 
