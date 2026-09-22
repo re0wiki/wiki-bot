@@ -88,7 +88,7 @@ prepare 的 wip 自动收尾：`work/` 里有上轮残留项时先按 wiki 最�
    - 姓与名分开登记（如 蕾拉妮、阿尔奈尔 各一条），全名不另登记条目——组成词全部已登记的候选 prepare 已查重滤除，若仍遇漏网（如异序全名）同此处理；
    - 语料核验：全部候选写法一次出齐精确计数——re0-corpus 仓库根 `python scripts/count_names.py 候选1 候选2 ...`（单趟扫 corpus/merged+ex，输出总数与分卷明细）；官方简中内部不一致按出现次数最多裁决。全部候选零命中 → 自拟（参考表内同音节既有用字）。判「wiki 写法 ≠ 官方写法」前先确认两者是否同词——衍生简称/别名不构成冲突（如 普勒阿得斯监视塔 vs 贤者塔），同词异写才是冲突；确为冲突时 std 取官方（译名规则官方简中优先），wiki 写法记进 note 并在报告说明；
    - 登记：`ENTRIES` 末尾 `]` 前 append `Entry(std=..., en=..., ja=..., note=...)`；ja 用注入线索的 name_ja，线索没有的省略；note 写裁决依据（「官方：N 处」或「LLM 自拟，语料无据（候选 X/Y/Z 均 0）」）；
-   - **绝不登记 aliases**：别名需全历史碰撞扫描，留人工——错误 std 配 alias 会让 fix:translation 把官方写法全站反向改写且不可见（re0-corpus docs/translation-audit.md 教训 1）。std-only 条目只生成繁→简归一，最坏是无害死规则；
+   - 别名一并自动登记：裁决中遇到的异写（wiki 旧写法、语料异写候选等）直接写进 `aliases`（只写简体，p2st 自动补繁；guard/字符类直接作为写法文本，如 `"(?<!梅)裘斯"`）；
    - 验收：`uv run pytest tests/test_translation.py -q` 全绿；每 tick 一个 commit `feat(translation): add X, Y（<页面>）`——commit 消息用 write_file 写 `scratch/_msg_<slug>.txt` 再 `git commit -F`（文件名带 slug，防止沿用旧消息文件）。官方出版覆盖滞后的条目由 re0-corpus names 管线新卷重跑兜底复审。
 8. 报告：处理/跳过了哪页、zh 原创段落取舍、新登记专名（如有）。
 

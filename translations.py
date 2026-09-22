@@ -3509,7 +3509,7 @@ ENTRIES: list[Entry] = [
         note="角色",
     ),
     # ---- LLM 翻译管线自裁决登记（官方语料精确计数优先，零命中自拟或保留英文；
-    #      aliases 一律留人工 + 全历史碰撞扫描，见 docs/llm-translation.md） ----
+    #      别名随裁决一并自动登记，见 docs/llm-translation.md） ----
     Entry(std="希玛", en="Shima", note="角色；琉兹复制体四长老之一。官方语料 165 处"),
     Entry(std="阿尔玛", en="Alma", note="角色；琉兹复制体四长老之一。官方语料 6 处"),
     Entry(std="毕尔玛", en="Bilma", note="角色；琉兹复制体四长老之一。官方语料 8 处"),
@@ -3671,7 +3671,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(std="Sasageru IF", en="Sasageru IF", note="IF 线名。语料无据，保留英文"),
     Entry(std="Gordon", en="Gordon", note="游戏:DEATH OR KISS 原创角色。保留英文"),
-    # ---- 高频通行术语（官方语料核验或 wiki 既有；prepare 注入用，aliases 留人工） ----
+    # ---- 高频通行术语（官方语料核验或 wiki 既有；prepare 注入用） ----
     Entry(std="圣域", en="Sanctuary", note="术语。官方语料 771 处"),
     Entry(
         std="试炼",
