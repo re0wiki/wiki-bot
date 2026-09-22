@@ -745,7 +745,8 @@ def known_nouns(body, conv):
 # ------------------------------------------------------ 未登记专名候选（prepare 注入线索）
 
 # 大写开头词序列（允许 of/the/van 类小写连接词与 J. 类首字母缩写），
-# 再减去译名表 en 与纯虚词——剩下的才是需要 agent 裁决的表外专名。
+# 再减去译名表 en（整串命中或组成词全部已登记）与纯虚词——剩下的才是需要
+# agent 裁决的表外专名。
 # 句点仅许挂在单字母后（J.），普通词的句尾标点不进候选。
 _NAME_TOKEN = r"(?:[A-Z]\.|[A-Z][A-Za-z'·-]+)"
 _NAME_CONN = ("of", "the", "van", "von", "de", "der", "di", "del", "la")
@@ -798,7 +799,9 @@ def noun_candidates(body):
 
     清洗：去所有格（'s）、剥句首虚词与句尾连接词（"As Flugel"→"Flugel"、
     "Alec of"→"Alec"）、House 前缀参与查重（House Remendis 按 Remendis
-    已登记丢弃）、纯虚词序列丢弃、字母不足 4 个丢弃（J. K. 类孤立首字母）。
+    已登记丢弃）、组成词全部已登记丢弃（Meili Portroute 按 Meili + Portroute
+    已登记丢弃——姓与名分开登记，全名不构成新专名）、纯虚词序列丢弃、
+    字母不足 4 个丢弃（J. K. 类孤立首字母）。
     """
     registered = _translations_en()
     cands = set()
@@ -815,6 +818,10 @@ def noun_candidates(body):
         if alpha < 4 or all(w.lower().rstrip(".") in _NAME_STOP for w in words):
             continue
         if cand.lower() in registered or core.lower() in registered:
+            continue
+        if words and all(
+            re.sub(r"(?:'s|')$", "", w).lower() in registered for w in words
+        ):
             continue
         cands.add(cand)
     return sorted(cands)

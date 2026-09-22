@@ -59,3 +59,15 @@ def test_candidate_targets_display_and_mapping():
         "War of Nowhere": "术语:某战",
         "Old Home": "地点:旧宅",
     }
+
+
+def test_fully_registered_components_dropped():
+    # 姓与名分开登记：全名各组成词均已登记则不再提示
+    body = "Meili Portroute met Reid Astrea near Farsale Lugunica. Zephyrion Quill watched."
+    assert lt.noun_candidates(body) == ["Zephyrion Quill"]
+
+
+def test_possessive_component_dropped():
+    # 组成词带 's 所有格同样按已登记查重
+    body = "Leilani's Authority flared. Zephyrion's shield broke."
+    assert lt.noun_candidates(body) == ["Zephyrion"]
