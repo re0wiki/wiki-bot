@@ -1847,7 +1847,7 @@ ENTRIES: list[Entry] = [
     Entry(
         std="皮克塔特",
         en="Picoutatte",
-        aliases=("聘可塔特",),
+        aliases=("聘可塔特", "匹克塔坨"),
         note="水门都市邻近都市。官方语料 10 处",
     ),
     Entry(
