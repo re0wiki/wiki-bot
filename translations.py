@@ -3698,7 +3698,12 @@ ENTRIES: list[Entry] = [
         en="Sin Archbishop",
         note="术语；en 复数 Sin Archbishops 不在注入匹配（词边界）。官方语料 750 处",
     ),
-    Entry(std="魔兽", ja="魔獣", en="Witchbeast", note="术语。官方语料 1350 处；en 站现称 Witchbeast（旧称 Demon Beast）"),
+    Entry(
+        std="魔兽",
+        ja="魔獣",
+        en="Witchbeast",
+        note="术语。官方语料 1350 处；en 站现称 Witchbeast（旧称 Demon Beast）",
+    ),
     Entry(std="剑圣", ja="剣聖", en="Sword Saint", note="术语/称号。官方语料 598 处"),
     Entry(std="水门都市", en="Water City", note="术语；普利斯提拉。官方语料 103 处"),
     Entry(
@@ -3775,14 +3780,23 @@ ENTRIES: list[Entry] = [
     ),
     Entry(std="卢克尼卡王室", en="Royal Family", note="术语。官方：4 处"),
     Entry(std="市政厅", en="City Hall", note="术语；水门都市行政中心。官方：226 处"),
-    Entry(std="亚人联军", en="Demi-Human Alliance", note="术语。官方：5 处（ex2 2 + vol07 2 + vol17 1）"),
+    Entry(
+        std="亚人联军",
+        en="Demi-Human Alliance",
+        note="术语。官方：5 处（ex2 2 + vol07 2 + vol17 1）",
+    ),
     Entry(std="亚人战争", ja="亜人戦争", en="Demi-Human War", note="术语。官方：42 处"),
     Entry(
         std="神龙教会",
         en="Divine Dragon Church",
         note="术语。语料无据（候选 神龙教会/神龙教/龙神教会/神龙教团 均 0），wiki 既有写法（术语:神龙教会）",
     ),
-    Entry(std="大征伐", ja="大征伐", en="Great Conquest", note="术语；十四年前讨伐白鲸失败之役。官方：20 处"),
+    Entry(
+        std="大征伐",
+        ja="大征伐",
+        en="Great Conquest",
+        note="术语；十四年前讨伐白鲸失败之役。官方：20 处",
+    ),
     Entry(std="大魔兽", ja="大魔獣", en="Great Witchbeast", note="术语。官方：24 处"),
     Entry(std="色欲", ja="色欲", en="Lust", note="大罪司教罪名。官方：181 处"),
     Entry(std="怠惰", ja="怠惰", en="Sloth", note="大罪司教罪名。官方：309 处"),
@@ -3791,7 +3805,9 @@ ENTRIES: list[Entry] = [
         en="Evil Eye",
         note="术语；梅琳达的能力。语料无据（候选 邪眼/魔眼/咒眼 均 0，恶眼 4 处均为「凶恶眼神」非该词），LLM 自拟",
     ),
-    Entry(std="监狱塔", en="Prison Tower", note="术语；王都的监狱塔。官方：14 处（ex3）"),
+    Entry(
+        std="监狱塔", en="Prison Tower", note="术语；王都的监狱塔。官方：14 处（ex3）"
+    ),
     Entry(std="王都", en="Royal Capital", note="术语。官方：463 处"),
     Entry(
         std="近卫骑士团",
@@ -3803,7 +3819,12 @@ ENTRIES: list[Entry] = [
         en="Royal Selection Ceremony",
         note="术语；王选开幕仪式。官方：1 处（vol04；候选 王选仪式/王选典礼 均 0）",
     ),
-    Entry(std="银华乱舞", ja="銀華乱舞", en="Silver Flower Dance", note="术语；皮克塔特决斗事件。官方：13 处（ex3 6 + ex4 7）"),
+    Entry(
+        std="银华乱舞",
+        ja="銀華乱舞",
+        en="Silver Flower Dance",
+        note="术语；皮克塔特决斗事件。官方：13 处（ex3 6 + ex4 7）",
+    ),
     Entry(
         std="昴阁下",
         en="Sir Subaru",
@@ -3815,7 +3836,12 @@ ENTRIES: list[Entry] = [
         en="Subjugation of the Blight Dragon",
         note="术语。语料无据（候选 邪龙讨灭战/邪龙讨伐战/邪龙讨伐 均 0），wiki 既有写法（术语:邪龙讨灭战）",
     ),
-    Entry(std="白鲸讨伐战", ja="白鯨討伐", en="Subjugation of the White Whale", note="术语。官方：37 处；wiki 条目 术语:白鲸讨伐战"),
+    Entry(
+        std="白鲸讨伐战",
+        ja="白鯨討伐",
+        en="Subjugation of the White Whale",
+        note="术语。官方：37 处；wiki 条目 术语:白鲸讨伐战",
+    ),
     Entry(
         std="不可视之手",
         ja="不可視の手",
@@ -3824,8 +3850,15 @@ ENTRIES: list[Entry] = [
         note="术语；怠惰的权能。官方：不可视之手 104 处；异写 不可视的手 1 处、看不见的手 3 处",
     ),
     Entry(std="尸兵", ja="屍兵", en="corpse soldier", note="术语。官方：126 处"),
-    Entry(std="阿斯特雷亚家", ja="アストレア家", en="House Astrea", note="术语。官方：62 处"),
-    Entry(std="特利亚斯家", ja="トリアス家", en="House Trias", note="术语。官方：11 处"),
+    Entry(
+        std="阿斯特雷亚家",
+        ja="アストレア家",
+        en="House Astrea",
+        note="术语。官方：62 处",
+    ),
+    Entry(
+        std="特利亚斯家", ja="トリアス家", en="House Trias", note="术语。官方：11 处"
+    ),
     Entry(std="库珥修阵营", en="Crusch Camp", note="术语。官方：25 处"),
     Entry(std="菲鲁特阵营", en="Felt Camp", note="术语。官方：7 处"),
     Entry(std="普莉希拉阵营", en="Priscilla Camp", note="术语。官方：4 处"),
