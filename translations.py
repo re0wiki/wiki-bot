@@ -3831,4 +3831,11 @@ ENTRIES: list[Entry] = [
         en="Battle of the Trias Domain",
         note="术语。语料无据（0），wiki 既有写法（术语:特利亚斯之战）",
     ),
+    Entry(
+        std="强欲魔女",
+        ja="強欲の魔女",
+        en="Witch of Greed",
+        aliases=("贪婪魔女", "贪欲魔女"),
+        note="术语。官方：强欲魔女 65 处（贪婪魔女/贪欲魔女 0），wiki 异写收编",
+    ),
 ]
