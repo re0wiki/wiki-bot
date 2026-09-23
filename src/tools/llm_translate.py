@@ -599,6 +599,12 @@ def convert_en_body(body, zh_text, mapping, title):
     fixes = _uf().user_fixes
     for name in CONVERT_FIXES:
         conv = apply_fix(conv, fixes[name])
+    # History 章节名按页面类型分派：user-fixes 的 heading_char/heading_term
+    # 在 wiki 侧由 -cat 限定作用域（分类由 Init 按前缀打），此处按 zh 标题前缀离线复刻
+    if title.startswith("角色:"):
+        conv = apply_fix(conv, fixes["heading_char"])
+    elif title.startswith("术语:"):
+        conv = apply_fix(conv, fixes["heading_term"])
     conv = convert_links(conv, mapping)
     return merge_structure(conv, zh_text)
 

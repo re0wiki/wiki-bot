@@ -197,3 +197,14 @@ def test_convert_en_body_end_to_end():
     assert "== 梗概 ==" in out  # 标题归一
     assert "[[角色:菜月·昴|Natsuki Subaru]] is summoned." in out
     assert "大塚真一郎" in out  # zh 独有字段合并保留
+
+
+def test_convert_en_body_history_heading_by_prefix():
+    """History 章节名按 zh 页面前缀分派：角色→经历，术语→历史，其他不动。"""
+    body = "==History==\nfoo\n"
+    out = lt.convert_en_body(body, "", {}, "角色:X")
+    assert "== 经历 ==" in out and "History" not in out
+    out = lt.convert_en_body(body, "", {}, "术语:X")
+    assert "== 历史 ==" in out and "History" not in out
+    out = lt.convert_en_body(body, "", {}, "小说:X")
+    assert "== History ==" in out  # 其他前缀不归一
