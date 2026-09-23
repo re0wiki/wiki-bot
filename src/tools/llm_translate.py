@@ -1151,7 +1151,8 @@ def verify_edit(slug, meta):
     - 最新编辑是本账号，源码含且仅含一个同步标记且 revid 与 meta 一致；
     - 页首模板块除 To do 翻译类标注清理外逐行不变；
     - 正文内链目标（按 页面/文件/分类/语言链接 分类）与模板调用
-      不超出 link_map ∪ 未解析名 ∪ conv 骨架 ∪ zh 现文的白名单；
+      不超出 link_map ∪ 未解析名 ∪ conv 骨架 ∪ zh 现文的白名单
+      （模板另含 nouns.txt 注入专名的模板值——Elf = {{Elf}} 类按令使用）；
     - 正文末尾挂了 [[Category:机翻待校对]]（人类校对后手动摘除）。
     """
     r = api(
@@ -1214,6 +1215,11 @@ def verify_edit(slug, meta):
     if PROOFREAD_CAT not in {t for t in new_links if classify(t) == "cat"}:
         sys.exit(f"缺 [[{PROOFREAD_CAT}]]（管线处理过的条目必挂，加在正文末尾）")
     tpl_ok = extract_templates(conv) | extract_templates(old_body)
+    # nouns.txt 注入的已裁决专名含模板值（Elf = {{Elf}} 类），译文按令使用
+    # 不应被白名单拒绝（值里的 {{...}} 即合法新增模板）
+    nouns_file = WORK / f"{slug}.nouns.txt"
+    if nouns_file.exists():
+        tpl_ok |= extract_templates(nouns_file.read_text(encoding="utf-8"))
     tpl_bad = extract_templates(new_body) - tpl_ok
     if tpl_bad:
         sys.exit(f"模板校验失败: 新增 {sorted(tpl_bad)}")
