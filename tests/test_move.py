@@ -136,3 +136,31 @@ def test_dot_in_name_without_extension_is_external_video():
 
 
 # endregion
+
+
+# region is_leftover（本轮移动遗留的重定向识别）
+def test_leftover_exact_source():
+    assert mv.is_leftover("Tornel", ["Tornel"])
+
+
+def test_leftover_subpage_of_moved_source():
+    """movesubpages 联动后，旧子页标题是遗留重定向。"""
+    assert mv.is_leftover("Tornel/Image Gallery", ["Tornel"])
+    assert mv.is_leftover(
+        "Re:Zero Light Novel Volume 46/Synopsis",
+        ["Re:Zero Light Novel Volume 46"],
+    )
+
+
+def test_not_leftover_for_mere_string_prefix():
+    """仅共享字符串前缀、无子页关系的不算遗留。"""
+    assert not mv.is_leftover("Tornel2", ["Tornel"])
+    assert not mv.is_leftover("Tornel2/Image Gallery", ["Tornel"])
+
+
+def test_not_leftover_for_unrelated_title():
+    assert not mv.is_leftover("角色:Tornel/图库", ["Tornel"])
+    assert not mv.is_leftover("Tornel", [])
+
+
+# endregion

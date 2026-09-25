@@ -12,16 +12,22 @@
 3. 角色前缀归位：主空间无伪前缀、非子页、含 {{Infobox character}} 的非重定向页
    → 加 角色: 前缀（入 分类:角色 后 heading_char 等按分类限定的 fix 才够得着）。
 
-跳过：重定向页、产出模板调用的规则（{{...}}）、伪命名空间前缀会变化的
-（规则 1 除外）、新标题含非法字符的、目标已存在且不是指回当前页的重定向的
-（需人工合并）、File 空间无有效扩展名的标题（Fandom 外部视频，见 is_external_video）。
+跳过：重定向页、本轮已移动标题及其子页（移动遗留的重定向——预加载缓存的
+isRedirectPage 是移动前的旧值，识别不了它，见 is_leftover）、产出模板调用的
+规则（{{...}}）、伪命名空间前缀会变化的（规则 1 除外）、新标题含非法字符的、
+目标已存在且不是指回当前页的重定向的（需人工合并）、File 空间无有效扩展名的
+标题（Fandom 外部视频，见 is_external_video）。
 
 子页后缀移动（/Image Gallery|Synopsis|Relationships → /图库|梗概|关系）的父页
 解析：父标题在 zh 已是指向中文名的重定向时，落到最终目标名下（目标冲突照常跳过）。
-page.move 默认 movesubpages=True，父页移动时其子页随之联动。
+page.move 默认 movesubpages=True，父页移动时其子页随之联动到半归一标题
+（后缀未归一），全归一由后续（同轮枚举推进到或下轮）对半归一标题的内容页
+执行。本轮若误移动联动遗留的旧子页重定向，全归一标题会被抢占成重定向，
+内容页反被钉在半归一标题（抢占重定向带移动 null revision，非
+single-rev-redirect，覆盖移动必吃 articleexists，无法自愈）。
 """
 
-from collections.abc import Callable
+from collections.abc import Callable, Iterable
 
 import regex as re
 
@@ -88,6 +94,16 @@ TITLE_PATTERNS: list[tuple[re.Pattern, str | Callable[[re.Match], str]]] = [
 ]
 
 
+def is_leftover(title: str, moved_sources: Iterable[str]) -> bool:
+    """title 是本轮已移动的源标题或其子页 = 移动后遗留的重定向。
+
+    movesubpages 联动在移动前预加载（PreloadingGenerator）的页面对象上不可见：
+    其缓存的 isRedirectPage 仍是移动前的 False，treat_page 的重定向检查拦不住，
+    必须靠本轮移动记录显式排除。
+    """
+    return any(title == s or title.startswith(f"{s}/") for s in moved_sources)
+
+
 def is_external_video(title: str, extensions) -> bool:
     """File 标题无有效扩展名 = Fandom 从 YouTube 导入的外部视频。
 
@@ -143,15 +159,21 @@ def resolve_move(
 class MoveBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
     """Move pages with non-standard translated titles to standard names."""
 
+    def __init__(self, **kwargs) -> None:
+        super().__init__(**kwargs)
+        self.moved_sources: list[str] = []  # 本轮已移动的源标题（含模拟）
+
     def treat_page(self) -> None:
         page = self.current_page
+        old = page.title()
+        if is_leftover(old, self.moved_sources):
+            return
         if page.isRedirectPage():
             return
         if page.namespace() == 6 and is_external_video(
             page.title(with_ns=False), page.site.file_extensions
         ):
             return
-        old = page.title()
         reason = "译名归一"
         new, skip = resolve_move(old)
         if (
@@ -183,9 +205,11 @@ class MoveBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
             return
         if pwb.config.simulate:
             pwb.info(f"[SIMULATE] {old} -> {new}")
+            self.moved_sources.append(old)
             return
         try:
             page.move(new, reason=f"{reason}: {old} -> {new}", noredirect=False)
+            self.moved_sources.append(old)
         except PwbError as e:
             pwb.error(f"FAILED: {old} -> {new}: {e}")
 
