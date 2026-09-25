@@ -431,6 +431,23 @@ user_fixes["heading"] = base | {
 }
 # endregion
 
+# region heading_history
+# History 章节名按页面类型分译：角色页→经历，术语页→历史（en 的 History 在角色
+# 条目是生平、在术语条目是沿革；决议记录于 wiki 的 ReZero Wiki:译名表
+# 「章节/页面/标签」节）。作用域由 generator 的 -cat 按分类限定（分类由
+# Module:Init 按标题前缀自动打，角色主页面入 分类:角色、术语主页面入 分类:术语，
+# 子页入 分类:角色梗概 等不受影响）；llm_translate 离线转换无 API 可取分类，
+# 按 zh 标题前缀分派同一对规则（两处手工同步）。
+user_fixes["heading_char"] = base | {
+    "generator": ["-cat:角色"],
+    "replacements": [(r"(?<== )History(?= =)", "经历")],
+}
+user_fixes["heading_term"] = base | {
+    "generator": ["-cat:术语"],
+    "replacements": [(r"(?<== )History(?= =)", "历史")],
+}
+# endregion
+
 # region translation
 s2t = OpenCC("s2t.json").convert
 t2s = OpenCC("t2s.json").convert

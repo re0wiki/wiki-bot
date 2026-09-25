@@ -8,7 +8,7 @@
 - .cache/nekoquote/sync_state.json / tweets.json / zh.json / ep_marks.json / ep_calendar.json
 - secrets.json（仓库根）LLM key 等在 "llm" 字段下（{"kimi": {...}, ...}）
 
-各阶段以 `python -m nekoquote.<阶段>` 运行（路径全部经 DATA 常量解析，不依赖 CWD）。
+各阶段以 `python -m src.nekoquote.<阶段>` 运行（路径全部经 DATA 常量解析，不依赖 CWD）。
 """
 
 from pathlib import Path

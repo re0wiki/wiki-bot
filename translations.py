@@ -771,9 +771,10 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="基尔狄拉乌",
-        en="Witchbeast",
+        ja="ギルティラウ",
+        en="Guiltylowe",
         aliases=("基尔[提狄]拉乌",),
-        note="术语",
+        note="魔兽；圣域的多头魔兽。官方：34 处（vol15 31）",
     ),
     Entry(
         std="巴登凯托斯",
@@ -1671,6 +1672,8 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="地狱·狙击",
+        ja="ヘルズ·スナイプ",
+        en="Hell's Snipe",
         aliases=("地狱狙击",),
     ),
     Entry(
@@ -1844,7 +1847,7 @@ ENTRIES: list[Entry] = [
     Entry(
         std="皮克塔特",
         en="Picoutatte",
-        aliases=("聘可塔特",),
+        aliases=("聘可塔特", "匹克塔坨"),
         note="水门都市邻近都市。官方语料 10 处",
     ),
     Entry(
@@ -1859,6 +1862,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="剑圣加护",
+        en="Divine Protection of the Sword Saint",
         aliases=("剑圣的加护",),
         note="术语",
     ),
@@ -1970,6 +1974,16 @@ ENTRIES: list[Entry] = [
         std="王选前日谈",
         aliases=("王选前日谭",),
         note="EX4 目录",
+    ),
+    Entry(
+        std="「剑圣」和「雷光」的银华乱舞",
+        aliases=(
+            "剑圣与雷光的银华乱舞",
+            "剑圣与闪电的银华乱舞",
+            "剑圣和雷光的银华乱舞",
+            "剑圣和蓝色雷光的银华乱舞",
+        ),
+        note="EX4 章名",
     ),
     Entry(
         std="卡尔斯腾公爵领的战斗少女",
@@ -2959,6 +2973,7 @@ ENTRIES: list[Entry] = [
     Entry(
         std="菲尔欧蕾",
         ja="フィルオーレ",
+        en="Filore",
         note="角色；全名 菲尔欧蕾·卢克尼卡",
     ),
     Entry(
@@ -3507,7 +3522,7 @@ ENTRIES: list[Entry] = [
         note="角色",
     ),
     # ---- LLM 翻译管线自裁决登记（官方语料精确计数优先，零命中自拟或保留英文；
-    #      aliases 一律留人工 + 全历史碰撞扫描，见 docs/llm-translation.md） ----
+    #      别名随裁决一并自动登记，见 docs/llm-translation.md） ----
     Entry(std="希玛", en="Shima", note="角色；琉兹复制体四长老之一。官方语料 165 处"),
     Entry(std="阿尔玛", en="Alma", note="角色；琉兹复制体四长老之一。官方语料 6 处"),
     Entry(std="毕尔玛", en="Bilma", note="角色；琉兹复制体四长老之一。官方语料 8 处"),
@@ -3669,7 +3684,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(std="Sasageru IF", en="Sasageru IF", note="IF 线名。语料无据，保留英文"),
     Entry(std="Gordon", en="Gordon", note="游戏:DEATH OR KISS 原创角色。保留英文"),
-    # ---- 高频通行术语（官方语料核验或 wiki 既有；prepare 注入用，aliases 留人工） ----
+    # ---- 高频通行术语（官方语料核验或 wiki 既有；prepare 注入用） ----
     Entry(std="圣域", en="Sanctuary", note="术语。官方语料 771 处"),
     Entry(
         std="试炼",
@@ -3683,7 +3698,12 @@ ENTRIES: list[Entry] = [
         en="Sin Archbishop",
         note="术语；en 复数 Sin Archbishops 不在注入匹配（词边界）。官方语料 750 处",
     ),
-    Entry(std="魔兽", ja="魔獣", en="Demon Beast", note="术语。官方语料 1350 处"),
+    Entry(
+        std="魔兽",
+        ja="魔獣",
+        en="Witchbeast",
+        note="术语。官方语料 1350 处；en 站现称 Witchbeast（旧称 Demon Beast）",
+    ),
     Entry(std="剑圣", ja="剣聖", en="Sword Saint", note="术语/称号。官方语料 598 处"),
     Entry(std="水门都市", en="Water City", note="术语；普利斯提拉。官方语料 103 处"),
     Entry(
@@ -3725,5 +3745,139 @@ ENTRIES: list[Entry] = [
         std="「贤者」之塔",
         aliases=("贤者塔", "贤者之塔"),
         note="术语；普勒阿得斯监视塔的衍生称呼。官方行文作 ‘贤者’之塔（4 处），wiki 引号规范作「」",
+    ),
+    Entry(
+        std="罗兹瓦尔·J·梅札斯",
+        ja="ロズワール·J·メイザース",
+        en="Roswaal J. Mathers",
+        note="角色；亚人战争时期的罗兹瓦尔家主。官方：EX2 6 处 + EX3 3 处（OCR 中点·常误作句点）",
+    ),
+    Entry(
+        std="茱莉亚",
+        en="Julia",
+        note="角色；罗兹瓦尔·J·梅札斯 本名。语料无据（候选 茱莉亚/朱莉娅/朱莉亚/茱莉娅/朱利娅 均 0），wiki 既有写法（角色:罗兹瓦尔·J·梅札斯）",
+    ),
+    Entry(
+        std="厄勒克特拉",
+        ja="エレクトラ",
+        en="Electra",
+        aliases=("厄勒特克拉",),
+        note="术语；普勒阿得斯监视塔第二层。官方：17 处（vol22-25）；厄勒特克拉 为 wiki 旧写法（语料 0）",
+    ),
+    Entry(std="爱蜜莉雅阵营", en="Emilia Camp", note="术语。官方：42 处"),
+    Entry(std="饿马王", en="Hungry Horse King", note="魔兽。官方：28 处（vol25）"),
+    Entry(
+        std="蕾拉妮",
+        ja="レイラニ",
+        en="Leilani",
+        note="角色；全名 蕾拉妮·阿尔奈尔；LLM 自拟，语料无据（候选 蕾拉妮/莱拉妮/雷拉妮/蕾拉尼 均 0）",
+    ),
+    Entry(
+        std="阿尔奈尔",
+        ja="アルナイル",
+        en="Alnair",
+        note="姓；蕾拉妮·阿尔奈尔；LLM 自拟，语料无据（候选 阿尔奈尔/阿尔娜伊尔/阿尔纳伊尔 均 0）；取天鹤座α星名惯译",
+    ),
+    Entry(std="卢克尼卡王室", en="Royal Family", note="术语。官方：4 处"),
+    Entry(std="市政厅", en="City Hall", note="术语；水门都市行政中心。官方：226 处"),
+    Entry(
+        std="亚人联军",
+        en="Demi-Human Alliance",
+        note="术语。官方：5 处（ex2 2 + vol07 2 + vol17 1）",
+    ),
+    Entry(std="亚人战争", ja="亜人戦争", en="Demi-Human War", note="术语。官方：42 处"),
+    Entry(
+        std="神龙教会",
+        en="Divine Dragon Church",
+        note="术语。语料无据（候选 神龙教会/神龙教/龙神教会/神龙教团 均 0），wiki 既有写法（术语:神龙教会）",
+    ),
+    Entry(
+        std="大征伐",
+        ja="大征伐",
+        en="Great Conquest",
+        note="术语；十四年前讨伐白鲸失败之役。官方：20 处",
+    ),
+    Entry(std="大魔兽", ja="大魔獣", en="Great Witchbeast", note="术语。官方：24 处"),
+    Entry(std="色欲", ja="色欲", en="Lust", note="大罪司教罪名。官方：181 处"),
+    Entry(std="怠惰", ja="怠惰", en="Sloth", note="大罪司教罪名。官方：309 处"),
+    Entry(
+        std="邪眼",
+        en="Evil Eye",
+        note="术语；梅琳达的能力。语料无据（候选 邪眼/魔眼/咒眼 均 0，恶眼 4 处均为「凶恶眼神」非该词），LLM 自拟",
+    ),
+    Entry(
+        std="监狱塔", en="Prison Tower", note="术语；王都的监狱塔。官方：14 处（ex3）"
+    ),
+    Entry(std="王都", en="Royal Capital", note="术语。官方：463 处"),
+    Entry(
+        std="近卫骑士团",
+        en="Royal Guard",
+        note="术语。官方：近卫骑士团 76 处、王国近卫骑士团 12 处——同一组织的简称/全称，日文原文即有两种形态（行文用简称、自报家门用全称），不互转",
+    ),
+    Entry(
+        std="国王选举仪式",
+        en="Royal Selection Ceremony",
+        note="术语；王选开幕仪式。官方：1 处（vol04；候选 王选仪式/王选典礼 均 0）",
+    ),
+    Entry(
+        std="银华乱舞",
+        ja="銀華乱舞",
+        en="Silver Flower Dance",
+        note="术语；皮克塔特决斗事件。官方：13 处（ex3 6 + ex4 7）",
+    ),
+    Entry(
+        std="昴阁下",
+        en="Sir Subaru",
+        note="威尔海姆对昴的敬称（官方 vol05-09 多处）；昴大人（官方 140 处）为其他人物称呼，不同称呼不互转",
+    ),
+    Entry(
+        std="邪龙讨灭战",
+        ja="邪龍討滅戦",
+        en="Subjugation of the Blight Dragon",
+        note="术语。语料无据（候选 邪龙讨灭战/邪龙讨伐战/邪龙讨伐 均 0），wiki 既有写法（术语:邪龙讨灭战）",
+    ),
+    Entry(
+        std="白鲸讨伐战",
+        ja="白鯨討伐",
+        en="Subjugation of the White Whale",
+        note="术语。官方：37 处；wiki 条目 术语:白鲸讨伐战",
+    ),
+    Entry(
+        std="不可视之手",
+        ja="不可視の手",
+        en="Unseen Hands",
+        aliases=("不可视的手", "看不见的手"),
+        note="术语；怠惰的权能。官方：不可视之手 104 处；异写 不可视的手 1 处、看不见的手 3 处",
+    ),
+    Entry(std="尸兵", ja="屍兵", en="corpse soldier", note="术语。官方：126 处"),
+    Entry(
+        std="阿斯特雷亚家",
+        ja="アストレア家",
+        en="House Astrea",
+        note="术语。官方：62 处",
+    ),
+    Entry(
+        std="特利亚斯家", ja="トリアス家", en="House Trias", note="术语。官方：11 处"
+    ),
+    Entry(std="库珥修阵营", en="Crusch Camp", note="术语。官方：25 处"),
+    Entry(std="菲鲁特阵营", en="Felt Camp", note="术语。官方：7 处"),
+    Entry(std="普莉希拉阵营", en="Priscilla Camp", note="术语。官方：4 处"),
+    Entry(
+        std="王城入侵",
+        en="Invasion of the Royal Castle",
+        note="术语；EX2 事件。语料无据（0），wiki 既有写法（术语:王城入侵）",
+    ),
+    Entry(
+        std="特利亚斯之战",
+        ja="トリアス領の戦い",
+        en="Battle of the Trias Domain",
+        note="术语。语料无据（0），wiki 既有写法（术语:特利亚斯之战）",
+    ),
+    Entry(
+        std="强欲魔女",
+        ja="強欲の魔女",
+        en="Witch of Greed",
+        aliases=("贪婪魔女", "贪欲魔女"),
+        note="术语。官方：强欲魔女 65 处（贪婪魔女/贪欲魔女 0），wiki 异写收编",
     ),
 ]

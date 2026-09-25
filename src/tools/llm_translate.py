@@ -20,6 +20,7 @@ revid 为 - 表示无 en 源（zh 源码无 en 链接，或 en 页不存在）�
 """
 
 import argparse
+import html
 import json
 import sys
 import time
@@ -598,6 +599,12 @@ def convert_en_body(body, zh_text, mapping, title):
     fixes = _uf().user_fixes
     for name in CONVERT_FIXES:
         conv = apply_fix(conv, fixes[name])
+    # History 章节名按页面类型分派：user-fixes 的 heading_char/heading_term
+    # 在 wiki 侧由 -cat 限定作用域（分类由 Init 按前缀打），此处按 zh 标题前缀离线复刻
+    if title.startswith("角色:"):
+        conv = apply_fix(conv, fixes["heading_char"])
+    elif title.startswith("术语:"):
+        conv = apply_fix(conv, fixes["heading_term"])
     conv = convert_links(conv, mapping)
     return merge_structure(conv, zh_text)
 
@@ -741,6 +748,152 @@ def known_nouns(body, conv):
     return sorted(f"{en} = {name}" for en, name in kept)
 
 
+# ------------------------------------------------------ 未登记专名候选（prepare 注入线索）
+
+# 大写开头词序列（允许 of/the/van 类小写连接词与 J. 类首字母缩写），
+# 再减去译名表 en（整串命中或组成词全部已登记）与纯虚词——剩下的才是需要
+# agent 裁决的表外专名。
+# 句点仅许挂在单字母后（J.），普通词的句尾标点不进候选。
+_NAME_TOKEN = r"(?:[A-Z]\.|[A-Z][A-Za-z'·-]+)"
+_NAME_CONN = ("of", "the", "van", "von", "de", "der", "di", "del", "la")
+_NAME_SEQ = re.compile(rf"{_NAME_TOKEN}(?: (?:{_NAME_TOKEN}|{'|'.join(_NAME_CONN)}))*")
+# 句首常见虚词（小写形态）：候选的全部实词都在此列即丢弃。
+# 第二段是 wiki 条目通用英文标题词与句首副词/代词（== Family == 类未归一标题、
+# "Likewise" 类句首副词不应成为专名候选）。
+_NAME_STOP_WORDS = """
+the a an in on at as of to for with without within into onto upon from by over under
+after afterward afterwards before following during however but this that these those
+it its he his she her they their them we our you your i my
+when while where which who whom what whose why how
+because though although if then than so yet still also just only even not no yes
+and or nor later earlier soon meanwhile eventually finally currently originally
+initially nowadays sometimes often usually always never shortly immediately suddenly
+thankfully unfortunately luckily apparently presumably actually really despite
+according instead furthermore moreover nevertheless nonetheless subsequently
+previously once again much more most less least many few several both neither either
+each every any all some none now here there like unlike very quite rather almost
+nearly already ever since until till towards toward against among between through
+across around about above below behind beyond
+family appearance personality history synopsis relationships relationship abilities
+equipment trivia references gallery background plot development legacy etymology
+powers skills weaknesses strengths quotes notes introduction overview biography
+likewise similarly typically notably especially particularly generally normally
+frequently occasionally rarely perhaps maybe certainly surely indeed overall anyway
+regardless otherwise therefore thus hence consequently additionally supposedly
+admittedly obviously clearly naturally hopefully sadly strangely interestingly
+surprisingly unsurprisingly officially technically formally formerly lately recently
+ultimately directly indirectly simply merely purely exactly precisely basically
+literally truly probably possibly likely unlikely others other another next former
+latter someone anyone everyone somebody anybody everybody something anything
+everything nothing nobody nowhere somewhere anywhere everywhere
+"""
+_NAME_STOP = frozenset(_NAME_STOP_WORDS.split())
+
+
+def _translations_en():
+    """译名表全部 en 面（小写集），候选去重用。"""
+    root = str(ROOT)
+    if root not in sys.path:
+        sys.path.insert(0, root)  # 与 known_nouns 同理：脚本直跑时译名表在仓库根
+    import translations
+
+    return {e.en.lower() for e in translations.ENTRIES if e.en}
+
+
+def noun_candidates(body):
+    """en 正文中的未登记专名候选，升序列表。
+
+    清洗：去所有格（'s）、剥句首虚词与句尾连接词（"As Flugel"→"Flugel"、
+    "Alec of"→"Alec"）、House 前缀参与查重（House Remendis 按 Remendis
+    已登记丢弃）、组成词全部已登记丢弃（Meili Portroute 按 Meili + Portroute
+    已登记丢弃——姓与名分开登记，全名不构成新专名）、纯虚词序列丢弃、
+    字母不足 4 个丢弃（J. K. 类孤立首字母）。
+    """
+    registered = _translations_en()
+    cands = set()
+    for m in _NAME_SEQ.finditer(body):
+        parts = re.sub(r"(?:'s|')$", "", m.group(0)).split()
+        while parts and parts[0].lower().rstrip(".") in _NAME_STOP:
+            parts.pop(0)
+        while parts and parts[-1] in _NAME_CONN:
+            parts.pop()
+        cand = " ".join(parts)
+        core = cand.removeprefix("House ")
+        words = [w for w in core.split() if w not in _NAME_CONN]
+        alpha = sum(c.isascii() and c.isalpha() for c in core)
+        if alpha < 4 or all(w.lower().rstrip(".") in _NAME_STOP for w in words):
+            continue
+        if cand.lower() in registered or core.lower() in registered:
+            continue
+        if words and all(
+            re.sub(r"(?:'s|')$", "", w).lower() in registered for w in words
+        ):
+            continue
+        cands.add(cand)
+    return sorted(cands)
+
+
+def _candidate_targets(cands, conv, mapping):
+    """候选 → zh 目标页：骨架内链显示文字或 en 链目标命中（去 # 锚点）。"""
+    disp2target = {d: t for t, d in re.findall(r"\[\[([^]|]+)\|([^]]*)\]\]", conv)}
+    out = {}
+    for c in cands:
+        if c in disp2target:
+            out[c] = disp2target[c].split("#", 1)[0]
+        elif c in mapping:
+            out[c] = mapping[c].split("#", 1)[0]
+    return out
+
+
+def noun_clues(body, conv, mapping):
+    """未登记专名候选的 wiki 线索行：zh 目标页 name_ja / zh 搜索命中摘要。
+
+    供 prepare 注入——agent 登记条目所需的 ja 与 wiki 既有写法证据随备料给出，
+    多数页面无需再为取证单独查 wiki。
+    """
+    cands = noun_candidates(body)
+    if not cands:
+        return []
+    target_of = _candidate_targets(cands, conv, mapping)
+    name_ja = {}  # zh 目标页批量取信息框 name_ja（20/批防响应过大，同 scan_markers）
+    targets = sorted(set(target_of.values()))
+    for i in range(0, len(targets), 20):
+        r = api(
+            ZH_API,
+            prop="revisions",
+            titles="|".join(targets[i : i + 20]),
+            rvprop="content",
+            rvslots="main",
+        )
+        for p in r["query"]["pages"]:
+            if "missing" in p:
+                continue
+            m = re.search(
+                r"name_ja\s*=\s*([^\n|]+)",
+                p["revisions"][0]["slots"]["main"]["content"],
+            )
+            if m:
+                name_ja[p["title"]] = m.group(1).strip()
+    lines = []
+    for c in cands:
+        t = target_of.get(c)
+        if t:
+            ja = f"，name_ja: {name_ja[t]}" if t in name_ja else ""
+            lines.append(f"{c} → zh 页 {t}{ja}")
+            continue
+        r = api(ZH_API, list="search", srsearch=c, srlimit="1", srnamespace="0")
+        hits = r["query"]["search"]
+        if not hits:
+            lines.append(f"{c} → zh 搜索无命中")
+            continue
+        snip = re.sub(r"<[^>]+>", "", hits[0]["snippet"])
+        snip = html.unescape(re.sub(r"\s+", " ", snip)).strip()[:160]
+        lines.append(
+            f"{c} → zh 搜索命中 {hits[0]['title']}" + (f"：{snip}" if snip else "")
+        )
+    return lines
+
+
 def agent_rules():
     """docs/llm-translation.md 的 agent 规则小节原文（prepare 注入用）。
 
@@ -805,6 +958,11 @@ def write_work_files(best):
         print("  已裁决专名（译文须使用）：")
         for n in nouns:
             print(f"    {n}")
+    clues = noun_clues(body, conv, mapping)
+    if clues:
+        print("  未登记专名候选（wiki 线索，裁决与登记见 agent 规则 7）：")
+        for line in clues:
+            print(f"    {line}")
     # 骨架与 zh 现文全量注入 stdout（进 agent prompt），省两次读文件。
     # 不设上限：Hermes 注入路径无截断（scheduler_script 全量捕获、scheduler_prompt
     # 整体注入，仅有的 8000 字符截断在未使用的 context_from 路径）；Kimi 侧限制即
@@ -999,7 +1157,8 @@ def verify_edit(slug, meta):
     - 最新编辑是本账号，源码含且仅含一个同步标记且 revid 与 meta 一致；
     - 页首模板块除 To do 翻译类标注清理外逐行不变；
     - 正文内链目标（按 页面/文件/分类/语言链接 分类）与模板调用
-      不超出 link_map ∪ 未解析名 ∪ conv 骨架 ∪ zh 现文的白名单；
+      不超出 link_map ∪ 未解析名 ∪ conv 骨架 ∪ zh 现文的白名单
+      （模板另含 nouns.txt 注入专名的模板值——Elf = {{Elf}} 类按令使用）；
     - 正文末尾挂了 [[Category:机翻待校对]]（人类校对后手动摘除）。
     """
     r = api(
@@ -1062,6 +1221,11 @@ def verify_edit(slug, meta):
     if PROOFREAD_CAT not in {t for t in new_links if classify(t) == "cat"}:
         sys.exit(f"缺 [[{PROOFREAD_CAT}]]（管线处理过的条目必挂，加在正文末尾）")
     tpl_ok = extract_templates(conv) | extract_templates(old_body)
+    # nouns.txt 注入的已裁决专名含模板值（Elf = {{Elf}} 类），译文按令使用
+    # 不应被白名单拒绝（值里的 {{...}} 即合法新增模板）
+    nouns_file = WORK / f"{slug}.nouns.txt"
+    if nouns_file.exists():
+        tpl_ok |= extract_templates(nouns_file.read_text(encoding="utf-8"))
     tpl_bad = extract_templates(new_body) - tpl_ok
     if tpl_bad:
         sys.exit(f"模板校验失败: 新增 {sorted(tpl_bad)}")

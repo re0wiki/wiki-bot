@@ -48,6 +48,8 @@ jobs: list[Job] = [
     Job("fix:date", ["replace", "-automaticsummary", "-fix:date"]),
     Job("fix:gallery", ["replace", "-automaticsummary", "-fix:gallery"]),
     Job("fix:heading", ["replace", "-automaticsummary", "-fix:heading"]),
+    Job("fix:heading_char", ["replace", "-automaticsummary", "-fix:heading_char"]),
+    Job("fix:heading_term", ["replace", "-automaticsummary", "-fix:heading_term"]),
     Job(
         "cat-image-gallery", ["category", "remove", "-nodelete", "-from:Image Gallery"]
     ),
