@@ -64,6 +64,54 @@ def test_illegal_chars_are_skipped():
     assert skip == "新标题含非法字符"
 
 
+# region TITLE_PATTERNS（整题模式规则）
+def test_ln_volume():
+    assert mv.resolve_move("Re:Zero Light Novel Volume 46") == ("小说:46卷", None)
+
+
+def test_tanpenshuu_volume_synopsis_subpage():
+    """系列题名规则与子页后缀规则组合生效。"""
+    assert mv.resolve_move("Re:Zero Tanpenshuu Volume 14/Synopsis") == (
+        "小说:短篇集第14卷/梗概",
+        None,
+    )
+
+
+def test_manga_chapter_and_parts():
+    assert mv.resolve_move("Manga Arc 4 Chapter 72") == ("漫画:第4章第72话", None)
+    assert mv.resolve_move("Manga Arc 4 Chapter 70 Part 1") == (
+        "漫画:第4章第70话前篇",
+        None,
+    )
+    assert mv.resolve_move("Manga Arc 4 Chapter 70 Part 2") == (
+        "漫画:第4章第70话后篇",
+        None,
+    )
+
+
+def test_manga_part3_plus_not_moved():
+    """Part 3+ 无 zh 先例，留人工。"""
+    assert mv.resolve_move("Manga Arc 4 Chapter 70 Part 3") == (None, None)
+
+
+def test_manga_volume():
+    assert mv.resolve_move("Manga Arc 4 Volume 14") == ("漫画:第4章第14卷", None)
+
+
+def test_subpage_suffix():
+    assert mv.resolve_move("Arbalest/Image Gallery") == ("Arbalest/图库", None)
+    assert mv.resolve_move("Hector/Relationships") == ("Hector/关系", None)
+
+
+def test_pattern_move_bypasses_prefix_guard():
+    """模式规则本身即前缀映射（Re:→小说:），不触发伪命名空间守卫。"""
+    _, skip = mv.resolve_move("Re:Zero Light Novel Volume 46")
+    assert skip is None
+
+
+# endregion
+
+
 # region is_external_video（File 空间无有效扩展名 = Fandom 外部视频）
 EXTS = {"png", "jpg", "mp4", "webm"}
 
