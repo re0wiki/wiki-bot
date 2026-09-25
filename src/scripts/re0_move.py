@@ -9,14 +9,17 @@
    无需两边同步。正文替换与标题均一律归一到简体（标题惯例只认简体，前缀同理，
    见 AGENTS.md）：含繁体字的标题做纯繁简移动（否则 fixing-redirects 解析到
    繁体存储标题，与 fix:translation 来回拉锯）；
-3. 角色前缀归位：主空间无伪前缀、非子页、含 {{Infobox character}} 的非重定向页
-   → 加 角色: 前缀（入 分类:角色 后 heading_char 等按分类限定的 fix 才够得着）。
+3. 前缀归位：主空间无伪前缀、非子页、带 en 链接的非重定向页 → 按 en 站页面
+   分类（prop=categories，含模板带入的类型分类）映射到对应伪前缀
+   （角色/术语/小说/漫画/动画/游戏/音乐，见 classify_prefix），en 链接目标经
+   API 重定向跟随。入对应分类后 heading_char 等按分类限定的 fix 才够得着。
 
 跳过：重定向页、本轮已移动标题及其子页（移动遗留的重定向——预加载缓存的
 isRedirectPage 是移动前的旧值，识别不了它，见 is_leftover）、产出模板调用的
 规则（{{...}}）、伪命名空间前缀会变化的（规则 1 除外）、新标题含非法字符的、
 目标已存在且不是指回当前页的重定向的（需人工合并）、File 空间无有效扩展名的
-标题（Fandom 外部视频，见 is_external_video）。
+标题（Fandom 外部视频，见 is_external_video）、en 分类未单命中或属
+Disambiguations 的（规则 3，宁漏勿错）。
 
 子页后缀移动（/Image Gallery|Synopsis|Relationships → /图库|梗概|关系）的父页
 解析：父标题在 zh 已是指向中文名的重定向时，落到最终目标名下（目标冲突照常跳过）。
@@ -44,6 +47,7 @@ from pywikibot.fixes import (
     translation_name_rules,  # ty: ignore[unresolved-import]
     translation_pairs,  # ty: ignore[unresolved-import]
 )
+from pywikibot.page import BasePage
 from pywikibot.pagegenerators import GeneratorFactory
 
 RULES = (
@@ -156,12 +160,103 @@ def resolve_move(
     return new, None
 
 
+EN_LINK_RE = re.compile(r"\[\[en:([^\]|]+)(?:\|[^\]]*)?\]\]")
+
+# en 站类型分类 → zh 伪前缀映射（2026-09-25 en 主空间全量 dump + 分类树实证）。
+# en 的类型分类由 portable infobox 等模板带入（1355/1877 内容页源码无分类行），
+# 必须经 prop=categories 取，扫源码无效。集合构成：
+# - ANIME_CATS = desc(Re:Zero Anime)：en 动画树完整（Episodes/季/BD 全挂其下）；
+# - TERM_CATS = desc(Terminology) − desc(Characters)：zh 术语: 比 en 直接
+#   Terminology 宽（战役/地点/组织也归术语:），但两树共享 ~120 个角色属性分类
+#   （种族/阵营/职业同时挂两树，纯传递闭包 427 页双命中），差集后剩 17 个
+#   干净容器分类；
+# - NOVEL_CATS：Re:Zero Volumes 树（BD Volumes 是其唯一子分类）+ Story Arcs
+#   （Arc N 页只挂 Browse 下，靠 Story Arcs 兜）；
+# - 漫画树断裂（Arc N Manga Chapters 挂 Re:Zero Chapters 下、不到 Re:Zero Manga），
+#   靠分类名含 "Manga" 子串枚举 + Bonds of Ice Chapters（无父分类）。
+# en 新增容器分类时漏判（不移动）属保守方向；更新枚举 = 重跑 dump 分析。
+ANIME_CATS = {
+    "Episodes",
+    "Mini Episodes",
+    "Re:Zero Anime",
+    "Re:Zero BD",
+    "Season 1",
+    "Season 1 BD Volumes",
+    "Season 2",
+    "Season 2 BD Volumes",
+    "Season 3",
+    "Season 3 BD Volumes",
+    "Season 4",
+    "Season 4 BD Volumes",
+}
+NOVEL_CATS = {"Re:Zero Volumes", "BD Volumes", "Story Arcs"}
+TERM_CATS = {
+    "Abilities",
+    "Alternate Spaces",
+    "Battles",
+    "Buildings",
+    "Cities",
+    "Countries",
+    "Demi-Human War",
+    "Five Great Cities",
+    "Items",
+    "Kararagi Locations",
+    "Locations",
+    "Lugunica Locations",
+    "Organizations",
+    "Races",
+    "Six Tongues",
+    "Terminology",
+    "Vollachia Locations",
+}
+
+
+def classify_prefix(cats: set[str]) -> str | None:
+    """en 分类集合 → zh 伪前缀（纯函数，可离线测试）。
+
+    多命中消解：角色优先（角色页恒带直接 Characters，术语页恒不带）、音乐
+    优先（歌曲页带季分类会命中动画树，zh 全归 音乐:）；其余多命中与
+    Disambiguations 一律返回 None 跳过（宁漏勿错）。
+    """
+    if "Disambiguations" in cats:
+        return None
+    hits = set()
+    if "Characters" in cats:
+        hits.add("角色")
+    if "Music" in cats:
+        hits.add("音乐")
+    if cats & ANIME_CATS:
+        hits.add("动画")
+    if "Re:Zero Games" in cats:
+        hits.add("游戏")
+    if any("Manga" in c for c in cats) or "Bonds of Ice Chapters" in cats:
+        hits.add("漫画")
+    if cats & NOVEL_CATS:
+        hits.add("小说")
+    if cats & TERM_CATS:
+        hits.add("术语")
+    hits -= {"术语"} if "角色" in hits else set()
+    hits -= {"动画"} if "音乐" in hits else set()
+    return hits.pop() if len(hits) == 1 else None
+
+
+def _resolve_api_title(title: str, norm: dict[str, str], red: dict[str, str]) -> str:
+    """按 API 响应的 normalized/redirects 映射把请求标题解析到最终页标题。"""
+    title = norm.get(title, title)
+    seen = set()
+    while title in red and title not in seen:
+        seen.add(title)
+        title = red[title]
+    return title
+
+
 class MoveBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
     """Move pages with non-standard translated titles to standard names."""
 
     def __init__(self, **kwargs) -> None:
         super().__init__(**kwargs)
         self.moved_sources: list[str] = []  # 本轮已移动的源标题（含模拟）
+        self.pending: list[tuple[BasePage, str]] = []  # 待分类判定的 (页, en 标题)
 
     def treat_page(self) -> None:
         page = self.current_page
@@ -174,18 +269,15 @@ class MoveBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
             page.title(with_ns=False), page.site.file_extensions
         ):
             return
-        reason = "译名归一"
         new, skip = resolve_move(old)
-        if (
-            new is None
-            and ":" not in old
-            and "/" not in old
-            and "{{Infobox character" in page.text
-        ):
-            # 角色前缀归位：无伪前缀、非子页、含角色信息框的页 = 未归位角色页
-            # （非主命名空间标题自带 Namespace: 前缀，已被 ":" 条件排除）
-            new, reason = "角色:" + old, "角色前缀归位"
         if new is None:
+            # 前缀归位候选：无伪前缀、非子页、带 en 链接的页，攒到 teardown
+            # 统一按 en 分类判定（非主命名空间标题自带 Namespace: 前缀，
+            # 已被 ":" 条件排除）
+            if ":" not in old and "/" not in old:
+                m = EN_LINK_RE.search(page.text)
+                if m:
+                    self.pending.append((page, m.group(1).split("#")[0].strip()))
             return
         if skip:
             pwb.warning(f"SKIP（{skip}）: {old} -> {new}")
@@ -196,6 +288,10 @@ class MoveBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
             parent = pwb.Page(self.site, old.rsplit("/", 1)[0])
             if parent.isRedirectPage():
                 new = parent.getRedirectTarget().title() + "/" + new.rsplit("/", 1)[1]
+        self._do_move(page, new, "译名归一")
+
+    def _do_move(self, page: BasePage, new: str, reason: str) -> None:
+        old = page.title()
         target = pwb.Page(self.site, new)
         if target.exists() and not (
             # 标准名只是指回当前页的重定向：直接移动覆盖，消除循环
@@ -212,6 +308,39 @@ class MoveBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
             self.moved_sources.append(old)
         except PwbError as e:
             pwb.error(f"FAILED: {old} -> {new}: {e}")
+
+    def teardown(self) -> None:
+        """前缀归位：批量取候选页 en 链接目标的分类（API 重定向跟随，en 站
+        匿名读），按 classify_prefix 判定加伪前缀。"""
+        if not self.pending:
+            return
+        site_en = pwb.Site("en", "re0")
+        for i in range(0, len(self.pending), 50):
+            batch = self.pending[i : i + 50]
+            query = site_en.simple_request(
+                action="query",
+                prop="categories",
+                titles="|".join(en_title for _, en_title in batch),
+                cllimit="max",
+                redirects=1,
+                formatversion=2,
+            ).submit()["query"]
+            norm = {n["from"]: n["to"] for n in query.get("normalized", [])}
+            red = {r["from"]: r["to"] for r in query.get("redirects", [])}
+            pages = {p["title"]: p for p in query["pages"]}
+
+            for page, en_title in batch:
+                pg = pages.get(_resolve_api_title(en_title, norm, red), {})
+                cats = {
+                    c["title"].removeprefix("Category:")
+                    for c in pg.get("categories", [])
+                }
+                prefix = classify_prefix(cats)
+                old = page.title()
+                if prefix is None:
+                    pwb.warning(f"SKIP（en 分类未归位）: {old} (en:{en_title})")
+                    continue
+                self._do_move(page, f"{prefix}:{old}", "en 分类前缀归位")
 
 
 if __name__ == "__main__":

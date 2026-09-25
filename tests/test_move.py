@@ -164,3 +164,85 @@ def test_not_leftover_for_unrelated_title():
 
 
 # endregion
+
+
+# region classify_prefix（en 分类集合 → zh 伪前缀）
+def test_classify_character():
+    assert mv.classify_prefix({"Characters", "Human", "Male"}) == "角色"
+
+
+def test_classify_terminology():
+    assert mv.classify_prefix({"Terminology"}) == "术语"
+    assert mv.classify_prefix({"Battles", "Kingdom of Lugunica"}) == "术语"
+    assert mv.classify_prefix({"Cities", "Locations"}) == "术语"
+    assert mv.classify_prefix({"Organizations"}) == "术语"
+
+
+def test_classify_character_beats_shared_cats():
+    """种族/阵营等角色属性分类同时在 Terminology 树下：Characters 直接命中优先。"""
+    assert mv.classify_prefix({"Characters", "Demi-Human", "Emilia Camp"}) == "角色"
+
+
+def test_classify_novel():
+    assert mv.classify_prefix({"Re:Zero Volumes", "Side Story"}) == "小说"
+    assert mv.classify_prefix({"Story Arcs", "Arc 4"}) == "小说"
+
+
+def test_classify_manga():
+    assert mv.classify_prefix({"Arc 4 Manga Chapters"}) == "漫画"
+    assert mv.classify_prefix({"Bonds of Ice Chapters"}) == "漫画"
+
+
+def test_classify_anime():
+    assert mv.classify_prefix({"Episodes", "Season 1"}) == "动画"
+    assert mv.classify_prefix({"Season 2 BD Volumes", "Re:Zero BD"}) == "动画"
+
+
+def test_classify_music_beats_anime():
+    """歌曲页带季分类（动画树）：Music 优先（zh 歌曲全归 音乐:）。"""
+    assert mv.classify_prefix({"Music", "Season 1"}) == "音乐"
+
+
+def test_classify_game():
+    assert mv.classify_prefix({"Re:Zero Games"}) == "游戏"
+
+
+def test_classify_disambiguation_excluded():
+    assert mv.classify_prefix({"Disambiguations"}) is None
+    assert mv.classify_prefix({"Disambiguations", "Characters"}) is None
+
+
+def test_classify_conflict_returns_none():
+    """小说×漫画等多命中：跳过留人工（含 BD 圆盘的 动画×小说）。"""
+    assert mv.classify_prefix({"Re:Zero Volumes", "Arc 4 Manga Chapters"}) is None
+    assert (
+        mv.classify_prefix({"Re:Zero BD", "Season 1 BD Volumes", "BD Volumes"}) is None
+    )
+
+
+def test_classify_unmapped_returns_none():
+    assert mv.classify_prefix(set()) is None
+    assert mv.classify_prefix({"Browse"}) is None
+    # 角色属性分类但无 Characters 直接命中：差集净化，不误判术语
+    assert mv.classify_prefix({"Human", "Male"}) is None
+
+
+# endregion
+
+
+# region _resolve_api_title（API normalized/redirects 链解析）
+def test_resolve_api_title_plain():
+    assert mv._resolve_api_title("A", {}, {}) == "A"
+
+
+def test_resolve_api_title_normalized_and_redirect_chain():
+    norm = {"demi-human": "Demi-human"}
+    red = {"Demi-human": "Demi-Human", "Demi-Human": "Half-Human"}
+    assert mv._resolve_api_title("demi-human", norm, red) == "Half-Human"
+
+
+def test_resolve_api_title_redirect_loop_terminates():
+    assert mv._resolve_api_title("A", {}, {"A": "B", "B": "A"}) in {"A", "B"}
+
+
+# endregion
