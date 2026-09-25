@@ -32,14 +32,8 @@ EN_LINK = re.compile(r"\[\[en:([^\]|]+)", re.IGNORECASE)
 HIST_EN = re.compile(r"^==\s*History\s*==\s*$", re.MULTILINE | re.IGNORECASE)
 
 
-def main():
-    zh = pywikibot.Site("zh", "re0")
-    en = pywikibot.Site("en", "re0")
-    if not SIMULATE:
-        zh.login()
-        assert zh.user() == "IchiSanNi"
-
-    # 第一阶段：扫 zh 主空间，收集候选
+def collect_candidates(zh):
+    """第一阶段：扫 zh 主空间，收集候选。"""
     cands = {}  # title -> (hits, en_title, zh_text)
     gen = pagegenerators.AllpagesPageGenerator(site=zh, namespace=0)
     for page in pagegenerators.PreloadingGenerator(gen, groupsize=50):
@@ -56,16 +50,18 @@ def main():
             continue
         if text.lstrip().startswith("#REDIRECT"):
             continue
-        target, olds = PLAN[prefix]
+        olds = PLAN[prefix][1]
         heads = [m.group(1).strip() for m in H2.finditer(text)]
         hits = [o for o in olds if o in heads]
         if not hits:
             continue
         m = EN_LINK.search(text)
         cands[t] = (hits, m.group(1).split("#")[0] if m else None, text)
+    return cands
 
-    # 第二阶段：批量取 en 源校验 History 对应
-    en_titles = sorted({v[1] for v in cands.values() if v[1]})
+
+def fetch_en_history(en, en_titles):
+    """第二阶段：批量取 en 源校验 History 对应。"""
     en_hist = set()
     for i in range(0, len(en_titles), 50):
         gen = iter([pywikibot.Page(en, t) for t in en_titles[i : i + 50]])
@@ -76,8 +72,11 @@ def main():
             except Exception as e:  # noqa: BLE001 - 单页失败不阻断批量校验，打印后跳过
                 print(f"en 读取失败跳过: {p.title()}: {e}")
                 continue
+    return en_hist
 
-    # 第三阶段：归一或归入报告
+
+def normalize(zh, cands, en_hist):
+    """第三阶段：归一或归入报告。"""
     stats = defaultdict(list)
     for t, (hits, en_title, text) in sorted(cands.items()):
         target = PLAN[t.split(":", 1)[0]][0]
@@ -108,7 +107,10 @@ def main():
                 f"章节名归一：{'/'.join(hits)} → {target}（History 译名决议）",
                 bot=True,
             )
+    return stats
 
+
+def print_report(stats):
     print(f"\n=== {'DRY RUN ' if SIMULATE else ''}结果 ===")
     print(f"归一 {len(stats['rename'])} 页:")
     for t, hits in stats["rename"]:
@@ -122,6 +124,20 @@ def main():
     print(f"跳过-撞名 {len(stats['collision'])} 页（需人工合并）:")
     for t, hits in stats["collision"]:
         print(f"  {t}: 已有目标章节 + {'/'.join(hits)}")
+
+
+def main():
+    zh = pywikibot.Site("zh", "re0")
+    en = pywikibot.Site("en", "re0")
+    if not SIMULATE:
+        zh.login()
+        assert zh.user() == "IchiSanNi"
+
+    cands = collect_candidates(zh)
+    en_titles = sorted({v[1] for v in cands.values() if v[1]})
+    en_hist = fetch_en_history(en, en_titles)
+    stats = normalize(zh, cands, en_hist)
+    print_report(stats)
 
 
 if __name__ == "__main__":
