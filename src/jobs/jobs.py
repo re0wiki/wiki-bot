@@ -50,6 +50,7 @@ jobs: list[Job] = [
     Job("fix:heading", ["replace", "-automaticsummary", "-fix:heading"]),
     Job("fix:heading_char", ["replace", "-automaticsummary", "-fix:heading_char"]),
     Job("fix:heading_term", ["replace", "-automaticsummary", "-fix:heading_term"]),
+    Job("fix:navbox", ["replace", "-automaticsummary", "-fix:navbox"]),
     Job(
         "cat-image-gallery", ["category", "remove", "-nodelete", "-from:Image Gallery"]
     ),
@@ -66,20 +67,7 @@ jobs: list[Job] = [
         [
             "template",
             "-remove",
-            # Navbox
-            "Gusteko Navbox",
-            "Lugunica Navbox",
-            "Royal Election Navbox",
-            "Royal Selection Navbox",
-            "Terminology Navbox",
-            "Vollachia Navbox",
-            # Navigation
-            "Anime Navigation",
-            "LN Navigation",
-            "Manga Navigation",
-            "Music Navigation",
-            "Re:Zero Manga Navigation",
-            # Other
+            # Navbox/Navigation 系模板已由 fix:navbox 按名称模式覆盖，不再逐名列出
             "Construction",
             "Parent Tab",
             "References",

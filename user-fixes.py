@@ -94,6 +94,8 @@ user_fixes["misc"] = base | {
         (r"\n{3,}", r"\n\n"),
         ("</br>", "<br>"),
         (r"'''(\{\{R\|.*?\}\})'''", r"\1"),
+        # en:Template:Topnote 本体就是 ''{{{1}}}''（纯斜体页首注），转换零信息损失
+        (r"\{\{Topnote\|([^{}]*)\}\}", r"''\1''"),
         # 依据 GB/T 7714-2025：引文标注置于句号之前。
         # 连续多个引文一并前移，以终结编辑者在此细节上的反复争执。
         (r"。((?:<ref\b[^>]*?/>|<ref\b[^>]*?>[\s\S]*?</ref>)+)", r"\1。"),
@@ -125,6 +127,10 @@ def match_to_yyyymmdd(month: int, match: re.Match) -> str:
     return f"{match.group(2)}-{str(month).zfill(2)}-{match.group(1).zfill(2)}"
 
 
+def match_to_yyyymm(month: int, match: re.Match) -> str:
+    return f"{match.group(1)}-{str(month).zfill(2)}"
+
+
 def normalize_date_value(value: str) -> str:
     """单个日期值归一：Month D, YYYY → YYYY-MM-DD；Month YYYY → YYYY-MM；其余原样。"""
     m = re.fullmatch(
@@ -142,12 +148,22 @@ def normalize_date_value(value: str) -> str:
 
 user_fixes["date"] = base | {
     "generator": generator_base,
+    "exceptions": {
+        # gallery 块的裸文件名与 [[File:...]] 链接内的日期不是散文，不转换
+        # （否则文件名与 wiki 上的实际文件错位，图片变红链）
+        "inside-tags": ["keep", "interwiki", "gallery", "file"],
+    },
     "replacements": [
         (
             rf"{month}\s*(\d+)\s*[，,]\s*(\d+)",
             # avoid late binding of i
             partial(match_to_yyyymmdd, i + 1),
         )
+        for i, month in enumerate(MONTHS)
+    ]
+    + [
+        # Month YYYY（无日）→ YYYY-MM；排在全日规则后，全日已先行归一
+        (rf"{month}\s+(\d{{4}})", partial(match_to_yyyymm, i + 1))
         for i, month in enumerate(MONTHS)
     ],
 }
@@ -408,7 +424,27 @@ user_fixes["gallery"] = base | {
 }
 # endregion
 
+# region navbox
+# 本站不维护 Navbox 系模板（角色/系列导航集中于 MediaWiki:Wiki-navigation 与
+# Tab/*），en 搬运带入的 *Navbox*/*Navigation* 转置一律删除——zh 模板命名空间
+# 实测零 Navbox 系模板（docs/templates.md 盘点），误判由构造排除。清空后遗留的
+# 空标题由 cosmetic_changes 的 removeEmptySections 收敛（同周期后续任务）。
+user_fixes["navbox"] = base | {
+    "generator": generator_base,
+    "replacements": [
+        (r"(?m)^\{\{[^{}\n]*(?:Navbox|Navigation)[^{}\n]*\}\}\n?", ""),
+    ],
+}
+# endregion
+
+
 # region heading
+# Note(s) 节（<references group="Note">）改名 注释；页面已有 注释 节时跳过——
+# 防双节并立（改名与 References 改名同趟完成，故顺序在其后），跳过的页面
+# 留 LLM/人工合并。\A 锚定的整页匹配只用于回读上下文，捕获组原样回吐，
+# 正文内容不被改写。
+_NOTE_ABSENT = r"(?:(?!^== *注释 *==[ \t]*$)[\s\S])*"
+
 user_fixes["heading"] = base | {
     "generator": generator_more,
     "replacements": [
@@ -425,16 +461,37 @@ user_fixes["heading"] = base | {
             ("Trivia", "你知道吗"),
             ("Lyrics?", "歌词"),
             ("Characters", "登场人物"),
-            ("References?", "注释与外部链接"),
+            ("References?", "注释"),
+            # 有 zh 先例（小说:45卷/术语:魔女教/术语:圣域 用 简介，术语:魔女教 用
+            # 成员，术语:大灾厄 用 背景）
+            ("Information", "简介"),
+            ("Members", "成员"),
+            ("Background", "背景"),
+            # 章节名映射以本表为唯一权威（wiki 不再另存清单）。故事情节节按
+            # 攻略指南的导言/简介/梗概体系统一为 梗概；Chapters/Anime Differences/
+            # Locations 均有大量存量与 zh 先例（章节/动画差异/地点）
+            ("Chapters", "章节"),
+            ("Events?", "梗概"),
+            ("Plot", "梗概"),
+            (r"Misc(ellaneous|\.)?", "其他"),
+            ("Locations?", "地点"),
+            ("Formations?", "建立"),
+            ("Anime Differences", "动画差异"),
+            ("External links?", "外部链接"),
         ]
+    ]
+    + [
+        (
+            rf"(?ms)\A({_NOTE_ABSENT}?)^== *Notes? *==[ \t]*$(?={_NOTE_ABSENT}\Z)",
+            r"\1== 注释 ==",
+        ),
     ],
 }
 # endregion
 
 # region heading_history
 # History 章节名按页面类型分译：角色页→经历，术语页→历史（en 的 History 在角色
-# 条目是生平、在术语条目是沿革；决议记录于 wiki 的 ReZero Wiki:译名表
-# 「章节/页面/标签」节）。作用域由 generator 的 -cat 按分类限定（分类由
+# 条目是生平、在术语条目是沿革）。作用域由 generator 的 -cat 按分类限定（分类由
 # Module:Init 按标题前缀自动打，角色主页面入 分类:角色、术语主页面入 分类:术语，
 # 子页入 分类:角色梗概 等不受影响）；llm_translate 离线转换无 API 可取分类，
 # 按 zh 标题前缀分派同一对规则（两处手工同步）。
