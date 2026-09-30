@@ -44,6 +44,9 @@ jobs: list[Job] = [
     Job("gallery", ["re0_gallery", "-catr:图库"]),
     Job("image", ["re0_image"]),
     Job("interwiki", ["interwiki", "-quiet", "-async", "-localonly", *starts_more]),
+    # category 属跨站同步；其 Init 覆盖缺失报告条目的处理（归位）由后段的
+    # move 完成——条目可能为同周期待归位页，下轮自动消失，持续存在才需人工
+    Job("category", ["re0_category"]),
     # 整理新搬运页面
     Job("fix:date", ["replace", "-automaticsummary", "-fix:date"]),
     Job("fix:gallery", ["replace", "-automaticsummary", "-fix:gallery"]),
@@ -51,12 +54,6 @@ jobs: list[Job] = [
     Job("fix:heading_char", ["replace", "-automaticsummary", "-fix:heading_char"]),
     Job("fix:heading_term", ["replace", "-automaticsummary", "-fix:heading_term"]),
     Job("fix:navbox", ["replace", "-automaticsummary", "-fix:navbox"]),
-    Job(
-        "cat-image-gallery", ["category", "remove", "-nodelete", "-from:Image Gallery"]
-    ),
-    Job(
-        "cat-relationships", ["category", "remove", "-nodelete", "-from:Relationships"]
-    ),
     # 模板维护
     Job(
         "template",
