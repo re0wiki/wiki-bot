@@ -28,7 +28,7 @@ for n, d in cal.items():
     n = int(n)
     if n < 51 or not d:
         continue
-    dd = datetime.strptime(d, "%B %d, %Y").date()  # noqa: DTZ007 只取日期
+    dd = datetime.strptime(d, "%B %d, %Y").date()
     windows.append((datetime(dd.year, dd.month, dd.day, 12, 0, tzinfo=JST), n))
 # 再放送
 rerun = {
@@ -43,7 +43,7 @@ rerun = {
     "2025-01-29": 58,
 }
 for d, ep in rerun.items():
-    dd = datetime.strptime(d, "%Y-%m-%d").date()  # noqa: DTZ007 只取日期
+    dd = datetime.strptime(d, "%Y-%m-%d").date()
     windows.append((datetime(dd.year, dd.month, dd.day, 12, 0, tzinfo=JST), ep))
 
 
