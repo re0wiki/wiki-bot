@@ -24,7 +24,7 @@ limit = int(sys.argv[sys.argv.index("--limit") + 1]) if "--limit" in sys.argv el
 site = pywikibot.Site("zh", "re0")
 
 
-def old_pages() -> dict[str, str]:
+def old_pages() -> dict[str, list[str]]:
     """旧 key -> 变体列表（hans 全有，hant 部分有）。"""
     return {k: ["zh-hans"] + (["zh-hant"] if plan[k]["hant"] else []) for k in OLD_KEYS}
 
