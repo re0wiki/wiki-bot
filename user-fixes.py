@@ -691,6 +691,13 @@ user_fixes["translation"] = base | {
             # 。「」等句读/引号不进字符集，否则中日两段会被连成一段。
             # 盲区：纯汉字日文引用无假名可探测，仍靠 as-is 注释。
             r"[㐀-䶿一-鿿豈-﫿぀-ヿｦ-ﾝ々〆〇、]*[぀-ヿｦ-ﾝ][㐀-䶿一-鿿豈-﫿぀-ヿｦ-ﾝ々〆〇、]*",
+            # 分类名位置整体不归一：[[Category:...]] 分类行（含 [[:Category:
+            # 链接形式）归 re0_category 从 en 映射管理，{{Category redirect|...}}
+            # 软重定向目标同理；在此改写会与分类同步互相覆盖（模板化目标如
+            # {{Seirei or Elf}} 使分类链接/重定向失效，category sync 还原、
+            # cosmetic 再删，三任务循环）。
+            r"\[\[:?(?:Category|分类):[^\n]*\]\]",
+            r"\{\{Category redirect\s*\|[^}\n]*\}\}",
         ],
     },
     "replacements": [(_alt_pattern, _alt_sub)] + list(translation_manual),
