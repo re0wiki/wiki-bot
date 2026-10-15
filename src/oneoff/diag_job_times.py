@@ -22,7 +22,7 @@ start_idx = max(
     if events[i][1] == "re0_transferbot" and events[i + 1][1] == "re0_gallery"
 )
 cycle = events[start_idx:]
-cycle_end = datetime.fromtimestamp(Path("logs/touch-bot.log").stat().st_mtime)  # noqa: DTZ006 本地时间，与日志 naive 时间戳一致
+cycle_end = datetime.fromtimestamp(Path("logs/touch-bot.log").stat().st_mtime)
 
 rows = [(c0, (t1 - t0).total_seconds()) for (t0, c0), (t1, _) in pairwise(cycle)]
 rows.append((cycle[-1][1], (cycle_end - cycle[-1][0]).total_seconds()))

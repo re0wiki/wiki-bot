@@ -36,6 +36,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="伽那库斯",
+        ja="ガナクス",
         aliases=("加纳克斯",),
         note="术语",
     ),
@@ -101,12 +102,14 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="卡拉拉基",
+        ja="カララギ",
         en="Kararagi",
         aliases=("卡拉拉[吉基奇]",),
         note="术语",
     ),
     Entry(
         std="卡什采尔平原",
+        ja="カスツール平原",
         aliases=("卡斯图鲁平原",),
     ),
     Entry(
@@ -128,6 +131,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="古斯提克",
+        ja="グステコ",
         en="Gusteko",
         aliases=("古斯提科",),
         note="术语",
@@ -304,6 +308,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="普莉斯卡",
+        ja="プリスカ",
         aliases=("普[丽利莉里][丝斯]卡",),
     ),
     Entry(
@@ -448,6 +453,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="米塞尔",
+        ja="ミゼール",
         aliases=("米捷尔",),
         note="角色；米塞尔子爵",
     ),
@@ -474,6 +480,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="梅札斯",
+        ja="メイザース",
         aliases=("梅瑟斯",),
     ),
     Entry(
@@ -497,6 +504,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="艾力欧尔大森林",
+        ja="エリオール大森林",
         en="Elior Forest",
     ),
     Entry(
@@ -512,6 +520,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="艾黑亚湿地",
+        ja="アイヒア湿地帯",
         aliases=("艾西亚湿地",),
     ),
     Entry(
@@ -690,6 +699,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="铁之牙",
+        ja="鉄の牙",
         en="Iron Fang",
     ),
     Entry(
@@ -700,6 +710,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="阿拉姆村",
+        ja="アーラム村",
         en="Arlam Village",
     ),
     Entry(
@@ -789,6 +800,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="特利亚斯",
+        ja="トリアス",
         en="Trias",
         aliases=("[托特][利里]亚斯",),
         note="威尔海姆旧姓",
@@ -802,6 +814,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="埃尔纱幕",
+        ja="エル·シャマク",
     ),
     Entry(
         std="丁赛尔",
@@ -824,6 +837,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="科斯茨尔",
+        ja="コスツール",
         en="Costuul",
         aliases=("[克寇柯科][丝司斯][兹泽茨]尔",),
         note="术语",
@@ -867,6 +881,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="禁书与谜之精灵",
+        ja="禁書と謎の精霊",
         en="Re:Zero Forbidden Book and the Mysterious Spirit",
         aliases=("禁书与迷之精灵",),
     ),
@@ -898,11 +913,13 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="瓜拉尔",
+        ja="グァラル",
         en="Guaral",
         note="术语",
     ),
     Entry(
         std="巴德哈姆",
+        ja="バドハイム",
         aliases=("巴[多德][哈海]姆",),
     ),
     Entry(
@@ -919,6 +936,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="弗兰德斯",
+        ja="フランダース",
         en="Flanders",
         aliases=("[佛弗芙]兰[德达][兹斯]",),
     ),
@@ -1034,7 +1052,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="奇夏",
-        ja="チシャ·ゴールド",
+        ja="チシャ",
         en="Chisha",
         aliases=("[奇齐]夏",),
     ),
@@ -1089,6 +1107,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="塞尔连",
+        ja="セルレイン",
         aliases=("塞路连",),
     ),
     Entry(
@@ -1226,6 +1245,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="慕斯兰",
+        ja="ムスラン",
         aliases=("[姆慕穆]斯[兰朗]",),
         note="慕斯兰·卡拉德",
     ),
@@ -1330,6 +1350,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="卡欧斯福莱姆",
+        ja="カオスフレーム",
         en="Chaosflame",
         aliases=(
             "混沌之炎",
@@ -1614,6 +1635,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="视风加护",
+        ja="風見の加護",
         aliases=("[视风][见风]的加护",),
         note="术语；库珥修的加护",
     ),
@@ -1668,6 +1690,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="记忆回廊",
+        ja="記憶の回廊",
         aliases=("记忆的回廊",),
     ),
     Entry(
@@ -1730,15 +1753,18 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="奇夏·金",
+        ja="チシャ·ゴールド",
         aliases=("奇夏·戈尔德",),
         note="官方意译 戈尔德→金（英 Chisha Gold）",
     ),
     Entry(
         std="贝亚子",
+        ja="ベア子",
         aliases=("[碧贝][亚翠阿雅]子",),
     ),
     Entry(
         std="爱蜜莉雅炭",
+        ja="エミリアたん",
         aliases=("爱蜜莉雅碳",),
         note="帕克对爱蜜莉雅的昵称",
     ),
@@ -1768,6 +1794,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="施瓦兹",
+        ja="シュバルツ",
         aliases=("[施舒]瓦[兹茨]",),
         note="乐师 夏美·施瓦茨",
     ),
@@ -1797,6 +1824,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="迷尼亚",
+        ja="ミーニャ",
         aliases=("米尼亚",),
         note="咒语后缀 X·迷尼亚（ミーニャ）",
     ),
@@ -1830,6 +1858,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="奥多",
+        ja="オド",
         aliases=("欧德(?!古勒斯)",),
     ),
     Entry(
@@ -1846,58 +1875,69 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="皮克塔特",
+        ja="ピックタット",
         en="Picoutatte",
         aliases=("聘可塔特", "匹克塔坨"),
         note="水门都市邻近都市。官方语料 10 处",
     ),
     Entry(
         std="避风加护",
+        ja="風避けの加護",
         aliases=("避风的加护",),
         note="术语",
     ),
     Entry(
         std="死神加护",
+        ja="死神の加護",
         aliases=("死神的加护",),
         note="术语",
     ),
     Entry(
         std="剑圣加护",
+        ja="剣聖の加護",
         en="Divine Protection of the Sword Saint",
         aliases=("剑圣的加护",),
         note="术语",
     ),
     Entry(
         std="言灵加护",
+        ja="言霊の加護",
         aliases=("言灵的加护",),
         note="术语",
     ),
     Entry(
         std="地灵加护",
+        ja="地霊の加護",
         aliases=("地灵的加护",),
         note="术语",
     ),
     Entry(
         std="传心加护",
+        ja="伝心の加護",
         aliases=("传心的加护",),
         note="术语",
     ),
     Entry(
         std="诱精加护",
+        ja="誘精の加護",
         aliases=("诱精的加护",),
         note="术语",
     ),
     Entry(
         std="魔操加护",
+        ja="魔操の加護",
         aliases=("魔操的加护",),
         note="术语",
     ),
     Entry(
         std="共感觉",
+        ja="共感の加護",
         aliases=("共感的加护",),
         note="术语；官方从不称加护",
     ),
     Entry(
         std="不死王的洗礼",
+        ja="不死王の秘蹟",
         en="Sacrament of the Immortal King",
         aliases=("不死王的圣礼",),
         note="术语",
@@ -1934,16 +1974,19 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="沙时间",
+        ja="砂時間",
         en="Sand Time",
         note="术语；奥吉拉沙丘沙暴屏障",
     ),
     Entry(
         std="寒冰烙印艺术",
+        ja="アイスブランド·アーツ",
         aliases=("冰印艺术",),
         note="术语",
     ),
     Entry(
         std="冰柱界线",
+        ja="アイシクルライン",
         aliases=("冰柱魔线",),
         note="术语",
     ),
@@ -1957,6 +2000,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="普勒阿得斯",
+        ja="プレアデス",
         aliases=("普雷阿迪斯",),
         note="普勒阿得斯监视塔",
     ),
@@ -1992,6 +2036,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="王族诱拐事件",
+        ja="王族誘拐案",
         aliases=("王族诱拐案",),
         note="vol16",
     ),
@@ -2004,6 +2049,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="汉赛尔和格莱特",
+        ja="ハンゼルとグレーテル",
         aliases=("汉赛尔与格莱特",),
         note="vol26；格林童话《糖果屋》",
     ),
@@ -2016,16 +2062,19 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="魔女因子",
+        ja="魔女因子",
         aliases=("大罪因子",),
         note="术语",
     ),
     Entry(
         std="克劳泽列",
+        ja="クラウゼリア",
         aliases=("克劳泽利亚",),
         note="术式 阿尔·克劳泽列",
     ),
     Entry(
         std="库拉利斯特",
+        ja="クラリスタ",
         aliases=("克劳利斯塔",),
         note="术式 阿尔·库拉利斯特",
     ),
@@ -2036,6 +2085,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="六条舌",
+        ja="六条舌",
         aliases=("六枚舌",),
         note="奥尔菲外号及其情报组织",
     ),
@@ -2048,6 +2098,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="多纳",
+        ja="ドーナ",
         aliases=("(?<!加)(?<!卡)(?<!雷)德纳",),
         note="术式 tier 前缀 埃尔/乌尔/阿尔·多纳；德纳 多为 加德纳/卡德纳 等他名子串",
     ),
@@ -2171,6 +2222,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="亚雷",
+        ja="アレイ",
     ),
     Entry(
         std="艾达",
@@ -2223,6 +2275,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="哈莱因",
+        ja="ハーライン",
     ),
     Entry(
         std="威茨",
@@ -2246,6 +2299,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="卢西安",
+        ja="ルシアン",
     ),
     Entry(
         std="阿尔",
@@ -2358,6 +2412,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="切格夫队",
+        ja="ツェルゲフ隊",
         en="Zergev Squadron",
         aliases=("[切卓]格夫小队",),
         note="术语",
@@ -2371,50 +2426,62 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="戈亚",
+        ja="ゴーア",
         note="术式名",
     ),
     Entry(
         std="芙拉",
+        ja="フーラ",
         note="术式名",
     ),
     Entry(
         std="修玛",
+        ja="ヒューマ",
         note="术式名",
     ),
     Entry(
         std="流星",
+        ja="ミーティア",
         note="术式名",
     ),
     Entry(
         std="纱幕",
+        ja="シャマク",
         note="术式名",
     ),
     Entry(
         std="渡门",
+        ja="扉渡り",
         note="术式名",
     ),
     Entry(
         std="吉瓦尔德",
+        ja="ジワルド",
         note="术式名",
     ),
     Entry(
         std="姆拉克",
+        ja="ムラク",
         note="术式名",
     ),
     Entry(
         std="维塔",
+        ja="ヴィータ",
         note="术式名",
     ),
     Entry(
         std="百人一太刀",
+        ja="百人一太刀",
         note="术式名",
     ),
     Entry(
         std="绝对零度",
+        ja="絶対零度",
         note="术式名",
     ),
     Entry(
         std="冰之花",
+        ja="氷の花",
         note="术式名",
     ),
     Entry(
@@ -3523,10 +3590,30 @@ ENTRIES: list[Entry] = [
     ),
     # ---- LLM 翻译管线自裁决登记（官方语料精确计数优先，零命中自拟或保留英文；
     #      别名随裁决一并自动登记，见 docs/llm-translation.md） ----
-    Entry(std="希玛", en="Shima", note="角色；琉兹复制体四长老之一。官方语料 165 处"),
-    Entry(std="阿尔玛", en="Alma", note="角色；琉兹复制体四长老之一。官方语料 6 处"),
-    Entry(std="毕尔玛", en="Bilma", note="角色；琉兹复制体四长老之一。官方语料 8 处"),
-    Entry(std="德尔玛", en="Delma", note="角色；琉兹复制体四长老之一。官方语料 2 处"),
+    Entry(
+        std="希玛",
+        ja="シーマ",
+        en="Shima",
+        note="角色；琉兹复制体四长老之一。官方语料 165 处",
+    ),
+    Entry(
+        std="阿尔玛",
+        ja="アルマ",
+        en="Alma",
+        note="角色；琉兹复制体四长老之一。官方语料 6 处",
+    ),
+    Entry(
+        std="毕尔玛",
+        ja="ビルマ",
+        en="Bilma",
+        note="角色；琉兹复制体四长老之一。官方语料 8 处",
+    ),
+    Entry(
+        std="德尔玛",
+        ja="デルマ",
+        en="Delma",
+        note="角色；琉兹复制体四长老之一。官方语料 2 处",
+    ),
     Entry(
         std="皮可",
         ja="ピコ",
@@ -3541,28 +3628,44 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="战神",
+        ja="戦神",
         en="War God",
         note="库尔干称号（官方语料亦见「八臂战神」）。官方语料 6 处",
     ),
     Entry(
-        std="猎肠者", en="Bowel Hunter", note="艾尔莎·葛兰希尔黛称号。官方语料 27 处"
+        std="猎肠者",
+        ja="腸狩り",
+        en="Bowel Hunter",
+        note="艾尔莎·葛兰希尔黛称号。官方语料 27 处",
     ),
-    Entry(std="神龙", en="Divine Dragon", note="波尔肯尼卡称号。官方语料 114 处"),
+    Entry(
+        std="神龙",
+        ja="神龍",
+        en="Divine Dragon",
+        note="波尔肯尼卡称号。官方语料 114 处",
+    ),
     Entry(
         std="九神将",
         ja="九神将",
         en="Nine Divine Generals",
         note="术语；佛拉基亚帝国军精锐。官方语料 200 处",
     ),
-    Entry(std="鲁普加纳", en="Lupugana", note="术语；佛拉基亚帝都。官方语料 13 处"),
+    Entry(
+        std="鲁普加纳",
+        ja="ルプガナ",
+        en="Lupugana",
+        note="术语；佛拉基亚帝都。官方语料 13 处",
+    ),
     Entry(
         std="贤人会",
+        ja="賢人会",
         en="Council of Wise Men",
         aliases=("贤者会议", "贤人会议"),
         note="术语；卢克尼卡决策机构。官方语料 79 处",
     ),
     Entry(
         std="加菲",
+        ja="ガフ",
         en="Garf",
         note="加菲尔昵称（拉姆/蜜蜜/莉亚拉等用）。官方语料 212 处",
     ),
@@ -3575,6 +3678,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="飞龙灾害",
+        ja="飛竜災害",
         en="Flying Dragon Cataclysm",
         note="术语；瓜拉尔的飞龙袭击事件。语料无据（候选 飞龙灾害/飞龙灾厄/飞龙之灾 均 0），wiki 既有写法（角色:玛德琳·恩夏尔德）",
     ),
@@ -3600,6 +3704,7 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="罗兹瓦尔·D.梅札斯",
+        ja="ロズワール·D·メイザース",
         en="Roswaal D. Mathers",
         aliases=("罗兹瓦尔·D·梅札斯",),
         note="角色；罗兹瓦尔先祖。语料无 D 形，LLM 自拟（沿 罗兹瓦尔·L.梅札斯 格式）",
@@ -3686,16 +3791,20 @@ ENTRIES: list[Entry] = [
     Entry(std="Sasageru IF", en="Sasageru IF", note="IF 线名。语料无据，保留英文"),
     Entry(std="Gordon", en="Gordon", note="游戏:DEATH OR KISS 原创角色。保留英文"),
     # ---- 高频通行术语（官方语料核验或 wiki 既有；prepare 注入用） ----
-    Entry(std="圣域", en="Sanctuary", note="术语。官方语料 771 处"),
+    Entry(std="圣域", ja="聖域", en="Sanctuary", note="术语。官方语料 771 处"),
     Entry(
         std="试炼",
+        ja="試練",
         en="Trial",
         note="术语；圣域的试炼。官方语料 603 处；en 复数 Trials 不在注入匹配（词边界）",
     ),
-    Entry(std="王选", en="Royal Selection", note="术语；王选。官方语料 371 处"),
-    Entry(std="魔女教", en="Witch Cult", note="术语。官方语料 937 处"),
+    Entry(
+        std="王选", ja="王選", en="Royal Selection", note="术语；王选。官方语料 371 处"
+    ),
+    Entry(std="魔女教", ja="魔女教", en="Witch Cult", note="术语。官方语料 937 处"),
     Entry(
         std="大罪司教",
+        ja="大罪司教",
         en="Sin Archbishop",
         note="术语；en 复数 Sin Archbishops 不在注入匹配（词边界）。官方语料 750 处",
     ),
@@ -3706,24 +3815,36 @@ ENTRIES: list[Entry] = [
         note="术语。官方语料 1350 处；en 站现称 Witchbeast（旧称 Demon Beast）",
     ),
     Entry(std="剑圣", ja="剣聖", en="Sword Saint", note="术语/称号。官方语料 598 处"),
-    Entry(std="水门都市", en="Water City", note="术语；普利斯提拉。官方语料 103 处"),
+    Entry(
+        std="水门都市",
+        ja="水門都市",
+        en="Water City",
+        note="术语；普利斯提拉。官方语料 103 处",
+    ),
     Entry(
         std="嫉妒魔女",
+        ja="嫉妬の魔女",
         en="Witch of Envy",
         note="角色/术语。官方语料 116 处（另 嫉妒的魔女 10 处）",
     ),
-    Entry(std="大罪魔女", en="Witches", note="术语。官方语料 5 处"),
+    Entry(std="大罪魔女", ja="大罪魔女", en="Witches", note="术语。官方语料 5 处"),
     Entry(
         std="魔女",
         en="Witch",
         note="术语；泛称。与 Witch Cult/Witch of Envy 共存时由注入的子面抑制处理",
     ),
-    Entry(std="王国军", en="Royal Army", note="术语；卢克尼卡王国军。官方语料 105 处"),
+    Entry(
+        std="王国军",
+        ja="王国軍",
+        en="Royal Army",
+        note="术语；卢克尼卡王国军。官方语料 105 处",
+    ),
     Entry(std="加护", ja="加護", en="Divine Protection", note="术语。官方语料 369 处"),
     Entry(std="权能", ja="権能", en="Authority", note="术语。官方语料 355 处"),
     Entry(std="福音书", ja="福音書", en="Gospel", note="术语。官方语料 57 处"),
     Entry(
         std="普勒阿得斯监视塔",
+        ja="プレアデス監視塔",
         en="Pleiades Watchtower",
         note="术语；贤者隐居之塔。官方语料 110 处；wiki 条目名作 贤者塔（系衍生简称，非同词异写——官方行文作 ‘贤者’之塔，仅 4 处）",
     ),
@@ -3734,11 +3855,13 @@ ENTRIES: list[Entry] = [
     ),
     Entry(
         std="水门都市攻防战",
+        ja="水門都市攻防戦",
         en="Battle for Priestella",
         note="术语；en-wiki 造事件名。语料无据，wiki 既有写法",
     ),
     Entry(
         std="大灾",
+        ja="大災",
         en="Great Disaster",
         note="术语；第九章事件。语料无据（「大灾」语料命中均为泛指或四百年前大灾难，非该事件），wiki 既有写法",
     ),
@@ -3794,8 +3917,18 @@ ENTRIES: list[Entry] = [
         aliases=("厄勒特克拉",),
         note="术语；普勒阿得斯监视塔第二层。官方：17 处（vol22-25）；厄勒特克拉 为 wiki 旧写法（语料 0）",
     ),
-    Entry(std="爱蜜莉雅阵营", en="Emilia Camp", note="术语。官方：42 处"),
-    Entry(std="饿马王", en="Hungry Horse King", note="魔兽。官方：28 处（vol25）"),
+    Entry(
+        std="爱蜜莉雅阵营",
+        ja="エミリア陣営",
+        en="Emilia Camp",
+        note="术语。官方：42 处",
+    ),
+    Entry(
+        std="饿马王",
+        ja="がばおう",
+        en="Hungry Horse King",
+        note="魔兽。官方：28 处（vol25）",
+    ),
     Entry(
         std="蕾拉妮",
         ja="レイラニ",
@@ -3808,7 +3941,12 @@ ENTRIES: list[Entry] = [
         en="Alnair",
         note="姓；蕾拉妮·阿尔奈尔；LLM 自拟，语料无据（候选 阿尔奈尔/阿尔娜伊尔/阿尔纳伊尔 均 0）；取天鹤座α星名惯译",
     ),
-    Entry(std="卢克尼卡王室", en="Royal Family", note="术语。官方：4 处"),
+    Entry(
+        std="卢克尼卡王室",
+        ja="ルグニカ王室",
+        en="Royal Family",
+        note="术语。官方：4 处",
+    ),
     Entry(std="市政厅", en="City Hall", note="术语；水门都市行政中心。官方：226 处"),
     Entry(
         std="亚人联军",
@@ -3818,6 +3956,7 @@ ENTRIES: list[Entry] = [
     Entry(std="亚人战争", ja="亜人戦争", en="Demi-Human War", note="术语。官方：42 处"),
     Entry(
         std="神龙教会",
+        ja="神龍教会",
         en="Divine Dragon Church",
         note="术语。语料无据（候选 神龙教会/神龙教/龙神教会/神龙教团 均 0），wiki 既有写法（术语:神龙教会）",
     ),
@@ -3836,11 +3975,15 @@ ENTRIES: list[Entry] = [
         note="术语；梅琳达的能力。语料无据（候选 邪眼/魔眼/咒眼 均 0，恶眼 4 处均为「凶恶眼神」非该词），LLM 自拟",
     ),
     Entry(
-        std="监狱塔", en="Prison Tower", note="术语；王都的监狱塔。官方：14 处（ex3）"
+        std="监狱塔",
+        ja="監獄塔",
+        en="Prison Tower",
+        note="术语；王都的监狱塔。官方：14 处（ex3）",
     ),
     Entry(std="王都", en="Royal Capital", note="术语。官方：463 处"),
     Entry(
         std="近卫骑士团",
+        ja="近衛騎士団",
         en="Royal Guard",
         note="术语。官方：近卫骑士团 76 处、王国近卫骑士团 12 处——同一组织的简称/全称，日文原文即有两种形态（行文用简称、自报家门用全称），不互转",
     ),
@@ -3889,9 +4032,16 @@ ENTRIES: list[Entry] = [
     Entry(
         std="特利亚斯家", ja="トリアス家", en="House Trias", note="术语。官方：11 处"
     ),
-    Entry(std="库珥修阵营", en="Crusch Camp", note="术语。官方：25 处"),
-    Entry(std="菲鲁特阵营", en="Felt Camp", note="术语。官方：7 处"),
-    Entry(std="普莉希拉阵营", en="Priscilla Camp", note="术语。官方：4 处"),
+    Entry(
+        std="库珥修阵营", ja="クルシュ陣営", en="Crusch Camp", note="术语。官方：25 处"
+    ),
+    Entry(std="菲鲁特阵营", ja="フェルト陣営", en="Felt Camp", note="术语。官方：7 处"),
+    Entry(
+        std="普莉希拉阵营",
+        ja="プリシラ陣営",
+        en="Priscilla Camp",
+        note="术语。官方：4 处",
+    ),
     Entry(
         std="王城入侵",
         en="Invasion of the Royal Castle",

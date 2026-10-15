@@ -16,8 +16,9 @@ KEYS_FILE = Path(__file__).parents[2] / "secrets.json"
 
 _GLOSSARY: dict[str, str] | None = None
 
-# 与普通词同形的 ja 面形态不注入（ジュース=果汁 等），避免非实体语境误导
-_COMMON_WORD_SURFACES = {"ジュース"}
+# 与普通词同形的 ja 面形态不注入（ジュース=果汁、ゴージャス=gorgeous、
+# タイガー=阪神タイガース棒球联动推 等），避免非实体语境误导
+_COMMON_WORD_SURFACES = {"ジュース", "ゴージャス", "タイガー"}
 
 
 def _build_glossary() -> dict[str, str]:
