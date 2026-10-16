@@ -26,10 +26,20 @@ os.makedirs("logs", exist_ok=True)
 ZH = "https://rezero.fandom.com/zh/api.php"
 EN = "https://rezero.fandom.com/api.php"
 S = requests.Session()
+# 裸 requests 必须显式 UA，否则 Fandom 403（wiki-access skill 实测坑）
+S.headers["User-Agent"] = (
+    "wiki-bot/audit_langlinks (https://github.com/re0wiki/wiki-bot)"
+)
 
 EN_LINK_RE = re.compile(
     r"\[\[en:([^\]|#]+)(?:#[^\]|]*)?(?:\|[^\]]*)?\]\]"
 )  # 剥 #片段与 |显示文本
+
+
+def norm_title(t):
+    """标题等价归一：下划线→空格、首字母大写（MediaWiki 标题语义）。"""
+    t = t.replace("_", " ").strip()
+    return t[:1].upper() + t[1:] if t else t
 
 
 def api(base, **params):
@@ -139,13 +149,26 @@ while True:
         m = EN_LINK_RE.search(text)
         if m:
             if "redirect" in p:
-                redirect_with_link[t] = m.group(1)
+                redirect_with_link[t] = norm_title(m.group(1))
             else:
-                zh_link[t] = m.group(1)
+                zh_link[t] = norm_title(m.group(1))
     if "continue" not in d:
         break
     cont = cont_params(d)
     time.sleep(0.2)
+
+# 兜底断言：generator+content 有静默截断前科（wiki-access skill 实测坑），用纯标题枚举对数
+zh_titles = []
+cont = {}
+while True:
+    d = api(ZH, action="query", list="allpages", apnamespace="0", aplimit="max", **cont)
+    zh_titles.extend(p["title"] for p in d["query"]["allpages"])
+    if "continue" not in d:
+        break
+    cont = cont_params(d)
+assert sorted(zh_all) == sorted(zh_titles), (
+    f"zh 扫描疑似截断: 抓到 {len(zh_all)} 页 != 枚举 {len(zh_titles)} 页"
+)
 print(
     f"zh 主空间: {len(zh_all)}，源码含 en 链接: {len(zh_link)}（另 {len(redirect_with_link)} 个重定向页带链接）"
 )
