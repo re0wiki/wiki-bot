@@ -248,6 +248,32 @@ def test_sync_noop():
     assert sync(text, en_cats=["Deceased"])[0] is None
 
 
+def test_sync_dedups_managed_duplicates():
+    """受管行重复（集合比对不可见）触发重写去重——2026-10 修德拉格之民事故形态：
+    分类行当时未豁免 translation fix，sync 写旧名 → fix 改写成新名（非受管）
+    → 下轮 sync 判缺失再插一条，每循环净 +1 行。"""
+    text = "正文\n" + "[[Category:已故角色]]\n" * 3
+    new, added, removed, _, _ = sync(text, en_cats=["Deceased"])
+    assert new == "正文\n[[Category:已故角色]]\n"
+    assert added == removed == set()  # 集合层面本就无增删，改动纯为去重
+    assert sync(new, en_cats=["Deceased"])[0] is None  # 去重后幂等
+
+
+def test_sync_dedups_scattered_duplicates():
+    """重复行被不受管行隔开（事故真实形态：改写残留行位置不连续）也能收敛。"""
+    text = (
+        "正文\n[[Category:已故角色]]\n[[Category:机翻待校对]]\n[[Category:已故角色]]\n"
+    )
+    new, *_ = sync(text, en_cats=["Deceased"])
+    assert new == "正文\n[[Category:已故角色]]\n[[Category:机翻待校对]]\n"
+
+
+def test_sync_unmanaged_duplicates_untouched():
+    """不受管源码行的重复不在本任务职责内（人工/其他流程管辖），不碰。"""
+    text = "正文\n[[Category:已故角色]]\n[[Category:新搬运待整理]]\n[[Category:新搬运待整理]]\n"
+    assert sync(text, en_cats=["Deceased"])[0] is None
+
+
 def test_sync_removes_when_en_dropped():
     new, _, removed, _, _ = sync("正文\n[[Category:已故角色]]\n", en_cats=[])
     assert new == "正文\n"

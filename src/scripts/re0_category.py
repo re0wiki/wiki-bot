@@ -17,7 +17,7 @@
    机制保留，与本任务互补——Init 管标题可判定的结构基线，本任务管 en 数据驱动
    的内容分类）；
 4. 受管集合 = 映射键 ∪ 映射值：源码中受管分类行整体按 desired 重写
-   （en 名残留行随之归一），不受管的源码分类行（人工添加、
+   （en 名残留行随之归一，重复受管行随之去重），不受管的源码分类行（人工添加、
    新搬运待整理/机翻待校对等）不碰；
 5. 不同步集合 = Category:自动清空分类 成员 ∪ TRACKING_CATEGORIES：
    en 名分类页挂 [[Category:自动清空分类]] 即声明不同步（优先于 interwiki
@@ -247,9 +247,11 @@ def compute_sync(
     new_text 为 None 表示无需改动。unmapped 是缺映射且未豁免的 en 分类。
     excluded（自动清空分类成员 ∪ MW 追踪分类）优先于 mapping，其源码行
     一律清除（残留清空职能）。映射目标属 init_cats 的不写入，仅当
-    registered 缺失时记入 init_missing 报告。
+    registered 缺失时记入 init_missing 报告。受管源码行重复（集合比对
+    不可见）同样视为需改动——重写删全部受管行、按 desired 去重插入。
     """
-    source_names = {m.group(1).strip() for m in CAT_LINE_RE.finditer(text)}
+    source_lines = [m.group(1).strip() for m in CAT_LINE_RE.finditer(text)]
+    source_names = set(source_lines)
     non_source = set(registered) - source_names  # Init/模板带入，不写源码行
     desired = {
         mapping[c]
@@ -267,7 +269,16 @@ def compute_sync(
     unmapped = [c for c in en_cats if c not in mapping and c not in excluded]
     current = {n for n in source_names if normalize(n) in managed}
     purged = {n for n in source_names if normalize(n) in excluded}
-    if current == desired and not purged:
+    # 集合比对对重复行不可见：受管行出现次数 != 1 同样视为未同步，
+    # 走重写路径（重写删全部受管行、按 desired 去重插入，重复行随之收敛）。
+    managed_counts = Counter(
+        normalize(raw) for raw in source_lines if normalize(raw) in managed
+    )
+    if (
+        current == desired
+        and not purged
+        and all(c == 1 for c in managed_counts.values())
+    ):
         return None, set(), set(), unmapped, init_missing
     removed = (current - desired) | purged
     added = desired - current
