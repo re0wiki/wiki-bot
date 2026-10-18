@@ -12,6 +12,7 @@
   任务）时不漏掉中间的人类编辑。
 - 排除 bot：EXCLUDE_USERS 里的账号（IchiSanNi）**全部**编辑都排除——无论是否带
   bot 标记，因为该账号的编辑（含手动）在修改时已自查；其他账号带 bot 标记的编辑也排除。
+- 排除 User 空间（ns=2）：用户页/沙盒属个人试验场，不巡查。
 - 首次运行只播种水位线，不输出（避免把历史改动全部报一遍）。
 - diff 拉取/解析由本脚本固定完成（曾由 LLM 每次现写代码，踩过三个坑：
   手工分组漏项、diff HTML 的 td class 是多值导致精确匹配抓空、
@@ -104,7 +105,7 @@ def fetch_new_changes(last_rcid: int) -> list[dict]:
             {
                 "action": "query",
                 "list": "recentchanges",
-                "rcprop": "title|ids|sizes|flags|user|comment|timestamp",
+                "rcprop": "title|ids|sizes|flags|user|comment|timestamp|ns",
                 "rctype": "edit|new",
                 "rclimit": "500",
                 "format": "json",
@@ -242,6 +243,7 @@ def main() -> int:
         if c["rcid"] > last_rcid
         and c.get("user") not in EXCLUDE_USERS
         and not c.get("bot")  # formatversion=2 下 "bot" 键恒存在，须判断值
+        and c.get("ns") != 2  # User 空间（用户页/沙盒）不巡查
     ]
 
     def advance_waterline() -> None:
