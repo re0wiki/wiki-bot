@@ -1,7 +1,7 @@
 ---
 name: series-nav-sync
 description: "Use when 同步系列导航 Tab 与 en 站 prev/next 链（新话/新卷/合并/拆分）。SOP 与审计工具。"
-version: 1.0.0
+version: 1.1.0
 ---
 
 # 系列导航（Tab/*）与 en 同步 SOP
@@ -14,7 +14,9 @@ previous/next（约定见 `docs/templates.md`）。en 站用信息框 Previous/N
 
 - en 侧新增/合并/拆分系列内容后，zh 有两处不会自动跟随：
   1. **新搬运页不带 Tab**——transferbot 只搬 en 内容，en 没有 Tab 体系；
-  2. **Tab 模板条目滞后**——新话数/新卷要手动补进对应 Tab。
+  2. **Tab 模板条目滞后**——新话数/新卷要补进对应 Tab。
+  这两处的机械情形由 tab-sync 循环任务自动收敛（见下节）；处理不了的进
+  报告页 `User:IchiSanNi/tab_sync`。
 - transferbot 带入的 `| previous/next =` 残留由 fix:para 常驻删行，无需处理。
 - en 的合并/拆分调整要跟随（zh 拆分页结构与 en Part 结构一一对应）。
 
@@ -42,9 +44,25 @@ uv run python src/tools/series_nav_audit.py
 派生表不可靠）；参数值匹配用 `[ \t]*` 不用 `\s*`（`\s` 吃换行，空值行会吞
 下一行）。
 
-## 同步步骤
+## 自动同步：tab-sync 循环任务
 
-1. 跑审计工具，未覆盖清单即工作队列（也可由 watchdog 发现新搬运页后触发）。
+`src/scripts/re0_tab_sync.py`（`python main.py tab-sync`）每轮跑同一套审计，
+对机械情形直接写入（链式收敛：最多 3 编辑轮 + 1 复核轮），其余进报告页
+`User:IchiSanNi/tab_sync`（含拆分失配清单）。规则（全部满足才动手，否则报告）：
+
+- **挂载**：en 链上有 Tab 且 **en 标题系列键一致**的邻居全票一致（系列键 =
+  掩末位数字段，季/章号保留：`Season 2 Episode #` ≠ `Season 3 Episode #`，
+  跨季/跨章新页不会挂错上一季，进报告页等人工建模板）；候选模板链接集须含
+  至少一个邻居页；页首须为独立 Init/To do 行块。
+- **补条目**：锚定检查发起页自身在模板中的条目行（next 插其后、previous
+  插其前）；锚行全模板唯一；所在块无注释；目标与锚同词干同词尾（拆分篇
+  词尾归一后比较，目标自身非拆分篇）；序号方向与链一致；块内有同词干
+  数字显示条目佐证显示文本可推导（`OVA1|OVA1` 类推导不出，转人工）。
+
+## 同步步骤（人工处理报告页 leftover）
+
+1. 看报告页 `User:IchiSanNi/tab_sync`（tab-sync 每轮自动维护）；或跑审计工具，
+   未覆盖清单即工作队列（也可由 watchdog 发现新搬运页后触发）。
 2. 目标页未搬运 → 等 transferbot（re0_transferbot 循环任务），不急。
 3. 已搬运但无 Tab → 挂载：页首顺序 `{{Init}}` → `{{To do}}` → `{{Tab/…}}`；
    注意 `{{To do}}{{#infobox` 粘连形态（无独立 To do 行时锚到 Init 后）。
