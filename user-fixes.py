@@ -275,7 +275,10 @@ def split_crammed_params(m: re.Match) -> str:
 user_fixes["para"] = base | {
     "generator": generator_more,
     "replacements": [
-        (rf"\|\s*{o}\s*=", f"| {n} =")
+        # 行首锚定：信息框参数行以 | 开头。不锚定时 tabber 分隔行 `|-| Light Novel =`
+        # 中的 `| Light Novel =` 子串会被打成 `|-| novel =`，产出的 novel/comic
+        # 不在 gallery fix 表内、无人兜底（2026-10 实证 33 处残留）。
+        (rf"(?m)^\|[ \t]*{o}[ \t]*=", f"| {n} =")
         for o, n in [
             ("Name", "name"),
             ("Image", "image"),
