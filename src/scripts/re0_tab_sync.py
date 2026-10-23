@@ -135,23 +135,31 @@ def _virtual_lines(source: str) -> tuple[list[str], list[tuple[int, int]]]:
     return vlines, vmap
 
 
-def insert_entry(source: str, anchor: str, target: str, direction: str) -> str | None:
-    """锚定插入 target 条目到模板源码；无法唯一机械定位返回 None。
+def _check_serials(
+    anchor: str, target: str, direction: str
+) -> tuple[str, int, str] | None:
+    """序号校验，通过返回 (锚词干, 目标序号, 目标词尾)。
 
-    规则见模块 docstring「补条目」条。direction 为 en 链方向（next/previous）。
+    目标须与锚同系列（词干相同、词尾归一后相同）且自身非拆分篇；
+    序号方向须与链一致（防 en 链回环/乱序误插）。
     """
     pa, pt = _parse_serial(anchor), _parse_serial(target)
     if not pa or not pt:
         return None
     astem, anum, atail = pa
     tstem, tnum, ttail = pt
-    # 目标须与锚同系列（词干相同、词尾归一后相同）且自身非拆分篇
     if tstem != astem or ttail != _base_tail(atail) or ttail != _base_tail(ttail):
         return None
-    # 序号方向须与链一致（防 en 链回环/乱序误插）
     if direction == "next" and tnum <= anum or direction == "previous" and tnum >= anum:
         return None
-    vlines, vmap = _virtual_lines(source)
+    return astem, tnum, ttail
+
+
+def _locate_block(vlines: list[str], anchor: str) -> tuple[int, int, int] | None:
+    """唯一锚行所在 {{Tab}} 块，返回 (锚行号, 块首行号, 块尾行号)。
+
+    锚不唯一、不在块内、块未闭合、块含注释均返回 None。
+    """
     anchors = [
         i
         for i, line in enumerate(vlines)
@@ -160,7 +168,6 @@ def insert_entry(source: str, anchor: str, target: str, direction: str) -> str |
     if len(anchors) != 1:
         return None
     a = anchors[0]
-    # 锚所在块边界与注释检查
     lo = a
     while lo > 0 and not RE_TAB_OPEN.match(vlines[lo]):
         lo -= 1
@@ -173,18 +180,24 @@ def insert_entry(source: str, anchor: str, target: str, direction: str) -> str |
         return None  # 块未闭合，模板形态异常
     if any("<!--" in line for line in vlines[lo : hi + 1]):
         return None  # 含注释块放弃机械处理
-    # 数字显示约定佐证：块内有同词干同词尾（归一）的数字显示条目，
-    # 显示文本才可推导为序号（反例：OVA1|OVA1 类显示文本非序号）
-    proof = any(
-        (nm := RE_NUM_ENTRY.match(vlines[k].rstrip("\r\n")))
-        and nm["stem"] == astem
-        and _base_tail(nm["tail"]) == ttail
-        for k in range(lo + 1, hi)
-    )
-    if not proof:
-        return None
-    pos = a + 1 if direction == "next" else a
-    new_line = f"|[[{target}|{tnum}]]\n"
+    return a, lo, hi
+
+
+def _has_num_proof(vlines: list[str], lo: int, hi: int, stem: str, tail: str) -> bool:
+    """数字显示约定佐证：块内有同词干同词尾（归一）的数字显示条目，
+    显示文本才可推导为序号（反例：OVA1|OVA1 类显示文本非序号）。
+    """
+    for k in range(lo + 1, hi):
+        nm = RE_NUM_ENTRY.match(vlines[k].rstrip("\r\n"))
+        if nm and nm["stem"] == stem and _base_tail(nm["tail"]) == tail:
+            return True
+    return False
+
+
+def _insert_line(
+    source: str, vmap: list[tuple[int, int]], pos: int, new_line: str
+) -> str:
+    """新行插到虚拟行位置 pos（经 vmap 映射回原行，粘连行做行内拼接）。"""
     lines = source.splitlines(keepends=True)
     orig_idx, col = vmap[pos] if pos < len(vmap) else (len(lines), 0)
     if col == 0:
@@ -193,6 +206,26 @@ def insert_entry(source: str, anchor: str, target: str, direction: str) -> str |
         line = lines[orig_idx]
         lines[orig_idx] = line[:col] + "\n" + new_line + line[col:]
     return "".join(lines)
+
+
+def insert_entry(source: str, anchor: str, target: str, direction: str) -> str | None:
+    """锚定插入 target 条目到模板源码；无法唯一机械定位返回 None。
+
+    规则见模块 docstring「补条目」条。direction 为 en 链方向（next/previous）。
+    """
+    serials = _check_serials(anchor, target, direction)
+    if serials is None:
+        return None
+    astem, tnum, ttail = serials
+    vlines, vmap = _virtual_lines(source)
+    block = _locate_block(vlines, anchor)
+    if block is None:
+        return None
+    a, lo, hi = block
+    if not _has_num_proof(vlines, lo, hi, astem, ttail):
+        return None
+    pos = a + 1 if direction == "next" else a
+    return _insert_line(source, vmap, pos, f"|[[{target}|{tnum}]]\n")
 
 
 def mount_candidates(
