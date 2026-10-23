@@ -4,15 +4,21 @@
 zh 侧的 Tab 覆盖不会自动跟随——本工具产出待办清单。用法与背景见
 .agents/skills/series-nav-sync/SKILL.md。
 
-两项检查：
+三项检查：
 1. 覆盖（coverage）：en 每个 previous/next 目标的 zh 对应页，必须出现在
    该页 {{Tab/…}} 的链接集合内（分层 Tab 两跳判定：本页 Tab 链接的季/章
    总页自带下一层 Tab）。
-2. 拆分对应（splits）：zh 前/中/后篇拆分页与 en Part N 结构一一对应
+2. 自身条目（self-entry）：已挂 Tab 的页必须出现在其 Tab 的活链接集内
+   （注释里的占位暂存条目不算列出）。
+3. 拆分对应（splits）：zh 前/中/后篇拆分页与 en Part N 结构一一对应
    （篇数一致、前→Part 1、中→Part 2、后→末位 Part）。
 
 注意：en→zh 映射用 zh 页源码的 [[en:…]] 建立（langlinks 派生表不可靠）；
 参数值匹配用 [ \\t]* 而非 \\s*（\\s 吃换行，空值行会吞下一行）。
+子页（zh 标题与 en 链接均含 /）自身 en 页无 prev/next 时，取 en 根页
+（主页面）的 prev/next、目标加相同子页后缀——短篇集第14卷/梗概 的链 =
+短篇集卷链 + /Synopsis；自身带 prev/next 的子页（合集故事子页的故事链）
+仍以自身为准。
 """
 
 import re
@@ -130,9 +136,47 @@ def scan_zh(site):
     return pages, en2zh, split_groups
 
 
+def _prevnext_pairs(content: str) -> list[tuple[str, str]]:
+    """en 源码提取 (direction, en 目标) 对；空值/非链接值跳过。"""
+    pairs = []
+    for mm in RE_PREVNEXT.finditer(content):
+        m = RE_LINK.search(mm.group(2))
+        if m:
+            pairs.append((mm.group(1).lower(), norm(m.group(1))))
+    return pairs
+
+
+def subpage_root(en_link: str) -> tuple[str, str]:
+    """en 子页链接拆为 (根页, 子页后缀)。调用方保证 en_link 含 /。"""
+    root = en_link.split("/", 1)[0]
+    return root.strip(), en_link[len(root) :]
+
+
+def iter_prevnext(pages, en_content, resolve):
+    """逐页 yield (zh_title, direction, en_target)。子页派生规则见模块 docstring。"""
+    subpages = {
+        t: subpage_root(i["en"])
+        for t, i in pages.items()
+        if "/" in t and "/" in i["en"]
+    }
+    for zh_title, info in pages.items():
+        if not info["en"]:
+            continue
+        content = en_content.get(resolve(info["en"]))
+        pairs = _prevnext_pairs(content) if content is not None else []
+        suffix = ""
+        if not pairs and zh_title in subpages:
+            root, suffix = subpages[zh_title]
+            content = en_content.get(resolve(root))
+            pairs = _prevnext_pairs(content) if content is not None else []
+        for direction, target in pairs:
+            yield zh_title, direction, target + suffix
+
+
 def collect_checks(en_site, pages, en2zh):
     """从 en 页源码提取 prev/next 目标，逐条反查 zh 对应页。"""
-    en_content, en_redir, en_missing = batch_query(en_site, set(en2zh))
+    sub_roots = {subpage_root(i["en"])[0] for i in pages.values() if "/" in i["en"]}
+    en_content, en_redir, en_missing = batch_query(en_site, set(en2zh) | sub_roots)
 
     def resolve(t):
         return en_redir.get(t, t)
@@ -140,28 +184,17 @@ def collect_checks(en_site, pages, en2zh):
     en2zh_r = {resolve(k): v for k, v in en2zh.items()}
 
     checks = []
-    for zh_title, info in pages.items():
-        if not info["en"]:
-            continue
-        content = en_content.get(resolve(info["en"]))
-        if content is None:
-            continue
-        for mm in RE_PREVNEXT.finditer(content):
-            m = RE_LINK.search(mm.group(2))
-            if not m:  # 空值/非链接值
-                continue
-            en_target = norm(m.group(1))
-            checks.append(
-                {
-                    "zh_page": zh_title,
-                    "direction": mm.group(1).lower(),
-                    "en_target": en_target,
-                    "zh_target": en2zh_r.get(resolve(en_target))
-                    or en2zh_r.get(en_target),
-                    "en_redlink": en_target in en_missing
-                    or resolve(en_target) in en_missing,
-                }
-            )
+    for zh_title, direction, en_target in iter_prevnext(pages, en_content, resolve):
+        checks.append(
+            {
+                "zh_page": zh_title,
+                "direction": direction,
+                "en_target": en_target,
+                "zh_target": en2zh_r.get(resolve(en_target)) or en2zh_r.get(en_target),
+                "en_redlink": en_target in en_missing
+                or resolve(en_target) in en_missing,
+            }
+        )
     # 不在首批查询集内的 en 目标补一轮重定向归一后重查
     unresolved = {
         c["en_target"] for c in checks if c["zh_target"] is None and not c["en_redlink"]
@@ -177,23 +210,59 @@ def collect_checks(en_site, pages, en2zh):
     return checks
 
 
+RE_COMMENT = re.compile(r"<!--.*?-->", re.DOTALL)
+
+
+def link_sets(src: str) -> tuple[set[str], set[str]]:
+    """模板源码的 (全量链接集, 活链接集)。
+
+    全量含注释暂存条目（存在性语义：覆盖判定用——占位条目视同目标已在册，
+    激活占位是 tab-sync 的职责）；活链接集剥除注释（可见性语义：检测
+    「已挂 Tab 但自身未被列出」用）。
+    """
+
+    def links(s):
+        return {
+            norm(x) for x in RE_LINK.findall(s) if not x.lower().startswith("template:")
+        }
+
+    return links(src), links(RE_COMMENT.sub("", src))
+
+
 def load_tab_links(zh_site, pages):
-    """全部 Tab 模板的链接集（zh 重定向归一到最终目标）。"""
+    """全部 Tab 模板的链接集（zh 重定向归一到最终目标）。
+
+    返回 (tab_links, tab_links_live, tab_src)：全量/活链接集（语义见
+    link_sets）与模板源码（标题已归一）。
+    """
     all_tabs = set().union(*(i["tabs"] for i in pages.values())) if pages else set()
     tab_src, _, _ = batch_query(zh_site, {f"Template:Tab/{t}" for t in all_tabs})
-    tab_links = {}
+    tab_links, tab_links_live = {}, {}
     for t in all_tabs:
         src = tab_src.get(norm(f"Template:Tab/{t}"), "")
-        tab_links[t] = {
-            norm(x)
-            for x in RE_LINK.findall(src)
-            if not x.lower().startswith("template:")
-        }
-    all_link_targets = set().union(*tab_links.values()) if tab_links else set()
+        tab_links[t], tab_links_live[t] = link_sets(src)
+    all_link_targets = (
+        set().union(*tab_links.values(), *tab_links_live.values())
+        if tab_links
+        else set()
+    )
     _, zh_redir, _ = batch_query(zh_site, all_link_targets - set(pages.keys()))
-    for t, links in tab_links.items():
-        tab_links[t] = {zh_redir.get(x, x) for x in links}
-    return tab_links
+    for t in all_tabs:
+        tab_links[t] = {zh_redir.get(x, x) for x in tab_links[t]}
+        tab_links_live[t] = {zh_redir.get(x, x) for x in tab_links_live[t]}
+    return tab_links, tab_links_live, tab_src
+
+
+def self_entry_missing(pages, tab_links_live, skip=frozenset()):
+    """已挂 Tab 但自身不在其活链接集（不含注释占位）的页面清单，skip 除外。"""
+    out = []
+    for t, info in pages.items():
+        if t in skip or not info["tabs"]:
+            continue
+        live = set().union(*(tab_links_live.get(x, set()) for x in info["tabs"]))
+        if t not in live:
+            out.append(t)
+    return sorted(out)
 
 
 def classify_checks(pages, checks, tab_links):
@@ -231,13 +300,6 @@ def classify_checks(pages, checks, tab_links):
         else:
             uncovered.append((c, "目标不在 Tab 链接集（含两跳）"))
     return covered, layered, na, uncovered
-
-
-def check_coverage(zh_site, en_site, pages, en2zh):
-    """检查 1：en prev/next 目标的 Tab 覆盖。返回 (covered, layered, na, uncovered, 总数)。"""
-    checks = collect_checks(en_site, pages, en2zh)
-    tab_links = load_tab_links(zh_site, pages)
-    return (*classify_checks(pages, checks, tab_links), len(checks))
 
 
 def real_split_groups(split_groups, zh_en):
@@ -326,7 +388,10 @@ def main():
     pages, en2zh, split_groups = scan_zh(zh)
     print(f"zh 主空间内容页 {len(pages)}，带 en 链接 {len(en2zh)}", flush=True)
 
-    covered, layered, na, uncovered, total = check_coverage(zh, en, pages, en2zh)
+    checks = collect_checks(en, pages, en2zh)
+    tab_links, tab_links_live, _ = load_tab_links(zh, pages)
+    covered, layered, na, uncovered = classify_checks(pages, checks, tab_links)
+    total = len(checks)
     print(
         f"\n== 覆盖检查：{total} 项 = 直接 {len(covered)} + 分层 {len(layered)} + N/A {len(na)} + 未覆盖 {len(uncovered)} =="
     )
@@ -337,6 +402,11 @@ def main():
     for c, reason in na:
         print(f"  N/A {c['zh_page']}: {c['direction']} en:{c['en_target']}（{reason}）")
 
+    self_missing = self_entry_missing(pages, tab_links_live)
+    print(f"\n== 自身条目检查：已挂 Tab 但未被列出 {len(self_missing)} 页 ==")
+    for t in self_missing:
+        print(f"  缺自身条目 {t}（挂 {'、'.join(sorted(pages[t]['tabs']))}）")
+
     mismatches, n_groups = check_splits(en, pages, split_groups)
     print(f"\n== 拆分对应检查：{n_groups} 组，失配 {len(mismatches)} 组 ==")
     for base, problems in mismatches:
@@ -344,7 +414,7 @@ def main():
         for p in problems:
             print(f"    ✗ {p}")
 
-    if uncovered or mismatches:
+    if uncovered or self_missing or mismatches:
         raise SystemExit(1)
 
 

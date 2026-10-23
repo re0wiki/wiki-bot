@@ -266,3 +266,49 @@ def test_append_candidates_two_hop():
     tab_links = {"Tab/S2": {"动画:第二季", "动画:第49集"}}
     cands = ts.append_candidates("P", pages, tab_links)
     assert cands == ["Tab/Extra", "Tab/S2"]
+
+
+# region 占位注释激活
+EX_TAB = """{{Tab
+|[[小说:狮子王所见之梦/梗概|Ex1 狮子王所见之梦]]
+|[[小说:绯色姬谭/梗概|Ex5 绯色姬谭]]
+<!--|[[小说:劍鬼戰歌/梗概|Ex6 劍鬼戰歌]]-->
+}}<noinclude>[[Category:分页模板]]</noinclude>"""
+
+
+def test_activate_placeholder_redirect_target():
+    """占位目标经重定向归一后存在 → 去注释并改指终态，显示文本保留。"""
+    out, activated = ts.activate_placeholders(
+        EX_TAB, {"小说:劍鬼戰歌/梗概": "小说:剑鬼战歌/梗概"}
+    )
+    assert activated == ["小说:剑鬼战歌/梗概"]
+    assert "|[[小说:剑鬼战歌/梗概|Ex6 劍鬼戰歌]]\n" in out
+    assert "<!--" not in out.split("}}")[0]
+
+
+def test_activate_placeholder_redlink_stays():
+    """目标不存在 → 占位保持注释，逐字节不动。"""
+    out, activated = ts.activate_placeholders(EX_TAB, {})
+    assert activated == [] and out == EX_TAB
+
+
+def test_activate_placeholder_with_note_prefix():
+    """SOP 的 <!--暂未搬运--> 前注形态。"""
+    src = "{{Tab\n|[[小说:1卷/梗概|1]]\n<!--暂未搬运--><!--|[[小说:2卷/梗概|2]]-->\n}}"
+    out, activated = ts.activate_placeholders(src, {"小说:2卷/梗概": "小说:2卷/梗概"})
+    assert activated == ["小说:2卷/梗概"]
+    assert out == "{{Tab\n|[[小说:1卷/梗概|1]]\n|[[小说:2卷/梗概|2]]\n}}"
+
+
+def test_activate_placeholder_no_display():
+    src = "{{Tab\n<!--|[[小说:9卷/梗概]]-->\n}}"
+    out, activated = ts.activate_placeholders(src, {"小说:9卷/梗概": "小说:9卷/梗概"})
+    assert out == "{{Tab\n|[[小说:9卷/梗概]]\n}}"
+    assert activated == ["小说:9卷/梗概"]
+
+
+def test_activate_placeholder_non_entry_comment_untouched():
+    """含链接的说明注释不是占位行，不激活。"""
+    src = "{{Tab\n<!-- 注：[[小说:X]] 待议 -->\n|[[小说:Y|Y]]\n}}"
+    out, activated = ts.activate_placeholders(src, {"小说:X": "小说:X"})
+    assert activated == [] and out == src
