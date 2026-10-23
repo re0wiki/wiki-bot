@@ -87,8 +87,6 @@ user_fixes["misc"] = base | {
         ("其[他它她]", "其他"),  # 用字归一（非译名，不属 translation fix）
         ("“", "「"),
         ("”", "」"),
-        ("【", "『"),
-        ("】", "』"),
         (r"(?<!==)\s*\n==", r"\n\n=="),
         (r"==\n\s*", r"==\n"),
         (r"\n{3,}", r"\n\n"),
@@ -275,7 +273,10 @@ def split_crammed_params(m: re.Match) -> str:
 user_fixes["para"] = base | {
     "generator": generator_more,
     "replacements": [
-        (rf"\|\s*{o}\s*=", f"| {n} =")
+        # 行首锚定：信息框参数行以 | 开头。不锚定时 tabber 分隔行 `|-| Light Novel =`
+        # 中的 `| Light Novel =` 子串会被打成 `|-| novel =`，产出的 novel/comic
+        # 不在 gallery fix 表内、无人兜底（2026-10 实证 33 处残留）。
+        (rf"(?m)^\|[ \t]*{o}[ \t]*=", f"| {n} =")
         for o, n in [
             ("Name", "name"),
             ("Image", "image"),
@@ -403,21 +404,32 @@ user_fixes["gallery"] = base | {
             ("Anime", "动画"),
             ("Season 1", "第一季"),
             ("Season 2", "第二季"),
+            ("Season 3", "第三季"),
+            ("Season 4", "第四季"),
+            ("Memory Snow OVA", "OVA1"),
+            ("Bonds of Ice OVA", "OVA2"),
             ("Light Novels?", "小说"),
             ("Main Series", "正传"),
             ("Tanpenshuu", "月刊CA短篇"),
             ("Side Content", "特典SS"),
-            ("Side Stories", "特典SS"),
+            ("Re:Zero Ex", "EX外传"),
+            ("Bonds of Ice", "冰结之绊"),
+            ("Comic Alive Covers", "月刊CA封面"),
             ("Manga", "漫画"),
-            ("Daisshou", "第1章"),
-            ("Dainishou", "第2章"),
+            (r"Arc (\d+)", r"第\1章"),
+            ("Love Song", "剑鬼恋歌"),
             ("Daisanshou", "第3章"),
-            ("Daiyonshou", "第4章"),
             ("Anthology", "官方同人精选集"),
             ("Games?", "游戏"),
-            ("-Infinity", "INFINITY"),
+            ("Infinity", "INFINITY"),
+            ("Death or Kiss", "DEATH OR KISS"),
+            ("Witch's Re:surrection", "Re:Zero Witch’s Re:surrection"),
+            ("Game CG", "游戏CG"),
+            ("Story", "剧情CG"),
+            ("Character Designs", "角色设计"),
             ("The Prophecy of the Throne", "虚假的王选候补"),
             ("Forbidden Book and the Mysterious Spirit", "禁书与谜之精灵"),
+            ("Others", "其他"),
             (r"Misc(ellaneous|\.)?", "其他"),
         ]
     ],

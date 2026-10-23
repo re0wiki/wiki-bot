@@ -53,6 +53,21 @@ def test_similar_param_names_untouched():
     assert apply_para(src) == src
 
 
+def test_tabber_separator_untouched():
+    # tabber 分隔行 `|-| X =` 形似参数行但非信息框参数，不得归一
+    # （误伤实证：|-| Light Novel = 曾被打成 |-| novel = 并残留至今）
+    src = "<tabber>\n|-| Light Novel =\nfoo.png\n|-| Manga =\nbar.png\n</tabber>\n"
+    assert apply_para(src) == src
+
+
+def test_param_names_still_normalized():
+    src = "{{Infobox character\n| Light Novel = [[小说:1卷]]\n| Manga = x\n}}\n"
+    assert (
+        apply_para(src)
+        == "{{Infobox character\n| novel = [[小说:1卷]]\n| comic = x\n}}\n"
+    )
+
+
 # ------------------------------------------------------------ 多语言堆积参数拆分
 
 

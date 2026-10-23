@@ -48,6 +48,7 @@ jobs: list[Job] = [
     # move 完成——条目可能为同周期待归位页，下轮自动消失，持续存在才需人工
     Job("category", ["re0_category"]),
     # 整理新搬运页面
+    Job("tab-sync", ["re0_tab_sync"]),
     Job("fix:date", ["replace", "-automaticsummary", "-fix:date"]),
     Job("fix:gallery", ["replace", "-automaticsummary", "-fix:gallery"]),
     Job("fix:heading", ["replace", "-automaticsummary", "-fix:heading"]),

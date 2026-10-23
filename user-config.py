@@ -155,7 +155,7 @@ noisysleep = 2
 # Non-Wikimedia wikis may or may not support this feature; for families
 # that do not use it, it is recommended to set minthrottle (above) to
 # at least 1 second.
-maxlag = 5
+write_maxlag = 5
 
 # Maximum of pages which can be retrieved at one time from wiki server.
 # -1 indicates limit by api restriction

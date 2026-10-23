@@ -209,11 +209,6 @@ ENTRIES: list[Entry] = [
         en="Juukulius",
     ),
     Entry(
-        std="希斯尼娅",
-        ja="シトニア·フェザーラン",
-        en="Sithonia",
-    ),
-    Entry(
         std="帕克",
         ja="パック",
         en="Puck",
@@ -1458,6 +1453,13 @@ ENTRIES: list[Entry] = [
             "罗[丝兹斯]瓦尔",
         ),
         note="全名 罗兹瓦尔·L.梅札斯",
+    ),
+    Entry(
+        std="罗兹瓦尔邸",
+        ja="ロズワール邸",
+        en="Roswaal Manor",
+        aliases=("罗兹瓦尔宅邸",),
+        note="术语；罗兹瓦尔的宅邸（新旧两座）",
     ),
     Entry(
         std="帕尔米拉",
@@ -3106,6 +3108,7 @@ ENTRIES: list[Entry] = [
         std="克拉莉莎",
         ja="クラリッサ",
         en="Clarissa",
+        aliases=("克拉丽莎",),
         note="角色",
     ),
     Entry(
@@ -3196,6 +3199,7 @@ ENTRIES: list[Entry] = [
         std="多萝蒂娅",
         ja="ドロテア",
         en="Dorothea",
+        aliases=("多萝西娅",),
         note="角色；全名 多萝蒂娅·费瑟兰",
     ),
     Entry(
@@ -3220,6 +3224,7 @@ ENTRIES: list[Entry] = [
         std="希多妮娅",
         ja="シトニア",
         en="Sithonia",
+        aliases=("希斯尼娅",),
         note="角色；全名 希多妮娅·费瑟兰",
     ),
     Entry(
@@ -3238,6 +3243,7 @@ ENTRIES: list[Entry] = [
         std="希鲁蒂娅",
         ja="ヒルデア",
         en="Hildea",
+        aliases=("希尔德娅",),
         note="角色；全名 希鲁蒂娅·费瑟兰",
     ),
     Entry(
@@ -3472,6 +3478,7 @@ ENTRIES: list[Entry] = [
         std="莎莉娅",
         ja="サリア",
         en="Saria",
+        aliases=("赛雷娅", "赛蕾娅"),
         note="角色；全名 莎莉娅·费瑟兰",
     ),
     Entry(

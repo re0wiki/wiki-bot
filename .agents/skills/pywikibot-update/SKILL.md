@@ -23,7 +23,6 @@ version: 1.0.0
 - `textlib.py`：`replaceLanguageLinks` 的 CategorySelect 分支加守卫，模板页（含子页）改走 noinclude 感知分支——否则 `getCategoryLinks` 不识别 `<noinclude>` 包裹，会把分类从 noinclude 里拽出来放到页尾（Fandom 有 CategorySelect 扩展，cosmetic_changes 的 standardizePageFooter 必踩）。
 - `_filepage.py`：下载 URL 加 `&format=original`，否则 Fandom API 返回 webp。同时必须去掉上游的 suffix 调整：它从 URL 路径取扩展名，而 Fandom URL 以 `/revision/latest` 结尾（无扩展名），留着会把下载文件的真扩展名剥掉（Wikimedia 的 URL 路径以文件名结尾，所以上游留着没事）。
 - `noreferences.py`：zh 参考资料段标题首选「注释」；预载带 `pageprops`——`skip_page` 对每页调 `isDisambig()`（`use_disambigs=False`）读 `prop=pageprops`，默认预载不含它导致每页一次查询（全扫 ~18 min），带上后随内容同批缓存（~25 s）。背景：本站按对齐 en 的策略不加 `__DISAMBIG__`（en 不加，zh 单加会破坏 interwiki；用户尝试给 en 加被回退），该检查恒为空——故选零成本的语义保留方案而非改 `use_disambigs=None` 的假设性跳过。
-- `scripts/redirect.py`：`fix_moved_broken_redirects` 加移动日志环检测（`seen` 集合沿递归传递）——上游对 `moved_target()` 链的递归无环检测，A↔B 往返移动且两页均不存在时无限递归直至 RecursionError。
 - `scripts/listpages.py`：`-notitle`（含 `-format:` 空值）抑制标题后 `treat()` 不再 pop 空 `output_list`——上游 bug：非 preloading 且无 `-tofile` 时逐页 `pop()`，首页即 IndexError 崩溃。
 - `pagegenerators/_factory.py`：恢复多个 `-start` 的并集语义。上游 fa0c6f6c7（T425882，11.3 引入 `-until`）把 `-start` 改为惰性合并进单个 `_allpages_args`，导致多个 `-start` 只有第一个命名空间生效（jobs 的 `starts.py` 全依赖多 `-start`）。补丁在再遇 `-start` 时把挂起的参数实例化为独立 allpages 生成器，`-start`+`-until` 配对行为不变。
 - `site/_decorators.py`：`need_right` 权限检查失败且当前为匿名会话（`user() is None`）但配置了账号时，先 `_relogin()` 重登一次再复查，复查仍失败才抛 `UserRightsError`。覆盖「进程启动后首次取 userinfo 时会话已被服务端作废」的盲区——该场景下缓存里从未有过登录态，`api._requests` 的 userinfo 不符自愈（要求 `user() is not None`）不会触发，会直接以 `User "None"` 抛错退出。重登失败则 `NoUsernameError` 照常传播（响亮失败）。
@@ -39,6 +38,7 @@ git rebase upstream/master main
 
 - 冲突通常很少：定制集中在上游很少改动的区域。定制涉及的文件以上方清单为准；若清单里的文件在上游侧有新提交，rebase 时重点核对该定制是否仍成立（语义冲突不一定产生文本冲突）。
 - `GIT_EDITOR=true git rebase --continue` 避免弹编辑器。
+- 嵌套 submodule `scripts/i18n` 的 gitlink 随上游升级：gerrit 直连可能 403，走 GitHub 镜像同步——`git -C scripts/i18n fetch https://github.com/wikimedia/pywikibot-i18n.git master && git -C scripts/i18n checkout <目标 commit>`（目标 commit 用 `git ls-tree upstream/master scripts/i18n` 查；镜像 HEAD 通常就是它）。
 
 ## 验证（比冲突解决更重要）
 
@@ -50,6 +50,10 @@ git range-diff <old-base>..backup/pre-rebase-xxx upstream/master..main
 # 2. 提交级与文件级核对：定制提交数、触及文件应与上方清单一一对应
 git log upstream/master..main --oneline
 git diff upstream/master...main --stat
+
+# 3. regex 替换不变量：全库 `^import re$` 应只剩 setup.py；
+#    上游新增/改动的文件若引入新的 `^import re$`，一并换掉并折进 regex 提交
+grep -rln '^import re$' --include='*.py' . | grep -v scripts/i18n
 ```
 
 再按上方清单逐条抽查定制点仍在（每条定制都写了标志代码，如 keep 标签、`format=original` 等，grep 即可）。
@@ -61,15 +65,29 @@ uv sync                                                          # editable 重�
 uv run python src/tools/verify_wiki_access.py   # 期望 ALL CHECKS PASSED
 ```
 
-冒烟测试可直接在仓库根跑 `uv run python -c "import pywikibot"`；设 `PYWIKIBOT_NO_USER_CONFIG=1` 可跳过配置加载。
+import 冒烟时留意新版本弃用的配置变量警告（如 11.8 起 `maxlag`→`write_maxlag`），同步改主仓 `user-config.py` 并一起提交。冒烟测试可直接在仓库根跑 `uv run python -c "import pywikibot"`；设 `PYWIKIBOT_NO_USER_CONFIG=1` 可跳过配置加载。
+
+## 变更总结
+
+更新完成后向用户总结上游主要变更：
+
+- 版本亮点：ROADMAP.rst 只保留当前版本，历史版本亮点从发布提交处取——`git log <old-base>..upstream/master --grep='publish Pywikibot'` 找提交，`git -C pwb show <commit>:ROADMAP.rst` 读 Release 小节。
+- 提交主题聚类：`git -C pwb log <old-base>..upstream/master --format='%s'`，按 area 前缀分桶归纳主题。
+- 明确标注对本仓库有适配义务的项（配置弃用、API 改名、fork 补丁被上游覆盖等）。
 
 ## 收尾
 
 ```bash
-git -C pwb push --force-with-lease origin main   # rebase 必改写历史
-# 主仓：uv.lock 里 pywikibot 版本号也会变，一起提交
+# 主仓提交（uv.lock 里 pywikibot 版本号随 submodule 一起变）：
 git add pwb uv.lock
 git commit -m "chore: update pywikibot"
 ```
 
-确认线上正常后再删 backup 分支：`git -C pwb branch -D backup/pre-rebase-xxx`。
+push 及之后均由用户手动执行，agent 不执行：
+
+```bash
+git -C pwb push --force-with-lease origin main   # rebase 必改写历史
+git push
+# 确认线上正常后删 backup 分支：
+git -C pwb branch -D backup/pre-rebase-xxx
+```
