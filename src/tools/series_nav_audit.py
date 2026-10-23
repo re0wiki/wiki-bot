@@ -13,6 +13,10 @@ zh 侧的 Tab 覆盖不会自动跟随——本工具产出待办清单。用法
 
 注意：en→zh 映射用 zh 页源码的 [[en:…]] 建立（langlinks 派生表不可靠）；
 参数值匹配用 [ \\t]* 而非 \\s*（\\s 吃换行，空值行会吞下一行）。
+子页（zh 标题与 en 链接均含 /）自身 en 页无 prev/next 时，取 en 根页
+（主页面）的 prev/next、目标加相同子页后缀——短篇集第14卷/梗概 的链 =
+短篇集卷链 + /Synopsis；自身带 prev/next 的子页（合集故事子页的故事链）
+仍以自身为准。
 """
 
 import re
@@ -130,9 +134,47 @@ def scan_zh(site):
     return pages, en2zh, split_groups
 
 
+def _prevnext_pairs(content: str) -> list[tuple[str, str]]:
+    """en 源码提取 (direction, en 目标) 对；空值/非链接值跳过。"""
+    pairs = []
+    for mm in RE_PREVNEXT.finditer(content):
+        m = RE_LINK.search(mm.group(2))
+        if m:
+            pairs.append((mm.group(1).lower(), norm(m.group(1))))
+    return pairs
+
+
+def subpage_root(en_link: str) -> tuple[str, str]:
+    """en 子页链接拆为 (根页, 子页后缀)。调用方保证 en_link 含 /。"""
+    root = en_link.split("/", 1)[0]
+    return root.strip(), en_link[len(root) :]
+
+
+def iter_prevnext(pages, en_content, resolve):
+    """逐页 yield (zh_title, direction, en_target)。子页派生规则见模块 docstring。"""
+    subpages = {
+        t: subpage_root(i["en"])
+        for t, i in pages.items()
+        if "/" in t and "/" in i["en"]
+    }
+    for zh_title, info in pages.items():
+        if not info["en"]:
+            continue
+        content = en_content.get(resolve(info["en"]))
+        pairs = _prevnext_pairs(content) if content is not None else []
+        suffix = ""
+        if not pairs and zh_title in subpages:
+            root, suffix = subpages[zh_title]
+            content = en_content.get(resolve(root))
+            pairs = _prevnext_pairs(content) if content is not None else []
+        for direction, target in pairs:
+            yield zh_title, direction, target + suffix
+
+
 def collect_checks(en_site, pages, en2zh):
     """从 en 页源码提取 prev/next 目标，逐条反查 zh 对应页。"""
-    en_content, en_redir, en_missing = batch_query(en_site, set(en2zh))
+    sub_roots = {subpage_root(i["en"])[0] for i in pages.values() if "/" in i["en"]}
+    en_content, en_redir, en_missing = batch_query(en_site, set(en2zh) | sub_roots)
 
     def resolve(t):
         return en_redir.get(t, t)
@@ -140,28 +182,17 @@ def collect_checks(en_site, pages, en2zh):
     en2zh_r = {resolve(k): v for k, v in en2zh.items()}
 
     checks = []
-    for zh_title, info in pages.items():
-        if not info["en"]:
-            continue
-        content = en_content.get(resolve(info["en"]))
-        if content is None:
-            continue
-        for mm in RE_PREVNEXT.finditer(content):
-            m = RE_LINK.search(mm.group(2))
-            if not m:  # 空值/非链接值
-                continue
-            en_target = norm(m.group(1))
-            checks.append(
-                {
-                    "zh_page": zh_title,
-                    "direction": mm.group(1).lower(),
-                    "en_target": en_target,
-                    "zh_target": en2zh_r.get(resolve(en_target))
-                    or en2zh_r.get(en_target),
-                    "en_redlink": en_target in en_missing
-                    or resolve(en_target) in en_missing,
-                }
-            )
+    for zh_title, direction, en_target in iter_prevnext(pages, en_content, resolve):
+        checks.append(
+            {
+                "zh_page": zh_title,
+                "direction": direction,
+                "en_target": en_target,
+                "zh_target": en2zh_r.get(resolve(en_target)) or en2zh_r.get(en_target),
+                "en_redlink": en_target in en_missing
+                or resolve(en_target) in en_missing,
+            }
+        )
     # 不在首批查询集内的 en 目标补一轮重定向归一后重查
     unresolved = {
         c["en_target"] for c in checks if c["zh_target"] is None and not c["en_redlink"]

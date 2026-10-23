@@ -11,7 +11,9 @@
   显示文本可推导。候选模板 = 本页所挂 Tab ∪ 两跳父页的 Tab，唯一命中才执行。
 
 审计逻辑复用 src/tools/series_nav_audit.py；规则与背景见
-.agents/skills/series-nav-sync/SKILL.md。
+.agents/skills/series-nav-sync/SKILL.md。子页（如 小说:短篇集第14卷/梗概）
+的 prev/next 由审计层从 en 主页面派生（目标加相同子页后缀），本脚本
+无需特判——邻居即邻居子页，挂载/补条目规则同主页面。
 """
 
 import re
