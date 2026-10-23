@@ -128,3 +128,25 @@ def test_iter_root_without_prevnext_no_checks():
 def test_iter_no_en_link_skipped():
     pages = _pages(("小说:原创页/梗概", ""))
     assert list(sna.iter_prevnext(pages, {}, IDENTITY)) == []
+
+
+# region link_sets / self_entry_missing
+def test_link_sets_live_excludes_comments():
+    """活链接集剥除注释（占位暂存条目不算列出）；全量集含注释。"""
+    src = (
+        "{{Tab\n|[[小说:1卷|1]]\n<!--|[[小说:2卷|2]]-->\n<!-- 说明 [[小说:3卷]] -->\n}}"
+    )
+    all_links, live = sna.link_sets(src)
+    assert all_links == {"小说:1卷", "小说:2卷", "小说:3卷"}
+    assert live == {"小说:1卷"}
+
+
+def test_self_entry_missing():
+    pages = {
+        "小说:1卷": {"en": "", "tabs": {"LN"}},
+        "小说:2卷": {"en": "", "tabs": {"LN"}},
+        "小说:3卷": {"en": "", "tabs": set()},  # 未挂 Tab 不参与
+    }
+    live = {"LN": {"小说:1卷"}}
+    assert sna.self_entry_missing(pages, live) == ["小说:2卷"]
+    assert sna.self_entry_missing(pages, live, {"小说:2卷"}) == []

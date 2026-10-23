@@ -9,6 +9,11 @@
   目标与锚同词干同词尾（拆分篇词尾归一后比较，目标本身不得是拆分篇）、序号
   方向与链一致、锚行全模板唯一、所在块无注释、块内有同词干数字显示条目佐证
   显示文本可推导。候选模板 = 本页所挂 Tab ∪ 两跳父页的 Tab，唯一命中才执行。
+- 激活占位：Tab 模板里整行注释包裹的占位条目（「暂未搬运」暂存写法），其目标
+  经重定向归一后已是现存内容页 → 去注释并改指终态标题（显示文本保留）。
+- 自身条目兜底：已挂 Tab 但不在其活链接集（剥除注释）→ 以自身检查的链上邻居
+  为锚、方向取反走补条目；锚定位机械不了进报告。覆盖挂载/既挂页条目无人补
+  的情形（邻居检查被全量链接集的注释占位判为已覆盖、en 链缺环等）。
 
 审计逻辑复用 src/tools/series_nav_audit.py；规则与背景见
 .agents/skills/series-nav-sync/SKILL.md。子页（如 小说:短篇集第14卷/梗概）
@@ -36,6 +41,7 @@ from src.tools.series_nav_audit import (
     load_tab_links,
     norm,
     scan_zh,
+    self_entry_missing,
 )
 
 SUMMARY = "机器人：同步系列导航 Tab"
@@ -58,6 +64,15 @@ RE_NUM_ENTRY = re.compile(
 )
 RE_TAB_OPEN = re.compile(r"^\s*\{\{\s*Tab\b")
 RE_TAB_CLOSE = re.compile(r"^\s*\}\}")
+# 占位注释条目：整行全为注释、恰好一个注释包裹单条目
+# （|[[X|D]] 或 |[[X]]，可带 <!--暂未搬运--> 类前注）
+RE_PLACEHOLDER = re.compile(
+    r"^[ \t]*(?:<!--[^\[>]*?-->[ \t]*)*"
+    r"<!--(?P<entry>\|\[\[(?P<link>[^\]|]+)(?:\|(?P<disp>[^\]]*))?\]\])-->"
+    r"[ \t]*$"
+)
+# 自身条目兜底的方向取反：P.previous=Q ⇒ 从锚 Q 看 P 是 next
+INVERT_DIRECTION = {"previous": "next", "next": "previous"}
 
 # classify_checks 的未覆盖原因文案（同源文件内的字面量，改动需同步）
 REASON_NO_TAB = "页面无 Tab"
@@ -317,16 +332,78 @@ def do_append(
     return None
 
 
-def process(uncovered: list, pages: dict, tab_links: dict, zh, write: bool):
-    """一轮未覆盖清单的计划与执行，返回 (遗留报告项, 成功编辑数)。"""
-    mount_groups: dict[str, list] = defaultdict(list)
-    appends = []
-    for c, reason in uncovered:
-        if reason == REASON_NO_TAB:
-            mount_groups[c["zh_page"]].append(c)
-        else:
-            appends.append(c)
+def activate_placeholders(source: str, live_targets: dict) -> tuple[str, list[str]]:
+    """占位注释条目的目标已存在时激活为活条目（去注释、改指终态，显示文本保留）。
 
+    live_targets: 占位链接（已 norm）-> 现存终态标题。返回 (新源码, 激活标题列表)。
+    """
+    lines = source.splitlines(keepends=True)
+    activated = []
+    for i, line in enumerate(lines):
+        m = RE_PLACEHOLDER.match(line.rstrip("\r\n"))
+        if not m:
+            continue
+        final = live_targets.get(norm(m["link"]))
+        if final is None:
+            continue
+        entry = (
+            f"|[[{final}|{m['disp']}]]" if m["disp"] is not None else f"|[[{final}]]"
+        )
+        lines[i] = entry + ("\n" if line.endswith("\n") else "")
+        activated.append(final)
+    return "".join(lines), activated
+
+
+def activatable_targets(tab_src: dict, pages: dict, zh) -> dict:
+    """全部占位注释链接中目标已存在的 {链接: 终态标题}（重定向归一后判定）。"""
+    links = {
+        norm(m["link"])
+        for src in tab_src.values()
+        for line in src.splitlines()
+        if (m := RE_PLACEHOLDER.match(line))
+    }
+    if not links:
+        return {}
+    _, redirs, missing = batch_query(zh, links)
+    return {
+        link: final
+        for link in links
+        if (final := redirs.get(link, link)) not in missing and final in pages
+    }
+
+
+def do_activate(zh, tab: str, live_targets: dict, write: bool) -> list[str]:
+    """激活 Tab/<tab> 的占位条目。返回激活的终态标题列表（空 = 无变更）。"""
+    page = pwb.Page(zh, f"Template:Tab/{tab}")
+    new, activated = activate_placeholders(page.text, live_targets)  # 新鲜读取
+    if not activated:
+        return []
+    pwb.info(f"Tab/{tab}: 激活占位 {'、'.join(activated)}")
+    if write and not config.simulate:
+        page.text = new
+        page.save(summary=SUMMARY, bot=True)
+    return activated
+
+
+def activate_step(tab_src: dict, pages: dict, zh, write: bool) -> tuple[int, set[str]]:
+    """激活占位步。返回 (编辑数, 激活的终态标题集)。"""
+    live_targets = activatable_targets(tab_src, pages, zh)
+    edits, resolved = 0, set()
+    for full in sorted(tab_src):
+        # 预筛用子串：RE_PLACEHOLDER 是行锚定正则（^/$ 无 MULTILINE），整源 search 不命中
+        if "<!--" not in tab_src[full]:
+            continue
+        activated = do_activate(
+            zh, full.partition("Template:Tab/")[2], live_targets, write
+        )
+        if activated:
+            edits += 1
+            resolved.update(activated)
+    return edits, resolved
+
+
+def mount_step(mount_groups: dict, pages: dict, tab_links: dict, zh, write: bool):
+    """挂载步。返回 (遗留报告项, 编辑数)。"""
     leftovers: list[str] = []
     edits = 0
     for title, cs in sorted(mount_groups.items()):
@@ -339,39 +416,129 @@ def process(uncovered: list, pages: dict, tab_links: dict, zh, write: bool):
             edits += 1
         else:
             leftovers.append(f"[[{title}]]：挂 {'、'.join(tabs)} —— {why}")
+    return leftovers, edits
+
+
+def append_entry(zh, c: dict, pages: dict, tab_links: dict, write: bool) -> str | None:
+    """补单条检查目标条目。返回 None = 成功/干跑，否则完整报告项。"""
+    zh_page, target = c["zh_page"], c["zh_target"]
+    label = f"[[{zh_page}]] → [[{target}]]：补条目 —— "
+    if _series_key(pages[zh_page]["en"]) != _series_key(c["en_target"]):
+        return label + "跨系列边界（en 标题系列键不一致），需人工判定归属 Tab"
+    cands = append_candidates(zh_page, pages, tab_links)
+    if not cands:
+        return label + "本页与父页均无 Tab"
+    srcs, _, _ = batch_query(zh, {f"Template:Tab/{t}" for t in cands})
+    tab, why = pick_template(
+        {
+            t: src
+            for t in cands
+            if (src := srcs.get(norm(f"Template:Tab/{t}"))) is not None
+        },
+        zh_page,
+        target,
+        c["direction"],
+    )
+    if tab is None:
+        assert why is not None  # pick_template 未命中必带原因
+        return label + why
+    why = do_append(zh, tab, zh_page, target, c["direction"], write)
+    if why is not None:
+        return f"[[{zh_page}]] → [[{target}]]：补 Tab/{tab} —— {why}"
+    return None
+
+
+def append_step(appends: list, pages: dict, tab_links: dict, zh, write: bool):
+    """补条目步。返回 (遗留报告项, 编辑数, 补入目标集)。"""
+    leftovers: list[str] = []
+    edits = 0
+    resolved: set[str] = set()
     for c in appends:
-        zh_page, target = c["zh_page"], c["zh_target"]
-        label = f"[[{zh_page}]] → [[{target}]]：补条目 —— "
-        if _series_key(pages[zh_page]["en"]) != _series_key(c["en_target"]):
-            leftovers.append(
-                label + "跨系列边界（en 标题系列键不一致），需人工判定归属 Tab"
-            )
-            continue
-        cands = append_candidates(zh_page, pages, tab_links)
-        if not cands:
-            leftovers.append(label + "本页与父页均无 Tab")
-            continue
-        srcs, _, _ = batch_query(zh, {f"Template:Tab/{t}" for t in cands})
-        tab, why = pick_template(
-            {
-                t: src
-                for t in cands
-                if (src := srcs.get(norm(f"Template:Tab/{t}"))) is not None
-            },
-            zh_page,
-            target,
-            c["direction"],
-        )
+        leftover = append_entry(zh, c, pages, tab_links, write)
+        if leftover is None:
+            edits += 1
+            resolved.add(c["zh_target"])
+        else:
+            leftovers.append(leftover)
+    return leftovers, edits, resolved
+
+
+def append_self_entry(zh, p: str, anchors: list, zh_tabs: list, write: bool):
+    """缺自身条目页以链上邻居为锚反向补条目。返回 None = 成功/干跑，否则原因。"""
+    if not anchors:
+        return "无链上邻居可锚定"
+    srcs, _, _ = batch_query(zh, {f"Template:Tab/{t}" for t in zh_tabs})
+    srcs = {
+        t: src
+        for t in zh_tabs
+        if (src := srcs.get(norm(f"Template:Tab/{t}"))) is not None
+    }
+    reason = "候选模板无唯一锚定位"
+    for anchor, direction in anchors:
+        tab, why = pick_template(srcs, anchor, p, direction)
         if tab is None:
             assert why is not None  # pick_template 未命中必带原因
-            leftovers.append(label + why)
+            reason = why
             continue
-        why = do_append(zh, tab, zh_page, target, c["direction"], write)
+        why = do_append(zh, tab, anchor, p, direction, write)
+        if why is None:
+            return None
+        reason = why
+    return reason
+
+
+def self_entry_step(
+    pages: dict, checks: list, tab_links_live: dict, resolved: set, zh, write: bool
+):
+    """自身条目兜底步：邻居检查被注释占位判为已覆盖/en 链缺环等情形下条目无人补，反向锚定补。"""
+    leftovers: list[str] = []
+    edits = 0
+    for p in self_entry_missing(pages, tab_links_live, resolved):
+        anchors = [
+            (c["zh_target"], INVERT_DIRECTION[c["direction"]])
+            for c in checks
+            if c["zh_page"] == p and c["zh_target"]
+        ]
+        why = append_self_entry(zh, p, anchors, sorted(pages[p]["tabs"]), write)
         if why is None:
             edits += 1
+            resolved.add(p)
         else:
-            leftovers.append(f"[[{zh_page}]] → [[{target}]]：补 Tab/{tab} —— {why}")
+            leftovers.append(f"[[{p}]]：缺自身条目 —— {why}")
     return leftovers, edits
+
+
+def process(
+    uncovered: list,
+    checks: list,
+    pages: dict,
+    tab_links: dict,
+    tab_links_live: dict,
+    tab_src: dict,
+    zh,
+    write: bool,
+):
+    """一轮的计划与执行：激活占位 → 挂载 → 补条目 → 自身条目兜底。
+
+    返回 (遗留报告项, 成功编辑数)。
+    """
+    mount_groups: dict[str, list] = defaultdict(list)
+    appends = []
+    for c, reason in uncovered:
+        if reason == REASON_NO_TAB:
+            mount_groups[c["zh_page"]].append(c)
+        else:
+            appends.append(c)
+
+    edits, resolved = activate_step(tab_src, pages, zh, write)
+    leftovers, n = mount_step(mount_groups, pages, tab_links, zh, write)
+    edits += n
+    items, n, done = append_step(appends, pages, tab_links, zh, write)
+    leftovers += items
+    edits += n
+    resolved |= done
+    items, n = self_entry_step(pages, checks, tab_links_live, resolved, zh, write)
+    return leftovers + items, edits + n
 
 
 def build_report(leftovers: list[str], mismatches: list) -> str:
@@ -380,9 +547,9 @@ def build_report(leftovers: list[str], mismatches: list) -> str:
         "本页由系列导航同步任务自动维护（有变更才编辑）。",
         "",
         (
-            "机械可判定的挂载/补条目已自动完成（同系列键邻居 Tab 全票一致才挂；"
-            "锚定位唯一且显示文本可推导才补）。以下需人工处理，"
-            "处理规则见系列导航同步 SOP。"
+            "机械可判定的挂载/补条目/占位激活已自动完成（同系列键邻居 Tab 全票"
+            "一致才挂；锚定位唯一且显示文本可推导才补；占位注释目标已存在即激活）。"
+            "以下需人工处理，处理规则见系列导航同步 SOP。"
         ),
         "",
         "== 未覆盖（需人工） ==",
@@ -409,13 +576,16 @@ if __name__ == "__main__":
         write = round_no <= MAX_ROUNDS
         pages, en2zh, split_groups = scan_zh(zh)
         checks = collect_checks(en, pages, en2zh)
-        tab_links = load_tab_links(zh, pages)
+        tab_links, tab_links_live, tab_src = load_tab_links(zh, pages)
         *_, uncovered = classify_checks(pages, checks, tab_links)
+        self_missing = self_entry_missing(pages, tab_links_live)
+        activatable = activatable_targets(tab_src, pages, zh)
         pwb.info(
-            f"第 {round_no} 轮：未覆盖 {len(uncovered)} / 检查 {len(checks)}"
+            f"第 {round_no} 轮：未覆盖 {len(uncovered)} / 检查 {len(checks)}，"
+            f"缺自身条目 {len(self_missing)}，占位可激活 {len(activatable)}"
             f"{'' if write else '（复核，不再写入）'}"
         )
-        if not uncovered:
+        if not uncovered and not self_missing and not activatable:
             leftovers = []
             break
         for c, reason in uncovered:
@@ -423,7 +593,20 @@ if __name__ == "__main__":
                 f"  未覆盖 {c['zh_page']}: {c['direction']} "
                 f"en:{c['en_target']} -> zh:{c['zh_target']}（{reason}）"
             )
-        leftovers, edits = process(uncovered, pages, tab_links, zh, write)
+        for t in self_missing:
+            pwb.info(f"  缺自身条目 {t}")
+        for link, final in activatable.items():
+            pwb.info(f"  占位可激活 {link} -> {final}")
+        leftovers, edits = process(
+            uncovered,
+            checks,
+            pages,
+            tab_links,
+            tab_links_live,
+            tab_src,
+            zh,
+            write,
+        )
         pwb.info(f"第 {round_no} 轮：写入 {edits} 项，遗留 {len(leftovers)} 项")
         if config.simulate or not write or edits == 0:
             break
