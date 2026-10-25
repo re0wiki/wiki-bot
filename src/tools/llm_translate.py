@@ -249,15 +249,29 @@ def cmd_refresh():
 EN_FRAME_TEMPLATES = frozenset({"construction", "parent tab", "references"})
 
 
+def template_line_name(line):
+    if not TEMPLATE_LINE.match(line):
+        return None
+    m = re.match(r"\{\{\s*([^{}|]+)", line)
+    return m.group(1).strip() if m else None
+
+
 def is_en_frame_template(line):
     """en 页首/页尾框架模板；内容模板（Quote、Infobox 等）不在剥离范围内。"""
-    if not TEMPLATE_LINE.match(line):
+    name = template_line_name(line)
+    if name is None:
         return False
-    m = re.match(r"\{\{\s*([^{}|]+)", line)
-    if not m:
-        return False
-    name = m.group(1).strip().casefold()
+    name = name.casefold()
     return name in EN_FRAME_TEMPLATES or "navbox" in name or "navigation" in name
+
+
+def is_zh_frame_template(line):
+    """zh 真正的页首框架（Init/To do/Tab 系）；Quote/Infobox 等属于正文。"""
+    name = template_line_name(line)
+    if name is None:
+        return False
+    name = name.casefold()
+    return name in {"init", "to do", "tab"} or name.startswith("tab/")
 
 
 def split_en_body(en_text):
@@ -283,11 +297,11 @@ def split_en_body(en_text):
 
 
 def split_zh_frame(zh_text):
-    """拆 zh 现文为 (页首模板块, 正文, 页尾语言链接块)。"""
+    """拆 zh 现文为 (真正页首框架, 正文, 页尾语言链接块)；内容模板归入正文。"""
     lines = zh_text.splitlines()
     head, i = [], 0
-    while i < len(lines) and (TEMPLATE_LINE.match(lines[i]) or not lines[i].strip()):
-        if TEMPLATE_LINE.match(lines[i]):
+    while i < len(lines) and (is_zh_frame_template(lines[i]) or not lines[i].strip()):
+        if is_zh_frame_template(lines[i]):
             head.append(lines[i])
         i += 1
     tail = []

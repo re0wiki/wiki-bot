@@ -192,6 +192,30 @@ def test_verify_edit_head_change_fails(tmp_path, monkeypatch):
         lt.verify_edit("角色_测试", META)
 
 
+@pytest.mark.parametrize(
+    ("conv_template", "new_template"),
+    [
+        ("{{Quote|A quote}}", "{{Quote|一句引语}}"),
+        (
+            "{{Infobox character| name = Subaru}}",
+            "{{Infobox character| name = 菜月·昴}}",
+        ),
+    ],
+)
+def test_verify_edit_allows_leading_content_templates(
+    tmp_path, monkeypatch, conv_template, new_template
+):
+    """Quote/Infobox 位于页首也属正文，字段可翻译，不按框架改动拒绝。"""
+    work = make_work(tmp_path, monkeypatch)
+    slug = "角色_测试"
+    (work / f"{slug}.conv.txt").write_text(
+        f"{conv_template}\n新文。\n", encoding="utf-8"
+    )
+    new_text = GOOD_NEW.replace("新文。", f"{new_template}\n新文。")
+    stub_api(monkeypatch, make_rev(101, lt.BOT, new_text))
+    lt.verify_edit(slug, META)
+
+
 def test_verify_edit_language_tail_change_fails(tmp_path, monkeypatch):
     """语言链接尾块独立于正文白名单逐字核验，删一条也不能通过。"""
     work = make_work(tmp_path, monkeypatch)
