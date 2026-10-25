@@ -6,6 +6,7 @@
     uv run python src/tools/llm_translate.py refresh   # 重建选页队列（约 5 分钟，低频）
     uv run python src/tools/llm_translate.py prepare   # 取队首备料
     uv run python src/tools/llm_translate.py publish <slug>  # 基线比对+打标+保存 agent 新源码
+    uv run python src/tools/llm_translate.py republish <slug>  # 在上次发布稿上受控修正
     uv run python src/tools/llm_translate.py done <slug> [理由]  # 核验 wiki 编辑
     uv run python src/tools/llm_translate.py skip <slug> [理由]  # 无需内容编辑（打标记）
 
@@ -13,8 +14,8 @@
     <!-- LLM: revid <en_revid>; <ISO 时间> -->   （已同步到 en 该版本）
 revid 为 - 表示无 en 源（zh 源码无 en 链接，或 en 页不存在）。
 编辑（done）与跳过（skip/auto-skip）统一以标记落账——不怕本地状态丢失，格式变更
-只是普通编辑。本脚本对 wiki 的写入只有两处：publish（agent 新源码的机械保存）
-与 skip/auto-skip 的机械打标记。
+只是普通编辑。本脚本对 wiki 的内容写入统一走 publish/republish；
+skip/auto-skip 只做机械打标记。
 
 运行期数据全部在 .cache/llm_translate/（gitignored，跨运行状态——非 scratch）。
 """
@@ -962,7 +963,7 @@ def write_work_files(best):
         },
     )
     print(f"prepared: {title} (cold {cold[:10]}, en revid {en_revid})")
-    print(f"  slug: {slug}（publish/done/skip 用此名）")
+    print(f"  slug: {slug}（publish/republish/done/skip 用此名）")
     print(
         f"  conv skeleton: {len(conv)} chars（en body {len(body)} chars, "
         f"links: {len(mapping)} resolved, {len(unresolved)} unresolved）"
@@ -1195,7 +1196,8 @@ def verify_edit(slug, meta):
         sys.exit(
             f"同步标记缺失或不匹配（期望 <!-- LLM: revid {want}; ... -->，"
             f"实际 {[f'revid {m[0]}' for m in markers]!r}）——"
-            "标记由 publish 机械打（agent 不手写）：重跑 publish <slug> 再 done"
+            "标记由 publish/republish 机械打（agent 不手写）："
+            "首次发布用 publish，发布后修正用 republish，然后再 done"
         )
     new_text = MARKER_RE.sub("", rev["slots"]["main"]["content"])
 
@@ -1249,7 +1251,7 @@ def verify_edit(slug, meta):
 
 
 def ensure_proofread_cat(text):
-    """正文末尾挂 [[Category:机翻待校对]]（publish 机械处理）：已挂则不动，
+    """正文末尾挂 [[Category:机翻待校对]]（publish/republish 机械处理）：已挂则不动，
     尾部有分类段则并入，否则加在正文末（语言链接块之前）。"""
     if re.search(r"\[\[Category:机翻待校对\]\]", text, re.IGNORECASE):
         return text
@@ -1275,22 +1277,48 @@ def finalize_new_text(new_text, en_revid):
     )
 
 
-def cmd_publish(slug):
-    """发布 agent 的新源码：基线比对 + 登录校验 + 标准摘要 + 机械打标保存。
-
-    agent 把整页新源码写进 work/<slug>.new.txt（不含同步标记）。wiki 最新
-    源码与 prepare 时 zh 现文不一致即响亮中止（不融合——下 tick prepare
-    以最新状态自动重备吸收）。
-    """
-    meta = load_json(WORK / f"{slug}.meta.json", None)
-    if meta is None:
-        sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
+def read_new_text(slug):
     new_file = WORK / f"{slug}.new.txt"
     if not new_file.exists():
         sys.exit(f"找不到 {new_file}——先把整页新源码写入该文件（不含同步标记）")
     new_text = new_file.read_text(encoding="utf-8")
     if not new_text.strip():
         sys.exit(f"空白成稿：{new_file} 不含可发布内容，中止")
+    return new_text
+
+
+def save_publication(slug, meta, new_text, base_revid, tagged):
+    """以 base_revid 为服务端冲突基线保存，并记录实际修订与提交文本哈希。"""
+    import pywikibot
+
+    site = pywikibot.Site("zh", "re0")
+    site.login()
+    assert site.user() == BOT, f"登录账号异常: {site.user()}"
+    page = pywikibot.Page(site, meta["title"])
+    final_text = finalize_new_text(new_text, meta["en_revid"])
+    page.text = final_text
+    page.save(
+        summary=std_summary(meta, tagged),
+        bot=False,
+        minor=False,
+        baserevid=base_revid,
+    )
+    published_revid = page.latest_revision_id
+    if published_revid is None:
+        raise RuntimeError("发布保存成功但未获得实际 revid，拒绝推进发布状态")
+    meta["published"] = {
+        "revid": published_revid,
+        "sha256": hashlib.sha256(final_text.encode("utf-8")).hexdigest(),
+    }
+    save_json(WORK / f"{slug}.meta.json", meta)
+
+
+def cmd_publish(slug):
+    """首次发布：仅允许 wiki 仍逐字等于 prepare 基线。"""
+    meta = load_json(WORK / f"{slug}.meta.json", None)
+    if meta is None:
+        sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
+    new_text = read_new_text(slug)
     live, live_revid, _ = get_page(ZH_API, meta["title"])
     zh_old = (WORK / f"{slug}.zh.txt").read_text(encoding="utf-8")
     if live is None:
@@ -1300,31 +1328,40 @@ def cmd_publish(slug):
             "基线不一致：wiki 最新源码与 prepare 时 zh 现文不符——"
             "中止本轮（下 tick prepare 以最新状态自动重备吸收）"
         )
-
-    import pywikibot
-
-    site = pywikibot.Site("zh", "re0")
-    site.login()
-    assert site.user() == BOT, f"登录账号异常: {site.user()}"
-    page = pywikibot.Page(site, meta["title"])
-    final_text = finalize_new_text(new_text, meta["en_revid"])
-    page.text = final_text
     tagged = bool(re.search(r"\[\[Category:机翻待校对\]\]", zh_old, re.IGNORECASE))
-    page.save(
-        summary=std_summary(meta, tagged),
-        bot=False,
-        minor=False,
-        baserevid=live_revid,
-    )
-    published_revid = page.latest_revision_id
-    if published_revid is None:
-        raise RuntimeError("publish 保存成功但未获得实际 revid，拒绝推进发布状态")
-    meta["published"] = {
-        "revid": published_revid,
-        "sha256": hashlib.sha256(final_text.encode("utf-8")).hexdigest(),
-    }
-    save_json(WORK / f"{slug}.meta.json", meta)
+    save_publication(slug, meta, new_text, live_revid, tagged)
     print(f"published: {meta['title']}（en revid {meta['en_revid']}，待 done 核验）")
+
+
+def cmd_republish(slug):
+    """受控修正：仅允许 wiki 仍等于 meta 记录的上次发布稿。"""
+    meta = load_json(WORK / f"{slug}.meta.json", None)
+    if meta is None:
+        sys.exit(f"找不到 {slug}.meta.json，先跑 prepare")
+    new_text = read_new_text(slug)
+    published = meta.get("published")
+    if (
+        not isinstance(published, dict)
+        or not isinstance(published.get("revid"), int)
+        or not isinstance(published.get("sha256"), str)
+    ):
+        sys.exit(
+            "缺少有效的上次发布元数据，拒绝 republish。旧 WIP 请先运行 "
+            "`done <slug>`；若仍需改稿，直接修正 wiki 后再运行 done，"
+            "或备份并删除该 WIP 文件后重新 prepare。"
+        )
+    live, live_revid, _ = get_page(ZH_API, meta["title"])
+    if live is None:
+        sys.exit(f"{meta['title']} 页面不存在（发布后被删除？），中止")
+    live_sha256 = hashlib.sha256(live.encode("utf-8")).hexdigest()
+    if live_revid != published["revid"] or live_sha256 != published["sha256"]:
+        sys.exit(
+            "发布后基线漂移：wiki 的 revid 或文本已不再等于上次发布稿，"
+            "拒绝 republish 覆盖其他编辑；保留现场供核对。"
+        )
+    tagged = bool(re.search(r"\[\[Category:机翻待校对\]\]", live, re.IGNORECASE))
+    save_publication(slug, meta, new_text, live_revid, tagged)
+    print(f"republished: {meta['title']}（基于 revid {live_revid}，待 done 核验）")
 
 
 def cmd_done(slug):
@@ -1360,7 +1397,15 @@ if __name__ == "__main__":
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument(
         "cmd",
-        choices=["refresh", "prepare", "publish", "done", "skip", "status"],
+        choices=[
+            "refresh",
+            "prepare",
+            "publish",
+            "republish",
+            "done",
+            "skip",
+            "status",
+        ],
     )
     ap.add_argument("slug", nargs="?")
     ap.add_argument("reason", nargs="?")
@@ -1376,6 +1421,8 @@ if __name__ == "__main__":
             ap.error(f"{args.cmd} 需要 slug 参数")
         if args.cmd == "publish":
             cmd_publish(args.slug)
+        elif args.cmd == "republish":
+            cmd_republish(args.slug)
         elif args.cmd == "done":
             cmd_done(args.slug)
         else:

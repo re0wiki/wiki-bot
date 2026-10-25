@@ -8,14 +8,15 @@ zh 站大部分条目处于未翻译/机翻/过时状态（全站 1657 页挂 `C
 机械环节全部在 `src/tools/llm_translate.py`，LLM 只做两件事：翻译 prose、裁决登记表外专名。
 
 ```
-refresh（重建选页队列）→ prepare（取队首、机械转换备料）→ agent 产出新源码 → publish（基线比对+打标+保存）→ done（核验）
+refresh（重建选页队列）→ prepare（取队首、机械转换备料）→ agent 产出新源码 → publish（基线比对+打标+保存）→ done（核验）；done 失败时修正 new.txt → republish → done
 ```
 
 - **refresh**：重建 `.cache/llm_translate/queue.json`（全量扫描 + 标记扫描重定冷度，约 5 分钟，低频跑）。
 - **prepare**：取队列最冷的一页，拉 en 源码+revid、zh 现文，**本地机械转换**（en→zh 骨架，见「机械转换层」节），落工作文件到 `.cache/llm_translate/work/`；途中对机械可判定的页面（无 en 源 / en 仅标题骨架）自动打标记跳过，重定向页直接剔出队列（标记只落在正式条目页）。stdout 注入 agent prompt：conv 骨架与 zh 现文两份**全量注入，无大小上限**（agent 无需再读工作文件）。依据：①注入与 read_file 进上下文的 token 成本相同，收益是省回合（页越长省越多）；②Hermes 注入路径实测无截断——`scheduler_script._run_job_script` 全量捕获 stdout、`scheduler_prompt._build_job_prompt` 整体注入，全链路仅有的 8000 字符截断在未使用的 `context_from` 路径（2026-09-12 读本地源码确认）；③Kimi 侧限制即上下文窗口（K3.1 Pro 为 100 万 token），实测队列最大页（术语:术语，en 17.8 万字符 99.5% 非 CJK + zh 4.8 万字符）源估算 ~9 万 token；④真存在超窗页面时会以 API 错误响亮失败，届时再处理——不为假想限制预设机制。参考分布（2026-09-12 对队列 1648 页实测 骨架≈en 正文+zh 现文）：p50≈3k、p90≈21k、p99≈78k、max≈226k 字符。
-- **agent**：以骨架为基础产出整页新源码（只翻 prose 并裁决 zh 原创段落），写入 `work/<slug>.new.txt`；同步标记与机翻待校对分类由 publish 机械处理。
+- **agent**：以骨架为基础产出整页新源码（只翻 prose 并裁决 zh 原创段落），写入 `work/<slug>.new.txt`；同步标记与机翻待校对分类由 publish/republish 机械处理。
 - **publish**：拒绝空白成稿；对 agent 新源码做基线比对（wiki 最新源码 ≠ prepare 时 zh 现文即响亮中止）、登录校验，以标准摘要（`std_summary`）和刚核验的 live revid 作为 `baserevid` 保存，并在正文末机械挂 `[[Category:机翻待校对]]`（已挂不动、有分类段则并入）与打同步标记——摘要、分类与标记不再经 agent 之手。保存成功后，meta 记录实际发布 revid 与提交文本的 SHA-256，供受控修正核验。
-- **done**：对 wiki 只读——以 prepare 时的 zh 现文与骨架为基线做事后机械核验（标记/页首/内链/模板/分类），通过即清场完成。脚本对 wiki 的写入只有两处：publish 与 skip/auto-skip 的机械打标记。
+- **republish**：done 失败后的受控修正入口。仅当 wiki 的 revid 与文本哈希仍等于 meta 记录的上次发布稿时，才以该 revid 为 `baserevid` 保存修正并更新发布元数据；任何发布后漂移都中止。无发布元数据的 WIP 拒绝重发布，先按错误提示用 done 或重备流程恢复。
+- **done**：对 wiki 只读——以 prepare 时的 zh 现文与骨架为基线做事后机械核验（标记/页首/语言链接尾块/内链/模板/分类），通过即清场完成。脚本对 wiki 的内容写入统一走 publish/republish；skip/auto-skip 只做机械打标记。
 
 ## 机械转换层（prepare 的 en→zh 骨架生成）
 
@@ -71,15 +72,15 @@ prepare 的 walk 逐页读 zh 源码解析标记（源码本来必读）：
 - 标记 revid 与 en 当前一致 → 跳过；**不一致即自动复活**重入处理（追更路径由此承载）。无 en 链接时 en 侧 revid 视为 `-`——zh 原创页后来加了 en 链接、悬空链接的 en 页被创建，都走 revid 不一致复活，无需专门分支。
 - 无标记 → 处理；其中机械可判定的两种情况由 prepare 直接打标记跳过：无 en 源（标记 revid 为 `-`）、en 仅标题骨架（剥离后正文无一超过 20 字符的非标题行）。「en 无增量」由 agent 判断后 `skip <slug> [理由]` 打标记。
 
-prepare 的 wip 自动收尾：`work/` 里有上轮残留项时先按 wiki 最新状态分流再备新页。管线编辑认两个痕迹：管线摘要前缀（`LLM(K3.1 Pro):`，publish/skip 的编辑摘要）与同步标记——循环任务（fix:translation 等）对冷页的偶发编辑不算管线编辑。分流：zh 页无新编辑（agent 未编辑成，如 API 故障）、最新编辑是其他人（prepare 后有人类编辑，含人类在管线编辑后再改——人工改动即事实上的复核）、或最新编辑是无痕迹的本账号偶发编辑 → 丢弃旧备料按最新状态重备（改动由新基线自动吸收）；含匹配同步标记（管线编辑完成但 done 未跑）→ 自动补跑 done 核验（`verify_edit`，与 cmd_done 同一实现），通过则清场，不过则保留现场响亮失败；带管线摘要却标记缺失/不匹配的怪异态保留现场、拒绝备页，留人工排查。
+prepare 的 wip 自动收尾：`work/` 里有上轮残留项时先按 wiki 最新状态分流再备新页。管线编辑认两个痕迹：管线摘要前缀（`LLM(K3.1 Pro):`，publish/republish/skip 的编辑摘要）与同步标记——循环任务（fix:translation 等）对冷页的偶发编辑不算管线编辑。分流：zh 页无新编辑（agent 未编辑成，如 API 故障）、最新编辑是其他人（prepare 后有人类编辑，含人类在管线编辑后再改——人工改动即事实上的复核）、或最新编辑是无痕迹的本账号偶发编辑 → 丢弃旧备料按最新状态重备（改动由新基线自动吸收）；含匹配同步标记（管线编辑完成但 done 未跑）→ 自动补跑 done 核验（`verify_edit`，与 cmd_done 同一实现），通过则清场，不过则保留现场响亮失败；带管线摘要却标记缺失/不匹配的怪异态保留现场、拒绝备页，留人工排查。
 
 ## agent 规则（prepare 注入）
 
-本节由 prepare 原样注入 agent prompt（唯一事实源——cron prompt 不复制本节，改 agent 规则只改这里）。agent 只做翻译与裁决；基线比对、登录校验、编辑摘要、机翻待校对分类与同步标记全在 publish 脚本内。
+本节由 prepare 原样注入 agent prompt（唯一事实源——cron prompt 不复制本节，改 agent 规则只改这里）。agent 只做翻译与裁决；基线比对、登录校验、编辑摘要、机翻待校对分类与同步标记全在 publish/republish 脚本内。
 
-1. 以骨架（`{slug}.conv.txt` 内容已全量注入）为基础产出整页新源码，写入 `.cache/llm_translate/work/<slug>.new.txt`，然后 `uv run python src/tools/llm_translate.py publish <slug>` → `done <slug>`。publish 基线不通过（wiki 最新源码 ≠ prepare 时 zh 现文）即中止本轮，报告中说明即可，下 tick 自动重备吸收。done 失败按其输出修正：内容问题改 new.txt 后重跑 publish 再 done；反复失败保留工作文件并在报告中说明。
+1. 以骨架（`{slug}.conv.txt` 内容已全量注入）为基础产出整页新源码，写入 `.cache/llm_translate/work/<slug>.new.txt`，然后 `uv run python src/tools/llm_translate.py publish <slug>` → `done <slug>`。publish 基线不通过（wiki 最新源码 ≠ prepare 时 zh 现文）即中止本轮，报告中说明即可，下 tick 自动重备吸收。done 失败按其输出修正：publish 已成功后的内容问题改 new.txt 后运行 `republish <slug>` 再 done；republish 报告发布后漂移即停止，不覆盖其他编辑。反复失败保留工作文件并在报告中说明。
 2. 页首：`{{Init}}`/`{{To do}}`/`{{Tab/...}}` 等行首模板块原样保留；唯一允许的改动是清理 `{{To do}}` 参数中的翻译类标注——K3 标注段与「本页翻译结果不准确…重新翻译」「AI翻译，待校对」等翻译任务类标注段按「；」分段丢弃，清空则还原裸 `{{To do}}`；**其他参数**（如「列表格式待整理」「内容待补充」）原样保留，裸 `{{To do}}` 不动（其 `Category:待修撰` 归入是队列数据源）。
-3. 正文 = 翻译后的骨架。en 侧明确的框架模板、页尾分类/语言链接、`==Navigation==` 导航区已被 prepare 剥离，不带回（分类由 Module:Init 自动打，系列导航由 Tab/* 承担）；`[[Category:机翻待校对]]` 与同步标记由 publish 挂载——新源码不写分类、不写标记。页尾 zh 现文的语言链接行原样保留（不增删、不改目标）。
+3. 正文 = 翻译后的骨架。en 侧明确的框架模板、页尾分类/语言链接、`==Navigation==` 导航区已被 prepare 剥离，不带回（分类由 Module:Init 自动打，系列导航由 Tab/* 承担）；`[[Category:机翻待校对]]` 与同步标记由 publish/republish 挂载——新源码不写分类、不写标记。页尾 zh 现文的语言链接行原样保留（不增删、不改目标）。
 4. 内链已解析为 `[[zh 最终目标|原显示文字]]`：只翻译显示文字，不碰目标。解析失败的（en 有 zh 无）保留 en 原名并在报告中列出。
 5. 翻译：prose 段落、参数里的英文散文值、内链显示文字、未归一的标题；引号用「」；专名用注入的已裁决译名与 wiki 通行译名（残留别名由主循环 fix:translation 兜底）。骨架里含中文的 zh 策展内容（信息框合并保留的字段等）原样不动。zh 现文有而 en 没有的原创段落：质量良好的保留，质量低下的舍弃（可从页面历史恢复），报告中说明取舍。拿不准骨架转换时对照 `{slug}.body.en.txt`（en 原文）；`{slug}.zh.txt` 仅供原创段落裁决核对。
 6. 仅当 en 无增量（对照 en 全文判定，含发售日期/封面/出处等字段——zh 已是中文不代表无增量）且 zh 无英文残留时才不编辑：`skip <slug> "en 无增量"`，然后直接进报告步。
@@ -101,7 +102,7 @@ prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 
 1. **标记核验**：zh 页最新编辑必须是本账号，且源码含且仅含一个同步标记、revid 与 meta 的 en_revid 一致——防止「没编辑就记完成」与标记漂移。
 2. **框架不变量**：页首模板块（仅 To do 翻译类标注可按规则清理）以 prepare 时的 zh 现文为基线逐行比对（核验前先从新源码摘除标记行）；语言链接尾块独立逐字比对，目标、数量与顺序均不得变化。
 3. **白名单**：正文内链目标（按 页面/文件/分类/语言链接 分类）⊆ link_map ∪ 未解析名 ∪ zh 现文已有目标（文件另含骨架出现的，分类另含机翻待校对）；正文模板调用 ⊆ conv 骨架 ∪ zh 现文 ∪ nouns.txt 注入专名的模板值（`Elf = {{Elf}}` 类——注入令译文须使用，白名单必须放行）。另核验 `[[Category:机翻待校对]]` 必挂（漏挂拒绝）。
-4. **失败响亮**：核验不过非零退出，工作文件保留供排查；wiki 上的编辑由 agent 修正（重编 wiki）后重新 done。
+4. **失败响亮**：核验不过非零退出，工作文件保留供排查；有发布元数据时改 new.txt 后 republish 再 done，无发布元数据的 WIP 按 republish 的恢复提示处理。
 
 ## 状态与产出
 
@@ -117,7 +118,7 @@ Hermes cron 驱动，watchdog 同款「script + agent」两段式。cron 的 scr
 
 agent 只做产出与收尾。频率与每次页数随 token 预算调整（改 cron schedule 或 prompt 循环次数），token 富余时也可手动触发（`cronjob run`）或直接在会话里走 prepare → 写 new.txt → publish → done 流程。
 
-每页的处理信息（冷度、en 源条目、预测编辑后的积压统计）由 publish 的编辑摘要承载，随修订历史落账；skip 的摘要不含统计（沿用「同步标记：理由」格式）。
+每页的处理信息（冷度、en 源条目、预测编辑后的积压统计）由 publish/republish 的编辑摘要承载，随修订历史落账；skip 的摘要不含统计（沿用「同步标记：理由」格式）。
 
 ## 当前限制
 

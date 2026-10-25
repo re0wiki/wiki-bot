@@ -55,7 +55,9 @@ class FakeWiki:
         self.content = content
         self.revid = revid
         self.saved = []
+        self.comment = ""
         monkeypatch.setattr(lt, "get_page", self.get_page)
+        monkeypatch.setattr(lt, "api", self.api)
         monkeypatch.setattr(lt, "std_summary", lambda *args: "测试摘要")
         monkeypatch.setitem(
             sys.modules,
@@ -65,6 +67,17 @@ class FakeWiki:
 
     def get_page(self, base, title):
         return self.content, self.revid, "2026-01-01T00:00:00Z"
+
+    def api(self, base, **params):
+        assert params["prop"] == "revisions"
+        rev = {
+            "revid": self.revid,
+            "user": lt.BOT,
+            "comment": self.comment,
+            "timestamp": "2026-01-01T00:00:00Z",
+            "slots": {"main": {"content": self.content}},
+        }
+        return {"query": {"pages": [{"revisions": [rev]}]}}
 
     def make_site(self, *args):
         wiki = self
@@ -85,6 +98,7 @@ class FakeWiki:
                 wiki.saved.append(kwargs)
                 wiki.revid += 1
                 wiki.content = self.text
+                wiki.comment = kwargs["summary"]
                 self.latest_revision_id = wiki.revid
 
         self.page_class = FakePage
@@ -150,6 +164,60 @@ def test_publish_binds_baseline_and_records_publication(tmp_path, monkeypatch):
         "revid": 91,
         "sha256": hashlib.sha256(wiki.content.encode("utf-8")).hexdigest(),
     }
+
+
+def test_republish_recovers_failed_done(tmp_path, monkeypatch):
+    old = "{{Init}}\n\n旧文。\n\n[[en:Test]]\n"
+    work = make_work(tmp_path, monkeypatch, old)
+    (work / f"{SLUG}.conv.txt").write_text("新文。\n", encoding="utf-8")
+    new_file = work / f"{SLUG}.new.txt"
+    new_file.write_text("{{Init}}\n\n新文。\n", encoding="utf-8")
+    wiki = FakeWiki(monkeypatch, old)
+    lt.cmd_publish(SLUG)
+    with pytest.raises(SystemExit, match="语言链接"):
+        lt.cmd_done(SLUG)
+
+    new_file.write_text("{{Init}}\n\n修正文。\n\n[[en:Test]]\n", encoding="utf-8")
+    lt.cmd_republish(SLUG)
+    assert wiki.saved[1]["baserevid"] == 91
+    meta = json.loads((work / f"{SLUG}.meta.json").read_text(encoding="utf-8"))
+    assert meta["published"] == {
+        "revid": 92,
+        "sha256": hashlib.sha256(wiki.content.encode("utf-8")).hexdigest(),
+    }
+    lt.cmd_done(SLUG)
+    assert not list(work.iterdir())
+
+
+def test_republish_refuses_post_publish_drift(tmp_path, monkeypatch):
+    work = make_work(tmp_path, monkeypatch)
+    new_file = work / f"{SLUG}.new.txt"
+    new_file.write_text("{{Init}}\n\n修正文。\n", encoding="utf-8")
+    published = lt.finalize_new_text("{{Init}}\n\n已发布。\n", 100)
+    meta_path = work / f"{SLUG}.meta.json"
+    meta = json.loads(meta_path.read_text(encoding="utf-8"))
+    meta["published"] = {
+        "revid": 91,
+        "sha256": hashlib.sha256(published.encode("utf-8")).hexdigest(),
+    }
+    meta_path.write_text(json.dumps(meta, ensure_ascii=False), encoding="utf-8")
+
+    for live, revid in ((published + "\n漂移。\n", 91), (published, 92)):
+        wiki = FakeWiki(monkeypatch, live, revid)
+        with pytest.raises(SystemExit, match="发布后.*漂移"):
+            lt.cmd_republish(SLUG)
+        assert not wiki.saved
+
+
+def test_republish_legacy_wip_fails_closed_with_recovery(tmp_path, monkeypatch):
+    work = make_work(tmp_path, monkeypatch)
+    (work / f"{SLUG}.new.txt").write_text("{{Init}}\n\n修正文。\n", encoding="utf-8")
+    wiki = FakeWiki(monkeypatch)
+    with pytest.raises(SystemExit) as exc:
+        lt.cmd_republish(SLUG)
+    assert "发布元数据" in str(exc.value)
+    assert "done" in str(exc.value) and "prepare" in str(exc.value)
+    assert not wiki.saved
 
 
 @pytest.mark.parametrize("content", ["", " \n\t\n"])
