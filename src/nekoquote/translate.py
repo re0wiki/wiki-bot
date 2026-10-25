@@ -1,5 +1,8 @@
 """中文翻译：raw 推 ja→zh（Kimi K3.1 Pro，批量断点续跑）。
-产物 zh.json：{tid: {"zh": 推文译文, "qzh": 提问推译文(如有)}}。无 key 时跳过（退出 0）。
+
+产物 zh.json：{tid: {"zh": 推文译文, "qzh": 提问推译文(如有)}}。
+zh_deleted/qzh_deleted 是 pull_wiki 记录的人工删除标记，对应字段不再自动补译。
+无 key 时跳过（退出 0）。
 """
 
 import json
@@ -78,12 +81,19 @@ for tid, rec in merged.items():
 # 已有译文命中
 text_zh = {}
 for tid, r in done.items():
-    if tid in tid2text and r.get("zh"):
+    if tid in tid2text and r.get("zh") and not r.get("zh_deleted"):
         text_zh[tid2text[tid]] = r["zh"]
     if r.get("qzh") and tid in qids:
         pass
-todo_texts = [t for t in texts if t not in text_zh]
-todo_qs = {q: t for q, t in qids.items() if not done.get(q, {}).get("qzh")}
+pending_texts = {
+    t for tid, t in tid2text.items() if not done.get(tid, {}).get("zh_deleted")
+}
+todo_texts = [t for t in texts if t in pending_texts and t not in text_zh]
+todo_qs = {
+    q: t
+    for q, t in qids.items()
+    if not done.get(q, {}).get("qzh") and not done.get(q, {}).get("qzh_deleted")
+}
 print(
     f"待译正文 {len(todo_texts)}（唯一文本 {len(texts)}，已有 {len(text_zh)}）；待译提问 {len(todo_qs)}"
 )
@@ -169,6 +179,9 @@ new_texts = set()
 
 
 def save_zh(tid, source):
+    rec = done.get(tid)
+    if rec and rec.get("zh_deleted"):
+        return
     rec = done.setdefault(tid, {})
     rec["zh"] = text_zh[source]
     if source in new_texts:

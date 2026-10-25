@@ -9,7 +9,7 @@ import pywikibot as pwb
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
 import src.nekoquote as pkg
-from src.nekoquote import build, pull_wiki
+from src.nekoquote import build, llm, pull_wiki
 
 TID = "2105311705297846272"  # 2026-10-01
 QID = "456"
@@ -46,6 +46,113 @@ def test_missing_fields_are_removed_and_not_rebuilt(monkeypatch, tmp_path):
     assert build.merge_raw(buckets, set()) == 1
     names = [name for name, _, _ in buckets["2026-10"][0]["fields"]]
     assert names == ["src"]
+
+
+def test_new_wiki_translation_creates_updates_and_deletes_local_record():
+    zh = {}
+    tw = {TID: {"text": "原文", "author": "nezumiironyanko"}}
+
+    fields = [("src", '"', SRC), ("jt", '"', "原文"), ("t", '"', "人工译文")]
+    assert pull_wiki.writeback_entry("2026-10", fields, zh, tw) == (1, 0)
+    assert zh[TID]["zh"] == "人工译文"
+
+    fields[-1] = ("t", '"', "修订译文")
+    assert pull_wiki.writeback_entry("2026-10", fields, zh, tw) == (1, 0)
+    assert zh[TID]["zh"] == "修订译文"
+
+    assert pull_wiki.writeback_entry("2026-10", fields[:-1], zh, tw) == (1, 0)
+    assert "zh" not in zh[TID]
+    assert zh[TID]["zh_deleted"] is True
+
+
+def run_translate_without_llm(monkeypatch, tmp_path, tw, zh):
+    (tmp_path / "lua_base").mkdir(exist_ok=True)
+    (tmp_path / "tweets.json").write_text(json.dumps(tw), encoding="utf-8")
+    (tmp_path / "zh.json").write_text(json.dumps(zh), encoding="utf-8")
+    monkeypatch.setattr(pkg, "DATA", tmp_path)
+    monkeypatch.setattr(build, "DATA", tmp_path)
+    monkeypatch.setattr(
+        llm,
+        "get_config",
+        lambda provider: ("https://example.invalid", "key", "model"),
+    )
+
+    def unexpected_chat(*args, **kwargs):
+        raise AssertionError("被人工删除的译文不应重新调用 LLM")
+
+    monkeypatch.setattr(llm, "chat", unexpected_chat)
+    monkeypatch.delitem(sys.modules, "src.nekoquote.translate", raising=False)
+    runpy.run_module("src.nekoquote.translate")
+
+
+def test_deleted_answer_is_not_regenerated_or_rebuilt(monkeypatch, tmp_path):
+    zh = {TID: {"zh": "旧译"}}
+    tw = {TID: {"text": "原文", "author": "nezumiironyanko"}}
+    fields = [("src", '"', SRC), ("jt", '"', "原文")]
+    assert pull_wiki.writeback_entry("2026-10", fields, zh, tw) == (1, 0)
+    assert zh[TID]["zh_deleted"] is True
+
+    run_translate_without_llm(monkeypatch, tmp_path, tw, zh)
+    buckets = {}
+    assert build.merge_raw(buckets, set()) == 1
+    names = [name for name, _, _ in buckets["2026-10"][0]["fields"]]
+    assert names == ["src", "jt"]
+
+
+def test_deleted_question_is_not_regenerated_or_rebuilt(monkeypatch, tmp_path):
+    zh = {TID: {"zh": "回答译文"}, QID: {"qzh": "旧提问译文"}}
+    tw = {
+        TID: {
+            "text": "原文",
+            "author": "nezumiironyanko",
+            "reply_to": QID,
+        },
+        QID: {"text": "提问", "author": "fan"},
+    }
+    fields = [
+        ("src", '"', SRC),
+        ("jt", '"', "原文"),
+        ("jq", '"', "提问"),
+        ("t", '"', "回答译文"),
+    ]
+    assert pull_wiki.writeback_entry("2026-10", fields, zh, tw) == (1, 0)
+    assert zh[QID]["qzh_deleted"] is True
+
+    run_translate_without_llm(monkeypatch, tmp_path, tw, zh)
+    buckets = {}
+    assert build.merge_raw(buckets, set()) == 1
+    names = [name for name, _, _ in buckets["2026-10"][0]["fields"]]
+    assert "q" not in names
+    assert "jq" in names and "t" in names
+
+
+def test_pull_wiki_refreshes_accepted_live_snapshot(monkeypatch, tmp_path):
+    (tmp_path / "lua_base").mkdir()
+    (tmp_path / "lua_live").mkdir()
+    zh = {TID: {"zh": "旧译"}}
+    tw = {TID: {"text": "原文", "author": "nezumiironyanko"}}
+    (tmp_path / "zh.json").write_text(json.dumps(zh), encoding="utf-8")
+    (tmp_path / "tweets.json").write_text(json.dumps(tw), encoding="utf-8")
+    fields = [("src", '"', SRC), ("jt", '"', "原文")]
+    online = build.emit_table([{"fields": fields}]).rstrip("\n")
+    (tmp_path / "lua_live" / "2026-10.lua").write_text("OLD WITH TRANSLATION\n")
+
+    class FakePage:
+        text = online
+
+    monkeypatch.setattr(pkg, "DATA", tmp_path)
+    monkeypatch.setattr(pull_wiki, "DATA", tmp_path)
+    monkeypatch.setattr(pwb, "Site", lambda *args: object())
+    monkeypatch.setattr(
+        pull_wiki, "collect_pages", lambda site: {"2026-10": FakePage()}
+    )
+    monkeypatch.setattr(
+        pull_wiki.pagegenerators, "PreloadingGenerator", lambda pages: pages
+    )
+    assert pull_wiki._main() == 0
+    assert (tmp_path / "lua_live" / "2026-10.lua").read_text(
+        encoding="utf-8"
+    ) == online + "\n"
 
 
 def test_missing_raw_entry_aborts_without_writing(monkeypatch, tmp_path):

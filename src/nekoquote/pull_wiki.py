@@ -84,32 +84,52 @@ def writeback_entry(month: str, fields: list, zh: dict, tw: dict) -> tuple[int, 
     qid = tw[tid].get("reply_to")
     qid = qid if qid in tw and tw[qid].get("author") != "nezumiironyanko" else None
     # 字段名 → (目标 dict, key, 由现 text 重建的期望值)；期望值=None 表示纯 wiki 侧字段
+    present = {name: (quote, raw) for name, quote, raw in fields}
     targets = {"jt": (tw[tid], "text", proc_jt(tw[tid].get("text", "")))}
-    if tid in zh:
+    created = set()
+    # 非空 t/q 可在 zh.json 尚无记录时新建；字段缺失且本地无记录则不留下空壳。
+    if tid in zh or "t" in present:
+        if tid not in zh:
+            zh[tid] = {}
+            created.add(tid)
         targets["t"] = (zh[tid], "zh", None)
     if qid:
-        targets["q"] = (zh.setdefault(qid, {}), "qzh", None)
+        if qid in zh or "q" in present:
+            if qid not in zh:
+                zh[qid] = {}
+                created.add(qid)
+            targets["q"] = (zh[qid], "qzh", None)
         targets["jq"] = (tw[qid], "text", proc_jq(tw[qid].get("text", "")))
-    present = {name: (quote, raw) for name, quote, raw in fields}
     n_zh = n_tw = 0
     for name, (rec, key, expected) in targets.items():
         cur = rec.get(key) if expected is None else expected
+        deleted_key = f"{key}_deleted" if expected is None else None
         if name in present:
             quote, raw = present[name]
             v = unescape(quote, raw)
         else:
             v = ""
-        if v == cur or (not v and key not in rec):
+        if not v and key not in rec:
+            continue
+        if v == cur and (deleted_key is None or not rec.get(deleted_key)):
             continue
         print(f"  {month} {tid} {name}: {str(cur)[:60]!r} -> {v[:60]!r}")
         if v:
             rec[key] = v
+            if deleted_key:
+                rec.pop(deleted_key, None)
         else:
             rec.pop(key, None)
+            if deleted_key:
+                # 与「从未翻译」区分：人工删除后不得由下一轮 translate 再生。
+                rec[deleted_key] = True
         if expected is None:
             n_zh += 1
         else:
             n_tw += 1
+    for tid in created:
+        if not zh[tid]:
+            del zh[tid]
     return n_zh, n_tw
 
 
@@ -128,10 +148,13 @@ def _main() -> int:
 
     pages = collect_pages(site)
     wiki_raw_ids = set()
+    online_pages = {}
     n_zh = n_tw = n_base = 0
     preloaded = pagegenerators.PreloadingGenerator(pages.values())
     for month, p in zip(pages, preloaded, strict=True):
-        r = refresh_base(month, p.text, DATA / "lua_base")
+        online = p.text if p.text.endswith("\n") else p.text + "\n"
+        online_pages[month] = online
+        r = refresh_base(month, online, DATA / "lua_base")
         if r is not None:
             n_base += r
             continue
@@ -156,8 +179,17 @@ def _main() -> int:
         write_json(zh_path, zh)
     if n_tw:
         write_json(tw_path, tw)
+    live_dir = DATA / "lua_live"
+    live_dir.mkdir(parents=True, exist_ok=True)
+    n_live = 0
+    for month, online in online_pages.items():
+        live = live_dir / f"{month}.lua"
+        if not live.exists() or live.read_text(encoding="utf-8") != online:
+            live.write_text(online, encoding="utf-8")
+            n_live += 1
     print(
-        f"lua_base 刷新 {n_base} 张，zh.json 回写 {n_zh} 处，tweets.json 回写 {n_tw} 处"
+        f"lua_base 刷新 {n_base} 张，lua_live 刷新 {n_live} 张，"
+        f"zh.json 回写 {n_zh} 处，tweets.json 回写 {n_tw} 处"
     )
     return 0
 
