@@ -211,15 +211,8 @@ TERM_CATS = {
 }
 
 
-def classify_prefix(cats: set[str]) -> str | None:
-    """en 分类集合 → zh 伪前缀（纯函数，可离线测试）。
-
-    多命中消解：角色优先（角色页恒带直接 Characters，术语页恒不带）、音乐
-    优先（歌曲页带季分类会命中动画树，zh 全归 音乐:）；其余多命中与
-    Disambiguations 一律返回 None 跳过（宁漏勿错）。
-    """
-    if "Disambiguations" in cats:
-        return None
+def _category_hits(cats: set[str]) -> set[str]:
+    """收集 en 类型分类直接命中的全部 zh 伪前缀。"""
     hits = set()
     if "Characters" in cats:
         hits.add("角色")
@@ -235,6 +228,19 @@ def classify_prefix(cats: set[str]) -> str | None:
         hits.add("小说")
     if cats & TERM_CATS:
         hits.add("术语")
+    return hits
+
+
+def classify_prefix(cats: set[str]) -> str | None:
+    """en 分类集合 → zh 伪前缀（纯函数，可离线测试）。
+
+    多命中消解：角色优先（角色页恒带直接 Characters，术语页恒不带）、音乐
+    优先（歌曲页带季分类会命中动画树，zh 全归 音乐:）；其余多命中与
+    Disambiguations 一律返回 None 跳过（宁漏勿错）。
+    """
+    if "Disambiguations" in cats:
+        return None
+    hits = _category_hits(cats)
     hits -= {"术语"} if "角色" in hits else set()
     hits -= {"动画"} if "音乐" in hits else set()
     return hits.pop() if len(hits) == 1 else None
@@ -250,6 +256,27 @@ def _resolve_api_title(title: str, norm: dict[str, str], red: dict[str, str]) ->
     return title
 
 
+def _skip_move_page(page: BasePage, old: str, moved_sources: Iterable[str]) -> bool:
+    """移动遗留重定向、重定向页与外部视频均不处理。"""
+    if is_leftover(old, moved_sources):
+        return True
+    if page.isRedirectPage():
+        return True
+    return page.namespace() == 6 and is_external_video(
+        page.title(with_ns=False), page.site.file_extensions
+    )
+
+
+def _resolve_subpage_target(site, old: str, new: str) -> str:
+    """子页后缀移动时，把已是重定向的父标题解析到最终目标。"""
+    if not re.search(r"/(?:Image Gallery|Synopsis|Relationships)$", old, re.IGNORECASE):
+        return new
+    parent = pwb.Page(site, old.rsplit("/", 1)[0])
+    if parent.isRedirectPage():
+        return parent.getRedirectTarget().title() + "/" + new.rsplit("/", 1)[1]
+    return new
+
+
 class MoveBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
     """Move pages with non-standard translated titles to standard names."""
 
@@ -258,36 +285,27 @@ class MoveBot(pwb.bot.SingleSiteBot, pwb.bot.ExistingPageBot):
         self.moved_sources: list[str] = []  # 本轮已移动的源标题（含模拟）
         self.pending: list[tuple[BasePage, str]] = []  # 待分类判定的 (页, en 标题)
 
+    def _queue_prefix_candidate(self, page: BasePage, old: str) -> None:
+        """暂存无前缀、非子页且带 en 链接的主空间页，留待 teardown 批量判类。"""
+        if ":" in old or "/" in old:
+            return
+        m = EN_LINK_RE.search(page.text)
+        if m:
+            self.pending.append((page, m.group(1).split("#")[0].strip()))
+
     def treat_page(self) -> None:
         page = self.current_page
         old = page.title()
-        if is_leftover(old, self.moved_sources):
-            return
-        if page.isRedirectPage():
-            return
-        if page.namespace() == 6 and is_external_video(
-            page.title(with_ns=False), page.site.file_extensions
-        ):
+        if _skip_move_page(page, old, self.moved_sources):
             return
         new, skip = resolve_move(old)
         if new is None:
-            # 前缀归位候选：无伪前缀、非子页、带 en 链接的页，攒到 teardown
-            # 统一按 en 分类判定（非主命名空间标题自带 Namespace: 前缀，
-            # 已被 ":" 条件排除）
-            if ":" not in old and "/" not in old:
-                m = EN_LINK_RE.search(page.text)
-                if m:
-                    self.pending.append((page, m.group(1).split("#")[0].strip()))
+            self._queue_prefix_candidate(page, old)
             return
         if skip:
             pwb.warning(f"SKIP（{skip}）: {old} -> {new}")
             return
-        # 子页后缀移动的父页解析：父标题在 zh 已是指向中文名的重定向时，
-        # 落到最终目标名下（如 Melty Pristis/关系 -> 角色:梅尔蒂·布里司堤斯/关系）
-        if re.search(r"/(?:Image Gallery|Synopsis|Relationships)$", old, re.IGNORECASE):
-            parent = pwb.Page(self.site, old.rsplit("/", 1)[0])
-            if parent.isRedirectPage():
-                new = parent.getRedirectTarget().title() + "/" + new.rsplit("/", 1)[1]
+        new = _resolve_subpage_target(self.site, old, new)
         self._do_move(page, new, "译名归一")
 
     def _do_move(self, page: BasePage, new: str, reason: str) -> None:
