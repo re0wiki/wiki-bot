@@ -102,17 +102,72 @@ BATCH = 50
 BLOCKED = []
 
 
-def run_batch(items, prompt_prefix):
-    """items: [(key, text)]；返回 {key: zh}。缺漏重试后仍缺则报错；content_filter 二分隔离。"""
+def batch_prompt(items, prompt_prefix):
+    """构造带译名对照的批量翻译 prompt。"""
     lines = [f"{i}\t{t}" for i, (_, t) in enumerate(items)]
-    prompt = (
+    return (
         prompt_prefix
-        + glossary_lines(
-            [t for _, t in items]
-        )  # 译名对照注入（译名表 ja 面形态确定性检出）
+        + glossary_lines([t for _, t in items])
         + "\n\n每行输出「编号<TAB>译文」，不要输出其他内容：\n\n"
         + "\n".join(lines)
     )
+
+
+def split_batch(items, prompt_prefix, label):
+    """将异常批次等分，分别递归处理后合并。"""
+    half = len(items) // 2
+    print(f"  {label}二分（{len(items)}→{half}+{len(items) - half}）", flush=True)
+    return {
+        **run_batch(items[:half], prompt_prefix),
+        **run_batch(items[half:], prompt_prefix),
+    }
+
+
+def handle_length(error, items, prompt_prefix):
+    """截断批次可拆则拆，单条响亮失败。"""
+    if len(items) == 1:
+        raise SystemExit(f"译文截断且无法拆分: {items[0][0]}") from error
+    return split_batch(items, prompt_prefix, "截断")
+
+
+def handle_content_filter(error, items, prompt_prefix):
+    """内容过滤二分隔离；非过滤错误返回 None。"""
+    if "content_filter" not in str(error):
+        return None
+    if len(items) == 1:
+        print(f"  !! 触线跳过: {items[0][1][:60]}", flush=True)
+        BLOCKED.append(items[0])
+        return {}
+    return split_batch(items, prompt_prefix, "触线")
+
+
+def parse_batch_output(out, items):
+    """解析编号<TAB>译文，忽略越界与不完整行。"""
+    res = {}
+    for line in out.splitlines():
+        m = re.match(r"^(\d+)\t(.+)$", line.strip())
+        if m and int(m.group(1)) < len(items):
+            res[int(m.group(1))] = m.group(2).strip()
+    return res
+
+
+def complete_batch(res, items, prompt_prefix):
+    """少量缺漏逐条补译，仍不完整则失败。"""
+    if len(res) != len(items):
+        missing = [items[i] for i in range(len(items)) if i not in res]
+        if len(missing) <= 3:
+            for item in missing:
+                res2 = run_batch([item], prompt_prefix)
+                if res2:
+                    res[items.index(item)] = res2[item[0]]
+    if len(res) != len(items):
+        raise SystemExit(f"批次持续缺漏 {len(res)}/{len(items)}")
+    return {items[i][0]: v for i, v in res.items()}
+
+
+def run_batch(items, prompt_prefix):
+    """items: [(key, text)]；返回 {key: zh}。缺漏重试后仍缺则报错；content_filter 二分隔离。"""
+    prompt = batch_prompt(items, prompt_prefix)
     res = {}
     for attempt in range(6):
         try:
@@ -124,51 +179,20 @@ def run_batch(items, prompt_prefix):
                 provider="kimi",
             )
         except LengthError as e:
-            if len(items) == 1:
-                raise SystemExit(f"译文截断且无法拆分: {items[0][0]}") from e
-            half = len(items) // 2
-            print(f"  截断二分（{len(items)}→{half}+{len(items) - half}）", flush=True)
-            return {
-                **run_batch(items[:half], prompt_prefix),
-                **run_batch(items[half:], prompt_prefix),
-            }
+            return handle_length(e, items, prompt_prefix)
         except Exception as e:  # noqa: BLE001 content_filter 靠消息文本判定
-            if "content_filter" in str(e):
-                # 内容过滤：二分定位触线文本，单条隔离
-                if len(items) == 1:
-                    print(f"  !! 触线跳过: {items[0][1][:60]}", flush=True)
-                    BLOCKED.append(items[0])
-                    return {}
-                half = len(items) // 2
-                print(
-                    f"  触线二分（{len(items)}→{half}+{len(items) - half}）", flush=True
-                )
-                return {
-                    **run_batch(items[:half], prompt_prefix),
-                    **run_batch(items[half:], prompt_prefix),
-                }
+            filtered = handle_content_filter(e, items, prompt_prefix)
+            if filtered is not None:
+                return filtered
             print(f"  批次异常 {e}，退避重试", flush=True)
             time.sleep(20 * (attempt + 1))
             continue
-        for line in out.splitlines():
-            m = re.match(r"^(\d+)\t(.+)$", line.strip())
-            if m and int(m.group(1)) < len(items):
-                res[int(m.group(1))] = m.group(2).strip()
+        res.update(parse_batch_output(out, items))
         if len(res) == len(items):
             break
         print(f"  缺漏 {len(res)}/{len(items)}，重试", flush=True)
         time.sleep(10)
-    if len(res) != len(items):
-        missing = [items[i] for i in range(len(items)) if i not in res]
-        if len(missing) <= 3:
-            # 少量缺漏：逐条补
-            for it in missing:
-                res2 = run_batch([it], prompt_prefix)
-                if res2:
-                    res[items.index(it)] = res2[it[0]]
-        if len(res) != len(items):
-            raise SystemExit(f"批次持续缺漏 {len(res)}/{len(items)}")
-    return {items[i][0]: v for i, v in res.items()}
+    return complete_batch(res, items, prompt_prefix)
 
 
 PROMPT_T = "把以下作者推文逐条翻译成简体中文（编号与推文一一对应，推内换行已折叠为空格，译文保持单条一段）。"
