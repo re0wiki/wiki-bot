@@ -26,6 +26,7 @@ sys.path.insert(0, str(ROOT))
 from src.nekoquote import DATA, bootstrap
 from src.nekoquote.chain import run_chain
 from src.nekoquote.parse import extract
+from src.nekoquote.state import PENDING, clear_pending, mark_pending
 
 CHANNEL_ID = "1293525355663196243"  # 中文服务器 FBK 转发频道
 STATE = DATA / "sync_state.json"
@@ -77,7 +78,12 @@ def main() -> None:
     state = json.loads(STATE.read_text(encoding="utf-8")) if STATE.exists() else {}
     msgs = fetch_new(token, state.get("last_id"))
     if not msgs:
-        pwb.info("无新消息")
+        if PENDING.exists():
+            pwb.info("上次语录全链未完成，续跑")
+            run_chain()
+            clear_pending(PENDING)
+        else:
+            pwb.info("无新消息")
         return
     newest = max(m["id"] for m in msgs)
     pwb.info(f"新消息 {len(msgs)} 条")
@@ -86,16 +92,22 @@ def main() -> None:
     tw_path = DATA / "tweets.json"
     tw = json.loads(tw_path.read_text(encoding="utf-8"))
     new = {t: x for t, x in found.items() if t not in tw}
-    if not new:
+    if not new and not PENDING.exists():
         pwb.info("无库外新推")
         STATE.write_text(json.dumps({"last_id": newest}), encoding="utf-8")
         return
-    pwb.info(f"库外新推 {len(new)} 条")
-    for tid, text in new.items():
-        tw[tid] = {"text": text, "author": "nezumiironyanko", "src": "dc_zh_fbk"}
-    tw_path.write_text(json.dumps(tw, ensure_ascii=False), encoding="utf-8")
+    if new:
+        pwb.info(f"库外新推 {len(new)} 条")
+        # 先落待完成标记再入库：任何后续失败都会在下一轮续跑，不会被当成已完成。
+        mark_pending(PENDING)
+        for tid, text in new.items():
+            tw[tid] = {"text": text, "author": "nezumiironyanko", "src": "dc_zh_fbk"}
+        tw_path.write_text(json.dumps(tw, ensure_ascii=False), encoding="utf-8")
+    else:
+        pwb.info("上次语录全链未完成，续跑")
 
     run_chain()  # 任一失败非零退出，水位线不推进下轮重试
+    clear_pending(PENDING)
     STATE.write_text(json.dumps({"last_id": newest}), encoding="utf-8")
     pwb.info("语录同步全链完成 ✓")
 
