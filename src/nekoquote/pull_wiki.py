@@ -23,6 +23,7 @@ from pywikibot import pagegenerators
 
 from . import DATA
 from .build import STATUS_RE, fget, parse_table, strip_tco
+from .state import state_lock, write_json
 
 MONTH_RE = re.compile(r"^NekoQuote/(\d{4}-\d{2})$")
 MENTION_RE = re.compile(r"^(@\w+\s*)+")
@@ -112,7 +113,7 @@ def writeback_entry(month: str, fields: list, zh: dict, tw: dict) -> tuple[int, 
     return n_zh, n_tw
 
 
-def main() -> int:
+def _main() -> int:
     site = pywikibot.Site("zh", "re0")  # 只读，无需登录
     zh_path = DATA / "zh.json"
     tw_path = DATA / "tweets.json"
@@ -152,13 +153,18 @@ def main() -> int:
         )
         return 1
     if n_zh:
-        zh_path.write_text(json.dumps(zh, ensure_ascii=False), encoding="utf-8")
+        write_json(zh_path, zh)
     if n_tw:
-        tw_path.write_text(json.dumps(tw, ensure_ascii=False), encoding="utf-8")
+        write_json(tw_path, tw)
     print(
         f"lua_base 刷新 {n_base} 张，zh.json 回写 {n_zh} 处，tweets.json 回写 {n_tw} 处"
     )
     return 0
+
+
+def main() -> int:
+    with state_lock(DATA):
+        return _main()
 
 
 if __name__ == "__main__":

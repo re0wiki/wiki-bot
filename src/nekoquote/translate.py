@@ -12,6 +12,7 @@ sys.path.insert(0, str(Path(__file__).parents[2]))
 from src.nekoquote import DATA
 from src.nekoquote.build import is_valid_tweet_month
 from src.nekoquote.llm import SYSTEM_PROMPT, LengthError, chat, glossary_lines
+from src.nekoquote.state import write_json
 
 try:
     from src.nekoquote.llm import get_config
@@ -173,9 +174,7 @@ for bi, b in enumerate(batches):
         for tid, t in tid2text.items():
             if t in text_zh:
                 done.setdefault(tid, {})["zh"] = text_zh[t]
-        (DATA / "zh.json").write_text(
-            json.dumps(done, ensure_ascii=False), encoding="utf-8"
-        )
+        write_json(DATA / "zh.json", done)
         print(
             f"正文 {bi + 1}/{len(batches)} 批，{(time.time() - t0) / 60:.1f}min",
             flush=True,
@@ -186,18 +185,14 @@ for bi, b in enumerate(qbatches):
     got = run_batch(b, PROMPT_Q)
     for qid, zh in got.items():
         done.setdefault(qid, {})["qzh"] = zh
-    (DATA / "zh.json").write_text(
-        json.dumps(done, ensure_ascii=False), encoding="utf-8"
-    )
+    write_json(DATA / "zh.json", done)
     print(f"提问 {bi + 1}/{len(qbatches)} 批", flush=True)
 
 for tid, t in tid2text.items():
     if t in text_zh:
         done.setdefault(tid, {})["zh"] = text_zh[t]
-(DATA / "zh.json").write_text(json.dumps(done, ensure_ascii=False), encoding="utf-8")
-(DATA / "zh_blocked.json").write_text(
-    json.dumps(BLOCKED, ensure_ascii=False, indent=1), encoding="utf-8"
-)
+write_json(DATA / "zh.json", done)
+write_json(DATA / "zh_blocked.json", BLOCKED)
 print(
     f"完成：{len(done)} 条记录，触线跳过 {len(BLOCKED)} 条，{(time.time() - t0) / 60:.1f}min"
 )

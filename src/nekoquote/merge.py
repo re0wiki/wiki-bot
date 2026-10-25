@@ -12,10 +12,10 @@ from pathlib import Path
 from . import DATA
 from .chain import run_chain
 from .parse import extract
-from .state import PENDING, clear_pending, mark_pending
+from .state import PENDING, clear_pending, mark_pending, state_lock, write_json
 
 
-def main() -> None:
+def _main() -> None:
     export_dir = Path(
         sys.argv[1] if len(sys.argv) > 1 else r"C:\Users\ccxxx\Desktop\tappei_tweets"
     )
@@ -40,7 +40,7 @@ def main() -> None:
         mark_pending(PENDING)
         for tid, text in new.items():
             tw[tid] = {"text": text, "author": "nezumiironyanko", "src": "dc_manual"}
-        tw_path.write_text(json.dumps(tw, ensure_ascii=False), encoding="utf-8")
+        write_json(tw_path, tw)
 
     pend_path = DATA / "wb_pending.txt"
     if pend_path.exists():
@@ -53,6 +53,11 @@ def main() -> None:
     run_chain()
     clear_pending(PENDING)
     print("全链完成 ✓")
+
+
+def main() -> None:
+    with state_lock(DATA):
+        _main()
 
 
 if __name__ == "__main__":

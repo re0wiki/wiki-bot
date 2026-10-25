@@ -26,7 +26,13 @@ sys.path.insert(0, str(ROOT))
 from src.nekoquote import DATA, bootstrap
 from src.nekoquote.chain import run_chain
 from src.nekoquote.parse import extract
-from src.nekoquote.state import PENDING, clear_pending, mark_pending
+from src.nekoquote.state import (
+    PENDING,
+    clear_pending,
+    mark_pending,
+    state_lock,
+    write_json,
+)
 
 CHANNEL_ID = "1293525355663196243"  # 中文服务器 FBK 转发频道
 STATE = DATA / "sync_state.json"
@@ -57,7 +63,7 @@ def fetch_new(token: str, after: str | None) -> list[dict]:
     return msgs
 
 
-def main() -> None:
+def _main() -> None:
     pwb.handle_args()  # 吞掉 pwb 全局参数（-always 等）
     token_file = ROOT / "secrets.json"
     if not token_file.exists():
@@ -73,7 +79,7 @@ def main() -> None:
         # 基线已含全部既有推，水位线直接设为最新频道消息（不吃存量）
         latest = api(f"/channels/{CHANNEL_ID}/messages?limit=1", token)
         if latest:
-            STATE.write_text(json.dumps({"last_id": latest[0]["id"]}), encoding="utf-8")
+            write_json(STATE, {"last_id": latest[0]["id"]})
 
     state = json.loads(STATE.read_text(encoding="utf-8")) if STATE.exists() else {}
     msgs = fetch_new(token, state.get("last_id"))
@@ -94,7 +100,7 @@ def main() -> None:
     new = {t: x for t, x in found.items() if t not in tw}
     if not new and not PENDING.exists():
         pwb.info("无库外新推")
-        STATE.write_text(json.dumps({"last_id": newest}), encoding="utf-8")
+        write_json(STATE, {"last_id": newest})
         return
     if new:
         pwb.info(f"库外新推 {len(new)} 条")
@@ -102,14 +108,19 @@ def main() -> None:
         mark_pending(PENDING)
         for tid, text in new.items():
             tw[tid] = {"text": text, "author": "nezumiironyanko", "src": "dc_zh_fbk"}
-        tw_path.write_text(json.dumps(tw, ensure_ascii=False), encoding="utf-8")
+        write_json(tw_path, tw)
     else:
         pwb.info("上次语录全链未完成，续跑")
 
     run_chain()  # 任一失败非零退出，水位线不推进下轮重试
     clear_pending(PENDING)
-    STATE.write_text(json.dumps({"last_id": newest}), encoding="utf-8")
+    write_json(STATE, {"last_id": newest})
     pwb.info("语录同步全链完成 ✓")
+
+
+def main() -> None:
+    with state_lock(DATA):
+        _main()
 
 
 if __name__ == "__main__":
