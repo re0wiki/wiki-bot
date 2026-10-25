@@ -63,46 +63,50 @@ EXPECTED = {
 SIMULATE = "-s" in sys.argv or "--simulate" in sys.argv
 
 
+def replace_pipe_label(line, counts):
+    m = re.match(r"^(\s*\|-\|\s*)(.*?)(\s*=.*)$", line)
+    if m and m.group(2) in REPLACE:
+        counts[m.group(2)] += 1
+        line = m.group(1) + REPLACE[m.group(2)] + m.group(3)
+    return line
+
+
+def replace_bare_label(line, counts):
+    m = re.match(r"^(\s*)([^=]*?)(\s*=.*)$", line)
+    if not m:
+        return line
+    label = m.group(2).strip()
+    if label in REPLACE and not any(c in label for c in "<>{}[]|"):
+        counts[label] += 1
+        line = m.group(1) + REPLACE[label] + m.group(3)
+    return line
+
+
+def process_line(line, expect_label, counts):
+    s = line.strip()
+    if "<tabber" in s or "#tag:tabber" in s:
+        return line, True
+    if s.startswith("|-|"):
+        return replace_pipe_label(line, counts), False
+    if s.startswith("{{!}}-{{!}}"):
+        return line, True
+    if expect_label and "=" in s and not s.startswith(("<", "{", "|")):
+        return replace_bare_label(line, counts), False
+    return line, expect_label
+
+
 def process_text(text: str):
     """逐行重写 tabber 标签；返回 (新文本, 计数器)。"""
     counts = collections.Counter()
     out = []
     expect_label = False  # 下一普通行是 tabber 块内裸标签行
     for line in text.split("\n"):
-        s = line.strip()
-        if "<tabber" in s or "#tag:tabber" in s:
-            expect_label = True
-        elif s.startswith("|-|"):
-            m = re.match(r"^(\s*\|-\|\s*)(.*?)(\s*=.*)$", line)
-            if m and m.group(2) in REPLACE:
-                counts[m.group(2)] += 1
-                line = m.group(1) + REPLACE[m.group(2)] + m.group(3)
-            expect_label = False
-        elif s.startswith("{{!}}-{{!}}"):
-            expect_label = True
-        elif expect_label and "=" in s and not s.startswith(("<", "{", "|")):
-            m = re.match(r"^(\s*)([^=]*?)(\s*=.*)$", line)
-            if not m:
-                out.append(line)
-                expect_label = False
-                continue
-            label = m.group(2).strip()
-            if label in REPLACE and not any(c in label for c in "<>{}[]|"):
-                counts[label] += 1
-                line = m.group(1) + REPLACE[label] + m.group(3)
-            expect_label = False
+        line, expect_label = process_line(line, expect_label, counts)
         out.append(line)
     return "\n".join(out), counts
 
 
-def main():
-    site = pywikibot.Site("zh", "re0")
-    if not SIMULATE:
-        site.login()
-        assert site.user() == "IchiSanNi"
-    cat = pywikibot.Category(site, "Category:图库")
-    pages = pagegenerators.CategorizedPageGenerator(cat, recurse=True)
-
+def process_pages(pages):
     total = collections.Counter()
     edited = 0
     for page in pagegenerators.PreloadingGenerator(pages, groupsize=50):
@@ -124,7 +128,10 @@ def main():
                 summary="图库标签归一：一次性清理存量（para 旧伤/en 弃用旧名/单次标签）",
                 bot=True,
             )
+    return total, edited
 
+
+def print_report(total, edited):
     print(
         f"\n{'[干跑] ' if SIMULATE else ''}编辑页数: {edited}，替换总数: {sum(total.values())}"
     )
@@ -133,6 +140,17 @@ def main():
         actual, expected = total.get(label, 0), EXPECTED[label]
         mark = "" if actual == expected else "  ⚠ 漂移"
         print(f"  {label}: {actual} vs {expected}{mark}")
+
+
+def main():
+    site = pywikibot.Site("zh", "re0")
+    if not SIMULATE:
+        site.login()
+        assert site.user() == "IchiSanNi"
+    cat = pywikibot.Category(site, "Category:图库")
+    pages = pagegenerators.CategorizedPageGenerator(cat, recurse=True)
+    total, edited = process_pages(pages)
+    print_report(total, edited)
 
 
 if __name__ == "__main__":
