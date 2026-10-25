@@ -266,10 +266,22 @@ def test_republish_legacy_wip_fails_closed_with_recovery(tmp_path, monkeypatch):
     assert not wiki.saved
 
 
-def test_done_rejects_empty_body_and_preserves_work(tmp_path, monkeypatch):
+@pytest.mark.parametrize(
+    "empty_page",
+    [
+        (
+            "{{Init}}\n[[Category:机翻待校对]]\n"
+            "<!-- LLM: revid 100; 2026-01-01T00:00:00+00:00 -->\n"
+        ),
+        (
+            "{{Init}}\n[[en:Test]]\n[[Category:机翻待校对]]\n"
+            "<!-- LLM: revid 100; 2026-01-01T00:00:00+00:00 -->\n"
+        ),
+    ],
+)
+def test_done_rejects_empty_body_and_preserves_work(tmp_path, monkeypatch, empty_page):
     work = make_work(tmp_path, monkeypatch)
     (work / f"{SLUG}.conv.txt").write_text("新文。\n", encoding="utf-8")
-    empty_page = lt.finalize_new_text("{{Init}}\n", 100)
     wiki = FakeWiki(monkeypatch, empty_page, revid=101)
     with pytest.raises(SystemExit, match="正文为空"):
         lt.cmd_done(SLUG)
@@ -285,6 +297,7 @@ def test_done_rejects_empty_body_and_preserves_work(tmp_path, monkeypatch):
         "{{Init}}\n",
         "<!-- LLM: revid 100; 2026-01-01T00:00:00+00:00 -->\n",
         "{{Init}}\n[[Category:机翻待校对]]\n[[en:Test]]\n",
+        "{{Init}}\n[[en:Test]]\n[[Category:机翻待校对]]\n",
     ],
 )
 def test_publish_blank_draft_aborts_before_wiki(tmp_path, monkeypatch, content):

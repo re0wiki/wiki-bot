@@ -316,12 +316,16 @@ def split_zh_frame(zh_text):
 CATEGORY_ANY_LINE = re.compile(
     r"(?m)^\[\[(?:Category|分类|分類):[^\]\n]*\]\][ \t]*\n?", re.IGNORECASE
 )
+LANGLINK_ANY_LINE = re.compile(r"(?m)^\[\[[a-z][a-z-]*:[^\]\n]*\]\][ \t]*\n?")
 
 
 def has_meaningful_body(text):
-    """去同步标记、分类、语言链接和真正页首框架后，是否仍有正文内容。"""
-    _, body, _ = split_zh_frame(MARKER_RE.sub("", text))
-    return bool(CATEGORY_ANY_LINE.sub("", body).strip())
+    """全文去同步标记、分类、语言链接和真正页首框架后，是否仍有正文内容。"""
+    stripped = MARKER_RE.sub("", text)
+    stripped = CATEGORY_ANY_LINE.sub("", stripped)
+    stripped = LANGLINK_ANY_LINE.sub("", stripped)
+    _, body, _ = split_zh_frame(stripped)
+    return bool(body.strip())
 
 
 def resolve_links(body):
