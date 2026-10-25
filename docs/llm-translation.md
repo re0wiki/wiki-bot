@@ -14,7 +14,7 @@ refresh（重建选页队列）→ prepare（取队首、机械转换备料）�
 - **refresh**：重建 `.cache/llm_translate/queue.json`（全量扫描 + 标记扫描重定冷度，约 5 分钟，低频跑）。
 - **prepare**：取队列最冷的一页，拉 en 源码+revid、zh 现文，**本地机械转换**（en→zh 骨架，见「机械转换层」节），落工作文件到 `.cache/llm_translate/work/`；途中对机械可判定的页面（无 en 源 / en 仅标题骨架）自动打标记跳过，重定向页直接剔出队列（标记只落在正式条目页）。stdout 注入 agent prompt：conv 骨架与 zh 现文两份**全量注入，无大小上限**（agent 无需再读工作文件）。依据：①注入与 read_file 进上下文的 token 成本相同，收益是省回合（页越长省越多）；②Hermes 注入路径实测无截断——`scheduler_script._run_job_script` 全量捕获 stdout、`scheduler_prompt._build_job_prompt` 整体注入，全链路仅有的 8000 字符截断在未使用的 `context_from` 路径（2026-09-12 读本地源码确认）；③Kimi 侧限制即上下文窗口（K3.1 Pro 为 100 万 token），实测队列最大页（术语:术语，en 17.8 万字符 99.5% 非 CJK + zh 4.8 万字符）源估算 ~9 万 token；④真存在超窗页面时会以 API 错误响亮失败，届时再处理——不为假想限制预设机制。参考分布（2026-09-12 对队列 1648 页实测 骨架≈en 正文+zh 现文）：p50≈3k、p90≈21k、p99≈78k、max≈226k 字符。
 - **agent**：以骨架为基础产出整页新源码（只翻 prose 并裁决 zh 原创段落），写入 `work/<slug>.new.txt`；同步标记与机翻待校对分类由 publish/republish 机械处理。
-- **publish**：拒绝空白成稿；对 agent 新源码做基线比对（wiki 最新源码 ≠ prepare 时 zh 现文即响亮中止）、登录校验，以标准摘要（`std_summary`）和刚核验的 live revid 作为 `baserevid` 保存，并在正文末机械挂 `[[Category:机翻待校对]]`（已挂不动、有分类段则并入）与打同步标记——摘要、分类与标记不再经 agent 之手。保存成功后，meta 记录实际发布 revid 与提交文本的 SHA-256，供受控修正核验。
+- **publish**：拒绝去除框架、分类与标记后无正文的成稿（Quote、Infobox 等内容模板计为正文）；对 agent 新源码做基线比对（wiki 最新源码 ≠ prepare 时 zh 现文即响亮中止）、登录校验，以标准摘要（`std_summary`）和刚核验的 live revid 作为 `baserevid` 保存，并在正文末机械挂 `[[Category:机翻待校对]]`（已挂不动、有分类段则并入）与打同步标记——摘要、分类与标记不再经 agent 之手。保存成功后，meta 记录实际发布 revid 与提交文本的 SHA-256，供受控修正核验。
 - **republish**：done 失败后的受控修正入口。仅当 wiki 的 revid 与文本哈希仍等于 meta 记录的上次发布稿时，才以该 revid 为 `baserevid` 保存修正并更新发布元数据；任何发布后漂移都中止。无发布元数据的 WIP 拒绝重发布，先按错误提示用 done 或重备流程恢复。
 - **done**：对 wiki 只读——以 prepare 时的 zh 现文与骨架为基线做事后机械核验（标记/页首/语言链接尾块/内链/模板/分类），通过即清场完成。脚本对 wiki 的内容写入统一走 publish/republish；skip/auto-skip 只做机械打标记。
 
@@ -100,7 +100,7 @@ prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 
 ## 护栏（done 的事后机械核验，不靠 LLM 自检）
 
 1. **标记核验**：zh 页最新编辑必须是本账号，且源码含且仅含一个同步标记、revid 与 meta 的 en_revid 一致——防止「没编辑就记完成」与标记漂移。
-2. **框架不变量**：真正的页首框架（Init/To do/Tab 系；Quote、Infobox 等内容模板归正文）以 prepare 时的 zh 现文为基线逐行比对，仅 To do 翻译类标注可按规则清理（核验前先从新源码摘除标记行）；语言链接尾块独立逐字比对，目标、数量与顺序均不得变化。
+2. **框架与正文完整性**：真正的页首框架（Init/To do/Tab 系；Quote、Infobox 等内容模板归正文）以 prepare 时的 zh 现文为基线逐行比对，仅 To do 翻译类标注可按规则清理（核验前先从新源码摘除标记行）；语言链接尾块独立逐字比对，目标、数量与顺序均不得变化。去除同步标记、分类、语言链接和真正页首框架后必须仍有正文，空稿拒绝 done。
 3. **白名单**：正文内链目标（按 页面/文件/分类/语言链接 分类）⊆ link_map ∪ 未解析名 ∪ zh 现文已有目标（文件另含骨架出现的，分类另含机翻待校对）；正文模板调用 ⊆ conv 骨架 ∪ zh 现文 ∪ nouns.txt 注入专名的模板值（`Elf = {{Elf}}` 类——注入令译文须使用，白名单必须放行）。另核验 `[[Category:机翻待校对]]` 必挂（漏挂拒绝）。
 4. **失败响亮**：核验不过非零退出，工作文件保留供排查；有发布元数据时改 new.txt 后 republish 再 done，无发布元数据的 WIP 按 republish 的恢复提示处理。
 

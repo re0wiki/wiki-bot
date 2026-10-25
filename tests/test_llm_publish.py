@@ -166,6 +166,20 @@ def test_publish_binds_baseline_and_records_publication(tmp_path, monkeypatch):
     }
 
 
+@pytest.mark.parametrize(
+    "template",
+    ["{{Quote|一句引语}}", "{{Infobox character| name = 菜月·昴}}"],
+)
+def test_publish_accepts_content_templates_as_body(tmp_path, monkeypatch, template):
+    work = make_work(tmp_path, monkeypatch)
+    (work / f"{SLUG}.new.txt").write_text(
+        f"{{{{Init}}}}\n{template}\n", encoding="utf-8"
+    )
+    wiki = FakeWiki(monkeypatch)
+    lt.cmd_publish(SLUG)
+    assert len(wiki.saved) == 1
+
+
 def test_republish_recovers_failed_done(tmp_path, monkeypatch):
     old = "{{Init}}\n\n旧文。\n\n[[en:Test]]\n"
     work = make_work(tmp_path, monkeypatch, old)
@@ -220,7 +234,27 @@ def test_republish_legacy_wip_fails_closed_with_recovery(tmp_path, monkeypatch):
     assert not wiki.saved
 
 
-@pytest.mark.parametrize("content", ["", " \n\t\n"])
+def test_done_rejects_empty_body_and_preserves_work(tmp_path, monkeypatch):
+    work = make_work(tmp_path, monkeypatch)
+    (work / f"{SLUG}.conv.txt").write_text("新文。\n", encoding="utf-8")
+    empty_page = lt.finalize_new_text("{{Init}}\n", 100)
+    wiki = FakeWiki(monkeypatch, empty_page, revid=101)
+    with pytest.raises(SystemExit, match="正文为空"):
+        lt.cmd_done(SLUG)
+    assert list(work.iterdir())
+    assert wiki.revid == 101
+
+
+@pytest.mark.parametrize(
+    "content",
+    [
+        "",
+        " \n\t\n",
+        "{{Init}}\n",
+        "<!-- LLM: revid 100; 2026-01-01T00:00:00+00:00 -->\n",
+        "{{Init}}\n[[Category:机翻待校对]]\n[[en:Test]]\n",
+    ],
+)
 def test_publish_blank_draft_aborts_before_wiki(tmp_path, monkeypatch, content):
     work = make_work(tmp_path, monkeypatch)
     (work / f"{SLUG}.new.txt").write_text(content, encoding="utf-8")
