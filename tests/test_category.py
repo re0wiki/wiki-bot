@@ -154,6 +154,32 @@ def test_conflicted_mapping_preserves_source_lines():
     assert unmapped == []
 
 
+def test_conflicted_page_is_fully_protected_when_target_has_valid_mapping():
+    mapping, _, _, conflicted = rc.build_mapping(
+        {
+            "甲": "[[en:Category:A]]",
+            "A": "{{Category redirect|乙}}",
+            "乙": "[[en:Category:B]]",
+            "B": "{{Category redirect|乙}}",
+        }
+    )
+    assert mapping == {"B": "乙"} and conflicted == {"A"}
+    managed = set(mapping) | set(mapping.values())
+    new, added, removed, unmapped, init_missing = rc.compute_sync(
+        "正文\n[[Category:乙]]\n",
+        set(),
+        ["A"],
+        mapping,
+        managed,
+        set(),
+        INIT_CATS,
+        conflicted,
+    )
+    assert new is None
+    assert added == removed == set()
+    assert unmapped == [] and init_missing == []
+
+
 def test_build_mapping_multiple_en_links():
     mapping, conflicts, _, conflicted = rc.build_mapping(
         {"X": "[[en:Category:A]]\n[[en:Category:B]]"}

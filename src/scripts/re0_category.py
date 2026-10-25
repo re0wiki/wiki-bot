@@ -27,8 +27,8 @@
    cat-image-gallery/cat-relationships 两专职任务的清空职能）；
    TRACKING_CATEGORIES 是 en 站 MW 追踪分类（解析器带入、非内容），
    完整清单再生成规程见常量注释；
-6. 未映射 en 分类与映射冲突写报告页 REPORT_PAGE（有变更才编辑）；冲突 en 不驱动
-   写入，相关既有源码行保持现状，不按未映射或待删除项处理。
+6. 未映射 en 分类与映射冲突写报告页 REPORT_PAGE（有变更才编辑）；含冲突 en 的
+   页面整轮保持现状，不按未映射或待删除项处理，冲突解除后下轮自动追平。
 
 人工不要手动增删页面底部的受管分类行（下轮会被改回）——与译名工作流同型，
 改分类 = 改 wiki 上的映射页。zh 侧分类改名 = 移动中文分类页 + 改 en 名页的
@@ -263,7 +263,16 @@ def compute_sync(
     一律清除（残留清空职能）。映射目标属 init_cats 的不写入，仅当
     registered 缺失时记入 init_missing 报告。受管源码行重复（集合比对
     不可见）同样视为需改动——重写删全部受管行、按 desired 去重插入。
+    含任一冲突 en 的页面整轮保持现状，避免冲突目标与有效 managed 重叠时
+    既有的相关分类行被 desired/删除/去重路径误伤；冲突解除后下轮自动追平。
     """
+    if set(en_cats) & set(conflicted):
+        unmapped = [
+            c
+            for c in en_cats
+            if c not in mapping and c not in excluded and c not in conflicted
+        ]
+        return None, set(), set(), unmapped, []
     source_lines = [m.group(1).strip() for m in CAT_LINE_RE.finditer(text)]
     source_names = set(source_lines)
     non_source = set(registered) - source_names  # Init/模板带入，不写源码行
