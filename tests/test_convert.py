@@ -44,6 +44,26 @@ def test_convert_links_case_fallback():
     assert lt.convert_links("[[mystery]]", mapping) == "[[mystery]]"
 
 
+def test_resolve_links_normalized_redirect_chain_and_cycle(monkeypatch):
+    response = {
+        "query": {
+            "pages": [{"title": "C"}, {"title": "Plain"}],
+            "normalized": [{"from": "demi-human", "to": "Demi-human"}],
+            "redirects": [
+                {"from": "Demi-human", "to": "Demi-Human"},
+                {"from": "Demi-Human", "to": "C"},
+                {"from": "Loop", "to": "Loop"},
+            ],
+        }
+    }
+    monkeypatch.setattr(lt, "api", lambda *args, **kwargs: response)
+    mapping, unresolved = lt.resolve_links(
+        "[[demi-human#Abilities]] [[Plain]] [[Loop]]"
+    )
+    assert mapping == {"demi-human#Abilities": "C#Abilities", "Plain": "Plain"}
+    assert unresolved == ["Loop"]
+
+
 # ------------------------------------------------------------ 信息框参数解析
 
 ZH_INLINE_BLOCK = """{{Infobox game | name = Re:从零开始的异世界生活 DEATH OR KISS

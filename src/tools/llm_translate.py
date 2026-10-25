@@ -319,11 +319,15 @@ def resolve_links(body):
         r = api(ZH_API, prop="info", titles="|".join(batch), redirects="1")
         pages = r["query"]["pages"]
         resolved = {p.get("title") for p in pages if "missing" not in p}
-        # redirects=1 后 pages 里是最终目标标题；按规范化标题回挂到 en 目标
-        norm = {n["to"]: n["from"] for n in r["query"].get("normalized", [])}
+        # redirects=1 后 pages 里是最终目标标题；normalized 与 redirects 都是 from→to
+        norm = {n["from"]: n["to"] for n in r["query"].get("normalized", [])}
         reds = {rd["from"]: rd["to"] for rd in r["query"].get("redirects", [])}
         for b in batch:
-            final = reds.get(norm.get(b, b), norm.get(b, b))
+            final = norm.get(b, b)
+            seen = set()
+            while final in reds and final not in seen:
+                seen.add(final)
+                final = reds[final]
             if final in resolved:
                 base_final[b] = final
     for t in sorted(targets):

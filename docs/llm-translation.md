@@ -26,7 +26,7 @@ refresh（重建选页队列）→ prepare（取队首、机械转换备料）�
 2. 模板名映射（`src/jobs/jobs.py` 的 `_template_replacements`，唯一事实源）；
 3. `cosmetic_changes` 本地复用（`CosmeticChangesToolkit` 以真实页名的惰性 Page 构造，不拉取内容）：标题等号内侧空格归一（`cleanUpSectionHeaders`，fix:heading 的前置）、列表空格、空段清理等，与循环任务同套件同语义（`ignore=METHOD`）；
 4. fix 表规则依次应用：para（参数名归一 + 多语言堆积拆分）→ heading（标题归一）→ date（日期 ISO 化）→ misc（间隔号/引号等）→ anti-ve（prose `<br>` 转段落；模板内受例外保护）；随后按 zh 标题前缀分派 heading_char/heading_term（`==History==` 章节名：角色页→经历、术语页→历史，wiki 侧由 fix 的 `-cat` 限定同一作用域）；
-5. 内链目标替换：resolve_links 映射（en 标题 → zh 同名页 → 跟随重定向——与 fixing-redirects 同链路等效，此处离线单遍完成）把 `[[X]]` 改写为 `[[zh 最终目标|X]]`，显示文字留 agent 翻译；映射查找带首字母大小写回退（前置 cosmetic 的 cleanUpLinks 会把 `[[Meteor|meteor]]` 折叠成 `[[meteor]]`，映射键是 en 原标题大小写）；解析失败（en 有 zh 无）保留 en 原名并列进报告；
+5. 内链目标替换：resolve_links 映射（en 标题 → zh 同名页 → 按 API normalized 归一并跟随多跳重定向，循环目标列为未解析——与 fixing-redirects 同链路等效，此处离线单遍完成）把 `[[X]]` 改写为 `[[zh 最终目标|X]]`，显示文字留 agent 翻译；映射查找带首字母大小写回退（前置 cosmetic 的 cleanUpLinks 会把 `[[Meteor|meteor]]` 折叠成 `[[meteor]]`，映射键是 en 原标题大小写）；解析失败（en 有 zh 无）保留 en 原名并列进报告；
 6. **信息框字段级合并**（`merge_structure`，zh 策展内容不丢）：zh 同名参数值含中文（已策展）→ 保留 zh 行，英文残留/空值 → 用 en 转换值；zh 独有参数行（isbn_ko/painter/voice_zh_* 等）块尾保留；粘在模板头/尾行的内联参数（`{{Infobox X | name = ...`、`| modes = }}`）按顶层 `|` / `}}` 切开，同样参与合并；zh 有 image_a/n/g/c 分媒介图库时丢弃 en 的单 image 参数；previous/next 与 character 的 name_ja_romaji（fix:para 删除对象）永不带回；zh 独有的整个信息框（en 无对应）整块前置保留。
 
 译名归一不在转换层——LLM 按译名表翻译，残留别名由主循环的 fix:translation 对成稿机械兜底。已裁决专名（译名表 en 字段=英文写法）由 prepare 词边界匹配 en 正文（专名大小写敏感；`{{Seirei}}`/`{{Elf}}` 等模板条目的 en 是普通名词，大小写不敏感，复数等变形不展开——漏网形态由 fix:translation 的占位模板兜底），命中且该 en 面未作为骨架内链显示文字出现（内链已覆盖的不重复注入）的写入 `{slug}.nouns.txt` 并在 stdout 列出（stdout 注入 agent prompt），译文须使用——这是 agent 新登记专名回灌后续 tick 的通道。未登记专名候选（en 正文的大写词序列减去译名表 en——整串命中或组成词全部已登记——与句首虚词/标题词）同样注入 stdout，每条附 wiki 线索（候选命中骨架内链/en 链目标的给 zh 目标页及其信息框 name_ja，否则给 zh 站搜索 top1 标题与摘要）——agent 裁决登记（agent 规则 7）所需的 ja 与 wiki 既有写法证据随备料给出。
@@ -95,7 +95,7 @@ prepare 的 wip 自动收尾：`work/` 里有上轮残留项时先按 wiki 最�
 
 ## 内链处理
 
-prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 标题 → zh 同名页 → 跟随重定向，即 transferbot 搬运 + re0_move 移动留重定向的链路），并在骨架里机械改写为 `[[zh 最终目标|原显示文字]]`——agent 只翻译显示文字，不碰目标。`#` 锚点不参与 API 查询（非法标题字符会静默落空），按裸标题解析后接回最终目标。解析失败的（en 有而 zh 无对应页）保留 en 原名并在报告中列出。done 侧的白名单核验见「护栏」。
+prepare 把 en 正文里的 `[[wikilink]]` 批量解析成 zh 最终目标（en 标题 → zh 同名页 → API normalized 归一 → 多跳重定向，即 transferbot 搬运 + re0_move 移动留重定向的链路），并在骨架里机械改写为 `[[zh 最终目标|原显示文字]]`——agent 只翻译显示文字，不碰目标。`#` 锚点不参与 API 查询（非法标题字符会静默落空），按裸标题解析后接回最终目标。解析失败的（en 有而 zh 无对应页，或重定向成环）保留 en 原名并在报告中列出。done 侧的白名单核验见「护栏」。
 
 ## 护栏（done 的事后机械核验，不靠 LLM 自检）
 
