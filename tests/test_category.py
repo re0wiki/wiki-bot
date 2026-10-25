@@ -74,14 +74,16 @@ def test_parse_en_link_none():
 # endregion
 # region build_mapping
 def test_build_mapping_basic():
-    mapping, conflicts, hints = rc.build_mapping({"角色": "[[en:Category:Characters]]"})
+    mapping, conflicts, hints, _ = rc.build_mapping(
+        {"角色": "[[en:Category:Characters]]"}
+    )
     assert mapping == {"Characters": "角色"}
     assert conflicts == []
     assert any("Characters 待建" in h for h in hints)
 
 
 def test_build_mapping_redirect_crosscheck_ok():
-    mapping, conflicts, _ = rc.build_mapping(
+    mapping, conflicts, _, _ = rc.build_mapping(
         {
             "角色": "[[en:Category:Characters]]",
             "Characters": "{{Category redirect|角色}}",
@@ -92,7 +94,7 @@ def test_build_mapping_redirect_crosscheck_ok():
 
 
 def test_build_mapping_conflict():
-    _, conflicts, _ = rc.build_mapping(
+    mapping, conflicts, _, conflicted = rc.build_mapping(
         {
             "漫画分类": "[[en:Category:Re:Zero Manga]]",
             "Re:Zero Manga": "{{Category redirect|单行本漫画}}",
@@ -100,25 +102,68 @@ def test_build_mapping_conflict():
     )
     assert len(conflicts) == 1
     assert "Re:Zero Manga" in conflicts[0]
+    assert mapping == {} and conflicted == {"Re:Zero Manga"}
 
 
 def test_build_mapping_duplicate_claim():
-    _, conflicts, _ = rc.build_mapping(
+    mapping, conflicts, _, conflicted = rc.build_mapping(
         {
             "角色": "[[en:Category:Characters]]",
             "角色2": "[[en:Category:Characters]]",
         }
     )
     assert any("多个分类声称" in c for c in conflicts)
+    assert mapping == {} and conflicted == {"Characters"}
+
+
+def test_build_mapping_normalizes_page_and_redirect_names():
+    mapping, conflicts, hints, conflicted = rc.build_mapping(
+        {
+            "角色": "[[en:Category:deceased_characters]]",
+            "Deceased_characters": "{{Category redirect|角色}}",
+        }
+    )
+    assert mapping == {"Deceased characters": "角色"}
+    assert conflicts == []
+    assert hints == []
+    assert conflicted == set()
+
+
+def test_conflicted_mapping_preserves_source_lines():
+    mapping, conflicts, _, conflicted = rc.build_mapping(
+        {
+            "角色": "[[en:Category:Characters]]",
+            "角色2": "[[en:Category:Characters]]",
+        }
+    )
+    assert mapping == {}
+    assert conflicts and conflicted == {"Characters"}
+    managed = set(mapping) | set(mapping.values())
+    new, added, removed, unmapped, _ = rc.compute_sync(
+        "正文\n[[Category:Characters]]\n[[Category:角色2]]\n",
+        set(),
+        ["Characters"],
+        mapping,
+        managed,
+        set(),
+        INIT_CATS,
+        conflicted,
+    )
+    assert new is None
+    assert added == removed == set()
+    assert unmapped == []
 
 
 def test_build_mapping_multiple_en_links():
-    _, conflicts, _ = rc.build_mapping({"X": "[[en:Category:A]]\n[[en:Category:B]]"})
+    mapping, conflicts, _, conflicted = rc.build_mapping(
+        {"X": "[[en:Category:A]]\n[[en:Category:B]]"}
+    )
     assert any("多个 en 链接" in c for c in conflicts)
+    assert mapping == {} and conflicted == {"A", "B"}
 
 
 def test_build_mapping_redirect_without_interwiki_hint():
-    _, _, hints = rc.build_mapping({"Old Name": "{{Category redirect|新名}}"})
+    _, _, hints, _ = rc.build_mapping({"Old Name": "{{Category redirect|新名}}"})
     assert any("无 interwiki 映射对应" in h for h in hints)
 
 
@@ -127,7 +172,7 @@ def test_build_mapping_hints_nowiki_wrapped():
     （报告页因此误入 已重定向的分类，2026-09-30 实证）。"""
     import re
 
-    _, _, hints = rc.build_mapping({"角色": "[[en:Category:Characters]]"})
+    _, _, hints, _ = rc.build_mapping({"角色": "[[en:Category:Characters]]"})
     assert hints
     for h in hints:
         stripped = re.sub(r"<nowiki>.*?</nowiki>", "", h, flags=re.DOTALL)

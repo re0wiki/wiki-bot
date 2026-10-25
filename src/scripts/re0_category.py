@@ -26,7 +26,8 @@
    cat-image-gallery/cat-relationships 两专职任务的清空职能）；
    TRACKING_CATEGORIES 是 en 站 MW 追踪分类（解析器带入、非内容），
    完整清单再生成规程见常量注释；
-6. 未映射 en 分类与映射冲突写报告页 REPORT_PAGE（有变更才编辑）。
+6. 未映射 en 分类与映射冲突写报告页 REPORT_PAGE（有变更才编辑）；冲突 en 不驱动
+   写入，相关既有源码行保持现状，不按未映射或待删除项处理。
 
 人工不要手动增删页面底部的受管分类行（下轮会被改回）——与译名工作流同型，
 改分类 = 改 wiki 上的映射页。zh 侧分类改名 = 移动中文分类页 + 改 en 名页的
@@ -165,38 +166,47 @@ def find_autoempty(cat_pages: dict[str, str]) -> set[str]:
 
 def build_mapping(
     cat_pages: dict[str, str],
-) -> tuple[dict[str, str], list[str], list[str]]:
-    """从分类页源码建映射。返回 (映射, 冲突清单, 提示清单)。
+) -> tuple[dict[str, str], list[str], list[str], set[str]]:
+    """从分类页源码建映射。返回 (有效映射, 冲突清单, 提示清单, 冲突 en 集)。
 
     cat_pages: {分类名（不含 Category: 前缀）: 源码}。
     冲突：interwiki 与 category redirect 不一致、同一 en 名被多个中文页声称、
     单页多个不同 en 链接。提示：redirect 缺页/缺 redirect/redirect 无 interwiki
     对应——均是映射维护的待办信号。
     """
+    cat_pages = {normalize(name): text for name, text in cat_pages.items()}
     mapping: dict[str, str] = {}
     redirects: dict[str, str] = {}
     conflicts: list[str] = []
+    conflicted: set[str] = set()
     for name, text in cat_pages.items():
         en_links = {normalize(x) for x in EN_CAT_LINK_RE.findall(text)}
         if len(en_links) > 1:
             conflicts.append(f"Category:{name} 有多个 en 链接: {sorted(en_links)}")
+            conflicted.update(en_links)
         for en_name in en_links:
             if en_name in mapping and mapping[en_name] != name:
                 conflicts.append(
                     f"{en_name} 被多个分类声称: {mapping[en_name]} 与 {name}"
                 )
+                conflicted.add(en_name)
             mapping.setdefault(en_name, name)
         if m := CAT_RD_RE.search(text):
             redirects[name] = normalize(m.group(1))
+    for en_name, zh_name in sorted(mapping.items()):
+        if en_name in redirects and redirects[en_name] != zh_name:
+            conflicts.append(
+                f"{en_name}: interwiki 映射到 {zh_name}，"
+                f"redirect 指 {redirects[en_name]}"
+            )
+            conflicted.add(en_name)
+    claimed = set(mapping)
+    mapping = {en: zh for en, zh in mapping.items() if en not in conflicted}
     hints = []
     for en_name, zh_name in sorted(mapping.items()):
         if en_name in redirects:
-            if redirects[en_name] != zh_name:
-                conflicts.append(
-                    f"{en_name}: interwiki 映射到 {zh_name}，"
-                    f"redirect 指 {redirects[en_name]}"
-                )
-        elif en_name in cat_pages:
+            continue
+        if en_name in cat_pages:
             hints.append(
                 f"Category:{en_name} 存在但缺 <nowiki>{{Category redirect}}</nowiki>"
             )
@@ -206,9 +216,9 @@ def build_mapping(
                 f"（挂 <nowiki>{{{{Category redirect|{zh_name}}}}}</nowiki>）"
             )
     for name in sorted(redirects):
-        if name not in mapping:
+        if name not in claimed:
             hints.append(f"Category redirect {name} 无 interwiki 映射对应")
-    return mapping, conflicts, hints
+    return mapping, conflicts, hints, conflicted
 
 
 def resolve_en_cats(data: dict, requested: list[str]) -> dict[str, list[str] | None]:
@@ -241,6 +251,7 @@ def compute_sync(
     managed: set[str] | frozenset[str],
     excluded: set[str] | frozenset[str],
     init_cats: set[str] | frozenset[str],
+    conflicted: set[str] | frozenset[str] = frozenset(),
 ) -> tuple[str | None, set[str], set[str], list[str], list[str]]:
     """计算同步后的新源码。返回 (new_text|None, added, removed, unmapped, init_missing)。
 
@@ -266,7 +277,11 @@ def compute_sync(
         and mapping[c] in init_cats
         and mapping[c] not in registered
     ]
-    unmapped = [c for c in en_cats if c not in mapping and c not in excluded]
+    unmapped = [
+        c
+        for c in en_cats
+        if c not in mapping and c not in excluded and c not in conflicted
+    ]
     current = {n for n in source_names if normalize(n) in managed}
     purged = {n for n in source_names if normalize(n) in excluded}
     # 集合比对对重复行不可见：受管行出现次数 != 1 同样视为未同步，
@@ -396,7 +411,7 @@ if __name__ == "__main__":
                 cat_pages[p["title"].removeprefix("Category:")] = p["revisions"][0][
                     "slots"
                 ]["main"]["content"]
-    mapping, conflicts, hints = build_mapping(cat_pages)
+    mapping, conflicts, hints, conflicted = build_mapping(cat_pages)
     managed = set(mapping) | set(mapping.values())
     excluded = find_autoempty(cat_pages) | TRACKING_CATEGORIES
     # Init 覆盖集：wiki 侧 Module 源码运行时解析（仓库零副本）
@@ -464,7 +479,7 @@ if __name__ == "__main__":
                 continue
             cats = got
         new_text, added, removed, page_unmapped, page_init_missing = compute_sync(
-            text, registered, cats, mapping, managed, excluded, init_cats
+            text, registered, cats, mapping, managed, excluded, init_cats, conflicted
         )
         unmapped.update(page_unmapped)
         if page_init_missing:
