@@ -19,6 +19,7 @@ api.php 上传）。创建的文件页标题与正文自动取自 YouTube 当前
 
 import time
 from os import path
+from pathlib import Path
 from tempfile import TemporaryDirectory
 from urllib.parse import urlencode
 
@@ -153,44 +154,55 @@ def import_videos(site, videos: dict[str, str]) -> None:
     pwb.logging.info("Imported %d/%d videos.", ok, len(videos))
 
 
-def download_one(image: pwb.FilePage, tmp_dir: str) -> None:
-    """从 en 下载一张图片文件到临时目录。"""
+def download_one(image: pwb.FilePage, tmp_dir: str) -> bool:
+    """下载一张图片；失败时删除残留文件并返回 False。"""
     filename = path.join(tmp_dir, image.title(with_ns=False, as_filename=True))
     try:
-        image.download(filename)
-    except Exception as e:  # noqa: BLE001 - 单张失败不阻断整批，交由日志人工复查
+        if image.download(filename):
+            return True
+        pwb.logging.error("FAILED to download %s", image.title())
+    except Exception as e:  # noqa: BLE001 - 整批完成后统一非零报告
         pwb.logging.error(e)
+    Path(filename).unlink(missing_ok=True)
+    return False
 
 
-def upload_one(image: pwb.FilePage, tmp_dir: str) -> None:
+def upload_one(image: pwb.FilePage, tmp_dir: str) -> bool:
     """从临时目录上传一张图片文件到 zh。"""
     filename = path.join(tmp_dir, image.title(with_ns=False, as_filename=True))
     title = image.title()
     text = f"[[en:{title}]]"
 
     try:
-        pwb.FilePage(pwb.Site("zh", "re0"), title).upload(
+        return pwb.FilePage(pwb.Site("zh", "re0"), title).upload(
             filename,
             comment=text,
             text=text,
             report_success=False,
             ignore_warnings=True,
         )
-    except Exception as e:  # noqa: BLE001 - 单张失败不阻断整批，交由日志人工复查
+    except Exception as e:  # noqa: BLE001 - 整批完成后统一非零报告
         pwb.logging.error(e)
+        return False
 
 
-def download_all(images: list[pwb.FilePage], tmp_dir: str):
-    """从 en 匿名下载所有图片文件到临时目录（下载不需要登录）。"""
+def download_all(images: list[pwb.FilePage], tmp_dir: str) -> list[pwb.FilePage]:
+    """返回下载成功的图片；失败文件绝不进入上传清单。"""
+    downloaded = []
     for image in tqdm(images, "Downloading images"):
-        download_one(image, tmp_dir)
+        if download_one(image, tmp_dir):
+            downloaded.append(image)
+    return downloaded
 
 
-def upload_all(images: list[pwb.FilePage], tmp_dir: str):
-    """从临时目录上传所有图片文件到 zh。"""
+def upload_all(images: list[pwb.FilePage], tmp_dir: str) -> int:
+    """上传图片并返回失败数。"""
     pwb.Site("zh", "re0").login()
+    failed = 0
     for image in tqdm(images, "Uploading images"):
-        upload_one(image, tmp_dir)
+        if not upload_one(image, tmp_dir):
+            failed += 1
+    return failed
 
 
 def main() -> None:
@@ -216,13 +228,17 @@ def main() -> None:
         for title in video_titles:
             pwb.logging.info("SIMULATE: would import video %s", title)
         return
+    failed = 0
     if diff_titles:
         diff = [pwb.FilePage(en, f"File:{title}") for title in diff_titles]
         with TemporaryDirectory() as tmp_dir:
-            download_all(diff, tmp_dir)
-            upload_all(diff, tmp_dir)
+            downloaded = download_all(diff, tmp_dir)
+            failed += len(diff) - len(downloaded)
+            failed += upload_all(downloaded, tmp_dir)
     if video_titles:
         import_videos(zh, fetch_video_ids(en, video_titles))
+    if failed:
+        raise RuntimeError(f"{failed} 张图片同步失败")
 
 
 if __name__ == "__main__":

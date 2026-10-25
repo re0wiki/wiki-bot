@@ -1,5 +1,8 @@
 """src/scripts/re0_image.py 的纯函数测试（不触碰 wiki）。"""
 
+from pathlib import Path
+
+import pytest
 from repo_loader import load_module
 
 img = load_module("re0_image", "src/scripts/re0_image.py")
@@ -56,3 +59,67 @@ def test_video_zh_extra_ignored():
 
 
 # endregion
+
+
+class FakeDownloadImage:
+    def __init__(self, name: str, ok: bool):
+        self.name = name
+        self.ok = ok
+
+    def title(self, with_ns=True, as_filename=False):
+        return self.name if not with_ns else f"File:{self.name}"
+
+    def download(self, filename):
+        Path(filename).write_bytes(b"partial" if not self.ok else b"complete")
+        return self.ok
+
+
+def test_download_all_filters_failed_files(tmp_path):
+    good = FakeDownloadImage("good.png", True)
+    bad = FakeDownloadImage("bad.png", False)
+    assert img.download_all([good, bad], str(tmp_path)) == [good]
+    assert not (tmp_path / "bad.png").exists()
+
+
+def test_upload_all_counts_failures(monkeypatch):
+    class FakeSite:
+        def login(self):
+            return None
+
+    monkeypatch.setattr(img.pwb, "Site", lambda *args: FakeSite())
+    monkeypatch.setattr(img, "upload_one", lambda image, tmp_dir: image != "bad")
+    assert img.upload_all(["good", "bad"], "") == 1
+
+
+def test_upload_one_honors_false_result(monkeypatch, tmp_path):
+    (tmp_path / "bad.png").write_bytes(b"bad")
+
+    class FakeUploader:
+        def __init__(self, site, title):
+            pass
+
+        def upload(self, filename, **kwargs):
+            return False
+
+    monkeypatch.setattr(img.pwb, "Site", lambda *args: object())
+    monkeypatch.setattr(img.pwb, "FilePage", FakeUploader)
+    image = FakeDownloadImage("bad.png", True)
+    assert img.upload_one(image, str(tmp_path)) is False
+
+
+def test_main_uploads_only_downloaded_and_raises_on_failure(monkeypatch):
+    monkeypatch.setattr(img.pwb, "handle_args", lambda *args: None)
+    monkeypatch.setattr(img.pwb.config, "simulate", False)
+    monkeypatch.setattr(img.pwb, "Site", lambda *args: object())
+    # 两次 list_images 分别对应 en/zh。
+    responses = iter([{"bad.png": PNG}, {}])
+    monkeypatch.setattr(img, "list_images", lambda site: next(responses))
+    monkeypatch.setattr(img.pwb, "FilePage", lambda site, title: title)
+    monkeypatch.setattr(img, "download_all", lambda images, tmp_dir: [])
+    uploaded = []
+    monkeypatch.setattr(
+        img, "upload_all", lambda images, tmp_dir: uploaded.append(images) or 0
+    )
+    with pytest.raises(RuntimeError, match="图片同步失败"):
+        img.main()
+    assert uploaded == [[]]
