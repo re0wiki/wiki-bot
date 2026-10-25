@@ -21,6 +21,7 @@ import re
 
 import pywikibot as pwb
 from pywikibot import config, pagegenerators
+from pywikibot.exceptions import PageCreatedConflictError
 from pywikibot.tools import first_upper
 
 HEADER = "{{Init}}\n{{To do}}\n"
@@ -84,6 +85,16 @@ def recheck_missing(zh, titles: list[str]) -> list[str]:
     ]
 
 
+def save_new_page(page, summary: str) -> bool:
+    """只允许创建新页；竞争产生的页面保留给人工/后续任务。"""
+    try:
+        page.save(summary=summary, bot=True, createonly=True)
+        return True
+    except PageCreatedConflictError:
+        pwb.warning(f"页面已被其他编辑创建，跳过: {page.title()}")
+        return False
+
+
 if __name__ == "__main__":
     pwb.handle_args()  # -always 等忽略：不询问；-s 走下方分支
     en = pwb.Site("en", "re0")
@@ -107,8 +118,8 @@ if __name__ == "__main__":
                 continue
             page = pwb.Page(zh, title)
             page.text = f"#REDIRECT [[{covered[title]}]]"
-            page.save(summary=build_redirect_summary(title, covered[title]), bot=True)
-            pwb.info(f"已建重定向 {title} -> {covered[title]}")
+            if save_new_page(page, build_redirect_summary(title, covered[title])):
+                pwb.info(f"已建重定向 {title} -> {covered[title]}")
         # 批量取 en 内容（50/批）
         for i in range(0, len(to_copy), 50):
             data = en.simple_request(
@@ -132,5 +143,5 @@ if __name__ == "__main__":
                 page.text = build_text(
                     p["revisions"][0]["slots"]["main"]["content"], title
                 )
-                page.save(summary=build_summary(title), bot=True)
-                pwb.info(f"已搬运 {title}")
+                if save_new_page(page, build_summary(title)):
+                    pwb.info(f"已搬运 {title}")
