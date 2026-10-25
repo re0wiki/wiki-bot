@@ -1,47 +1,70 @@
 """部署：变更月表 + 新非空月表 /doc 补骨架 + 主模块同步（全部对 lua_live 快照差量）。"""
 
+import sys
 import time
 
 import pywikibot
 
 from . import DATA
 
-site = pywikibot.Site("zh", "re0")
-site.login()
-assert site.user() == "IchiSanNi"
 
-# 主模块重生成（data_names 已程序化，直接推 emit 产物）
-main_src = (DATA / "main.lua").read_text(encoding="utf-8")
-p = pywikibot.Page(site, "Module:NekoQuote")
-if p.text != main_src:
-    p.text = main_src
-    p.save(summary="语录主模块同步", bot=True)
-print("主模块 ✓")
+def main() -> int:
+    site = pywikibot.Site("zh", "re0")
+    site.login()
+    assert site.user() == "IchiSanNi"
 
-# 变更月表 = emit 与上次部署快照（lua_live）不一致的
-changed = []
-for f in sorted((DATA / "lua").glob("*.lua")):
-    live = DATA / "lua_live" / f.name
-    if not live.exists() or live.read_text(encoding="utf-8") != f.read_text(
-        encoding="utf-8"
-    ):
-        changed.append(f.stem)
-print(f"变更月表 {len(changed)} 张（vs 上次部署）")
+    # 主模块重生成（data_names 已程序化，直接推 emit 产物）
+    main_src = (DATA / "main.lua").read_text(encoding="utf-8")
+    p = pywikibot.Page(site, "Module:NekoQuote")
+    if p.text != main_src:
+        p.text = main_src
+        p.save(summary="语录主模块同步", bot=True)
+    print("主模块 ✓")
 
-for m in changed:
-    content = (DATA / "lua" / f"{m}.lua").read_text(encoding="utf-8")
-    p = pywikibot.Page(site, f"Module:NekoQuote/{m}")
-    if p.text == content:
-        # 快照滞后导致的「假变更」：内容已与线上一致，省一次写请求
-        print(f"  {m} ≡（与线上一致，仅快照滞后）", flush=True)
-        continue
-    p.text = content
-    t0 = time.perf_counter()
-    p.save(summary="语录月表增量更新", bot=True)
-    # /doc：新非空月表补骨架（统一 Template:NekoQuoteDoc）
-    d = pywikibot.Page(site, f"Module:NekoQuote/{m}/doc")
-    if "{{NekoQuoteDoc}}" not in d.text:
-        d.text = "{{NekoQuoteDoc}}"
-        d.save(summary="语录 /doc 骨架", bot=True)
-    print(f"  {m} ✓ ({time.perf_counter() - t0:.1f}s)", flush=True)
-print("完成")
+    # 变更月表 = emit 与上次部署快照（lua_live）不一致的
+    changed = []
+    for f in sorted((DATA / "lua").glob("*.lua")):
+        live = DATA / "lua_live" / f.name
+        if not live.exists() or live.read_text(encoding="utf-8") != f.read_text(
+            encoding="utf-8"
+        ):
+            changed.append(f.stem)
+    print(f"变更月表 {len(changed)} 张（vs 上次部署）")
+
+    for m in changed:
+        content = (DATA / "lua" / f"{m}.lua").read_text(encoding="utf-8")
+        live = DATA / "lua_live" / f"{m}.lua"
+        p = pywikibot.Page(site, f"Module:NekoQuote/{m}")
+        online = p.text
+        if online == content:
+            # 快照滞后导致的「假变更」：内容已与线上一致，省一次写请求
+            print(f"  {m} ≡（与线上一致，仅快照滞后）", flush=True)
+            continue
+        if live.exists():
+            baseline = live.read_text(encoding="utf-8")
+            if online != baseline:
+                print(
+                    f"  {m} 线上内容与上次部署快照不一致；先运行 pull_wiki 合并，中止",
+                    flush=True,
+                )
+                return 1
+        elif p.exists():
+            print(
+                f"  {m} 线上页面已存在但无部署基线；人工核对后再部署，中止", flush=True
+            )
+            return 1
+        p.text = content
+        t0 = time.perf_counter()
+        p.save(summary="语录月表增量更新", bot=True)
+        # /doc：新非空月表补骨架（统一 Template:NekoQuoteDoc）
+        d = pywikibot.Page(site, f"Module:NekoQuote/{m}/doc")
+        if "{{NekoQuoteDoc}}" not in d.text:
+            d.text = "{{NekoQuoteDoc}}"
+            d.save(summary="语录 /doc 骨架", bot=True)
+        print(f"  {m} ✓ ({time.perf_counter() - t0:.1f}s)", flush=True)
+    print("完成")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
