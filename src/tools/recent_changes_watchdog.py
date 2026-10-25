@@ -7,7 +7,8 @@
   水位线按「拉取到的全部改动（含被过滤的 bot 编辑）」的最大 rcid 推进，
   否则 bot 自己的编辑会永远卡住水位线。
 - 审查区间与触发时间解耦：拉取不设时间窗口，从最新向水位线翻页、碰到
-  rcid <= 水位线即停。因此漏触发（停机任意时长）、手动触发、改触发间隔
+  rcid <= 水位线即停；只有实际抵达旧水位线才允许推进，数据耗尽仍未抵达
+  则保持状态并非零退出。因此漏触发（停机任意时长）、手动触发、改触发间隔
   都不影响正确性；翻页也保证两次运行之间改动超过单页 500 条（如 bot 全站
   任务）时不漏掉中间的人类编辑。
 - 排除 bot：EXCLUDE_USERS 里的账号（IchiSanNi）**全部**编辑都排除——无论是否带
@@ -100,6 +101,7 @@ def fetch_new_changes(last_rcid: int) -> list[dict]:
     """
     out: list[dict] = []
     cont: dict = {}
+    reached = False
     while True:
         data = _get(
             {
@@ -118,23 +120,36 @@ def fetch_new_changes(last_rcid: int) -> list[dict]:
             break
         out.extend(rc)
         if min(c["rcid"] for c in rc) <= last_rcid:
+            reached = True
             break  # 已到水位线，更旧的无需再看
         if "continue" not in data:
             break
         cont = data["continue"]
+    if not reached:
+        oldest = min((c["rcid"] for c in out), default=None)
+        raise RuntimeError(
+            f"recentchanges 数据耗尽但未抵达旧水位线 {last_rcid}"
+            f"（最旧取得 rcid={oldest}）；保持原状态，拒绝推进"
+        )
     return out
 
 
 def group_consecutive(pending: list[dict]) -> list[dict]:
-    """同用户同页的**相邻**连续编辑合并为一组（最早 old_revid→最晚 revid）。
+    """同用户同页且 revid 连续的相邻编辑合并为一组（最早 old_revid→最晚 revid）。
 
     必须按相邻合并而不能按 (user,title) 全局合并：中间隔着他人编辑时
     （如 A 编辑 → B 编辑 → A 回退 B），全局合并会把他人改动藏进合并区间。
+    下一条 old_revid 不等于当前 to_rev 时同样拆组，防止被过滤编辑夹在区间内。
     """
     groups: list[dict] = []
     for c in sorted(pending, key=lambda c: c["rcid"]):
         user = c.get("user", "?")
-        if groups and groups[-1]["user"] == user and groups[-1]["title"] == c["title"]:
+        if (
+            groups
+            and groups[-1]["user"] == user
+            and groups[-1]["title"] == c["title"]
+            and groups[-1]["to_rev"] == c["old_revid"]
+        ):
             g = groups[-1]
             g["to_rev"] = c["revid"]
             g["rcids"].append(c["rcid"])
