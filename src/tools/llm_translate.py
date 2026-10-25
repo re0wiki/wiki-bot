@@ -48,7 +48,7 @@ CATEGORY = "Category:待修撰"
 PROOFREAD_CAT = "Category:机翻待校对"
 # 标记名不随模型变；翻译用的模型型号记录在编辑摘要（人类可读、可扫描归因），
 # 换模型只改这里
-SUMMARY_PREFIX = "LLM(K3): revid "
+SUMMARY_PREFIX = "LLM(K3.1 Pro): revid "
 
 S = requests.Session()
 
@@ -966,7 +966,7 @@ def write_work_files(best):
     # 骨架与 zh 现文全量注入 stdout（进 agent prompt），省两次读文件。
     # 不设上限：Hermes 注入路径无截断（scheduler_script 全量捕获、scheduler_prompt
     # 整体注入，仅有的 8000 字符截断在未使用的 context_from 路径）；Kimi 侧限制即
-    # 上下文窗口（k3 为 100 万 token，实测队列最大页 22.6 万字符 ≈9 万 token）；
+    # 上下文窗口（K3.1 Pro 为 100 万 token，实测队列最大页 22.6 万字符 ≈9 万 token）；
     # 超窗页面会以 API 错误响亮失败，那才是处理时机
     print("===== 骨架 =====")
     print(conv)

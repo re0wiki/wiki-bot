@@ -301,7 +301,11 @@ def merge_raw(buckets, existing_ids):
         if zh:
             e["fields"].append(("t", '"', esc(zh)))
             # 机翻署名
-            e["fields"][0] = ("src", '"', esc(e["fields"][0][2] + " · 译：Kimi K3"))
+            e["fields"][0] = (
+                "src",
+                '"',
+                esc(e["fields"][0][2] + " · 译：Kimi K3.1 Pro"),
+            )
         buckets.setdefault(month, []).append(e)
         n += 1
     return n

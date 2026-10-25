@@ -1,4 +1,4 @@
-"""中文翻译：raw 推 ja→zh（Kimi K3，批量断点续跑）。
+"""中文翻译：raw 推 ja→zh（Kimi K3.1 Pro，批量断点续跑）。
 产物 zh.json：{tid: {"zh": 推文译文, "qzh": 提问推译文(如有)}}。无 key 时跳过（退出 0）。
 """
 

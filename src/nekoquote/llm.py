@@ -1,4 +1,4 @@
-"""语录管线 LLM 客户端（默认 Kimi K3，配置在 secrets.json 的 llm 字段）。
+"""语录管线 LLM 客户端（默认 Kimi K3.1 Pro，配置在 secrets.json 的 llm 字段）。
 
 - 429/5xx 指数退避（尊重 Retry-After）；reasoning 模型 max_tokens 恒 32768
 - 译名保障 = prompt 注入（glossary_lines）：推文中出现的译名表实体按 ja 面形态
@@ -122,7 +122,7 @@ def _chat_openai(user_text, system, max_tokens, max_attempts, provider, timeout=
         "max_tokens": max_tokens,
     }
     if provider == "kimi":
-        # K3 是 reasoning 模型，推理量随任务不随上限；API 按实际生成计费，
+        # K3.1 Pro 是 reasoning 模型，推理量随任务不随上限；API 按实际生成计费，
         # 低上限烧穿 = 推理费白付 + 重试再付——恒用最高档一次到位（32768 上限本身防失控）。
         payload["max_tokens"] = 32768
         timeout = max(timeout, 1800)  # 长生成期间无字节流，读超时须覆盖

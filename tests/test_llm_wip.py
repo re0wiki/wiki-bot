@@ -99,7 +99,7 @@ def test_resolve_wip_bad_marker_refuses(tmp_path, monkeypatch):
             101,
             lt.BOT,
             "编辑了但没标记。",
-            comment="LLM(K3): revid 100（5.0 年无人类编辑）",
+            comment="LLM(K3.1 Pro): revid 100（5.0 年无人类编辑）",
         ),
     )
     with pytest.raises(SystemExit, match="wip 异常"):
@@ -147,7 +147,7 @@ def test_std_summary(monkeypatch):
 
     monkeypatch.setattr(lt, "api", fake_api)
     s = lt.std_summary(META, tagged=False)
-    assert s.startswith("LLM(K3): revid 100（")
+    assert s.startswith("LLM(K3.1 Pro): revid 100（")
     assert "无人类编辑，据 [[en:Test]] 自动更新；" in s
     assert "待修撰 100 条占全站 50.0%，机翻待校对 41 条占待修撰 41.0%）" in s
     s = lt.std_summary(META, tagged=True)

@@ -30,7 +30,7 @@ cd wiki-bot 仓库根
 .venv/Scripts/python.exe -m src.nekoquote.merge <导出目录>
 ```
 
-一键完成：解析（content/embeds/递归组件三路全扫、双布局兼容、RT 剥除）→ 新推入 `.cache/nekoquote/tweets.json` → K3 翻译（断点续跑；译名表 ja 面形态确定性检出 → prompt 注入译名对照）→ 构建月表 → round-trip 校验 → 增量部署 → 更新 `lua_live` 快照。pending（已删推清单）命中自动划账。
+一键完成：解析（content/embeds/递归组件三路全扫、双布局兼容、RT 剥除）→ 新推入 `.cache/nekoquote/tweets.json` → K3.1 Pro 翻译（断点续跑；译名表 ja 面形态确定性检出 → prompt 注入译名对照）→ 构建月表 → round-trip 校验 → 增量部署 → 更新 `lua_live` 快照。pending（已删推清单）命中自动划账。
 
 **幂等**：同一份导出可反复跑，已入库 id 自动跳过（「库外新推 0」即无新增）。
 
@@ -51,6 +51,6 @@ cd wiki-bot 仓库根
 ```
 EN Discord 导出（Discrub JSON）
   → merge.py：parse 解析（三路全扫）+ 新推入 tweets.json
-  → chain.py 链：translate.py（K3 补译 → zh.json）→ build.py（lua_base + raw 合流 → lua/）
+  → chain.py 链：translate.py（K3.1 Pro 补译 → zh.json）→ build.py（lua_base + raw 合流 → lua/）
     → verify_rt.py（既有条目零缺失校验）→ deploy.py（增量部署，vs lua_live）
 ```
