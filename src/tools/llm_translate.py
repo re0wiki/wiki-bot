@@ -20,6 +20,7 @@ revid 为 - 表示无 en 源（zh 源码无 en 链接，或 en 页不存在）�
 """
 
 import argparse
+import hashlib
 import html
 import json
 import sys
@@ -1290,7 +1291,7 @@ def cmd_publish(slug):
     new_text = new_file.read_text(encoding="utf-8")
     if not new_text.strip():
         sys.exit(f"空白成稿：{new_file} 不含可发布内容，中止")
-    live, _, _ = get_page(ZH_API, meta["title"])
+    live, live_revid, _ = get_page(ZH_API, meta["title"])
     zh_old = (WORK / f"{slug}.zh.txt").read_text(encoding="utf-8")
     if live is None:
         sys.exit(f"{meta['title']} 页面不存在（prepare 后被删除？），中止")
@@ -1306,9 +1307,23 @@ def cmd_publish(slug):
     site.login()
     assert site.user() == BOT, f"登录账号异常: {site.user()}"
     page = pywikibot.Page(site, meta["title"])
-    page.text = finalize_new_text(new_text, meta["en_revid"])
+    final_text = finalize_new_text(new_text, meta["en_revid"])
+    page.text = final_text
     tagged = bool(re.search(r"\[\[Category:机翻待校对\]\]", zh_old, re.IGNORECASE))
-    page.save(summary=std_summary(meta, tagged), bot=False, minor=False)
+    page.save(
+        summary=std_summary(meta, tagged),
+        bot=False,
+        minor=False,
+        baserevid=live_revid,
+    )
+    published_revid = page.latest_revision_id
+    if published_revid is None:
+        raise RuntimeError("publish 保存成功但未获得实际 revid，拒绝推进发布状态")
+    meta["published"] = {
+        "revid": published_revid,
+        "sha256": hashlib.sha256(final_text.encode("utf-8")).hexdigest(),
+    }
+    save_json(WORK / f"{slug}.meta.json", meta)
     print(f"published: {meta['title']}（en revid {meta['en_revid']}，待 done 核验）")
 
 

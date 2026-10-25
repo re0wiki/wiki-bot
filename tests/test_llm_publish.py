@@ -1,6 +1,9 @@
 """llm_translate 的 publish 子命令测试（离线，api/工作目录打桩，不触 wiki）。"""
 
+import hashlib
 import json
+import sys
+from types import SimpleNamespace
 
 import pytest
 from repo_loader import load_module
@@ -43,6 +46,52 @@ def stub_live(monkeypatch, content):
     monkeypatch.setattr(
         lt, "api", lambda *a, **k: {"query": {"pages": [{"revisions": [rev]}]}}
     )
+
+
+class FakeWiki:
+    """可写入的离线 wiki 状态；Page.save 只推进这个对象，不触网络。"""
+
+    def __init__(self, monkeypatch, content="{{Init}}\n\n旧文。\n", revid=90):
+        self.content = content
+        self.revid = revid
+        self.saved = []
+        monkeypatch.setattr(lt, "get_page", self.get_page)
+        monkeypatch.setattr(lt, "std_summary", lambda *args: "测试摘要")
+        monkeypatch.setitem(
+            sys.modules,
+            "pywikibot",
+            SimpleNamespace(Site=self.make_site, Page=self.make_page),
+        )
+
+    def get_page(self, base, title):
+        return self.content, self.revid, "2026-01-01T00:00:00Z"
+
+    def make_site(self, *args):
+        wiki = self
+
+        class FakeSite:
+            def login(self):
+                pass
+
+            def user(self):
+                return lt.BOT
+
+        class FakePage:
+            def __init__(self, site, title):
+                self.text = None
+                self.latest_revision_id = None
+
+            def save(self, **kwargs):
+                wiki.saved.append(kwargs)
+                wiki.revid += 1
+                wiki.content = self.text
+                self.latest_revision_id = wiki.revid
+
+        self.page_class = FakePage
+        return FakeSite()
+
+    def make_page(self, site, title):
+        return self.page_class(site, title)
 
 
 # ------------------------------------------------------------ ensure_proofread_cat
@@ -88,6 +137,19 @@ def test_finalize_strips_agent_supplied_markers():
 
 
 # ------------------------------------------------------------ cmd_publish 前置校验
+
+
+def test_publish_binds_baseline_and_records_publication(tmp_path, monkeypatch):
+    work = make_work(tmp_path, monkeypatch)
+    (work / f"{SLUG}.new.txt").write_text("{{Init}}\n\n新文。\n", encoding="utf-8")
+    wiki = FakeWiki(monkeypatch)
+    lt.cmd_publish(SLUG)
+    assert wiki.saved[0]["baserevid"] == 90
+    meta = json.loads((work / f"{SLUG}.meta.json").read_text(encoding="utf-8"))
+    assert meta["published"] == {
+        "revid": 91,
+        "sha256": hashlib.sha256(wiki.content.encode("utf-8")).hexdigest(),
+    }
 
 
 @pytest.mark.parametrize("content", ["", " \n\t\n"])
