@@ -32,6 +32,8 @@ cd wiki-bot 仓库根
 
 一键完成：解析（content/embeds/递归组件三路全扫、双布局兼容、RT 剥除）→ 新推入 `.cache/nekoquote/tweets.json` → K3.1 Pro 翻译（断点续跑；译名表 ja 面形态确定性检出 → prompt 注入译名对照）→ 构建月表 → round-trip 校验 → 增量部署 → 更新 `lua_live` 快照。pending（已删推清单）命中自动划账。
 
+自动与手动入库都会先写全链恢复标记 `.cache/nekoquote/chain_pending.json`，只有全链成功才清除。任一阶段失败后，下轮即使「库外新推 0」也会续跑，不会提前推进 Discord 水位线。共享缓存的读改写、全链和状态提交由 `state.lock` 串行化，JSON 以同目录临时文件原子替换。
+
 **幂等**：同一份导出可反复跑，已入库 id 自动跳过（「库外新推 0」即无新增）。
 
 建议频率：每月一次，或明知有新内容（生日问答场次、动画播出期）时。
@@ -40,7 +42,10 @@ cd wiki-bot 仓库根
 
 ## 故障处理
 
-- **wiki 侧改月表后必须回写源数据**：月表条目构建期只读本地数据（lua_base 零变换重放、zh.json/tweets.json 经 merge_raw 重新生成），只在 wiki 上改（如 `{{Seirei or Elf}}` 复核消歧、fix:translation 命中 jt 字段）不落回本地，下轮增量同步重建即回潮（2026-08-23 实证：08-20 的复核消歧只改了 wiki，增量同步把 `{{Seirei}}` 回潮成 `{{Seirei or Elf}}`、jt 里的 `{{Yousei}}` 回潮成原文）。改完跑 `uv run python -m src.nekoquote.pull_wiki`——lua_base 月份整文件刷新（其条目是 P8 时代管线生成的，加工逻辑与 raw_tweet_entry 不同，不做逐字段比对），其余月份逐字段回写 zh.json（t/q）与 tweets.json（jt/jq）。
+- **wiki 侧改月表后必须回写源数据**：月表条目构建期只读本地数据（lua_base 零变换重放、zh.json/tweets.json 经 merge_raw 重新生成），只在 wiki 上改（如 `{{Seirei or Elf}}` 复核消歧、fix:translation 命中 jt 字段）不落回本地，下轮增量同步重建即回潮（2026-08-23 实证：08-20 的复核消歧只改了 wiki，增量同步把 `{{Seirei}}` 回潮成 `{{Seirei or Elf}}`、jt 里的 `{{Yousei}}` 回潮成原文）。改完跑 `uv run python -m src.nekoquote.pull_wiki`——lua_base 月份整文件刷新（其条目是 P8 时代管线生成的，加工逻辑与 raw_tweet_entry 不同，不做逐字段比对），其余月份逐字段回写 zh.json（t/q）与 tweets.json（jt/jq）。wiki 侧字段清空或删除会同步删除本地键；raw 条目消失会响亮报错并阻止盲目重建，不会静默保留本地副本。
+- **部署遇到线上漂移会中止**：部署逐月比较线上现文、`lua_live` 与新构建；线上不同于上次部署快照时不覆盖未知版本，线上页面已存在但无基线同样停机。先只读核对差异，再按需运行 `pull_wiki` 合并；线上已等于新构建时仅刷新快照，不写页面。
+- **模型截断不等于翻译成功**：任何 `finish_reason=length` 都不入库；可拆批次自动二分，单条仍截断则非零终止。不要用已有部分 content 冒充完整译文。
+- **本地基线只认完整发布**：bootstrap 在临时目录抓完所有月表后才发布 `lua_base`/`lua_live` 并写 `lua_base.complete`；中途失败的残留不会被新 clone 当成完整恢复。
 - **Kimi content_filter 误伤**（"high risk" 400）：管线已自动二分隔离并跳过该条，跑完后查 `.cache/nekoquote/zh_blocked.json`；用其他模型（Gemini）译出后，把译文写进 `.cache/nekoquote/zh.json` 对应 tid 的 `zh` 字段再重跑构建+部署。**日文原文若触发过滤，不要让它进 LLM 上下文**（有先例）。
 - **译名保障 = 注入而非后处理**：翻译期把推文中出现的译名表实体（ja 面形态确定性检出，歧义面不注入）以「ja = zh」对照注入 prompt；译文即终稿，不对 zh.json 跑规则归一（归一打在源数据上的误伤不可逆）。修正译文译名需同时改 zh.json 与 wiki 月表。
 - **导出缺最近内容**：先怀疑解析覆盖——正文可能在新版组件里（递归 walk）或与头部同组件链接之后；`src/nekoquote/parse.py` 的注释有三种格式的完整判例。
@@ -52,5 +57,7 @@ cd wiki-bot 仓库根
 EN Discord 导出（Discrub JSON）
   → merge.py：parse 解析（三路全扫）+ 新推入 tweets.json
   → chain.py 链：translate.py（K3.1 Pro 补译 → zh.json）→ build.py（lua_base + raw 合流 → lua/）
-    → verify_rt.py（既有条目零缺失校验）→ deploy.py（增量部署，vs lua_live）
+    → verify_rt.py（既有条目零缺失校验，失败非零并阻断部署）→ deploy.py（增量部署，vs lua_live）
 ```
+
+新译文在 `zh.json` 逐条记录 `provider`/`model`，构建按记录署名；无元数据的旧译文使用中性 `LLM`，不回填猜测型号。
