@@ -1,5 +1,6 @@
 """NekoQuote LLM 截断与重试行为（离线，不调用外部 API）。"""
 
+import json
 import re
 import runpy
 import sys
@@ -97,3 +98,26 @@ def test_run_batch_splits_length_errors(monkeypatch, tmp_path):
     result = run_batch([("a", "甲"), ("b", "乙")], "")
     assert result == {"a": "译文", "b": "译文"}
     assert len(calls) == 3
+
+
+def test_new_translation_records_provider_and_model(monkeypatch, tmp_path):
+    (tmp_path / "lua_base").mkdir()
+    tid = "2105311705297846272"  # 2026-10-01
+    (tmp_path / "tweets.json").write_text(
+        json.dumps({tid: {"text": "原文", "author": "nezumiironyanko"}}),
+        encoding="utf-8",
+    )
+    (tmp_path / "zh.json").write_text("{}", encoding="utf-8")
+    monkeypatch.setattr(pkg, "DATA", tmp_path)
+    monkeypatch.setattr(
+        llm,
+        "get_config",
+        lambda provider: ("https://example.invalid", "key", "k3.1-pro"),
+    )
+    monkeypatch.setattr(llm, "chat", lambda *args, **kwargs: "0\t译文")
+    monkeypatch.delitem(sys.modules, "src.nekoquote.translate", raising=False)
+    runpy.run_module("src.nekoquote.translate")
+    record = json.loads((tmp_path / "zh.json").read_text(encoding="utf-8"))[tid]
+    assert record["zh"] == "译文"
+    assert record["provider"] == "kimi"
+    assert record["model"] == "k3.1-pro"

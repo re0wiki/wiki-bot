@@ -17,7 +17,7 @@ from src.nekoquote.state import write_json
 try:
     from src.nekoquote.llm import get_config
 
-    get_config("kimi")
+    translator_model = get_config("kimi")[2]
 except FileNotFoundError as e:
     print(f"跳过翻译：{e}（新推将以日文上线，配置 key 后下轮自动补译）")
     raise SystemExit(0)
@@ -164,16 +164,28 @@ def run_batch(items, prompt_prefix):
 PROMPT_T = "把以下作者推文逐条翻译成简体中文（编号与推文一一对应，推内换行已折叠为空格，译文保持单条一段）。"
 PROMPT_Q = "把以下粉丝提问推文逐条翻译成简体中文（@前缀已剥除）。"
 
+TRANSLATOR = {"provider": "kimi", "model": translator_model}
+new_texts = set()
+
+
+def save_zh(tid, source):
+    rec = done.setdefault(tid, {})
+    rec["zh"] = text_zh[source]
+    if source in new_texts:
+        rec.update(TRANSLATOR)
+
+
 t0 = time.time()
 batches = [todo_texts[i : i + BATCH] for i in range(0, len(todo_texts), BATCH)]
 for bi, b in enumerate(batches):
     got = run_batch([(t, t) for t in b], PROMPT_T)
     text_zh.update(got)
+    new_texts.update(got)
     if bi % 5 == 4 or bi == len(batches) - 1:
         # 断点：把已知正文译文落到 tid 维度
         for tid, t in tid2text.items():
             if t in text_zh:
-                done.setdefault(tid, {})["zh"] = text_zh[t]
+                save_zh(tid, t)
         write_json(DATA / "zh.json", done)
         print(
             f"正文 {bi + 1}/{len(batches)} 批，{(time.time() - t0) / 60:.1f}min",
@@ -184,13 +196,15 @@ qbatches = [list(todo_qs.items())[i : i + BATCH] for i in range(0, len(todo_qs),
 for bi, b in enumerate(qbatches):
     got = run_batch(b, PROMPT_Q)
     for qid, zh in got.items():
-        done.setdefault(qid, {})["qzh"] = zh
+        rec = done.setdefault(qid, {})
+        rec["qzh"] = zh
+        rec.update(TRANSLATOR)
     write_json(DATA / "zh.json", done)
     print(f"提问 {bi + 1}/{len(qbatches)} 批", flush=True)
 
 for tid, t in tid2text.items():
     if t in text_zh:
-        done.setdefault(tid, {})["zh"] = text_zh[t]
+        save_zh(tid, t)
 write_json(DATA / "zh.json", done)
 write_json(DATA / "zh_blocked.json", BLOCKED)
 print(

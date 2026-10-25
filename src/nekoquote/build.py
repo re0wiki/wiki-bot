@@ -305,14 +305,20 @@ def merge_raw(buckets, existing_ids):
             qzh = zh_map.get(qid, {}).get("qzh")
             if qzh:
                 e["fields"].insert(1, ("q", '"', esc(qzh)))
-        zh = zh_map.get(tid, {}).get("zh")
+        zh_record = zh_map.get(tid, {})
+        zh = zh_record.get("zh")
         if zh:
             e["fields"].append(("t", '"', esc(zh)))
-            # 机翻署名
+            # 机翻署名按生成时记录；无元数据的旧译文使用中性标记
+            provider = zh_record.get("provider")
+            model = zh_record.get("model")
+            translator = (
+                f"{provider.capitalize()} {model}" if provider and model else "LLM"
+            )
             e["fields"][0] = (
                 "src",
                 '"',
-                esc(e["fields"][0][2] + " · 译：Kimi K3.1 Pro"),
+                esc(e["fields"][0][2] + f" · 译：{translator}"),
             )
         buckets.setdefault(month, []).append(e)
         n += 1
