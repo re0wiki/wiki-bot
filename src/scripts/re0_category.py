@@ -167,21 +167,13 @@ def find_autoempty(cat_pages: dict[str, str]) -> set[str]:
     }
 
 
-def build_mapping(
-    cat_pages: dict[str, str],
-) -> tuple[dict[str, str], list[str], list[str], set[str]]:
-    """从分类页源码建映射。返回 (有效映射, 冲突清单, 提示清单, 冲突 en 集)。
-
-    cat_pages: {分类名（不含 Category: 前缀）: 源码}。
-    冲突：interwiki 与 category redirect 不一致、同一 en 名被多个中文页声称、
-    单页多个不同 en 链接。提示：redirect 缺页/缺 redirect/redirect 无 interwiki
-    对应——均是映射维护的待办信号。
-    """
+def claim_category_mappings(cat_pages):
+    """收集 interwiki 声称、redirect 与直接冲突。"""
     cat_pages = {normalize(name): text for name, text in cat_pages.items()}
-    mapping: dict[str, str] = {}
-    redirects: dict[str, str] = {}
-    conflicts: list[str] = []
-    conflicted: set[str] = set()
+    mapping = {}
+    redirects = {}
+    conflicts = []
+    conflicted = set()
     for name, text in cat_pages.items():
         en_links = {normalize(x) for x in EN_CAT_LINK_RE.findall(text)}
         if len(en_links) > 1:
@@ -196,15 +188,11 @@ def build_mapping(
             mapping.setdefault(en_name, name)
         if m := CAT_RD_RE.search(text):
             redirects[name] = normalize(m.group(1))
-    for en_name, zh_name in sorted(mapping.items()):
-        if en_name in redirects and redirects[en_name] != zh_name:
-            conflicts.append(
-                f"{en_name}: interwiki 映射到 {zh_name}，"
-                f"redirect 指 {redirects[en_name]}"
-            )
-            conflicted.add(en_name)
-    claimed = set(mapping)
-    mapping = {en: zh for en, zh in mapping.items() if en not in conflicted}
+    return mapping, redirects, conflicts, conflicted
+
+
+def build_mapping_hints(mapping, redirects, cat_pages, claimed):
+    """生成 redirect 缺失、待建与孤立提示。"""
     hints = []
     for en_name, zh_name in sorted(mapping.items()):
         if en_name in redirects:
@@ -221,6 +209,30 @@ def build_mapping(
     for name in sorted(redirects):
         if name not in claimed:
             hints.append(f"Category redirect {name} 无 interwiki 映射对应")
+    return hints
+
+
+def build_mapping(
+    cat_pages: dict[str, str],
+) -> tuple[dict[str, str], list[str], list[str], set[str]]:
+    """从分类页源码建映射。返回 (有效映射, 冲突清单, 提示清单, 冲突 en 集)。
+
+    cat_pages: {分类名（不含 Category: 前缀）: 源码}。
+    冲突：interwiki 与 category redirect 不一致、同一 en 名被多个中文页声称、
+    单页多个不同 en 链接。提示：redirect 缺页/缺 redirect/redirect 无 interwiki
+    对应——均是映射维护的待办信号。
+    """
+    mapping, redirects, conflicts, conflicted = claim_category_mappings(cat_pages)
+    for en_name, zh_name in sorted(mapping.items()):
+        if en_name in redirects and redirects[en_name] != zh_name:
+            conflicts.append(
+                f"{en_name}: interwiki 映射到 {zh_name}，"
+                f"redirect 指 {redirects[en_name]}"
+            )
+            conflicted.add(en_name)
+    claimed = set(mapping)
+    mapping = {en: zh for en, zh in mapping.items() if en not in conflicted}
+    hints = build_mapping_hints(mapping, redirects, cat_pages, claimed)
     return mapping, conflicts, hints, conflicted
 
 
@@ -246,6 +258,78 @@ def resolve_en_cats(data: dict, requested: list[str]) -> dict[str, list[str] | N
     return out
 
 
+def unmapped_categories(en_cats, mapping, excluded, conflicted):
+    """缺映射且未豁免的 en 分类。"""
+    return [
+        c
+        for c in en_cats
+        if c not in mapping and c not in excluded and c not in conflicted
+    ]
+
+
+def source_category_state(text, managed, excluded):
+    """收集源码分类、待清空分类及受管行出现次数。"""
+    source_lines = [m.group(1).strip() for m in CAT_LINE_RE.finditer(text)]
+    source_names = set(source_lines)
+    current = {n for n in source_names if normalize(n) in managed}
+    purged = {n for n in source_names if normalize(n) in excluded}
+    managed_counts = Counter(
+        normalize(raw) for raw in source_lines if normalize(raw) in managed
+    )
+    return source_names, current, purged, managed_counts
+
+
+def desired_categories(source_names, registered, en_cats, mapping, excluded, init_cats):
+    """计算应写源码的分类与 Init 带入缺失报告。"""
+    non_source = set(registered) - source_names
+    desired = {
+        mapping[c]
+        for c in en_cats
+        if c in mapping and c not in excluded and mapping[c] not in init_cats
+    } - non_source
+    init_missing = [
+        mapping[c]
+        for c in en_cats
+        if c in mapping
+        and c not in excluded
+        and mapping[c] in init_cats
+        and mapping[c] not in registered
+    ]
+    return desired, init_missing
+
+
+def is_synchronized(current, desired, purged, managed_counts) -> bool:
+    """分类集合、待清空项与重复行均已收敛。"""
+    return (
+        current == desired
+        and not purged
+        and all(c == 1 for c in managed_counts.values())
+    )
+
+
+def insert_category_text(text, insert_text, managed, excluded):
+    """删受管/待清空行，在首个删除位或页尾插入目标分类。"""
+    parts, cur, placed = [], 0, False
+    for m in CAT_LINE_RE.finditer(text):
+        name = normalize(m.group(1).strip())
+        if name not in managed and name not in excluded:
+            continue
+        parts.append(text[cur : m.start()])
+        if not placed:
+            parts.append(insert_text)
+            placed = True
+        cur = m.end()
+    parts.append(text[cur:])
+    new_text = "".join(parts)
+    if placed:
+        return new_text
+    if lm := LANGLINK_LINE_RE.search(new_text):
+        return new_text[: lm.start()] + insert_text + new_text[lm.start() :]
+    if not new_text.endswith("\n"):
+        new_text += "\n"
+    return new_text + insert_text
+
+
 def compute_sync(
     text: str,
     registered: set[str],
@@ -266,71 +350,21 @@ def compute_sync(
     含任一冲突 en 的页面整轮保持现状，避免冲突目标与有效 managed 重叠时
     既有的相关分类行被 desired/删除/去重路径误伤；冲突解除后下轮自动追平。
     """
+    unmapped = unmapped_categories(en_cats, mapping, excluded, conflicted)
     if set(en_cats) & set(conflicted):
-        unmapped = [
-            c
-            for c in en_cats
-            if c not in mapping and c not in excluded and c not in conflicted
-        ]
         return None, set(), set(), unmapped, []
-    source_lines = [m.group(1).strip() for m in CAT_LINE_RE.finditer(text)]
-    source_names = set(source_lines)
-    non_source = set(registered) - source_names  # Init/模板带入，不写源码行
-    desired = {
-        mapping[c]
-        for c in en_cats
-        if c in mapping and c not in excluded and mapping[c] not in init_cats
-    } - non_source
-    init_missing = [
-        mapping[c]
-        for c in en_cats
-        if c in mapping
-        and c not in excluded
-        and mapping[c] in init_cats
-        and mapping[c] not in registered
-    ]
-    unmapped = [
-        c
-        for c in en_cats
-        if c not in mapping and c not in excluded and c not in conflicted
-    ]
-    current = {n for n in source_names if normalize(n) in managed}
-    purged = {n for n in source_names if normalize(n) in excluded}
-    # 集合比对对重复行不可见：受管行出现次数 != 1 同样视为未同步，
-    # 走重写路径（重写删全部受管行、按 desired 去重插入，重复行随之收敛）。
-    managed_counts = Counter(
-        normalize(raw) for raw in source_lines if normalize(raw) in managed
+    source_names, current, purged, managed_counts = source_category_state(
+        text, managed, excluded
     )
-    if (
-        current == desired
-        and not purged
-        and all(c == 1 for c in managed_counts.values())
-    ):
+    desired, init_missing = desired_categories(
+        source_names, registered, en_cats, mapping, excluded, init_cats
+    )
+    if is_synchronized(current, desired, purged, managed_counts):
         return None, set(), set(), unmapped, init_missing
     removed = (current - desired) | purged
     added = desired - current
     insert_text = "".join(f"[[Category:{n}]]\n" for n in sorted(desired))
-    # 删受管行与待清空行；在首个删除位插入 desired（保持块位置稳定）
-    parts, cur, placed = [], 0, False
-    for m in CAT_LINE_RE.finditer(text):
-        name = normalize(m.group(1).strip())
-        if name not in managed and name not in excluded:
-            continue
-        parts.append(text[cur : m.start()])
-        if not placed:
-            parts.append(insert_text)
-            placed = True
-        cur = m.end()
-    parts.append(text[cur:])
-    new_text = "".join(parts)
-    if not placed:
-        if lm := LANGLINK_LINE_RE.search(new_text):
-            # 插在语言链接块前（en 站惯例：分类行在语言链接前）
-            new_text = new_text[: lm.start()] + insert_text + new_text[lm.start() :]
-        else:
-            if not new_text.endswith("\n"):
-                new_text += "\n"
-            new_text += insert_text
+    new_text = insert_category_text(text, insert_text, managed, excluded)
     return new_text, added, removed, unmapped, init_missing
 
 
