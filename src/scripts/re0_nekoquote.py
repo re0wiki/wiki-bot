@@ -63,6 +63,44 @@ def fetch_new(token: str, after: str | None) -> list[dict]:
     return msgs
 
 
+def _ensure_baseline(token: str) -> None:
+    """本地基线缺失时重建，并把水位线播种到最新频道消息。"""
+    if not bootstrap.needed():
+        return
+    pwb.info("本地语录基线缺失，从 wiki 重建…")
+    bootstrap.run()
+    # 基线已含全部既有推，水位线直接设为最新频道消息（不吃存量）
+    latest = api(f"/channels/{CHANNEL_ID}/messages?limit=1", token)
+    if latest:
+        write_json(STATE, {"last_id": latest[0]["id"]})
+
+
+def _resume_pending() -> None:
+    """无新消息时仍续跑上次未完成的全链。"""
+    if not PENDING.exists():
+        pwb.info("无新消息")
+        return
+    pwb.info("上次语录全链未完成，续跑")
+    run_chain()
+    clear_pending(PENDING)
+
+
+def _store_new_quotes(found: dict) -> bool:
+    """入库库外新推；返回是否有新增。待完成标记先于数据落盘。"""
+    tw_path = DATA / "tweets.json"
+    tw = json.loads(tw_path.read_text(encoding="utf-8"))
+    new = {t: x for t, x in found.items() if t not in tw}
+    if not new:
+        return False
+    pwb.info(f"库外新推 {len(new)} 条")
+    # 先落待完成标记再入库：任何后续失败都会在下一轮续跑，不会被当成已完成。
+    mark_pending(PENDING)
+    for tid, text in new.items():
+        tw[tid] = {"text": text, "author": "nezumiironyanko", "src": "dc_zh_fbk"}
+    write_json(tw_path, tw)
+    return True
+
+
 def _main() -> None:
     pwb.handle_args()  # 吞掉 pwb 全局参数（-always 等）
     token_file = ROOT / "secrets.json"
@@ -73,43 +111,22 @@ def _main() -> None:
         "discord_bot_token"
     ].strip()
 
-    if bootstrap.needed():
-        pwb.info("本地语录基线缺失，从 wiki 重建…")
-        bootstrap.run()
-        # 基线已含全部既有推，水位线直接设为最新频道消息（不吃存量）
-        latest = api(f"/channels/{CHANNEL_ID}/messages?limit=1", token)
-        if latest:
-            write_json(STATE, {"last_id": latest[0]["id"]})
-
+    _ensure_baseline(token)
     state = json.loads(STATE.read_text(encoding="utf-8")) if STATE.exists() else {}
     msgs = fetch_new(token, state.get("last_id"))
     if not msgs:
-        if PENDING.exists():
-            pwb.info("上次语录全链未完成，续跑")
-            run_chain()
-            clear_pending(PENDING)
-        else:
-            pwb.info("无新消息")
+        _resume_pending()
         return
     newest = max(m["id"] for m in msgs)
     pwb.info(f"新消息 {len(msgs)} 条")
 
     found = extract(msgs)
-    tw_path = DATA / "tweets.json"
-    tw = json.loads(tw_path.read_text(encoding="utf-8"))
-    new = {t: x for t, x in found.items() if t not in tw}
+    new = _store_new_quotes(found)
     if not new and not PENDING.exists():
         pwb.info("无库外新推")
         write_json(STATE, {"last_id": newest})
         return
-    if new:
-        pwb.info(f"库外新推 {len(new)} 条")
-        # 先落待完成标记再入库：任何后续失败都会在下一轮续跑，不会被当成已完成。
-        mark_pending(PENDING)
-        for tid, text in new.items():
-            tw[tid] = {"text": text, "author": "nezumiironyanko", "src": "dc_zh_fbk"}
-        write_json(tw_path, tw)
-    else:
+    if not new:
         pwb.info("上次语录全链未完成，续跑")
 
     run_chain()  # 任一失败非零退出，水位线不推进下轮重试
