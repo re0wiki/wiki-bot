@@ -11,7 +11,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parents[2]))
 from src.nekoquote import DATA
 from src.nekoquote.build import is_valid_tweet_month
-from src.nekoquote.llm import SYSTEM_PROMPT, chat, glossary_lines
+from src.nekoquote.llm import SYSTEM_PROMPT, LengthError, chat, glossary_lines
 
 try:
     from src.nekoquote.llm import get_config
@@ -112,6 +112,15 @@ def run_batch(items, prompt_prefix):
                 timeout=1800,
                 provider="kimi",
             )
+        except LengthError as e:
+            if len(items) == 1:
+                raise SystemExit(f"译文截断且无法拆分: {items[0][0]}") from e
+            half = len(items) // 2
+            print(f"  截断二分（{len(items)}→{half}+{len(items) - half}）", flush=True)
+            return {
+                **run_batch(items[:half], prompt_prefix),
+                **run_batch(items[half:], prompt_prefix),
+            }
         except Exception as e:  # noqa: BLE001 content_filter 靠消息文本判定
             if "content_filter" in str(e):
                 # 内容过滤：二分定位触线文本，单条隔离

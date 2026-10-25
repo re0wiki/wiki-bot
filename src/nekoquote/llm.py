@@ -107,6 +107,10 @@ def chat(
     return _chat_openai(user_text, system, max_tokens, max_attempts, provider, timeout)
 
 
+class LengthError(RuntimeError):
+    """模型输出被 max_tokens 截断；即使已有部分 content 也不能当成功译文。"""
+
+
 def _chat_openai(user_text, system, max_tokens, max_attempts, provider, timeout=120):
     base_url, key, model = get_config(provider)
     headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
@@ -128,8 +132,10 @@ def _chat_openai(user_text, system, max_tokens, max_attempts, provider, timeout=
         timeout = max(timeout, 1800)  # 长生成期间无字节流，读超时须覆盖
     delay = 5.0
     tokens: int = payload["max_tokens"]
+    attempt = 0
     escalations = 0
-    for attempt in range(1, max_attempts + 1):
+    while attempt < max_attempts:
+        attempt += 1
         payload["max_tokens"] = tokens
         try:
             resp = requests.post(
@@ -157,24 +163,19 @@ def _chat_openai(user_text, system, max_tokens, max_attempts, provider, timeout=
                 reasoning = (msg.get("reasoning_content") or "").strip()
                 if "</final>" in reasoning:
                     content = reasoning.rsplit("</final>", 1)[1].strip()
-            if (
-                not content
-                and choice.get("finish_reason") == "length"
-                and escalations < 3
-            ):
-                # 结构性失败：原样重试只会再烧穿一次——升档 max_tokens（连带放宽超时）
-                escalations += 1
-                tokens = min(tokens * 2, 32768)
-                timeout = max(timeout, int(tokens / 15) + 60)  # 长生成需要更长读超时
-                print(
-                    f"  [升档 {escalations}/3] finish_reason=length，max_tokens→{tokens}、超时→{timeout}s 重试"
-                )
-                attempt -= 1  # 升档不消耗瞬时错误重试额度
-                continue
+            if choice.get("finish_reason") == "length":
+                if escalations < 3 and tokens < 32768:
+                    escalations += 1
+                    tokens = min(tokens * 2, 32768)
+                    timeout = max(timeout, int(tokens / 15) + 60)
+                    print(
+                        f"  [升档 {escalations}/3] finish_reason=length，max_tokens→{tokens}、超时→{timeout}s 重试"
+                    )
+                    attempt -= 1  # while 循环中显式保证升档不消耗错误重试额度
+                    continue
+                raise LengthError(f"finish_reason=length（max_tokens={tokens}）")
             if not content:
-                raise RuntimeError(
-                    f"空 content（max_tokens 已升档至 {tokens} 仍不足）: {str(data)[:300]}"
-                )
+                raise RuntimeError(f"空 content: {str(data)[:300]}")
             return content
         if resp.status_code in (429, 500, 502, 503, 504):
             retry_after = resp.headers.get("Retry-After")
