@@ -129,68 +129,89 @@ def merge_main(main_text, sub_body, title):
     return main_text[:at].rstrip() + f"\n\n== 经历 ==\n{sub_body}\n" + main_text[at:]
 
 
-def main():
-    zh = pywikibot.Site("zh", "re0")
-    en = pywikibot.Site("en", "re0")
-    if not SIMULATE:
-        zh.login()
-        assert zh.user() == "IchiSanNi"
-        rights = zh.userinfo.get("rights", [])
-        assert "delete" in rights, "账号无删除权限"
+def en_structure_changed(en, en_title) -> bool:
+    """en 缺页、缺 History 或已有 /Synopsis 时不可按本方案合并。"""
+    if not en_title:
+        return True
+    en_main = pywikibot.Page(en, en_title)
+    en_syn = pywikibot.Page(en, en_title + "/Synopsis")
+    return not en_main.exists() or not HIST_EN.search(en_main.text) or en_syn.exists()
 
+
+def target_skip_reason(main_p, sub_p, en):
+    """按当前 zh/en 结构返回跳过原因；可合并时返回 (en 标题, None)。"""
+    if not sub_p.exists() or sub_p.isRedirectPage():
+        return None, "子页不存在或已是重定向"
+    m = EN_LINK.search(main_p.text)
+    en_title = m.group(1).split("#")[0] if m else None
+    if en_structure_changed(en, en_title):
+        return en_title, f"en 侧结构已变化（en={en_title}）"
+    return en_title, None
+
+
+def show_simulation(main_title, main_p, sub_body, new_main):
+    """输出单个合并对象的 dry-run 摘要。"""
+    mode = "替换既有章节" if section_spans(main_p.text) else "新增章节"
+    print(f"--- {main_title} ---")
+    print(
+        f"[{mode}] 子页正文 {len(sub_body)} 字符；主页面 {len(main_p.text)} → {len(new_main)} 字符"
+    )
+    print(f"子页正文开头: {sub_body[:80]!r}")
+    print(f"子页正文结尾: {sub_body[-80:]!r}")
+
+
+def merge_target(main_p, sub_p, new_main):
+    """写回主页面并删除已合并子页。"""
+    main_p.text = new_main
+    main_p.save(
+        "梗概子页并回主页面：经历章节（结构对齐 en，History 在主页面）", bot=True
+    )
+    sub_p.delete("内容已并入主页面经历章节（en 无对应 /Synopsis 子页）", prompt=False)
+
+
+def print_result(done, skipped):
+    """输出任务汇总。"""
+    print(f"\n=== {'DRY RUN ' if SIMULATE else ''}结果 ===")
+    print(f"完成 {len(done)}，跳过 {len(skipped)}")
+    for title, why in skipped:
+        print(f"  跳过 {title}: {why}")
+
+
+def connect_zh():
+    """建立 zh 连接；真实执行时验证账号与删除权限。"""
+    site = pywikibot.Site("zh", "re0")
+    if SIMULATE:
+        return site
+    site.login()
+    assert site.user() == "IchiSanNi"
+    rights = site.userinfo.get("rights", [])
+    assert "delete" in rights, "账号无删除权限"
+    return site
+
+
+def main():
+    zh = connect_zh()
+    en = pywikibot.Site("en", "re0")
     targets = [t for t in TARGETS if not FILTER or FILTER in t]
     done, skipped = [], []
     for main_title in targets:
         sub_title = main_title + "/梗概"
         main_p = pywikibot.Page(zh, main_title)
         sub_p = pywikibot.Page(zh, sub_title)
-        if not sub_p.exists() or sub_p.isRedirectPage():
-            skipped.append((sub_title, "子页不存在或已是重定向"))
+        _, reason = target_skip_reason(main_p, sub_p, en)
+        if reason:
+            skipped.append((sub_title, reason))
             continue
-
-        # revalidate：en 侧结构仍与调查一致
-        m = EN_LINK.search(main_p.text)
-        en_title = m.group(1).split("#")[0] if m else None
-        en_main = pywikibot.Page(en, en_title) if en_title else None
-        en_syn = pywikibot.Page(en, en_title + "/Synopsis") if en_title else None
-        if (
-            not en_main
-            or not en_main.exists()
-            or not HIST_EN.search(en_main.text)
-            or (en_syn and en_syn.exists())
-        ):
-            skipped.append((sub_title, f"en 侧结构已变化（en={en_title}）"))
-            continue
-
         sub_body = clean_sub_body(sub_p.text)
         new_main = merge_main(main_p.text, sub_body, main_title)
         assert new_main != main_p.text
-
         if SIMULATE:
-            mode = "替换既有章节" if section_spans(main_p.text) else "新增章节"
-            print(f"--- {main_title} ---")
-            print(
-                f"[{mode}] 子页正文 {len(sub_body)} 字符；主页面 {len(main_p.text)} → {len(new_main)} 字符"
-            )
-            print(f"子页正文开头: {sub_body[:80]!r}")
-            print(f"子页正文结尾: {sub_body[-80:]!r}")
+            show_simulation(main_title, main_p, sub_body, new_main)
             continue
-
-        main_p.text = new_main
-        main_p.save(
-            "梗概子页并回主页面：经历章节（结构对齐 en，History 在主页面）", bot=True
-        )
-        sub_p.delete(
-            "内容已并入主页面经历章节（en 无对应 /Synopsis 子页）",
-            prompt=False,
-        )
+        merge_target(main_p, sub_p, new_main)
         done.append(main_title)
         print(f"OK {main_title}")
-
-    print(f"\n=== {'DRY RUN ' if SIMULATE else ''}结果 ===")
-    print(f"完成 {len(done)}，跳过 {len(skipped)}")
-    for t, why in skipped:
-        print(f"  跳过 {t}: {why}")
+    print_result(done, skipped)
 
 
 if __name__ == "__main__":
