@@ -211,6 +211,59 @@ CRAM_LINE = re.compile(
 CRAM_SEGMENT = re.compile(r"^(.*?)[ \t]*\(([^()]*)\)$")
 
 
+def existing_cram_params(lines):
+    """模板内已存在的参数名（小写）。"""
+    existing = set()
+    for line in lines:
+        pm = re.match(r"^\|[ \t]*([a-z_]+)[ \t]*=", line, re.IGNORECASE)
+        if pm:
+            existing.add(pm.group(1).lower())
+    return existing
+
+
+def valid_cram_segments(parts, segs) -> bool:
+    """各段均有已知语言、含 Japanese 且归一后语言不重复。"""
+    if not segs or len(segs) != len(parts):
+        return False
+    if any(lang not in CRAM_LANGS for _, lang in segs):
+        return False
+    langs = {CRAM_LANGS[lang] for _, lang in segs}
+    return "ja" in langs and len(langs) == len(segs)
+
+
+def cram_segments(pm):
+    """从 CRAM_LINE 匹配提取可安全拆分的 (值, 语言) 段。"""
+    parts = re.split(r"<br\s*/?>", pm.group(2)) if pm else []
+    segs = [
+        (m2.group(1).strip(), m2.group(2).strip())
+        for s in parts
+        if (m2 := CRAM_SEGMENT.match(s.strip()))
+    ]
+    return segs if valid_cram_segments(parts, segs) else []
+
+
+def split_cram_line(line, existing):
+    """拆单行，返回 (输出行, 是否命中可拆形态)。"""
+    pm = CRAM_LINE.match(line)
+    if pm is None:
+        return [line], False
+    segs = cram_segments(pm)
+    if not segs:
+        return [line], False
+    family = pm.group(1).lower()
+    existing.discard(f"{family}_ja")
+    out = []
+    for value, lang in segs:
+        param = f"{family}_{CRAM_LANGS[lang]}"
+        if param in existing:
+            continue
+        if family == "date":
+            value = normalize_date_value(value)
+        out.append(f"| {param} = {value}")
+        existing.add(param)
+    return out, True
+
+
 def split_crammed_params(m: re.Match) -> str:
     """信息框多语言堆积参数拆分：`值 (语言)<br>值 (语言)…` → per-语言参数行。
 
@@ -228,43 +281,12 @@ def split_crammed_params(m: re.Match) -> str:
     if head[2:].split("|", 1)[0].strip().lower() != "infobox book":
         return m.group(0)
     lines = body.split("\n") if body else []
-    existing = set()
-    for line in lines:
-        pm = re.match(r"^\|[ \t]*([a-z_]+)[ \t]*=", line, re.IGNORECASE)
-        if pm:
-            existing.add(pm.group(1).lower())
+    existing = existing_cram_params(lines)
     out, changed = [], False
     for line in lines:
-        pm = CRAM_LINE.match(line)
-        parts = re.split(r"<br\s*/?>", pm.group(2)) if pm else []
-        segs = [
-            (m2.group(1).strip(), m2.group(2).strip())
-            for s in parts
-            if (m2 := CRAM_SEGMENT.match(s.strip()))
-        ]
-        if (
-            not pm
-            or not segs
-            or len(segs) != len(parts)
-            or any(lang not in CRAM_LANGS for _, lang in segs)
-            # 基底参数的值来源（Japanese 及其别名）
-            or "ja" not in {CRAM_LANGS[lang] for _, lang in segs}
-            # 同语言多段（分册/别名混写）留人工——按归一后的后缀判重
-            or len({CRAM_LANGS[lang] for _, lang in segs}) != len(segs)
-        ):
-            out.append(line)
-            continue
-        changed = True
-        family = pm.group(1).lower()
-        existing.discard(f"{family}_ja")  # 基底行被本拆分替换，不算重复
-        for value, lang in segs:
-            param = f"{family}_{CRAM_LANGS[lang]}"
-            if param in existing:
-                continue
-            if family == "date":
-                value = normalize_date_value(value)
-            out.append(f"| {param} = {value}")
-            existing.add(param)
+        split_lines, line_changed = split_cram_line(line, existing)
+        out.extend(split_lines)
+        changed |= line_changed
     if not changed:
         return m.group(0)
     return head + ("\n" + "\n".join(out) if out else "") + tail_nl + "}}"
