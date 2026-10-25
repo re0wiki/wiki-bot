@@ -10,7 +10,7 @@ import pytest
 
 sys.path.insert(0, str(Path(__file__).parents[1]))
 import src.scripts.re0_nekoquote as auto
-from src.nekoquote import merge
+from src.nekoquote import bootstrap, chain, merge
 from src.nekoquote import state as nq_state
 
 
@@ -99,6 +99,19 @@ def test_write_json_is_atomic_on_replace_failure(monkeypatch, tmp_path):
         nq_state.write_json(path, {"new": 2})
     assert json.loads(path.read_text(encoding="utf-8")) == {"old": 1}
     assert not list(tmp_path.glob("*.tmp"))
+
+
+def test_chain_rejects_incomplete_baseline(monkeypatch, tmp_path):
+    monkeypatch.setattr(
+        bootstrap, "COMPLETE", tmp_path / "lua_base.complete", raising=False
+    )
+
+    def unexpected_run(*args, **kwargs):
+        raise AssertionError("基线不完整时不应启动任何子流程")
+
+    monkeypatch.setattr(chain.subprocess, "run", unexpected_run)
+    with pytest.raises(SystemExit, match="基线不完整"):
+        chain.run_chain()
 
 
 class SyncFile:
