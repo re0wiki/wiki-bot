@@ -270,6 +270,27 @@ def split_crammed_params(m: re.Match) -> str:
     return head + ("\n" + "\n".join(out) if out else "") + tail_nl + "}}"
 
 
+def _nested_table_depth(text: str) -> int:
+    depth = 0
+    i = 0
+    while i < len(text) - 1:
+        if text.startswith("{|", i):
+            depth += 1
+            i += 2
+        elif text.startswith("|}", i) and depth:
+            depth -= 1
+            i += 2
+        else:
+            i += 1
+    return depth
+
+
+def _outside_nested_tables(m: re.Match, replacement):
+    if _nested_table_depth(m.string[: m.start()]):
+        return m.group(0)
+    return replacement(m) if callable(replacement) else replacement
+
+
 user_fixes["para"] = base | {
     "generator": generator_more,
     "replacements": [
@@ -393,6 +414,12 @@ user_fixes["para"] = base | {
         ),
     ],
 }
+
+# 所有 para 替换都按匹配点判断表格深度；textlib 的 table 例外不支持嵌套表格
+user_fixes["para"]["replacements"] = [  # ty: ignore[invalid-assignment]
+    (pattern, partial(_outside_nested_tables, replacement=repl))
+    for pattern, repl in user_fixes["para"]["replacements"]  # ty: ignore[not-iterable]
+]
 # endregion
 
 # region gallery
@@ -515,6 +542,7 @@ user_fixes["heading_term"] = base | {
     "generator": ["-cat:术语"],
     "replacements": [(r"(?<== )History(?= =)", "历史")],
 }
+
 # endregion
 
 # region translation
@@ -703,13 +731,17 @@ user_fixes["translation"] = base | {
             # 。「」等句读/引号不进字符集，否则中日两段会被连成一段。
             # 盲区：纯汉字日文引用无假名可探测，仍靠 as-is 注释。
             r"[㐀-䶿一-鿿豈-﫿぀-ヿｦ-ﾝ々〆〇、]*[぀-ヿｦ-ﾝ][㐀-䶿一-鿿豈-﫿぀-ヿｦ-ﾝ々〆〇、]*",
+            # 文件链接仅保护目标文件名；说明文字照常归一
+            r"\[\[[ \t]*:?[ \t]*(?:File|Image|文件|檔案)[ \t]*:[^|\]\n]+",
+            # gallery 每行仅保护文件名（含常见媒体扩展名）；| 后的说明文字照常归一
+            r"(?m)^[ \t]*[^<>\n|]+?\.(?:png|jpe?g|gif|svg|webp|avif|bmp|tiff?|mp4|webm|ogv|ogg|mp3|wav|flac|pdf)(?=[ \t]*(?:\||$))",
             # 分类名位置整体不归一：[[Category:...]] 分类行（含 [[:Category:
             # 链接形式）归 re0_category 从 en 映射管理，{{Category redirect|...}}
             # 软重定向目标同理；在此改写会与分类同步互相覆盖（模板化目标如
             # {{Seirei or Elf}} 使分类链接/重定向失效，category sync 还原、
             # cosmetic 再删，三任务循环）。
-            r"\[\[:?(?:Category|分类):[^\n]*\]\]",
-            r"\{\{Category redirect\s*\|[^}\n]*\}\}",
+            r"\[\[[ \t]*:?[ \t]*(?:Category|分类|分類)[ \t]*:[^\n]*\]\]",
+            r"\{\{\s*Category redirect\s*\|[^}\n]*\}\}",
         ],
     },
     "replacements": [(_alt_pattern, _alt_sub)] + list(translation_manual),

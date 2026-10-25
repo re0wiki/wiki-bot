@@ -58,3 +58,29 @@ def test_translation_skips_category_links():
     assert "[[Category:精靈|排序键]]" in out
     assert "[[:Category:精灵|分类链接]]" in out
     assert "{{Category redirect|精灵}}" in out
+
+
+def test_translation_skips_filename_but_normalizes_caption():
+    inside = user_fixes["translation"]["exceptions"]["inside"]
+    exceptions = ["keep"] + [re.compile(p, re.IGNORECASE) for p in inside]
+    text = (
+        "<gallery>\n贝阿托莉丝.png|贝阿托莉丝微笑\n</gallery>\n"
+        "[[File:贝阿托莉丝.png|贝阿托莉丝微笑]]\n"
+        "贝阿托莉丝是角色。"
+    )
+    out = apply_fix("translation", text, exceptions)
+    assert out.count("贝阿托莉丝.png") == 2
+    assert out.count("碧翠丝微笑") == 2
+    assert "碧翠丝是角色" in out
+
+
+def test_translation_skips_category_whitespace_and_aliases():
+    inside = user_fixes["translation"]["exceptions"]["inside"]
+    exceptions = ["keep"] + [re.compile(p, re.IGNORECASE) for p in inside]
+    text = (
+        "[[ Category:精灵]]\n"
+        "[[Category :精灵]]\n"
+        "[[:分類:精靈]]\n"
+        "{{ Category redirect |精灵}}\n"
+    )
+    assert apply_fix("translation", text, exceptions) == text
