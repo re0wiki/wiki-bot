@@ -17,6 +17,73 @@ MONTH = "Module:NekoQuote/2026-01"
 DOC = MONTH + "/doc"
 
 
+class FakeSite:
+    def login(self):
+        return None
+
+    def user(self):
+        return "IchiSanNi"
+
+
+class FakeWiki:
+    """可注入竞争与失败的页面存储。"""
+
+    def __init__(self, pages, behavior):
+        self.pages = pages
+        self.behavior = behavior
+        self.saved = []
+        self.revisions = {title: 1 for title in pages}
+
+    def page(self, title):
+        return FakePage(self, title)
+
+
+class FakePage:
+    def __init__(self, harness, title):
+        self.harness = harness
+        self.title = title
+        self.text = harness.pages.get(title, "")
+        self.revid = harness.revisions.get(title)
+
+    @property
+    def latest_revision(self):
+        return SimpleNamespace(revid=self.revid)
+
+    def exists(self):
+        return self.title in self.harness.pages
+
+    def concurrent_edit(self, behavior_name) -> bool:
+        """在保存边界前插入一次月表并发编辑。"""
+        if self.title != MONTH or not self.harness.behavior.pop(behavior_name, False):
+            return False
+        self.harness.pages[self.title] = "CONCURRENT HUMAN EDIT"
+        self.harness.revisions[self.title] = (
+            self.harness.revisions.get(self.title, 0) + 1
+        )
+        return True
+
+    def check_conflicts(self, kwargs):
+        if kwargs.get("createonly") and self.title in self.harness.pages:
+            raise PageCreatedConflictError(1)
+        if "baserevid" in kwargs and kwargs["baserevid"] != self.harness.revisions.get(
+            self.title
+        ):
+            raise EditConflictError(1)
+
+    def save(self, **kwargs):
+        if self.concurrent_edit("create_race") and kwargs.get("createonly"):
+            raise PageCreatedConflictError(1)
+        self.concurrent_edit("edit_race")
+        self.check_conflicts(kwargs)
+        if self.title == DOC and self.harness.behavior.pop("fail_doc_once", False):
+            raise RuntimeError("injected doc failure")
+        self.harness.pages[self.title] = self.text.rstrip("\n")
+        self.harness.revisions[self.title] = (
+            self.harness.revisions.get(self.title, 0) + 1
+        )
+        self.harness.saved.append(self.title)
+
+
 def run_deploy(
     monkeypatch,
     tmp_path,
@@ -43,60 +110,16 @@ def run_deploy(
         wiki.setdefault(MONTH, online)
     if doc is not None:
         wiki.setdefault(DOC, doc)
-    behavior = {} if behavior is None else behavior
-    saved = []
-    revisions = {title: 1 for title in wiki}
-
-    class FakeSite:
-        def login(self):
-            return None
-
-        def user(self):
-            return "IchiSanNi"
-
-    class FakePage:
-        def __init__(self, site, title):
-            self.title = title
-            self.text = wiki.get(title, "")
-            self.revid = revisions.get(title)
-
-        @property
-        def latest_revision(self):
-            return SimpleNamespace(revid=self.revid)
-
-        def exists(self):
-            return self.title in wiki
-
-        def save(self, **kwargs):
-            if self.title == MONTH and behavior.pop("create_race", False):
-                wiki[self.title] = "CONCURRENT HUMAN EDIT"
-                revisions[self.title] = revisions.get(self.title, 0) + 1
-                if kwargs.get("createonly"):
-                    raise PageCreatedConflictError(1)
-            if self.title == MONTH and behavior.pop("edit_race", False):
-                wiki[self.title] = "CONCURRENT HUMAN EDIT"
-                revisions[self.title] += 1
-            if kwargs.get("createonly") and self.title in wiki:
-                raise PageCreatedConflictError(1)
-            if "baserevid" in kwargs and kwargs["baserevid"] != revisions.get(
-                self.title
-            ):
-                raise EditConflictError(1)
-            if self.title == DOC and behavior.pop("fail_doc_once", False):
-                raise RuntimeError("injected doc failure")
-            wiki[self.title] = self.text.rstrip("\n")
-            revisions[self.title] = revisions.get(self.title, 0) + 1
-            saved.append(self.title)
-
+    harness = FakeWiki(wiki, {} if behavior is None else behavior)
     monkeypatch.setattr(pwb, "Site", lambda *args: FakeSite())
-    monkeypatch.setattr(pwb, "Page", FakePage)
+    monkeypatch.setattr(pwb, "Page", lambda site, title: harness.page(title))
     try:
         runpy.run_module("src.nekoquote.deploy", run_name="__main__")
     except SystemExit as exc:
         code = int(exc.code or 0)
     else:
         code = 0
-    return code, wiki, saved
+    return code, wiki, harness.saved
 
 
 def test_normal_update_ignores_mediawiki_trailing_newline_difference(
