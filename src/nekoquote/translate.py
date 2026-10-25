@@ -59,7 +59,7 @@ done = (
 texts = {}  # 归一文本 -> None（去重池）
 tid2text = {}
 for tid, rec in merged.items():
-    t = re.sub(r"\s*https?://(?:t\.co|a\.co)/\S+", "", rec["text"]).strip()
+    t = re.sub(r"\s*https?://(?:t\.co|a\.co)/\S+", "", rec.get("text", "")).strip()
     t = re.sub(r"\s*\r?\n\s*", " ", t)
     if t:
         tid2text[tid] = t
@@ -68,7 +68,7 @@ qids = {}
 for tid, rec in merged.items():
     qid = rec.get("reply_to")
     if qid and qid in tw and tw[qid].get("author") != "nezumiironyanko":
-        qt = re.sub(r"^(@\w+\s*)+", "", tw[qid]["text"]).strip()
+        qt = re.sub(r"^(@\w+\s*)+", "", tw[qid].get("text", "")).strip()
         qt = re.sub(r"\s*https?://(?:t\.co|a\.co)/\S+", "", qt)
         qt = re.sub(r"\s*\r?\n\s*", " ", qt)
         if qt:

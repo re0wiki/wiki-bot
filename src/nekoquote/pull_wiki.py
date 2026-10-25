@@ -16,6 +16,7 @@
 
 import json
 import re
+import sys
 
 import pywikibot
 from pywikibot import pagegenerators
@@ -82,38 +83,50 @@ def writeback_entry(month: str, fields: list, zh: dict, tw: dict) -> tuple[int, 
     qid = tw[tid].get("reply_to")
     qid = qid if qid in tw and tw[qid].get("author") != "nezumiironyanko" else None
     # 字段名 → (目标 dict, key, 由现 text 重建的期望值)；期望值=None 表示纯 wiki 侧字段
-    targets = {"jt": (tw[tid], "text", proc_jt(tw[tid]["text"]))}
+    targets = {"jt": (tw[tid], "text", proc_jt(tw[tid].get("text", "")))}
     if tid in zh:
         targets["t"] = (zh[tid], "zh", None)
     if qid:
         targets["q"] = (zh.setdefault(qid, {}), "qzh", None)
-        targets["jq"] = (tw[qid], "text", proc_jq(tw[qid]["text"]))
+        targets["jq"] = (tw[qid], "text", proc_jq(tw[qid].get("text", "")))
+    present = {name: (quote, raw) for name, quote, raw in fields}
     n_zh = n_tw = 0
-    for name, quote, raw in fields:
-        hit = targets.get(name)
-        if hit is None:
-            continue
-        rec, key, expected = hit
-        v = unescape(quote, raw)
+    for name, (rec, key, expected) in targets.items():
         cur = rec.get(key) if expected is None else expected
-        if v and v != cur:
-            print(f"  {month} {tid} {name}: {str(cur)[:60]!r} -> {v[:60]!r}")
+        if name in present:
+            quote, raw = present[name]
+            v = unescape(quote, raw)
+        else:
+            v = ""
+        if v == cur or (not v and key not in rec):
+            continue
+        print(f"  {month} {tid} {name}: {str(cur)[:60]!r} -> {v[:60]!r}")
+        if v:
             rec[key] = v
-            if expected is None:
-                n_zh += 1
-            else:
-                n_tw += 1
+        else:
+            rec.pop(key, None)
+        if expected is None:
+            n_zh += 1
+        else:
+            n_tw += 1
     return n_zh, n_tw
 
 
-def main() -> None:
+def main() -> int:
     site = pywikibot.Site("zh", "re0")  # 只读，无需登录
     zh_path = DATA / "zh.json"
     tw_path = DATA / "tweets.json"
     zh = json.loads(zh_path.read_text(encoding="utf-8"))
     tw = json.loads(tw_path.read_text(encoding="utf-8"))
 
+    base_ids = set()
+    for f in (DATA / "lua_base").glob("*.lua"):
+        for fields, _ in parse_table(f.read_text(encoding="utf-8")):
+            if m := STATUS_RE.search(fget(fields, "src") or ""):
+                base_ids.add(m.group(1))
+
     pages = collect_pages(site)
+    wiki_raw_ids = set()
     n_zh = n_tw = n_base = 0
     preloaded = pagegenerators.PreloadingGenerator(pages.values())
     for month, p in zip(pages, preloaded, strict=True):
@@ -122,9 +135,22 @@ def main() -> None:
             n_base += r
             continue
         for fields, _ in parse_table(p.text):
+            if m := STATUS_RE.search(fget(fields, "src") or ""):
+                wiki_raw_ids.add(m.group(1))
             a, b = writeback_entry(month, fields, zh, tw)
             n_zh += a
             n_tw += b
+
+    local_raw_ids = {
+        tid for tid, rec in tw.items() if rec.get("author") == "nezumiironyanko"
+    } - base_ids
+    missing = local_raw_ids - wiki_raw_ids
+    if missing:
+        print(
+            f"wiki 月表缺少 {len(missing)} 条本地 raw 条目；未回写，先人工核对: "
+            + ", ".join(sorted(missing)[:10])
+        )
+        return 1
     if n_zh:
         zh_path.write_text(json.dumps(zh, ensure_ascii=False), encoding="utf-8")
     if n_tw:
@@ -132,7 +158,8 @@ def main() -> None:
     print(
         f"lua_base 刷新 {n_base} 张，zh.json 回写 {n_zh} 处，tweets.json 回写 {n_tw} 处"
     )
+    return 0
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())

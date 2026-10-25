@@ -272,8 +272,9 @@ def raw_tweet_entry(tid, rec, q_text):
         q_clean = re.sub(r"^(@\w+\s*)+", "", q_text).strip()
         q_clean = re.sub(r"\s*\r?\n\s*", "<br/>", q_clean)
         fields.append(("jq", '"', esc(strip_tco(q_clean))))
-    ja = re.sub(r"\s*\r?\n\s*", "<br/>", strip_tco(rec["text"].strip()))
-    fields.append(("jt", '"', esc(ja)))
+    ja = re.sub(r"\s*\r?\n\s*", "<br/>", strip_tco(rec.get("text", "").strip()))
+    if ja:
+        fields.append(("jt", '"', esc(ja)))
     return {"fields": fields, "key": dt, "from": "raw", "note": ""}
 
 
@@ -297,9 +298,10 @@ def merge_raw(buckets, existing_ids):
         # jq：提问推正文（若已抓到）+ 其中文（若已译）
         qid = rec.get("reply_to")
         if qid and qid in tw and tw[qid].get("author") != "nezumiironyanko":
-            q_clean = re.sub(r"^(@\w+\s*)+", "", tw[qid]["text"]).strip()
+            q_clean = re.sub(r"^(@\w+\s*)+", "", tw[qid].get("text", "")).strip()
             q_clean = re.sub(r"\s*\r?\n\s*", "<br/>", q_clean)
-            e["fields"].insert(1, ("jq", '"', esc(strip_tco(q_clean))))
+            if q_clean:
+                e["fields"].insert(1, ("jq", '"', esc(strip_tco(q_clean))))
             qzh = zh_map.get(qid, {}).get("qzh")
             if qzh:
                 e["fields"].insert(1, ("q", '"', esc(qzh)))
