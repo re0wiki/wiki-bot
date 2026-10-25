@@ -328,6 +328,8 @@ def resolve_links(body):
             while final in reds and final not in seen:
                 seen.add(final)
                 final = reds[final]
+            if final in seen:
+                continue  # 重定向成环不是可解析目标，即使 API 仍返回环内页面壳
             if final in resolved:
                 base_final[b] = final
     for t in sorted(targets):

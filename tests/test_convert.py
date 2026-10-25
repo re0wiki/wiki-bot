@@ -64,6 +64,25 @@ def test_resolve_links_normalized_redirect_chain_and_cycle(monkeypatch):
     assert unresolved == ["Loop"]
 
 
+def test_resolve_links_redirect_cycles_are_unresolved_even_when_pages_returned(
+    monkeypatch,
+):
+    response = {
+        "query": {
+            "pages": [{"title": "A"}, {"title": "B"}, {"title": "Loop"}],
+            "redirects": [
+                {"from": "A", "to": "B"},
+                {"from": "B", "to": "A"},
+                {"from": "Loop", "to": "Loop"},
+            ],
+        }
+    }
+    monkeypatch.setattr(lt, "api", lambda *args, **kwargs: response)
+    mapping, unresolved = lt.resolve_links("[[A]] [[Loop]]")
+    assert mapping == {}
+    assert unresolved == ["A", "Loop"]
+
+
 # ------------------------------------------------------------ 信息框参数解析
 
 ZH_INLINE_BLOCK = """{{Infobox game | name = Re:从零开始的异世界生活 DEATH OR KISS
