@@ -21,7 +21,7 @@ refresh（重建选页队列）→ prepare（取队首、机械转换备料）�
 
 `convert_en_body` 把 en 正文离线转成 zh 半成品骨架，本地复刻 replace.py 的应用路径（fix 表规则不经 wiki、不碰沙盒）：
 
-1. `split_en_body` 剥离 en 框架：页首模板行、页尾分类/语言链接、页尾 `==Navigation==` 导航区（navbox 全在 template-remove 清单，zh 系列导航由 Tab/* 承担）；
+1. `split_en_body` 剥离 en 框架：明确的页首/页尾框架模板行（Construction、Parent Tab、References 与 Navbox/Navigation 系；Quote、Infobox 等内容模板保留）、页尾分类/语言链接、页尾 `==Navigation==` 导航区（zh 系列导航由 Tab/* 承担）；
 2. 模板名映射（`src/jobs/jobs.py` 的 `_template_replacements`，唯一事实源）；
 3. `cosmetic_changes` 本地复用（`CosmeticChangesToolkit` 以真实页名的惰性 Page 构造，不拉取内容）：标题等号内侧空格归一（`cleanUpSectionHeaders`，fix:heading 的前置）、列表空格、空段清理等，与循环任务同套件同语义（`ignore=METHOD`）；
 4. fix 表规则依次应用：para（参数名归一 + 多语言堆积拆分）→ heading（标题归一）→ date（日期 ISO 化）→ misc（间隔号/引号等）→ anti-ve（prose `<br>` 转段落；模板内受例外保护）；随后按 zh 标题前缀分派 heading_char/heading_term（`==History==` 章节名：角色页→经历、术语页→历史，wiki 侧由 fix 的 `-cat` 限定同一作用域）；
@@ -79,7 +79,7 @@ prepare 的 wip 自动收尾：`work/` 里有上轮残留项时先按 wiki 最�
 
 1. 以骨架（`{slug}.conv.txt` 内容已全量注入）为基础产出整页新源码，写入 `.cache/llm_translate/work/<slug>.new.txt`，然后 `uv run python src/tools/llm_translate.py publish <slug>` → `done <slug>`。publish 基线不通过（wiki 最新源码 ≠ prepare 时 zh 现文）即中止本轮，报告中说明即可，下 tick 自动重备吸收。done 失败按其输出修正：内容问题改 new.txt 后重跑 publish 再 done；反复失败保留工作文件并在报告中说明。
 2. 页首：`{{Init}}`/`{{To do}}`/`{{Tab/...}}` 等行首模板块原样保留；唯一允许的改动是清理 `{{To do}}` 参数中的翻译类标注——K3 标注段与「本页翻译结果不准确…重新翻译」「AI翻译，待校对」等翻译任务类标注段按「；」分段丢弃，清空则还原裸 `{{To do}}`；**其他参数**（如「列表格式待整理」「内容待补充」）原样保留，裸 `{{To do}}` 不动（其 `Category:待修撰` 归入是队列数据源）。
-3. 正文 = 翻译后的骨架。en 侧页首模板、页尾分类/语言链接、`==Navigation==` 导航区已被 prepare 剥离，不带回（分类由 Module:Init 自动打，系列导航由 Tab/* 承担）；`[[Category:机翻待校对]]` 与同步标记由 publish 挂载——新源码不写分类、不写标记。页尾 zh 现文的语言链接行原样保留（不增删、不改目标）。
+3. 正文 = 翻译后的骨架。en 侧明确的框架模板、页尾分类/语言链接、`==Navigation==` 导航区已被 prepare 剥离，不带回（分类由 Module:Init 自动打，系列导航由 Tab/* 承担）；`[[Category:机翻待校对]]` 与同步标记由 publish 挂载——新源码不写分类、不写标记。页尾 zh 现文的语言链接行原样保留（不增删、不改目标）。
 4. 内链已解析为 `[[zh 最终目标|原显示文字]]`：只翻译显示文字，不碰目标。解析失败的（en 有 zh 无）保留 en 原名并在报告中列出。
 5. 翻译：prose 段落、参数里的英文散文值、内链显示文字、未归一的标题；引号用「」；专名用注入的已裁决译名与 wiki 通行译名（残留别名由主循环 fix:translation 兜底）。骨架里含中文的 zh 策展内容（信息框合并保留的字段等）原样不动。zh 现文有而 en 没有的原创段落：质量良好的保留，质量低下的舍弃（可从页面历史恢复），报告中说明取舍。拿不准骨架转换时对照 `{slug}.body.en.txt`（en 原文）；`{slug}.zh.txt` 仅供原创段落裁决核对。
 6. 仅当 en 无增量（对照 en 全文判定，含发售日期/封面/出处等字段——zh 已是中文不代表无增量）且 zh 无英文残留时才不编辑：`skip <slug> "en 无增量"`，然后直接进报告步。

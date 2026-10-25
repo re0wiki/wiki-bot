@@ -244,10 +244,24 @@ def cmd_refresh():
 # ---------------------------------------------------------------- prepare
 
 
+EN_FRAME_TEMPLATES = frozenset({"construction", "parent tab", "references"})
+
+
+def is_en_frame_template(line):
+    """en 页首/页尾框架模板；内容模板（Quote、Infobox 等）不在剥离范围内。"""
+    if not TEMPLATE_LINE.match(line):
+        return False
+    m = re.match(r"\{\{\s*([^{}|]+)", line)
+    if not m:
+        return False
+    name = m.group(1).strip().casefold()
+    return name in EN_FRAME_TEMPLATES or "navbox" in name or "navigation" in name
+
+
 def split_en_body(en_text):
-    """剥离 en 页首模板行与页尾分类/语言链接/导航区，返回正文。"""
+    """剥离 en 框架模板行与页尾分类/语言链接/导航区，返回正文。"""
     lines = en_text.splitlines()
-    while lines and (TEMPLATE_LINE.match(lines[0]) or not lines[0].strip()):
+    while lines and (is_en_frame_template(lines[0]) or not lines[0].strip()):
         lines.pop(0)
     while lines and (
         CATEGORY_LINE.match(lines[-1])
@@ -257,7 +271,7 @@ def split_en_body(en_text):
         lines.pop()
     # 页尾导航区（==Navigation== + navbox 群）：navbox 全在 template-remove 清单，
     # zh 的系列导航由 Tab/* 承担，不带入
-    while lines and (TEMPLATE_LINE.match(lines[-1]) or not lines[-1].strip()):
+    while lines and (is_en_frame_template(lines[-1]) or not lines[-1].strip()):
         lines.pop()
     if lines and re.fullmatch(r"==\s*Navigation\s*==", lines[-1], re.IGNORECASE):
         lines.pop()

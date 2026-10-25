@@ -166,6 +166,23 @@ def test_split_en_body_trailing_navbox_without_heading():
     assert body == "正文。\n"
 
 
+def test_split_en_body_preserves_content_templates():
+    src = (
+        "{{Quote|A quote}}\n"
+        "{{Infobox character| name = Subaru}}\n"
+        "正文。\n"
+        "{{Quote|Another quote}}\n"
+    )
+    assert lt.split_en_body(src) == src
+
+
+def test_split_en_body_strips_maintenance_templates():
+    body = lt.split_en_body(
+        "{{Construction}}\n{{Parent Tab|tab1 = Information}}\n正文。\n{{References}}\n"
+    )
+    assert body == "正文。\n"
+
+
 # ------------------------------------------------------------ 端到端（真实 fix 表规则）
 
 
