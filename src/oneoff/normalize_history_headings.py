@@ -32,31 +32,48 @@ EN_LINK = re.compile(r"\[\[en:([^\]|]+)", re.IGNORECASE)
 HIST_EN = re.compile(r"^==\s*History\s*==\s*$", re.MULTILINE | re.IGNORECASE)
 
 
+def page_prefix(title):
+    if ":" not in title or "/" in title:
+        return None
+    prefix = title.split(":", 1)[0]
+    if prefix not in PLAN:
+        return None
+    return prefix
+
+
+def text_candidate(prefix, text):
+    if text.lstrip().startswith("#REDIRECT"):
+        return None
+    olds = PLAN[prefix][1]
+    heads = [m.group(1).strip() for m in H2.finditer(text)]
+    hits = [o for o in olds if o in heads]
+    if not hits:
+        return None
+    m = EN_LINK.search(text)
+    return hits, m.group(1).split("#")[0] if m else None, text
+
+
+def collect_page(page, title):
+    prefix = page_prefix(title)
+    if prefix is None:
+        return None
+    try:
+        text = page.text
+    except Exception as e:  # noqa: BLE001 - 单页失败不阻断全站扫描，打印后跳过
+        print(f"读取失败跳过: {page.title()}: {e}")
+        return None
+    return text_candidate(prefix, text)
+
+
 def collect_candidates(zh):
     """第一阶段：扫 zh 主空间，收集候选。"""
     cands = {}  # title -> (hits, en_title, zh_text)
     gen = pagegenerators.AllpagesPageGenerator(site=zh, namespace=0)
     for page in pagegenerators.PreloadingGenerator(gen, groupsize=50):
-        t = page.title()
-        if ":" not in t or "/" in t:
-            continue
-        prefix = t.split(":", 1)[0]
-        if prefix not in PLAN:
-            continue
-        try:
-            text = page.text
-        except Exception as e:  # noqa: BLE001 - 单页失败不阻断全站扫描，打印后跳过
-            print(f"读取失败跳过: {page.title()}: {e}")
-            continue
-        if text.lstrip().startswith("#REDIRECT"):
-            continue
-        olds = PLAN[prefix][1]
-        heads = [m.group(1).strip() for m in H2.finditer(text)]
-        hits = [o for o in olds if o in heads]
-        if not hits:
-            continue
-        m = EN_LINK.search(text)
-        cands[t] = (hits, m.group(1).split("#")[0] if m else None, text)
+        title = page.title()
+        candidate = collect_page(page, title)
+        if candidate is not None:
+            cands[title] = candidate
     return cands
 
 
