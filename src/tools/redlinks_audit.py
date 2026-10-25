@@ -25,6 +25,7 @@ import re
 from collections import defaultdict
 from datetime import UTC, datetime
 from html import unescape
+from pathlib import Path
 
 from tqdm import tqdm
 
@@ -117,6 +118,8 @@ def main():
         "body_redlinks": {t: sorted(ps) for t, ps in sorted(body.items())},
         "footer_redcats": {t: sorted(ps) for t, ps in sorted(footer.items())},
     }
+    for out in (OUT_JSON, OUT_MD):
+        Path(out).parent.mkdir(parents=True, exist_ok=True)
     with open(OUT_JSON, "w", encoding="utf-8") as f:
         json.dump(result, f, ensure_ascii=False, indent=2)
 
