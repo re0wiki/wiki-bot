@@ -42,10 +42,10 @@ cd wiki-bot 仓库根
 
 ## 故障处理
 
-- **wiki 侧改月表后必须回写源数据**：月表条目构建期只读本地数据（lua_base 零变换重放、zh.json/tweets.json 经 merge_raw 重新生成），只在 wiki 上改（如 `{{Seirei or Elf}}` 复核消歧、fix:translation 命中 jt 字段）不落回本地，下轮增量同步重建即回潮（2026-08-23 实证：08-20 的复核消歧只改了 wiki，增量同步把 `{{Seirei}}` 回潮成 `{{Seirei or Elf}}`、jt 里的 `{{Yousei}}` 回潮成原文）。改完跑 `uv run python -m src.nekoquote.pull_wiki`——lua_base 月份整文件刷新（其条目是 P8 时代管线生成的，加工逻辑与 raw_tweet_entry 不同，不做逐字段比对），其余月份逐字段回写 zh.json（t/q）与 tweets.json（jt/jq）。wiki 侧字段清空或删除会同步删除本地键；raw 条目消失会响亮报错并阻止盲目重建，不会静默保留本地副本。
-- **部署遇到线上漂移会中止**：部署逐月比较线上现文、`lua_live` 与新构建；线上不同于上次部署快照时不覆盖未知版本，线上页面已存在但无基线同样停机。先只读核对差异，再按需运行 `pull_wiki` 合并；线上已等于新构建时仅刷新快照，不写页面。
+- **wiki 侧改月表后必须回写源数据**：月表条目构建期只读本地数据（lua_base 零变换重放、zh.json/tweets.json 经 merge_raw 重新生成），只在 wiki 上改（如 `{{Seirei or Elf}}` 复核消歧、fix:translation 命中 jt 字段）不落回本地，下轮增量同步重建即回潮（2026-08-23 实证：08-20 的复核消歧只改了 wiki，增量同步把 `{{Seirei}}` 回潮成 `{{Seirei or Elf}}`、jt 里的 `{{Yousei}}` 回潮成原文）。改完跑 `uv run python -m src.nekoquote.pull_wiki`——lua_base 月份整文件刷新（其条目是 P8 时代管线生成的，加工逻辑与 raw_tweet_entry 不同，不做逐字段比对），其余月份逐字段回写 zh.json（t/q）与 tweets.json（jt/jq）。wiki 侧 t/q 清空或删除会删除本地译文键并写 `zh_deleted`/`qzh_deleted` 抑制标记，translate 跳过这些字段；wiki 补回非空 t/q 时可新建本地记录并解除对应抑制。raw 条目消失会响亮报错并阻止盲目重建；全部校验通过后，pull_wiki 把接受的线上月表刷新到 `lua_live`，作为后续部署基线。
+- **部署遇到线上漂移会中止**：部署逐月比较线上现文、`lua_live` 与新构建，比较时忽略 MediaWiki 文件尾换行差异；线上不同于上次部署快照时不覆盖未知版本，线上页面已存在但无基线同样停机。先只读核对差异，再按需运行 `pull_wiki` 合并；线上已等于新构建时不重写月表，但仍幂等检查 `/doc`，使上次 `/doc` 失败的部署可续跑。既有页保存绑定已读 revid，新页使用 create-only，任何保存冲突均中止。
 - **模型截断不等于翻译成功**：任何 `finish_reason=length` 都不入库；可拆批次自动二分，单条仍截断则非零终止。不要用已有部分 content 冒充完整译文。
-- **本地基线只认完整发布**：bootstrap 在临时目录抓完所有月表后才发布 `lua_base`/`lua_live` 并写 `lua_base.complete`；中途失败的残留不会被新 clone 当成完整恢复。
+- **本地基线只认完整发布**：bootstrap 在临时目录抓完所有月表后成对发布 `lua_base`/`lua_live`，发布期间保留旧版本备份，目录或完成标记任一步失败都回滚；`lua_base.complete` 只在两张目录均发布成功后写入。异常退出留下的备份由下次 bootstrap 先恢复或清理；`run_chain` 在完成标记缺失时拒绝启动，先运行 `uv run python -m src.nekoquote.bootstrap`。
 - **Kimi content_filter 误伤**（"high risk" 400）：管线已自动二分隔离并跳过该条，跑完后查 `.cache/nekoquote/zh_blocked.json`；用其他模型（Gemini）译出后，把译文写进 `.cache/nekoquote/zh.json` 对应 tid 的 `zh` 字段再重跑构建+部署。**日文原文若触发过滤，不要让它进 LLM 上下文**（有先例）。
 - **译名保障 = 注入而非后处理**：翻译期把推文中出现的译名表实体（ja 面形态确定性检出，歧义面不注入）以「ja = zh」对照注入 prompt；译文即终稿，不对 zh.json 跑规则归一（归一打在源数据上的误伤不可逆）。修正译文译名需同时改 zh.json 与 wiki 月表。
 - **导出缺最近内容**：先怀疑解析覆盖——正文可能在新版组件里（递归 walk）或与头部同组件链接之后；`src/nekoquote/parse.py` 的注释有三种格式的完整判例。
