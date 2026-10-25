@@ -6,7 +6,7 @@
   与主映射不一致即冲突——进报告，不猜测。
 
 同步（zh 侧驱动，与 audit_langlinks 同向；每轮全量 diff、幂等、无本地状态）：
-1. zh 主空间非重定向页两阶段取源码 + prop=categories（50/批同一请求）；
+1. zh 主空间非重定向页两阶段取源码 + revid + prop=categories（50/批同一请求）；
 2. 无 [[en:X]] 链接的页不同步（zh 原创页等，见 docs/wiki-structure.md）；
 3. desired = 映射(en 页 prop=categories&redirects=1 的分类) − 不同步集合 −
    Init 覆盖集（INIT_CATS：映射目标属 Init 前缀×后缀矩阵的不写入，逐页检查
@@ -18,7 +18,8 @@
    的内容分类）；
 4. 受管集合 = 映射键 ∪ 映射值：源码中受管分类行整体按 desired 重写
    （en 名残留行随之归一，重复受管行随之去重），不受管的源码分类行（人工添加、
-   新搬运待整理/机翻待校对等）不碰；
+   新搬运待整理/机翻待校对等）不碰；保存绑定快照 revid（baserevid），
+   编辑冲突时重读源码与 registered 分类重算一次，仍冲突则响亮失败；
 5. 不同步集合 = Category:自动清空分类 成员 ∪ TRACKING_CATEGORIES：
    en 名分类页挂 [[Category:自动清空分类]] 即声明不同步（优先于 interwiki
    映射——分类页的 en 链接同时是读者导航，语义 1:N 的如 图库↔Image Gallery
@@ -41,9 +42,11 @@ LLM 翻译管线不处理分类（搬运/翻译时剥除，由本任务下轮补
 
 import re
 from collections import Counter
+from functools import partial
 
 import pywikibot as pwb
 from pywikibot import config
+from pywikibot.exceptions import EditConflictError
 from pywikibot.tools import first_upper
 
 SUMMARY = "机器人：自英文站同步分类"
@@ -376,6 +379,52 @@ def build_report(
     return "\n".join(lines) + "\n"
 
 
+def parse_page_snapshot(page: dict) -> tuple[str, set[str], int]:
+    """API 页面响应 → (源码, registered 分类, revid)。"""
+    rev = page["revisions"][0]
+    return (
+        rev["slots"]["main"]["content"],
+        {c["title"].removeprefix("Category:") for c in page.get("categories", [])},
+        rev["revid"],
+    )
+
+
+def load_page_snapshot(site, title: str) -> tuple[str, set[str], int]:
+    """冲突后重读单页的最新源码、registered 分类与 revid。"""
+    data = site.simple_request(
+        action="query",
+        prop="revisions|categories",
+        titles=title,
+        rvprop="ids|content",
+        rvslots="main",
+        cllimit="500",
+        formatversion="2",
+        format="json",
+    ).submit()
+    return parse_page_snapshot(data["query"]["pages"][0])
+
+
+def save_category_page(site, title, result, revid, recompute):
+    """绑定快照 revid 保存；冲突时按最新快照重算一次，仍冲突则抛出。"""
+    for attempt in range(2):
+        page = pwb.Page(site, title)
+        page.text = result[0]
+        try:
+            page.save(summary=SUMMARY, bot=True, baserevid=revid)
+            return result
+        except EditConflictError:
+            if attempt:
+                raise
+            text, registered, revid = load_page_snapshot(site, title)
+            result = recompute(text, registered)
+            if result[0] is None:
+                return result
+            pwb.info(
+                f"{title}: 编辑冲突，按最新修订重算 +{sorted(result[1])} -{sorted(result[2])}"
+            )
+    raise AssertionError("unreachable")
+
+
 def batched(site, titles: list[str], **params) -> list[tuple[list[str], dict]]:
     """titles= 50/批查询（wiki-access 两阶段配方的批内部分）。
 
@@ -393,6 +442,68 @@ def batched(site, titles: list[str], **params) -> list[tuple[list[str], dict]]:
         ).submit()
         out.append((batch, data))
     return out
+
+
+def recompute_category_snapshot(
+    text,
+    registered,
+    *,
+    en_cats,
+    mapping,
+    managed,
+    excluded,
+    init_cats,
+    conflicted,
+):
+    """编辑冲突后的 zh 新快照重算；新 en 链接没有可靠分类快照时拒绝写入。"""
+    cats = []
+    if (link := parse_en_link(text)) is not None:
+        cats = en_cats.get(link)
+        if cats is None:
+            raise RuntimeError(f"冲突后 en 页 {link} 无可用分类快照，停止写入")
+    return compute_sync(
+        text, registered, cats, mapping, managed, excluded, init_cats, conflicted
+    )
+
+
+def sync_category_pages(
+    site, zh_pages, en_cats, mapping, managed, excluded, init_cats, conflicted
+):
+    """逐页计算并保存分类同步，返回报告数据与实际写入页数。"""
+    unmapped: Counter = Counter()
+    init_missing: dict[str, list[str]] = {}
+    synced = 0
+    for title, (text, registered, revid) in zh_pages.items():
+        link = parse_en_link(text)
+        cats: list[str] = []
+        if link is not None:
+            got = en_cats.get(link)
+            if got is None:
+                pwb.warning(f"en 页 {link} 取数失败或已删除，{title} 保持现状")
+                continue
+            cats = got
+        result = compute_sync(
+            text, registered, cats, mapping, managed, excluded, init_cats, conflicted
+        )
+        if result[0] is not None:
+            pwb.info(f"{title}: +{sorted(result[1])} -{sorted(result[2])}")
+            if not config.simulate:
+                recompute = partial(
+                    recompute_category_snapshot,
+                    en_cats=en_cats,
+                    mapping=mapping,
+                    managed=managed,
+                    excluded=excluded,
+                    init_cats=init_cats,
+                    conflicted=conflicted,
+                )
+                result = save_category_page(site, title, result, revid, recompute)
+            if result[0] is not None:
+                synced += 1
+        unmapped.update(result[3])
+        if result[4]:
+            init_missing[title] = result[4]
+    return unmapped, init_missing, synced
 
 
 if __name__ == "__main__":
@@ -436,27 +547,24 @@ if __name__ == "__main__":
 
     # 2. zh 主空间非重定向页：两阶段取源码 + 已登记分类（同一批请求）
     zh_titles = [p.title() for p in zh.allpages(namespace=0, filterredir=False)]
-    zh_pages: dict[str, tuple[str, set[str]]] = {}
+    zh_pages: dict[str, tuple[str, set[str], int]] = {}
     for _batch, data in batched(
         zh,
         zh_titles,
         prop="revisions|categories",
-        rvprop="content",
+        rvprop="ids|content",
         rvslots="main",
         cllimit="500",
     ):
         for p in data["query"]["pages"]:
             if "revisions" not in p:
                 continue
-            zh_pages[p["title"]] = (
-                p["revisions"][0]["slots"]["main"]["content"],
-                {c["title"].removeprefix("Category:") for c in p.get("categories", [])},
-            )
+            zh_pages[p["title"]] = parse_page_snapshot(p)
     pwb.info(f"zh 主空间 {len(zh_pages)} 页")
 
     # 3. en 对应页分类（redirects=1 取最终目标）
     en_titles = sorted(
-        {link for text, _ in zh_pages.values() if (link := parse_en_link(text))}
+        {link for text, _, _ in zh_pages.values() if (link := parse_en_link(text))}
     )
     en_cats: dict[str, list[str] | None] = {}
     for batch, data in batched(
@@ -465,34 +573,10 @@ if __name__ == "__main__":
         en_cats.update(resolve_en_cats(data, batch))
     pwb.info(f"en 对应页 {len(en_cats)} 页")
 
-    # 4. 逐页 diff + 写入（无 en 链接的页只做残留清空）
-    unmapped: Counter = Counter()
-    init_missing: dict[str, list[str]] = {}
-    synced = 0
-    for title, (text, registered) in zh_pages.items():
-        link = parse_en_link(text)
-        cats: list[str] = []
-        if link is not None:
-            got = en_cats.get(link)
-            if got is None:
-                pwb.warning(f"en 页 {link} 取数失败或已删除，{title} 保持现状")
-                continue
-            cats = got
-        new_text, added, removed, page_unmapped, page_init_missing = compute_sync(
-            text, registered, cats, mapping, managed, excluded, init_cats, conflicted
-        )
-        unmapped.update(page_unmapped)
-        if page_init_missing:
-            init_missing[title] = page_init_missing
-        if new_text is None:
-            continue
-        pwb.info(f"{title}: +{sorted(added)} -{sorted(removed)}")
-        synced += 1
-        if config.simulate:
-            continue  # -s 干跑：改动已逐条打印
-        page = pwb.Page(zh, title)
-        page.text = new_text
-        page.save(summary=SUMMARY, bot=True)
+    # 4. 逐页 diff + 写入（无 en 链接的页只做残留清空；保存绑定快照 revid）
+    unmapped, init_missing, synced = sync_category_pages(
+        zh, zh_pages, en_cats, mapping, managed, excluded, init_cats, conflicted
+    )
     pwb.info(f"同步 {synced} 页；未映射分类 {len(unmapped)} 类")
 
     # 5. 报告页（有变更才编辑）

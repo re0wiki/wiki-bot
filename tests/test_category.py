@@ -209,6 +209,105 @@ def test_resolve_en_cats_missing():
     assert rc.resolve_en_cats(data, ["A"]) == {"A": None}
 
 
+def test_parse_page_snapshot_includes_revid():
+    page = {
+        "revisions": [
+            {
+                "revid": 123,
+                "slots": {"main": {"content": "正文"}},
+            }
+        ],
+        "categories": [{"title": "Category:角色"}],
+    }
+    assert rc.parse_page_snapshot(page) == ("正文", {"角色"}, 123)
+
+
+def test_save_category_page_reloads_after_conflict(monkeypatch):
+    calls = []
+
+    class FakePage:
+        def __init__(self, site, title):
+            self.text = None
+
+        def save(self, **kwargs):
+            calls.append((self.text, kwargs))
+            if len(calls) == 1:
+                raise rc.EditConflictError(0)
+
+    monkeypatch.setattr(rc.pwb, "Page", FakePage)
+    monkeypatch.setattr(
+        rc,
+        "load_page_snapshot",
+        lambda site, title: ("新快照", {"模板分类"}, 101),
+        raising=False,
+    )
+
+    def recompute(text, registered):
+        assert text == "新快照" and registered == {"模板分类"}
+        return ("重算文本", {"新增"}, {"删除"}, [], [])
+
+    result = rc.save_category_page(
+        object(), "页面", ("旧计算文本", set(), set(), [], []), 90, recompute
+    )
+    assert result[0] == "重算文本"
+    assert [call[1]["baserevid"] for call in calls] == [90, 101]
+    assert calls[1][0] == "重算文本"
+
+
+def test_save_category_page_conflict_can_become_noop(monkeypatch):
+    calls = []
+
+    class FakePage:
+        def __init__(self, site, title):
+            self.text = None
+
+        def save(self, **kwargs):
+            calls.append((self.text, kwargs))
+            raise rc.EditConflictError(0)
+
+    monkeypatch.setattr(rc.pwb, "Page", FakePage)
+    monkeypatch.setattr(
+        rc,
+        "load_page_snapshot",
+        lambda site, title: ("新快照", set(), 101),
+        raising=False,
+    )
+    result = rc.save_category_page(
+        object(),
+        "页面",
+        ("旧计算文本", set(), set(), [], []),
+        90,
+        lambda text, registered: (None, set(), set(), ["新未映射"], []),
+    )
+    assert result[0] is None
+    assert result[3] == ["新未映射"]
+    assert len(calls) == 1
+
+
+def test_sync_category_pages_passes_snapshot_revid_to_save(monkeypatch):
+    captured = {}
+
+    def fake_save(site, title, result, revid, recompute):
+        captured.update(title=title, revid=revid)
+        return result
+
+    monkeypatch.setattr(rc, "save_category_page", fake_save, raising=False)
+    monkeypatch.setattr(rc.config, "simulate", False)
+    unmapped, init_missing, synced = rc.sync_category_pages(
+        object(),
+        {"页面": ("正文\n[[Category:Deceased]]\n", set(), 123)},
+        {},
+        MAPPING,
+        MANAGED,
+        set(),
+        INIT_CATS,
+        set(),
+    )
+    assert captured == {"title": "页面", "revid": 123}
+    assert synced == 1
+    assert not unmapped and not init_missing
+
+
 # endregion
 # region parse_init_cats
 def test_parse_init_cats_full():
