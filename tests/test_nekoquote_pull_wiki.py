@@ -167,7 +167,9 @@ def test_explicit_empty_question_without_record_is_suppressed(monkeypatch, tmp_p
     assert "q" not in names and "t" in names
 
 
-def run_pull_wiki_with_online(monkeypatch, tmp_path, tw, zh, online, live_text):
+def run_pull_wiki_with_online(
+    monkeypatch, tmp_path, tw, zh, online, live_text, before=None
+):
     (tmp_path / "lua_base").mkdir(exist_ok=True)
     (tmp_path / "lua_live").mkdir(exist_ok=True)
     (tmp_path / "zh.json").write_text(json.dumps(zh), encoding="utf-8")
@@ -187,6 +189,8 @@ def run_pull_wiki_with_online(monkeypatch, tmp_path, tw, zh, online, live_text):
     monkeypatch.setattr(
         pull_wiki.pagegenerators, "PreloadingGenerator", lambda pages: pages
     )
+    if before:
+        before()
     return pull_wiki._main()
 
 
@@ -211,6 +215,41 @@ def test_unreplayable_online_edit_is_rejected_before_live_refresh(
     online = build.emit_table([entry])
     assert (
         run_pull_wiki_with_online(monkeypatch, tmp_path, tw, {}, online, "OLD\n") == 1
+    )
+    assert (tmp_path / "lua_live" / "2026-10.lua").read_text(
+        encoding="utf-8"
+    ) == "OLD\n"
+
+
+def test_stale_output_cleanup_failure_cannot_promote_live(monkeypatch, tmp_path):
+    online = build.emit_table([build.raw_tweet_entry(TID, {"text": "线上独有"}, None)])
+
+    def inject_stale_and_cleanup_failure():
+        outdir = tmp_path / "lua"
+        outdir.mkdir()
+        (outdir / "2026-10.lua").write_text(online, encoding="utf-8")
+        real_rmtree = pull_wiki.shutil.rmtree
+
+        def fail_rmtree(path, ignore_errors=False):
+            if Path(path) == outdir:
+                if ignore_errors:
+                    return
+                raise OSError("injected stale cleanup failure")
+            return real_rmtree(path, ignore_errors=ignore_errors)
+
+        monkeypatch.setattr(pull_wiki.shutil, "rmtree", fail_rmtree)
+
+    assert (
+        run_pull_wiki_with_online(
+            monkeypatch,
+            tmp_path,
+            {},
+            {},
+            online,
+            "OLD\n",
+            before=inject_stale_and_cleanup_failure,
+        )
+        == 1
     )
     assert (tmp_path / "lua_live" / "2026-10.lua").read_text(
         encoding="utf-8"

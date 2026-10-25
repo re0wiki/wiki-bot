@@ -192,7 +192,12 @@ def _main() -> int:
     # 只有线上能由回写后的本地源完整重放，才可把它提升为部署基线。
     # 清空可再生输出，避免旧月表掩盖本次未生成的条目。
     outdir = DATA / "lua"
-    shutil.rmtree(outdir, ignore_errors=True)
+    try:
+        if outdir.exists():
+            shutil.rmtree(outdir)
+    except OSError as e:
+        print(f"构建输出清理失败；未更新 lua_live: {e}")
+        return 1
     build.main()
     generated_months = {f.stem for f in outdir.glob("*.lua")}
     mismatched = [
