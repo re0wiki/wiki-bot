@@ -16,7 +16,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 
 ## 环境
 
-- **Python 3.14**（`.python-version`，`pyproject.toml` 要求 `>=3.14`），uv 管理，有 `uv.lock`。
+- **Python >=3.14**（`pyproject.toml`；当前解释器选择见 `.python-version`），uv 管理，有 `uv.lock`。
 - 安装：`uv sync`（`default-groups = "all"`）。pywikibot 的全部可选依赖以 extras 形式声明在 dev 组（`pywikibot[html,http,...]`），覆盖其 requirements.txt，随 submodule 更新自动跟随。
 - 运行脚本：`uv run python <script>`（仓库根目录）。uv 按 cwd 的 pyproject.toml 定位项目 `.venv`，天然绕过 PATH 上 Hermes 自身 venv 的裸 `python`（3.11、无项目依赖），且每次运行顺带校验环境与 uv.lock 同步（开销可忽略，`--no-sync` 可跳过）。
 - **pywikibot 是 git submodule**（fork：`github.com/re0wiki/pywikibot`，upstream 是 wikimedia/pywikibot）。克隆要 `--recurse-submodules`（否则 `uv sync` 会因路径缺失失败）。fork 上的 re0wiki 定制补丁 rebase 上游时必须逐条保留——**清单与流程的唯一权威是 pywikibot-update skill**。更新 submodule 后提交信息写 `chore: update pywikibot`。
@@ -30,7 +30,7 @@ Re:Zero Fandom Wiki（<https://rezero.fandom.com/zh>）的维护机器人，基�
 | 文件 | 作用 |
 |---|---|
 | `src/` | **仓库自有代码伞包，顶层目录的唯一增长口**：`jobs/`（任务编排）、`nekoquote/`（功能包先例）、`scripts/`（pwb 入口）、`tools/`（常驻工具）、`oneoff/`（一次性归档）。今后新多模块功能一律 `src/<feature>/`，单文件工具 `src/tools/`，pwb 任务 `src/scripts/`。顶层目录冻结：pwb 契约物（`pwb/`、`families/`、`user-config.py`、`user-fixes.py`）+ `main.py`、`tests/`、`docs/`、`.agents/`（project skills）与运行期目录（`scratch/`、`logs/`、`.cache/`，均 gitignore），不再新增 |
-| `main.py` | 循环任务入口。`python main.py <任务名或编号>...` 依次跑指定任务（可多个，编号随插入平移，名字稳定，`-h` 列全部），`-s` 模拟；不传参数 = 无限循环所有任务，**每轮结束休眠 1 小时**（`CYCLE_SLEEP`，Cloudflare 累计量限流对策，见 docs/cloudflare-429.md）。任务失败（子进程非零退出）即以相同码退出等待人工修复，不继续后续任务 |
+| `main.py` | 循环任务入口。`uv run python main.py <任务名或编号>...` 依次跑指定任务（可多个，编号随插入平移，名字稳定，`-h` 列全部），`-s` 模拟；不传参数 = 无限循环所有任务，**每轮结束休眠 1 小时**（`CYCLE_SLEEP`，Cloudflare 累计量限流对策，见 docs/cloudflare-429.md）。任务失败（子进程非零退出）即以相同码退出等待人工修复，不继续后续任务 |
 | `src/jobs/jobs.py` | 任务列表（`Job(name, cmd)`，name 是稳定引用；fix 类任务名与 `-fix:` 参数一致），分 6 组：跨站同步 → 整理新搬运页 → 模板维护 → 重定向 → 语法规范化 → 内容规范化 → 杂项。列表末尾的 `touch -random:128` 是为触发缓存刷新，不是无意义操作 |
 | `src/jobs/run_job.py` | 子进程包装：`build_cmd` 拼 `sys.executable pwb/pwb.py ...`（不用裸 `python`，PATH 上可能是无项目依赖的其他版本），自动加 `-always`（interwiki 加 `-auto -force`，transferbot 不加）。注入 `PYTHONIOENCODING=utf-8`、管道按 UTF-8 解码（勿移除，Windows 管道乱码）；循环模式子进程继承控制台走 WriteConsoleW 宽字符 API，不受此变量影响 |
 | `src/jobs/starts.py` | namespace → `-start:ns:!` 生成器参数。`ns_base`=主/project/template/category，`ns_more` 再加 module/mediawiki |
@@ -64,7 +64,7 @@ pywikibot 自带脚本（movepages/add_text/delete/listpages/category/template �
 ## 译名维护工作流（最常见的改动）
 
 1. 译名选取规则见 wiki 的 `ReZero Wiki:译名表`（官方简中 > 官方繁体 > 民间 > 保留英文）。bot 执行的唯一权威是 `user-fixes.py`；译名表页面由人工随性维护、无逐条同步义务（bot 的 fix:translation 会自动归一页面上的别名写法），已有条目的标题与内容本身即译名表的作用，不另建清单页。用户通过 GitHub Issues 报译名问题（模板：新增/修改译名、遗漏替换、错误替换），wiki 页面明确告诉用户「不要手动移动页面或替换文本，提议通过后 Bot 会批量修改」。
-2. 改译名 = 改 `translations.py` 的 `ENTRIES`：`std` 进主列表（标准名经 `p2st()` 简繁展开匹配简繁写法；**仅繁简差异的命中不改写**——MediaWiki 简繁转换已覆盖显示与链接解析，源码归一只会误伤与繁体同形的日文），**新变体一律登记 `aliases` 精确对**（写法字符串；别名位于更长他名内部时 guard 直接写进写法文本，如 `"(?<!梅)裘斯"`；读音全组合类变体（ai-mi-li-ya→爱蜜莉雅 族）写音位字符类一条收编（如 `"[艾爱][米蜜][莉利][娅亚雅]"`，类内只写简体、p2st 自动补繁）；guard 的作用验证要在 wiki 源码匹配**（官方语料 0 次不代表多余：无官方译名的实体本就不在语料里，如 `梅莉(?!奥)` 防 `角色:梅里欧·阿嘎玛`）；选择性展开用手写字符类表达，如 利格鲁/梅莉；不同日文名（真名/旧名/称呼）不互转，各自单记）。`translation_manual` 只剩模板替换规则。拿不准覆盖面的，先 `python main.py fix:translation -s` 干跑。繁体与日文原名同字的别名（王选前日谭/最优纪行/王族诱拐案 类）：含假名的日文连段由 translation fix 的 inside 异常自动保护（卷名、{{R}} 日文参数、日文引文等均在此列），纯汉字日文引用无假名可探测——wiki 上既有出现处已逐处 as-is 保护（出版信息、术语:王族诱拐事件 lead），**新增此类纯汉字日文引用必须包 `<!--as-is-->`**，否则会被 s2t 对归一。标题含别名的页面由 `re0_move` 任务用同一张表自动移动，无需另行处理。
+2. 改译名 = 改 `translations.py` 的 `ENTRIES`：`std` 进主列表（标准名经 `p2st()` 简繁展开匹配简繁写法；**仅繁简差异的命中不改写**——MediaWiki 简繁转换已覆盖显示与链接解析，源码归一只会误伤与繁体同形的日文），**新变体一律登记 `aliases` 精确对**（写法字符串；别名位于更长他名内部时 guard 直接写进写法文本，如 `"(?<!梅)裘斯"`；读音全组合类变体（ai-mi-li-ya→爱蜜莉雅 族）写音位字符类一条收编（如 `"[艾爱][米蜜][莉利][娅亚雅]"`，类内只写简体、p2st 自动补繁）；guard 的作用验证要在 wiki 源码匹配**（官方语料 0 次不代表多余：无官方译名的实体本就不在语料里，如 `梅莉(?!奥)` 防 `角色:梅里欧·阿嘎玛`）；选择性展开用手写字符类表达，如 利格鲁/梅莉；不同日文名（真名/旧名/称呼）不互转，各自单记）。`translation_manual` 只剩模板替换规则。拿不准覆盖面的，先 `uv run python main.py fix:translation -s` 干跑。繁体与日文原名同字的别名（王选前日谭/最优纪行/王族诱拐案 类）：含假名的日文连段由 translation fix 的 inside 异常自动保护（卷名、{{R}} 日文参数、日文引文等均在此列），纯汉字日文引用无假名可探测——wiki 上既有出现处已逐处 as-is 保护（出版信息、术语:王族诱拐事件 lead），**新增此类纯汉字日文引用必须包 `<!--as-is-->`**，否则会被 s2t 对归一。标题含别名的页面由 `re0_move` 任务用同一张表自动移动，无需另行处理。
 3. 提交信息遵循 Conventional Commits：`feat(translation): add X` / `fix(translation): 旧 -> 新`。
 4. 模板条目（如 `{{Elf}}`）不生成名字规则（name 含 `{{` 自动排除），正文归一由 `translation_manual` 结构规则处理。
 5. 写替换规则正则（translations.py 的 guard 写法、user-fixes 的作用域正则）当心三处解析坑（2026-08-11 fix:para 死行删除规则实证）：`\{\{}` 不是 `{{`——`\}` 也是字面量，该写法匹配的是三字符 `{{}`，正确写法是 `(?!\{\{)`；DOTALL 下值匹配用 `.*` 会吞到文末，行值一律 `[^\n]*`；参数名/等号两侧的空白用 `[ \t]*` 不用 `\s*`——`\s` 含 `\n`，遇空值行（如 `|Next = ` 独占一行）会把下一行吞成值。验证这类规则必须断言 diff 只删目标行（仅看 `new != text` 会漏掉截尾事故）。

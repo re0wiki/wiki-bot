@@ -128,7 +128,7 @@ uv run python pwb/pwb.py replace -automaticsummary \
 
 ### 已踩过的坑（历史里的失败命令）
 
-- `python pwb/pwb.py main.py ...` 是错的——`main.py` 在仓库根，不是 pwb 脚本，直接 `python main.py`。
+- `python pwb/pwb.py main.py ...` 是错的——`main.py` 在仓库根，不是 pwb 脚本，直接 `uv run python main.py`。
 - `-always-from:X`（参数粘连）、`imagetrasfer`（拼写）、`revert_bot`（下划线）、`-assubst`（应为 `-subst`）都是真实出现过的笔误，脚本只会报 unknown argument 或 script not found。
 - PowerShell 里 `-grep:"require('Module:Tab')"` 会被剥引号剥坏，要整体加引号并转义：`"-grep:require\('Module:Tab'\)"`。git-bash 里用单引号即可。
 - `category remove -from:Sandbox` 会把名为 Sandbox 的**分类**清空，操作前 `-simulate` 确认范围，必要时 `-nodelete`。
