@@ -16,12 +16,13 @@
 
 import json
 import re
+import shutil
 import sys
 
 import pywikibot
 from pywikibot import pagegenerators
 
-from . import DATA
+from . import DATA, build
 from .build import STATUS_RE, fget, parse_table, strip_tco
 from .state import state_lock, write_json
 
@@ -109,9 +110,17 @@ def writeback_entry(month: str, fields: list, zh: dict, tw: dict) -> tuple[int, 
             v = unescape(quote, raw)
         else:
             v = ""
-        if not v and key not in rec:
+        if (
+            not v
+            and key not in rec
+            and (name not in present or (deleted_key and rec.get(deleted_key)))
+        ):
             continue
-        if v == cur and (deleted_key is None or not rec.get(deleted_key)):
+        if (
+            v == cur
+            and (v or expected is not None)
+            and (deleted_key is None or not rec.get(deleted_key))
+        ):
             continue
         print(f"  {month} {tid} {name}: {str(cur)[:60]!r} -> {v[:60]!r}")
         if v:
@@ -179,6 +188,29 @@ def _main() -> int:
         write_json(zh_path, zh)
     if n_tw:
         write_json(tw_path, tw)
+
+    # 只有线上能由回写后的本地源完整重放，才可把它提升为部署基线。
+    # 清空可再生输出，避免旧月表掩盖本次未生成的条目。
+    outdir = DATA / "lua"
+    shutil.rmtree(outdir, ignore_errors=True)
+    build.main()
+    generated_months = {f.stem for f in outdir.glob("*.lua")}
+    mismatched = [
+        month
+        for month, online in online_pages.items()
+        if not (outdir / f"{month}.lua").exists()
+        or (outdir / f"{month}.lua").read_text(encoding="utf-8") != online
+    ]
+    local_only = generated_months - online_pages.keys()
+    if mismatched or local_only:
+        print(
+            "本地源无法完整重放线上月表；未更新 lua_live: "
+            + ", ".join(sorted(mismatched))
+        )
+        if local_only:
+            print("本地生成但线上缺失的月表: " + ", ".join(sorted(local_only)))
+        return 1
+
     live_dir = DATA / "lua_live"
     live_dir.mkdir(parents=True, exist_ok=True)
     n_live = 0
