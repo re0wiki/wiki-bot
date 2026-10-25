@@ -48,33 +48,35 @@ for name in INLINE:
     bodies[name] = transclude_body(pywikibot.Page(site, f"Template:{name}").text)
 
 
+def nesting_step(text, i, brace, link):
+    two = text[i : i + 2]
+    if two == "{{":
+        return i + 2, brace + 1, link
+    if two == "}}" and brace:
+        return i + 2, brace - 1, link
+    if two == "[[":
+        return i + 2, brace, link + 1
+    if two == "]]" and link:
+        return i + 2, brace, link - 1
+    return None
+
+
 def escape_pipes(text):
     """深度 0（不在 {{}} / [[]] 内）的 | 全部转义为 {{!}}。"""
     out, brace, link = [], 0, 0
     i = 0
     while i < len(text):
         two = text[i : i + 2]
-        if two == "{{":
-            brace += 1
-            i += 2
-        elif two == "}}" and brace:
-            brace -= 1
-            i += 2
-        elif two == "[[":
-            link += 1
-            i += 2
-        elif two == "]]" and link:
-            link -= 1
-            i += 2
-        elif text[i] == "|" and brace == 0 and link == 0:
-            out.append("{{!}}")
-            i += 1
+        step = nesting_step(text, i, brace, link)
+        if step is not None:
+            i, brace, link = step
+            out.append(two)
             continue
+        if text[i] == "|" and brace == 0 and link == 0:
+            out.append("{{!}}")
         else:
             out.append(text[i])
-            i += 1
-            continue
-        out.append(two)
+        i += 1
     return "".join(out)
 
 
