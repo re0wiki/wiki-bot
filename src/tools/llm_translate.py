@@ -1169,7 +1169,7 @@ def verify_edit(slug, meta):
 
     核验（均以 prepare 时的 zh 现文与 conv 骨架为基线）：
     - 最新编辑是本账号，源码含且仅含一个同步标记且 revid 与 meta 一致；
-    - 页首模板块除 To do 翻译类标注清理外逐行不变；
+    - 页首模板块除 To do 翻译类标注清理外逐行不变，语言链接尾块逐字不变；
     - 正文内链目标（按 页面/文件/分类/语言链接 分类）与模板调用
       不超出 link_map ∪ 未解析名 ∪ conv 骨架 ∪ zh 现文的白名单
       （模板另含 nouns.txt 注入专名的模板值——Elf = {{Elf}} 类按令使用）；
@@ -1200,10 +1200,12 @@ def verify_edit(slug, meta):
 
     zh_old = (WORK / f"{slug}.zh.txt").read_text(encoding="utf-8")
     conv = (WORK / f"{slug}.conv.txt").read_text(encoding="utf-8")
-    old_head, old_body, _ = split_zh_frame(zh_old)
-    new_head, new_body, _ = split_zh_frame(new_text)
+    old_head, old_body, old_tail = split_zh_frame(zh_old)
+    new_head, new_body, new_tail = split_zh_frame(new_text)
     if new_head != [strip_todo(line) for line in old_head]:
         sys.exit("页首模板块被改动（唯一允许的改动是按规则清理 To do 的翻译类标注）")
+    if new_tail != old_tail:
+        sys.exit("语言链接尾块被改动（目标、数量与顺序必须与 prepare 基线逐字一致）")
 
     def link_targets(text):
         return {m.group(1).strip() for m in WIKILINK.finditer(text)}
@@ -1286,6 +1288,8 @@ def cmd_publish(slug):
     if not new_file.exists():
         sys.exit(f"找不到 {new_file}——先把整页新源码写入该文件（不含同步标记）")
     new_text = new_file.read_text(encoding="utf-8")
+    if not new_text.strip():
+        sys.exit(f"空白成稿：{new_file} 不含可发布内容，中止")
     live, _, _ = get_page(ZH_API, meta["title"])
     zh_old = (WORK / f"{slug}.zh.txt").read_text(encoding="utf-8")
     if live is None:

@@ -192,6 +192,19 @@ def test_verify_edit_head_change_fails(tmp_path, monkeypatch):
         lt.verify_edit("角色_测试", META)
 
 
+def test_verify_edit_language_tail_change_fails(tmp_path, monkeypatch):
+    """语言链接尾块独立于正文白名单逐字核验，删一条也不能通过。"""
+    work = make_work(tmp_path, monkeypatch)
+    slug = "角色_测试"
+    (work / f"{slug}.zh.txt").write_text(
+        "{{Init}}\n\n旧文。\n\n[[de:Test]]\n[[en:Test]]\n", encoding="utf-8"
+    )
+    new_text = GOOD_NEW + "\n[[en:Test]]\n"  # 删除 [[de:Test]]
+    stub_api(monkeypatch, make_rev(101, lt.BOT, new_text))
+    with pytest.raises(SystemExit, match="语言链接"):
+        lt.verify_edit(slug, META)
+
+
 def test_agent_rules_injectable():
     """agent 规则小节必须能从 docs/llm-translation.md 抽出（prepare 注入依赖它）。"""
     section = lt.agent_rules()

@@ -90,6 +90,19 @@ def test_finalize_strips_agent_supplied_markers():
 # ------------------------------------------------------------ cmd_publish 前置校验
 
 
+@pytest.mark.parametrize("content", ["", " \n\t\n"])
+def test_publish_blank_draft_aborts_before_wiki(tmp_path, monkeypatch, content):
+    work = make_work(tmp_path, monkeypatch)
+    (work / f"{SLUG}.new.txt").write_text(content, encoding="utf-8")
+    monkeypatch.setattr(
+        lt,
+        "get_page",
+        lambda *args: pytest.fail("空白成稿不应查询 wiki"),
+    )
+    with pytest.raises(SystemExit, match="空白成稿"):
+        lt.cmd_publish(SLUG)
+
+
 def test_publish_missing_new_file_aborts(tmp_path, monkeypatch):
     make_work(tmp_path, monkeypatch)
     with pytest.raises(SystemExit, match="new.txt"):
