@@ -39,17 +39,8 @@ def verified_members(zh) -> str:
     return "\n".join(f"* [[{t}]]" for t in FILORE_MEMBERS)
 
 
-def main() -> None:
-    zh = pwb.Site("zh", "re0")
-    cat = pwb.Category(zh, "Category:新搬运待整理")
-    pages = list(pagegenerators.PreloadingGenerator(cat.articles(), groupsize=50))
-    print(f"队列 {len(pages)} 页")
-
-    # 1. 收集全部手写分类并批量复核存在性
-    all_cats = sorted(
-        {m.group(1).strip() for p in pages for m in CAT_RE.finditer(p.text)} - KEEP_CATS
-    )
-    missing_cats = set()
+def missing_categories(zh, all_cats):
+    missing = set()
     for i in range(0, len(all_cats), 50):
         data = zh.simple_request(
             action="query",
@@ -60,7 +51,50 @@ def main() -> None:
         ).submit()
         for p in data["query"]["pages"]:
             if p.get("missing"):
-                missing_cats.add(p["title"].split(":", 1)[1])
+                missing.add(p["title"].split(":", 1)[1])
+    return missing
+
+
+def clean_text(text, title, missing_cats, filore_list):
+    new = CAT_RE.sub(
+        lambda m: "" if m.group(1).strip() in missing_cats else m.group(0), text
+    )
+    if title == "Filore Camp" and "{{Filore Camp}}" in new:
+        new = new.replace("{{Filore Camp}}", filore_list)
+    return new
+
+
+def process_page(page, missing_cats, filore_list):
+    old = page.text
+    new = clean_text(old, page.title(), missing_cats, filore_list)
+    if new == old:
+        return
+    if SIMULATE:
+        removed = len(CAT_RE.findall(old)) - len(CAT_RE.findall(new))
+        print(
+            f"[SIMULATE] {page.title()}：删分类 {removed} 处"
+            + ("，Filore Camp navbox 改列表" if "{{Filore Camp}}" in old else "")
+        )
+        return
+    summary = "清理 en 搬运残留：移除红链分类"
+    if "{{Filore Camp}}" in old:
+        summary += "；Filore Camp 成员 navbox 改列表"
+    page.text = new
+    page.save(summary=summary, bot=True)
+    print(f"已清理 {page.title()}")
+
+
+def main() -> None:
+    zh = pwb.Site("zh", "re0")
+    cat = pwb.Category(zh, "Category:新搬运待整理")
+    pages = list(pagegenerators.PreloadingGenerator(cat.articles(), groupsize=50))
+    print(f"队列 {len(pages)} 页")
+
+    # 1. 收集全部手写分类并批量复核存在性
+    all_cats = sorted(
+        {m.group(1).strip() for p in pages for m in CAT_RE.finditer(p.text)} - KEEP_CATS
+    )
+    missing_cats = missing_categories(zh, all_cats)
     print(
         f"手写分类 {len(all_cats)} 个，红链 {len(missing_cats)} 个：{sorted(missing_cats)}"
     )
@@ -70,27 +104,7 @@ def main() -> None:
 
     # 3. 逐页应用
     for page in pages:
-        old = page.text
-        new = CAT_RE.sub(
-            lambda m: "" if m.group(1).strip() in missing_cats else m.group(0), old
-        )
-        if page.title() == "Filore Camp" and "{{Filore Camp}}" in new:
-            new = new.replace("{{Filore Camp}}", filore_list)
-        if new == old:
-            continue
-        if SIMULATE:
-            removed = len(CAT_RE.findall(old)) - len(CAT_RE.findall(new))
-            print(
-                f"[SIMULATE] {page.title()}：删分类 {removed} 处"
-                + ("，Filore Camp navbox 改列表" if "{{Filore Camp}}" in old else "")
-            )
-            continue
-        summary = "清理 en 搬运残留：移除红链分类"
-        if "{{Filore Camp}}" in old:
-            summary += "；Filore Camp 成员 navbox 改列表"
-        page.text = new
-        page.save(summary=summary, bot=True)
-        print(f"已清理 {page.title()}")
+        process_page(page, missing_cats, filore_list)
 
 
 if __name__ == "__main__":
