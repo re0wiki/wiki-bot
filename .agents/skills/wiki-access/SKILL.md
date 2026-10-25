@@ -47,6 +47,7 @@ p.save(summary="编辑摘要", bot=True)                # 批量脚本：加 bot
 - 验证 bot flag 要查 `list=recentchanges`（rcprop=flags）；`usercontribs` 的 ucprop=flags **不返回 bot 键**（即使编辑带 bot flag），会漏报。
 - `botflag=` 参数已废弃，用 `bot=`；传了 botflag 只会触发 FutureWarning，不影响保存。
 - save 有内置异常保护；批量写建议 try `pywikibot.exceptions.PageSaveError`。
+- **baserevid 冲突验证必须用不同账号的修订**：MediaWiki 会抑制同一账号的自我编辑冲突（2026-10-26 沙盒实证：同账号持旧 baserevid 仍可保存；改用最近编辑者为另一账号的 Sandbox 后，旧 baserevid + basetimestamp 正确返回 `EditConflictError`）。构造反例时先核对 `latest_revision.user`，不能用 bot 自己连续两次编辑充当并发用户。
 
 ## 生成器（pagegenerators）
 
