@@ -10,6 +10,7 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parents[2]))
 from src.nekoquote import DATA
+from src.nekoquote.build import is_valid_tweet_month
 from src.nekoquote.llm import SYSTEM_PROMPT, chat, glossary_lines
 
 try:
@@ -44,7 +45,7 @@ for tid, rec in tw.items():
     if rec.get("author") != "nezumiironyanko" or tid in existing_ids:
         continue
     mo = snowflake_month(tid)
-    if not ("2010-01" <= mo <= "2026-12"):
+    if not is_valid_tweet_month(mo):
         continue
     merged[tid] = rec
 print(f"合流 raw 推 {len(merged)} 条")

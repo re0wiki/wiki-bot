@@ -37,6 +37,12 @@ def snowflake_jst(tid):
     return datetime.fromtimestamp(ms / 1000, JST)
 
 
+def is_valid_tweet_month(month: str, now: datetime | None = None) -> bool:
+    """只拒绝早于收录起点或晚于当前月的异常 ID，允许自然跨年。"""
+    current = (now or datetime.now(JST)).strftime("%Y-%m")
+    return "2010-01" <= month <= current
+
+
 def parse_table(lua):
     """返回 [(fields=[(name,quote,raw)], block_text)]。"""
     out = []
@@ -285,7 +291,7 @@ def merge_raw(buckets, existing_ids):
             continue
         e = raw_tweet_entry(tid, rec, None)
         month = e["key"].strftime("%Y-%m")
-        if not ("2010-01" <= month <= "2026-12"):
+        if not is_valid_tweet_month(month):
             print(f"  !! 越界月份 {month}（脏 id {tid}），跳过")
             continue
         # jq：提问推正文（若已抓到）+ 其中文（若已译）
