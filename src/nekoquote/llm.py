@@ -21,6 +21,39 @@ _GLOSSARY: dict[str, str] | None = None
 _COMMON_WORD_SURFACES = {"ジュース", "ゴージャス", "タイガー"}
 
 
+def _exact_surfaces(entries):
+    surf: dict[str, str | None] = {}
+    # 先全段（精确）
+    for e in entries:
+        if e.ja:
+            s = e.ja.strip()
+            if len(s) >= 2 and s not in _COMMON_WORD_SURFACES:
+                surf[s] = e.std if surf.get(s) in (None, e.std) else None
+    return surf
+
+
+def _segment_surfaces(entry):
+    for s in re.split(r"[·・]", entry.ja):
+        s = s.strip()
+        if len(s) < 2 or s == entry.ja.strip() or s in _COMMON_WORD_SURFACES:
+            continue
+        yield s
+
+
+def _add_segment_surfaces(surf, exact, entries):
+    # 再分段：不覆盖已有精确归属
+    for e in entries:
+        if not e.ja:
+            continue
+        for s in _segment_surfaces(e):
+            if s in exact:
+                continue
+            if s in surf and surf[s] != e.std:
+                surf[s] = None  # 歧义
+            else:
+                surf[s] = e.std
+
+
 def _build_glossary() -> dict[str, str]:
     """ja 面形态 -> 标准中文名。面形态 = ja 全文 + 各段。
 
@@ -29,28 +62,10 @@ def _build_glossary() -> dict[str, str]:
     """
     import translations  # 仓库根（调用方已把根目录入 sys.path）
 
-    surf: dict[str, str | None] = {}
-    # 先全段（精确）
-    for e in translations.ENTRIES:
-        if e.ja:
-            s = e.ja.strip()
-            if len(s) >= 2 and s not in _COMMON_WORD_SURFACES:
-                surf[s] = e.std if surf.get(s) in (None, e.std) else None
+    entries = translations.ENTRIES
+    surf = _exact_surfaces(entries)
     exact = {k: v for k, v in surf.items() if v}
-    # 再分段：不覆盖已有精确归属
-    for e in translations.ENTRIES:
-        if not e.ja:
-            continue
-        for s in re.split(r"[·・]", e.ja):
-            s = s.strip()
-            if len(s) < 2 or s == e.ja.strip() or s in _COMMON_WORD_SURFACES:
-                continue
-            if s in exact:
-                continue
-            if s in surf and surf[s] != e.std:
-                surf[s] = None  # 歧义
-            else:
-                surf[s] = e.std
+    _add_segment_surfaces(surf, exact, entries)
     return {k: v for k, v in surf.items() if v}
 
 
@@ -111,6 +126,54 @@ class LengthError(RuntimeError):
     """模型输出被 max_tokens 截断；即使已有部分 content 也不能当成功译文。"""
 
 
+def _response_content(resp):
+    data = resp.json()
+    choice = data["choices"][0]
+    msg = choice["message"]
+    content = (msg.get("content") or "").strip()
+    if not content:
+        # 该模型偶发把最终答案塞进 reasoning_content 并以 </final> 分隔、content 留空
+        reasoning = (msg.get("reasoning_content") or "").strip()
+        if "</final>" in reasoning:
+            content = reasoning.rsplit("</final>", 1)[1].strip()
+    return data, choice, content
+
+
+def _length_escalation(tokens, timeout, escalations):
+    if escalations < 3 and tokens < 32768:
+        escalations += 1
+        tokens = min(tokens * 2, 32768)
+        timeout = max(timeout, int(tokens / 15) + 60)
+        print(
+            f"  [升档 {escalations}/3] finish_reason=length，max_tokens→{tokens}、超时→{timeout}s 重试"
+        )
+        return tokens, timeout, escalations
+    return None
+
+
+def _handle_response(resp, attempt, max_attempts, tokens, timeout, escalations, delay):
+    if resp.status_code == 200:
+        data, choice, content = _response_content(resp)
+        if choice.get("finish_reason") == "length":
+            escalation = _length_escalation(tokens, timeout, escalations)
+            if escalation is None:
+                raise LengthError(f"finish_reason=length（max_tokens={tokens}）")
+            return "length", escalation
+        if not content:
+            raise RuntimeError(f"空 content: {str(data)[:300]}")
+        return "success", content
+    if resp.status_code in (429, 500, 502, 503, 504):
+        retry_after = resp.headers.get("Retry-After")
+        wait = float(retry_after) if retry_after else delay
+        if attempt == max_attempts:
+            raise RuntimeError(f"HTTP {resp.status_code} 重试耗尽: {resp.text[:200]}")
+        print(
+            f"  [重试 {attempt}/{max_attempts}] HTTP {resp.status_code}，{wait:.0f}s 后重试"
+        )
+        return "retry", wait
+    raise RuntimeError(f"HTTP {resp.status_code}: {resp.text[:500]}")
+
+
 def _chat_openai(user_text, system, max_tokens, max_attempts, provider, timeout=120):
     base_url, key, model = get_config(provider)
     headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json"}
@@ -153,44 +216,17 @@ def _chat_openai(user_text, system, max_tokens, max_attempts, provider, timeout=
             time.sleep(delay)
             delay *= 2
             continue
-        if resp.status_code == 200:
-            data = resp.json()
-            choice = data["choices"][0]
-            msg = choice["message"]
-            content = (msg.get("content") or "").strip()
-            if not content:
-                # 该模型偶发把最终答案塞进 reasoning_content 并以 </final> 分隔、content 留空
-                reasoning = (msg.get("reasoning_content") or "").strip()
-                if "</final>" in reasoning:
-                    content = reasoning.rsplit("</final>", 1)[1].strip()
-            if choice.get("finish_reason") == "length":
-                if escalations < 3 and tokens < 32768:
-                    escalations += 1
-                    tokens = min(tokens * 2, 32768)
-                    timeout = max(timeout, int(tokens / 15) + 60)
-                    print(
-                        f"  [升档 {escalations}/3] finish_reason=length，max_tokens→{tokens}、超时→{timeout}s 重试"
-                    )
-                    attempt -= 1  # while 循环中显式保证升档不消耗错误重试额度
-                    continue
-                raise LengthError(f"finish_reason=length（max_tokens={tokens}）")
-            if not content:
-                raise RuntimeError(f"空 content: {str(data)[:300]}")
-            return content
-        if resp.status_code in (429, 500, 502, 503, 504):
-            retry_after = resp.headers.get("Retry-After")
-            wait = float(retry_after) if retry_after else delay
-            if attempt == max_attempts:
-                raise RuntimeError(
-                    f"HTTP {resp.status_code} 重试耗尽: {resp.text[:200]}"
-                )
-            print(
-                f"  [重试 {attempt}/{max_attempts}] HTTP {resp.status_code}，{wait:.0f}s 后重试"
-            )
-            time.sleep(wait)
-            delay *= 2
+        action, result = _handle_response(
+            resp, attempt, max_attempts, tokens, timeout, escalations, delay
+        )
+        if action == "success":
+            return result
+        if action == "length":
+            tokens, timeout, escalations = result
+            attempt -= 1  # while 循环中显式保证升档不消耗错误重试额度
             continue
-        raise RuntimeError(f"HTTP {resp.status_code}: {resp.text[:500]}")
+        time.sleep(result)
+        delay *= 2
     raise AssertionError("unreachable")
 
 
