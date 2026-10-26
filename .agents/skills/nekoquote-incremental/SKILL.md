@@ -48,6 +48,7 @@ cd wiki-bot 仓库根
 - **本地基线只认完整发布**：bootstrap 在临时目录抓完所有月表后成对发布 `lua_base`/`lua_live`，发布期间保留旧版本备份，目录或完成标记任一步失败都回滚；`lua_base.complete` 只在两张目录均发布成功后写入。异常退出留下的备份由下次 bootstrap 先恢复或清理；`run_chain` 在完成标记缺失时拒绝启动，先运行 `uv run python -m src.nekoquote.bootstrap`。
 - **Kimi content_filter 误伤**（"high risk" 400）：管线已自动二分隔离并跳过该条，跑完后查 `.cache/nekoquote/zh_blocked.json`；用其他模型（Gemini）译出后，把译文写进 `.cache/nekoquote/zh.json` 对应 tid 的 `zh` 字段再重跑构建+部署。**日文原文若触发过滤，不要让它进 LLM 上下文**（有先例）。
 - **译名保障 = 注入而非后处理**：翻译期把推文中出现的译名表实体（ja 面形态确定性检出，歧义面不注入）以「ja = zh」对照注入 prompt；译文即终稿，不对 zh.json 跑规则归一（归一打在源数据上的误伤不可逆）。修正译文译名需同时改 zh.json 与 wiki 月表。
+- **「无库外新推」不等于长月没发原创（FBK 长文漏转）**：2026-10-26 对照 X 原创时间线与本地库，确认 `2109591572061020504`、`2109607854743400823`（10-12）和 `2111733988796899816`（10-18）三条 `#リゼロ小話` 长文漏收；回查中文 FBK 频道同时段 400 条消息也无这三个 id，普通短推与转推仍持续到达。任务正常报「无库外新推」只代表 FBK 没供稿；排查停更时须对照 [X 原创时间线](https://x.com/nezumiironyanko?filter=posts)（可用 teapaw 镜像辅助读取），重跑 FBK 同步或改走 EN 频道都无法补回未转发消息。
 - **导出缺最近内容**：先怀疑解析覆盖——正文可能在新版组件里（递归 walk）或与头部同组件链接之后；`src/nekoquote/parse.py` 的注释有三种格式的完整判例。
 - **部署后 wiki 上没变化**：查 `.cache/nekoquote/lua_live` 快照是否滞后（每次部署后必须同步，deploy 链已自动做）。
 
