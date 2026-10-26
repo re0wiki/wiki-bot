@@ -4,7 +4,6 @@ import json
 import sys
 import threading
 from pathlib import Path
-from types import SimpleNamespace
 
 import pytest
 
@@ -17,26 +16,25 @@ from src.nekoquote import state as nq_state
 def test_auto_retries_pending_chain_before_advancing(monkeypatch, tmp_path):
     data = tmp_path / "data"
     data.mkdir()
-    root = tmp_path / "root"
-    root.mkdir()
-    (root / "secrets.json").write_text(
-        '{"discord_bot_token":"offline-dummy"}', encoding="utf-8"
-    )
     state = data / "sync_state.json"
-    state.write_text(json.dumps({"last_id": "100"}), encoding="utf-8")
+    initial = {"source": "fxtwitter_v2", "last_original_id": "100"}
+    state.write_text(json.dumps(initial), encoding="utf-8")
     (data / "tweets.json").write_text("{}", encoding="utf-8")
     pending = data / "chain_pending.json"
 
-    monkeypatch.setattr(auto, "ROOT", root)
     monkeypatch.setattr(auto, "DATA", data)
     monkeypatch.setattr(auto, "STATE", state)
     monkeypatch.setattr(auto, "PENDING", pending, raising=False)
     monkeypatch.setattr(auto.bootstrap, "needed", lambda: False)
     monkeypatch.setattr(auto.pwb, "handle_args", lambda *args: None)
     monkeypatch.setattr(auto.pwb, "info", lambda *args: None)
-    monkeypatch.setattr(auto, "fetch_new", lambda token, after: [{"id": "200"}])
-    monkeypatch.setattr(auto, "extract", lambda msgs: {"200": "日文"})
 
+    def fetch_quotes(session, *, stop_id=None, stop_before=None):
+        assert stop_id == "100"
+        assert stop_before is None
+        return {"200": "日文"}, "200"
+
+    monkeypatch.setattr(auto, "fetch_quotes", fetch_quotes)
     calls = []
 
     def fail_chain():
@@ -46,14 +44,174 @@ def test_auto_retries_pending_chain_before_advancing(monkeypatch, tmp_path):
     monkeypatch.setattr(auto, "run_chain", fail_chain)
     with pytest.raises(SystemExit, match="injected"):
         auto.main()
-    assert json.loads(state.read_text(encoding="utf-8"))["last_id"] == "100"
+    assert json.loads(state.read_text(encoding="utf-8")) == initial
     assert pending.exists()
 
     monkeypatch.setattr(auto, "run_chain", lambda: calls.append("success"))
     auto.main()
     assert calls == ["fail", "success"]
-    assert json.loads(state.read_text(encoding="utf-8"))["last_id"] == "200"
+    assert json.loads(state.read_text(encoding="utf-8")) == {
+        "source": "fxtwitter_v2",
+        "last_original_id": "200",
+    }
     assert not pending.exists()
+
+
+def test_fetch_failure_preserves_state(monkeypatch, tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    state = data / "sync_state.json"
+    initial = {"source": "fxtwitter_v2", "last_original_id": "100"}
+    state.write_text(json.dumps(initial), encoding="utf-8")
+    (data / "tweets.json").write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr(auto, "DATA", data)
+    monkeypatch.setattr(auto, "STATE", state)
+    monkeypatch.setattr(auto, "PENDING", data / "chain_pending.json", raising=False)
+    monkeypatch.setattr(auto.bootstrap, "needed", lambda: False)
+    monkeypatch.setattr(auto.pwb, "handle_args", lambda *args: None)
+    monkeypatch.setattr(auto.pwb, "info", lambda *args: None)
+    calls = []
+    monkeypatch.setattr(auto, "run_chain", lambda: calls.append("chain"))
+
+    def fetch_quotes(session, *, stop_id=None, stop_before=None):
+        raise RuntimeError("injected network failure")
+
+    monkeypatch.setattr(auto, "fetch_quotes", fetch_quotes)
+    with pytest.raises(RuntimeError, match="injected network failure"):
+        auto.main()
+
+    assert calls == []
+    assert json.loads(state.read_text(encoding="utf-8")) == initial
+    assert not (data / "chain_pending.json").exists()
+
+
+def test_fbk_state_migrates_with_backfill(monkeypatch, tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    state = data / "sync_state.json"
+    state.write_text(json.dumps({"last_id": "discord-watermark"}), encoding="utf-8")
+    (data / "tweets.json").write_text('{"300": {"text": "已收"}}', encoding="utf-8")
+
+    monkeypatch.setattr(auto, "DATA", data)
+    monkeypatch.setattr(auto, "STATE", state)
+    monkeypatch.setattr(auto, "PENDING", data / "chain_pending.json", raising=False)
+    monkeypatch.setattr(auto.bootstrap, "needed", lambda: False)
+    monkeypatch.setattr(auto.pwb, "handle_args", lambda *args: None)
+    monkeypatch.setattr(auto.pwb, "info", lambda *args: None)
+    calls = []
+    monkeypatch.setattr(auto, "run_chain", lambda: calls.append("chain"))
+
+    fetch_calls = []
+
+    def fetch_quotes(session, *, stop_id=None, stop_before=None):
+        fetch_calls.append((stop_id, stop_before))
+        if len(fetch_calls) == 1:
+            assert stop_id is None
+            assert stop_before == auto.MIGRATION_SINCE
+        else:
+            assert stop_id == "300"
+            assert stop_before is None
+        return {"300": "不应覆盖", "200": "新推"}, "300"
+
+    monkeypatch.setattr(auto, "fetch_quotes", fetch_quotes)
+    auto.main()
+    auto.main()
+
+    assert fetch_calls == [(None, auto.MIGRATION_SINCE), ("300", None)]
+    assert calls == ["chain"]
+    assert json.loads(state.read_text(encoding="utf-8")) == {
+        "source": "fxtwitter_v2",
+        "last_original_id": "300",
+    }
+    tweets = json.loads((data / "tweets.json").read_text(encoding="utf-8"))
+    assert tweets["300"]["text"] == "已收"
+    assert tweets["200"] == {
+        "text": "新推",
+        "author": "nezumiironyanko",
+        "src": "fxtwitter_v2",
+    }
+
+
+def test_bootstrap_seeds_latest_original_without_backfill(monkeypatch, tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    state = data / "sync_state.json"
+    (data / "tweets.json").write_text("{}", encoding="utf-8")
+
+    monkeypatch.setattr(auto, "DATA", data)
+    monkeypatch.setattr(auto, "STATE", state)
+    monkeypatch.setattr(auto, "PENDING", data / "chain_pending.json", raising=False)
+    monkeypatch.setattr(auto.bootstrap, "needed", lambda: True)
+    calls = []
+    monkeypatch.setattr(auto.bootstrap, "run", lambda: calls.append("bootstrap"))
+    monkeypatch.setattr(auto, "run_chain", lambda: calls.append("chain"))
+    monkeypatch.setattr(auto.pwb, "handle_args", lambda *args: None)
+    monkeypatch.setattr(auto.pwb, "info", lambda *args: None)
+    monkeypatch.setattr(auto, "latest_original_id", lambda session: "900")
+
+    def fetch_quotes(session, *, stop_id=None, stop_before=None):
+        assert stop_id == "900"
+        assert stop_before is None
+        return {}, "900"
+
+    monkeypatch.setattr(auto, "fetch_quotes", fetch_quotes)
+    auto.main()
+
+    assert calls == ["bootstrap"]
+    assert json.loads(state.read_text(encoding="utf-8")) == {
+        "source": "fxtwitter_v2",
+        "last_original_id": "900",
+    }
+    assert json.loads((data / "tweets.json").read_text(encoding="utf-8")) == {}
+
+
+def test_bootstrap_seed_retries_while_state_is_missing(monkeypatch, tmp_path):
+    data = tmp_path / "data"
+    data.mkdir()
+    state = data / "sync_state.json"
+    (data / "tweets.json").write_text("{}", encoding="utf-8")
+    complete = {"value": False}
+
+    monkeypatch.setattr(auto, "DATA", data)
+    monkeypatch.setattr(auto, "STATE", state)
+    monkeypatch.setattr(auto, "PENDING", data / "chain_pending.json", raising=False)
+    monkeypatch.setattr(auto.bootstrap, "needed", lambda: not complete["value"])
+    calls = []
+
+    def bootstrap_run():
+        complete["value"] = True
+        calls.append("bootstrap")
+
+    def latest_original_id(session):
+        calls.append("latest")
+        if calls.count("latest") == 1:
+            raise RuntimeError("injected seed failure")
+        return "900"
+
+    monkeypatch.setattr(auto.bootstrap, "run", bootstrap_run)
+    monkeypatch.setattr(auto, "latest_original_id", latest_original_id)
+    monkeypatch.setattr(auto, "run_chain", lambda: calls.append("chain"))
+    monkeypatch.setattr(auto.pwb, "handle_args", lambda *args: None)
+    monkeypatch.setattr(auto.pwb, "info", lambda *args: None)
+
+    def fetch_quotes(session, *, stop_id=None, stop_before=None):
+        assert stop_id == "900"
+        assert stop_before is None
+        return {}, "900"
+
+    monkeypatch.setattr(auto, "fetch_quotes", fetch_quotes)
+    with pytest.raises(RuntimeError, match="injected seed failure"):
+        auto.main()
+    assert not state.exists()
+
+    auto.main()
+
+    assert calls == ["bootstrap", "latest", "latest"]
+    assert json.loads(state.read_text(encoding="utf-8")) == {
+        "source": "fxtwitter_v2",
+        "last_original_id": "900",
+    }
 
 
 def test_manual_merge_retries_pending_chain(monkeypatch, tmp_path):
@@ -149,15 +307,6 @@ class FakeData:
         return self.root.mkdir(**kwargs)
 
 
-class FakeRoot:
-    def __truediv__(self, name):
-        assert name == "secrets.json"
-        return SimpleNamespace(
-            exists=lambda: True,
-            read_text=lambda encoding: '{"discord_bot_token":"offline-dummy"}',
-        )
-
-
 def test_concurrent_ingress_does_not_lose_tweets(monkeypatch, tmp_path):
     data_root = tmp_path / "data"
     data_root.mkdir()
@@ -165,10 +314,12 @@ def test_concurrent_ingress_does_not_lose_tweets(monkeypatch, tmp_path):
     tweets_path.write_text("{}", encoding="utf-8")
     data = FakeData(data_root, SyncFile(tweets_path, threading.Barrier(2)))
     state = data_root / "sync_state.json"
-    state.write_text(json.dumps({"last_id": "100"}), encoding="utf-8")
+    state.write_text(
+        json.dumps({"source": "fxtwitter_v2", "last_original_id": "100"}),
+        encoding="utf-8",
+    )
     pending = data_root / "chain_pending.json"
 
-    monkeypatch.setattr(auto, "ROOT", FakeRoot())
     monkeypatch.setattr(auto, "DATA", data)
     monkeypatch.setattr(auto, "STATE", state)
     monkeypatch.setattr(auto, "PENDING", pending, raising=False)
@@ -177,13 +328,11 @@ def test_concurrent_ingress_does_not_lose_tweets(monkeypatch, tmp_path):
     monkeypatch.setattr(auto.pwb, "info", lambda *args: None)
     monkeypatch.setattr(auto, "run_chain", lambda: None)
 
-    def fetch_new(token, after):
-        return [
-            {"id": "201" if threading.current_thread().name == "worker-a" else "202"}
-        ]
+    def fetch_quotes(session, *, stop_id=None, stop_before=None):
+        tid = "201" if threading.current_thread().name == "worker-a" else "202"
+        return {tid: "日文"}, tid
 
-    monkeypatch.setattr(auto, "fetch_new", fetch_new)
-    monkeypatch.setattr(auto, "extract", lambda msgs: {msgs[0]["id"]: "日文"})
+    monkeypatch.setattr(auto, "fetch_quotes", fetch_quotes)
     errors = []
 
     def run_worker():

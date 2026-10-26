@@ -1,19 +1,18 @@
-"""NekoQuote 语录增量同步：中文 wiki 服务器 FBK 转发频道 → 月表全链更新。
+"""NekoQuote 语录增量同步：FxTwitter v2 时间线 → 月表全链更新。
 
-数据流：Discord API 拉频道新消息（bot token，水位线增量）→ nekoquote.parse
-解析（FBK 组件布局/RT 剥除/机翻段切除）→ 新推入 tweets.json
-（src=dc_zh_fbk）→ nekoquote.chain 全链（翻译→归一→构建→校验→部署）→
-推进水位线。
+数据流：FxTwitter v2 拉长月原创（含 Note Tweet 长文，RT 剥除）→ 新推入
+tweets.json（src=fxtwitter_v2）→ nekoquote.chain 全链（翻译→归一→构建→校验→部署）
+→ 推进原创边界。
 
-- token 读 secrets.json 的 discord_bot_token（gitignored，bot 账号读频道合规；勿用用户 token）；
-  文件缺失则任务跳过（退出码 0，不阻塞其他循环任务）
+- 无 Discord token 依赖；公共实例失败时非零退出，不推进边界
 - 本地基线缺失时自动从 wiki 重建（nekoquote.bootstrap）——新 clone 开箱即用
-- 幂等：推 id 级去重；水位线在全链成功后才推进
-- EN 频道同为 FBK 转发、无独立兜底；FBK/nitter 单点故障时任务自然无新增
+- 幂等：推 id 级去重；原创边界在全链成功后才推进
+- FBK 旧状态首次迁移时回扫到其启用日期，补收其漏转内容
 """
 
 import json
 import sys
+from datetime import UTC, datetime
 from pathlib import Path
 
 import requests
@@ -25,7 +24,7 @@ sys.path.insert(0, str(ROOT))
 
 from src.nekoquote import DATA, bootstrap
 from src.nekoquote.chain import run_chain
-from src.nekoquote.parse import extract
+from src.nekoquote.fxtwitter import fetch_quotes, latest_original_id
 from src.nekoquote.state import (
     PENDING,
     clear_pending,
@@ -34,55 +33,21 @@ from src.nekoquote.state import (
     write_json,
 )
 
-CHANNEL_ID = "1293525355663196243"  # 中文服务器 FBK 转发频道
+SOURCE = "fxtwitter_v2"
+MIGRATION_SINCE = int(datetime(2026, 8, 18, tzinfo=UTC).timestamp())
 STATE = DATA / "sync_state.json"
 
 
-def api(path: str, token: str) -> list:
-    resp = requests.get(
-        f"https://discord.com/api/v10{path}",
-        headers={"Authorization": f"Bot {token}", "User-Agent": "wiki-bot"},
-        timeout=30,
-    )
-    resp.raise_for_status()
-    return resp.json()
-
-
-def fetch_new(token: str, after: str | None) -> list[dict]:
-    """水位线后全量新消息（雪花 id 即时间序，翻页直到没有更多）。"""
-    msgs = []
-    while True:
-        q = f"?limit=100{'&after=' + after if after else ''}"
-        batch = api(f"/channels/{CHANNEL_ID}/messages{q}", token)
-        if not batch:
-            break
-        msgs.extend(batch)
-        after = max(m["id"] for m in batch)
-        if len(batch) < 100:
-            break
-    return msgs
-
-
-def _ensure_baseline(token: str) -> None:
-    """本地基线缺失时重建，并把水位线播种到最新频道消息。"""
-    if not bootstrap.needed():
-        return
-    pwb.info("本地语录基线缺失，从 wiki 重建…")
-    bootstrap.run()
-    # 基线已含全部既有推，水位线直接设为最新频道消息（不吃存量）
-    latest = api(f"/channels/{CHANNEL_ID}/messages?limit=1", token)
-    if latest:
-        write_json(STATE, {"last_id": latest[0]["id"]})
-
-
-def _resume_pending() -> None:
-    """无新消息时仍续跑上次未完成的全链。"""
-    if not PENDING.exists():
-        pwb.info("无新消息")
-        return
-    pwb.info("上次语录全链未完成，续跑")
-    run_chain()
-    clear_pending(PENDING)
+def _ensure_baseline(session) -> None:
+    """本地基线缺失时重建；状态缺失时播种到最新原创，不吃存量。"""
+    if bootstrap.needed():
+        pwb.info("本地语录基线缺失，从 wiki 重建…")
+        bootstrap.run()
+    if not STATE.exists():
+        write_json(
+            STATE,
+            {"source": SOURCE, "last_original_id": latest_original_id(session)},
+        )
 
 
 def _store_new_quotes(found: dict) -> bool:
@@ -96,42 +61,43 @@ def _store_new_quotes(found: dict) -> bool:
     # 先落待完成标记再入库：任何后续失败都会在下一轮续跑，不会被当成已完成。
     mark_pending(PENDING)
     for tid, text in new.items():
-        tw[tid] = {"text": text, "author": "nezumiironyanko", "src": "dc_zh_fbk"}
+        tw[tid] = {"text": text, "author": "nezumiironyanko", "src": SOURCE}
     write_json(tw_path, tw)
     return True
 
 
+def _next_state(state: dict, newest: str | None) -> dict:
+    previous = state.get("last_original_id") if state.get("source") == SOURCE else None
+    if newest and (not previous or int(newest) > int(previous)):
+        previous = newest
+    return {"source": SOURCE, "last_original_id": previous}
+
+
 def _main() -> None:
     pwb.handle_args()  # 吞掉 pwb 全局参数（-always 等）
-    token_file = ROOT / "secrets.json"
-    if not token_file.exists():
-        pwb.info("无 secrets.json，语录同步任务跳过")
-        return
-    token = json.loads(token_file.read_text(encoding="utf-8"))[
-        "discord_bot_token"
-    ].strip()
+    session = requests.Session()
+    session.headers.update({"User-Agent": "wiki-bot"})
 
-    _ensure_baseline(token)
+    _ensure_baseline(session)
     state = json.loads(STATE.read_text(encoding="utf-8")) if STATE.exists() else {}
-    msgs = fetch_new(token, state.get("last_id"))
-    if not msgs:
-        _resume_pending()
-        return
-    newest = max(m["id"] for m in msgs)
-    pwb.info(f"新消息 {len(msgs)} 条")
-
-    found = extract(msgs)
+    previous = state.get("last_original_id") if state.get("source") == SOURCE else None
+    found, newest = fetch_quotes(
+        session,
+        stop_id=previous,
+        stop_before=None if previous else MIGRATION_SINCE,
+    )
+    next_state = _next_state(state, newest)
     new = _store_new_quotes(found)
     if not new and not PENDING.exists():
         pwb.info("无库外新推")
-        write_json(STATE, {"last_id": newest})
+        write_json(STATE, next_state)
         return
     if not new:
         pwb.info("上次语录全链未完成，续跑")
 
-    run_chain()  # 任一失败非零退出，水位线不推进下轮重试
+    run_chain()  # 任一失败非零退出，原创边界不推进下轮重试
     clear_pending(PENDING)
-    write_json(STATE, {"last_id": newest})
+    write_json(STATE, next_state)
     pwb.info("语录同步全链完成 ✓")
 
 
