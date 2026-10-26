@@ -61,4 +61,4 @@ EN Discord 导出（Discrub JSON）
     → verify_rt.py（既有条目零缺失校验，失败非零并阻断部署）→ deploy.py（增量部署，vs lua_live）
 ```
 
-新译文在 `zh.json` 逐条记录 `provider`/`model`，构建按记录署名；无元数据的旧译文使用中性 `LLM`，不回填猜测型号。
+译文在 `zh.json` 逐条记录 `provider`/`model`，构建按记录署名；正文译文缺失署名元数据时构建报错。

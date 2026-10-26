@@ -1,6 +1,7 @@
 """中文翻译：raw 推 ja→zh（Kimi K3.1 Pro，批量断点续跑）。
 
-产物 zh.json：{tid: {"zh": 推文译文, "qzh": 提问推译文(如有)}}。
+产物 zh.json：{tid: {"zh": 推文译文, "qzh": 提问推译文(如有),
+"provider": 翻译提供者, "model": 翻译模型}}。正文译文缺失署名元数据时构建报错。
 zh_deleted/qzh_deleted 是 pull_wiki 记录的人工删除标记，对应字段不再自动补译。
 无 key 时跳过（退出 0）。
 """

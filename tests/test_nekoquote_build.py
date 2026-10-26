@@ -5,6 +5,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+import pytest
+
 sys.path.insert(0, str(Path(__file__).parents[1]))
 from src.nekoquote import build
 
@@ -50,10 +52,9 @@ def _merge_attribution(monkeypatch, tmp_path, zh_record):
     return buckets["2026-10"][0]["fields"][0][2]
 
 
-def test_legacy_translation_has_neutral_attribution(monkeypatch, tmp_path):
-    src = _merge_attribution(monkeypatch, tmp_path, {"zh": "旧译"})
-    assert " · 译：LLM" in src
-    assert "K3.1 Pro" not in src
+def test_translation_requires_recorded_attribution(monkeypatch, tmp_path):
+    with pytest.raises(KeyError):
+        _merge_attribution(monkeypatch, tmp_path, {"zh": "旧译"})
 
 
 def test_translation_attribution_uses_recorded_model(monkeypatch, tmp_path):

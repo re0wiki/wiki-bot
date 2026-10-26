@@ -100,7 +100,10 @@ def test_deleted_answer_is_not_regenerated_or_rebuilt(monkeypatch, tmp_path):
 
 
 def test_deleted_question_is_not_regenerated_or_rebuilt(monkeypatch, tmp_path):
-    zh = {TID: {"zh": "回答译文"}, QID: {"qzh": "旧提问译文"}}
+    zh = {
+        TID: {"zh": "回答译文", "provider": "kimi", "model": "K3"},
+        QID: {"qzh": "旧提问译文"},
+    }
     tw = {
         TID: {
             "text": "原文",
@@ -141,7 +144,7 @@ def test_explicit_empty_answer_without_record_is_suppressed(monkeypatch, tmp_pat
 
 
 def test_explicit_empty_question_without_record_is_suppressed(monkeypatch, tmp_path):
-    zh = {TID: {"zh": "回答译文"}}
+    zh = {TID: {"zh": "回答译文", "provider": "kimi", "model": "K3"}}
     tw = {
         TID: {
             "text": "原文",

@@ -314,10 +314,8 @@ def _add_translation(entry, zh_record):
     if not zh:
         return
     entry["fields"].append(("t", '"', esc(zh)))
-    # 机翻署名按生成时记录；无元数据的旧译文使用中性标记
-    provider = zh_record.get("provider")
-    model = zh_record.get("model")
-    translator = f"{provider.capitalize()} {model}" if provider and model else "LLM"
+    # 机翻署名按生成时记录；缺失元数据时中止，避免错误归因
+    translator = f"{zh_record['provider'].capitalize()} {zh_record['model']}"
     entry["fields"][0] = (
         "src",
         '"',
