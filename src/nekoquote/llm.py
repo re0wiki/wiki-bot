@@ -139,26 +139,11 @@ def _response_content(resp):
     return data, choice, content
 
 
-def _length_escalation(tokens, timeout, escalations):
-    if escalations < 3 and tokens < 32768:
-        escalations += 1
-        tokens = min(tokens * 2, 32768)
-        timeout = max(timeout, int(tokens / 15) + 60)
-        print(
-            f"  [升档 {escalations}/3] finish_reason=length，max_tokens→{tokens}、超时→{timeout}s 重试"
-        )
-        return tokens, timeout, escalations
-    return None
-
-
-def _handle_response(resp, attempt, max_attempts, tokens, timeout, escalations, delay):
+def _handle_response(resp, attempt, max_attempts, tokens, delay):
     if resp.status_code == 200:
         data, choice, content = _response_content(resp)
         if choice.get("finish_reason") == "length":
-            escalation = _length_escalation(tokens, timeout, escalations)
-            if escalation is None:
-                raise LengthError(f"finish_reason=length（max_tokens={tokens}）")
-            return "length", escalation
+            raise LengthError(f"finish_reason=length（max_tokens={tokens}）")
         if not content:
             raise RuntimeError(f"空 content: {str(data)[:300]}")
         return "success", content
@@ -194,12 +179,9 @@ def _chat_openai(user_text, system, max_tokens, max_attempts, provider, timeout=
         payload["max_tokens"] = 32768
         timeout = max(timeout, 1800)  # 长生成期间无字节流，读超时须覆盖
     delay = 5.0
-    tokens: int = payload["max_tokens"]
     attempt = 0
-    escalations = 0
     while attempt < max_attempts:
         attempt += 1
-        payload["max_tokens"] = tokens
         try:
             resp = requests.post(
                 f"{base_url}/chat/completions",
@@ -217,14 +199,10 @@ def _chat_openai(user_text, system, max_tokens, max_attempts, provider, timeout=
             delay *= 2
             continue
         action, result = _handle_response(
-            resp, attempt, max_attempts, tokens, timeout, escalations, delay
+            resp, attempt, max_attempts, payload["max_tokens"], delay
         )
         if action == "success":
             return result
-        if action == "length":
-            tokens, timeout, escalations = result
-            attempt -= 1  # while 循环中显式保证升档不消耗错误重试额度
-            continue
         time.sleep(result)
         delay *= 2
     raise AssertionError("unreachable")

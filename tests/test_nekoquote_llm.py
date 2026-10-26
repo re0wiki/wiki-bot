@@ -61,20 +61,18 @@ def test_kimi_length_at_cap_does_not_retry(monkeypatch):
     assert calls == [32768]
 
 
-def test_escalation_does_not_consume_error_attempts(monkeypatch):
+def test_length_does_not_escalate_token_limit(monkeypatch):
     monkeypatch.setattr(llm, "get_config", _config)
     calls = []
 
     def post(url, headers, json, timeout):
         calls.append(json["max_tokens"])
-        if len(calls) == 1:
-            return FakeResponse("", "length")
-        return FakeResponse("ok", "stop")
+        return FakeResponse("", "length")
 
     monkeypatch.setattr(llm.requests, "post", post)
-    monkeypatch.setattr(llm.time, "sleep", lambda seconds: None)
-    assert llm._chat_openai("text", "system", 1000, 1, "other") == "ok"
-    assert calls == [1000, 2000]
+    with pytest.raises(RuntimeError, match="length"):
+        llm._chat_openai("text", "system", 1000, 1, "other")
+    assert calls == [1000]
 
 
 def test_run_batch_splits_length_errors(monkeypatch, tmp_path):
