@@ -8,7 +8,14 @@ version: 1.0.0
 
 **2026-08-18 起主通道：循环任务 `nekoquote`（`src/scripts/re0_nekoquote.py`）全自动同步**——Discord bot token 拉中文服务器的 FBK 转发频道新消息（水位线 `.cache/nekoquote/sync_state.json`，全链成功才推进），复用 `src/nekoquote/` 包的解析与管线，随 main.py 循环执行、无需人工。以下手动导出流程保留为备份/排障手段（注意 EN 频道同为 FBK 转发，与中文频道**不互为独立兜底**；FBK/nitter 是共同单点）。
 
-长月新推的持续收录流程（2026-08-15 定稿）。自动抓取通道全不可靠（fxtwitter 无时间线枚举、wayback CDX 被动滞后、nitter 半死），走英文社区 Discord 转发频道的**定期手动导出 + 一键管线**。
+长月新推的手动备份流程（2026-08-15 定稿）走英文社区 Discord 转发频道的**定期手动导出 + 一键管线**。直连自动采集的候选渠道见下节；wayback CDX 被动滞后，只作补漏。
+
+## 直连采集候选（2026-10-26 实测）
+
+- **FxTwitter API v2**（[文档](https://docs.fxembed.com/api/introduction)、[OpenAPI](https://api.fxtwitter.com/2/openapi.json)）：无密钥。`GET /2/profile/nezumiironyanko/statuses` 可枚举时间线并按 `cursor.bottom` 翻页，`GET /2/status/{id}` 取单条。时间线混有转推、同页时间序不严格且可能重复，须按 id 去重、按 `author.screen_name` / `reposted_by` 过滤，不能只按 `created_at` 排序推进入库。实测 `count=100` 仍每页 20；10-18 长文在第 5 页、10-12 两篇长文在第 11 页才找齐，`is_note_tweet=true` 且 `text` 均含完整结尾。文档提供 `since` 增量参数；生产接入前仍需验证高转推量下的分页终止条件，公共实例无 SLA，失败不得推进水位线。`/2/search` 当次 `from:` 查询返回 404，不依赖它做发现。
+- **teapaw HTML**（`https://teapaw.org/nezumiironyanko?filter=posts`）：首页 20 条原创即含 10-12 两篇与 10-18 一篇长文；`.timeline-item` 可关联状态 id，`.tweet-content` 含长文全文与结尾，可作免费补漏/对账来源。RSS 与 HTML 覆盖不同，当次 RSS（含 `?filter=posts` 变体）不含这三条，不能以 RSS 覆盖推断原创停更。HTML 不是稳定接口，结构变化须响亮失败。
+- **X 官方 API**（[用户时间线](https://docs.x.com/x-api/users/get-posts)、[定价](https://docs.x.com/x-api/getting-started/pricing)）：文档支持 `since_id`、游标分页、排除转推及长文全文字段；现行按量付费无订阅，Posts Read 为 **$0.005/返回条数**。需开发者账号与 credits，本仓库尚未做凭据实测。
+- **ReZeroDB 作者推存档**（[入口](https://rezerodb.com/series_meta/author_tweets)）：作品向筛选友好，但页面自述每三个月更新，只宜低频对账/补漏，不宜承担及时同步。
 
 ## 上游：EN Discord 转发频道
 
