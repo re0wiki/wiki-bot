@@ -5,14 +5,17 @@
   确定性检出并给出 ja→zh 对照；ja 面形态歧义（多名共用）的不注入
 """
 
+import hashlib
 import json
 import re
 import time
+from datetime import UTC, datetime
 from pathlib import Path
 
 import requests
 
 KEYS_FILE = Path(__file__).parents[2] / "secrets.json"
+LOG_FILE = Path(__file__).parents[2] / "logs" / "nekoquote_llm.jsonl"
 
 _GLOSSARY: dict[str, str] | None = None
 
@@ -110,6 +113,50 @@ def get_config(provider="kimi"):
     return base_url, key, model
 
 
+def _log_event(event):
+    """追加脱敏诊断事件；日志故障不影响翻译主流程。"""
+    event = {"timestamp": datetime.now(UTC).isoformat(), **event}
+    try:
+        LOG_FILE.parent.mkdir(parents=True, exist_ok=True)
+        with LOG_FILE.open("a", encoding="utf-8") as f:
+            f.write(json.dumps(event, ensure_ascii=False) + "\n")
+    except OSError as e:
+        print(f"  LLM 诊断日志写入失败: {e}", flush=True)
+
+
+def _log_http_response(resp, context):
+    """记录状态、关联 ID、用量与错误摘要，不记录正文内容。"""
+    headers = getattr(resp, "headers", {})
+    event = {
+        **context,
+        "event": "http_response",
+        "status": resp.status_code,
+        "request_id": headers.get("x-request-id") or headers.get("request-id"),
+        "retry_after": headers.get("Retry-After"),
+        "cf_ray": headers.get("cf-ray"),
+        "server": headers.get("server"),
+    }
+    if resp.status_code == 200:
+        try:
+            data = resp.json()
+            choice = data["choices"][0]
+            message = choice["message"]
+        except (KeyError, IndexError, TypeError, ValueError) as e:
+            event["parse_error"] = f"{type(e).__name__}: {e}"
+        else:
+            event.update(
+                response_id=data.get("id"),
+                finish_reason=choice.get("finish_reason"),
+                usage=data.get("usage"),
+                content_chars=len(message.get("content") or ""),
+                reasoning_chars=len(message.get("reasoning_content") or ""),
+            )
+    else:
+        event["body_preview"] = (getattr(resp, "text", "") or "")[:2000]
+    _log_event(event)
+    return event
+
+
 def chat(
     user_text,
     system=SYSTEM_PROMPT,
@@ -182,6 +229,30 @@ def _chat_openai(user_text, system, max_tokens, max_attempts, provider, timeout=
     attempt = 0
     while attempt < max_attempts:
         attempt += 1
+        context = {
+            "provider": provider,
+            "model": model,
+            "attempt": attempt,
+            "max_attempts": max_attempts,
+        }
+        payload_json = json.dumps(payload, ensure_ascii=False, sort_keys=True)
+        _log_event(
+            {
+                **context,
+                "event": "request_start",
+                "user_chars": len(user_text),
+                "system_chars": len(system),
+                "max_tokens": payload["max_tokens"],
+                "timeout": timeout,
+                "payload_sha256": hashlib.sha256(payload_json.encode()).hexdigest(),
+            }
+        )
+        print(
+            f"  [请求 {attempt}/{max_attempts}] {provider}/{model}，"
+            f"输入 {len(user_text)} 字",
+            flush=True,
+        )
+        started = time.perf_counter()
         try:
             resp = requests.post(
                 f"{base_url}/chat/completions",
@@ -190,6 +261,15 @@ def _chat_openai(user_text, system, max_tokens, max_attempts, provider, timeout=
                 timeout=timeout,
             )
         except requests.RequestException as e:
+            _log_event(
+                {
+                    **context,
+                    "event": "network_error",
+                    "elapsed_s": round(time.perf_counter() - started, 3),
+                    "error_type": type(e).__name__,
+                    "error": str(e),
+                }
+            )
             if attempt == max_attempts:
                 raise
             print(
@@ -198,6 +278,15 @@ def _chat_openai(user_text, system, max_tokens, max_attempts, provider, timeout=
             time.sleep(delay)
             delay *= 2
             continue
+        elapsed = time.perf_counter() - started
+        response_event = _log_http_response(
+            resp, {**context, "elapsed_s": round(elapsed, 3)}
+        )
+        print(
+            f"  [响应 {attempt}/{max_attempts}] HTTP {resp.status_code}，"
+            f"{elapsed:.1f}s，request_id={response_event['request_id']}",
+            flush=True,
+        )
         action, result = _handle_response(
             resp, attempt, max_attempts, payload["max_tokens"], delay
         )
