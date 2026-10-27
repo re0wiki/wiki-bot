@@ -10,13 +10,15 @@ import subprocess
 import sys
 import time
 
-from . import DATA
+from . import DATA, bootstrap
 
 ROOT = DATA.parent.parent
 STAGES = ("translate", "build", "verify_rt", "deploy")
 
 
 def run_chain(stages: tuple[str, ...] = STAGES) -> None:
+    if bootstrap.needed():
+        raise SystemExit("本地语录基线不完整；先运行 src.nekoquote.bootstrap")
     env = {k: v for k, v in os.environ.items() if k != "PYTHONPATH"}
     env["PYTHONIOENCODING"] = "utf-8"
     for s in stages:

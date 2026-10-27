@@ -105,6 +105,29 @@ def build_skip_prefixes(site) -> set[str]:
     return prefixes
 
 
+def _replacement_title(final_title: str, link_text: str) -> str:
+    """按上游规则让目标首字母跟随显示文本的大小写。"""
+    if link_text[0].isupper() or link_text[0].isdigit():
+        return final_title
+    return first_lower(final_title)
+
+
+def _target_section(section: str, final_frag: str | None) -> str:
+    return section or (f"#{final_frag}" if final_frag else "")
+
+
+def _can_merge_linktrail(
+    new_title: str, new_section: str, link_text: str, linktrail: str
+) -> bool:
+    """目标前缀加链接尾字符已能表达显示文本时，可用裸链接形式。"""
+    return (
+        not new_section
+        and len(new_title) <= len(link_text)
+        and first_upper(link_text[: len(new_title)]) == first_upper(new_title)
+        and re.sub(linktrail, "", link_text[len(new_title) :]) == ""
+    )
+
+
 def resolve_link(
     title: str,
     section: str,
@@ -124,25 +147,46 @@ def resolve_link(
     link_text = label if label else title
     if trail:
         link_text += trail
-    # 首字母大小写规则（对中文无影响）
-    new_title = (
-        final_title
-        if link_text[0].isupper() or link_text[0].isdigit()
-        else first_lower(final_title)
-    )
-    new_section = section or (f"#{final_frag}" if final_frag else "")
+    new_title = _replacement_title(final_title, link_text)
+    new_section = _target_section(section, final_frag)
     if new_title == link_text and not new_section:
         return f"[[{new_title}]]"
-    # 能用链接尾字符形式就不用管道链接
-    if (
-        not new_section
-        and len(new_title) <= len(link_text)
-        and first_upper(link_text[: len(new_title)]) == first_upper(new_title)
-        and re.sub(linktrail, "", link_text[len(new_title) :]) == ""
-    ):
+    if _can_merge_linktrail(new_title, new_section, link_text, linktrail):
         k = len(new_title)
         return f"[[{link_text[:k]}]]{link_text[k:]}"
     return f"[[{new_title}{new_section}|{link_text}]]"
+
+
+def _editable_link_title(text: str, m, site) -> str | None:
+    """返回可处理的链接标题；空标题、禁用区与跨站链接返回 None。"""
+    title = m["title"].strip()
+    if not title or isDisabled(text, m.start()) or is_interwiki(site, title):
+        return None
+    return title
+
+
+def _resolve_match(m, title: str, rmap: dict, site, skip_prefixes: set[str]):
+    """按单个链接匹配构造改写结果；未命中或应跳过返回 None。"""
+    had_colon = title.startswith(":")
+    if had_colon:
+        title = title[1:].lstrip()
+    ns_prefix = title.split(":", 1)[0].lower() if ":" in title else None
+    if not had_colon and ns_prefix in skip_prefixes:
+        return None
+    hit = rmap.get(normalize(title))
+    if not hit:
+        return None
+    newlink = resolve_link(
+        title,
+        m["section"] or "",
+        m["label"],
+        m["trail"],
+        *hit,
+        site.linktrail(),
+    )
+    if newlink and had_colon:
+        newlink = "[[:" + newlink[2:]
+    return newlink
 
 
 def rewrite_links(
@@ -157,26 +201,10 @@ def rewrite_links(
     curpos = 0
     changes = []
     for m in link_re.finditer(text):
-        newlink = None
-        title = m["title"].strip()
-        if title and not isDisabled(text, m.start()) and not is_interwiki(site, title):
-            had_colon = title.startswith(":")
-            if had_colon:
-                title = title[1:].lstrip()
-            ns_prefix = title.split(":", 1)[0].lower() if ":" in title else None
-            if had_colon or ns_prefix not in skip_prefixes:
-                hit = rmap.get(normalize(title))
-                if hit:
-                    newlink = resolve_link(
-                        title,
-                        m["section"] or "",
-                        m["label"],
-                        m["trail"],
-                        *hit,
-                        site.linktrail(),
-                    )
-                    if newlink and had_colon:
-                        newlink = "[[:" + newlink[2:]
+        title = _editable_link_title(text, m, site)
+        if title is None:
+            continue
+        newlink = _resolve_match(m, title, rmap, site, skip_prefixes)
         if newlink is None:
             continue
         out.append(text[curpos : m.start()])

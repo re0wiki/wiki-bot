@@ -44,6 +44,45 @@ def test_convert_links_case_fallback():
     assert lt.convert_links("[[mystery]]", mapping) == "[[mystery]]"
 
 
+def test_resolve_links_normalized_redirect_chain_and_cycle(monkeypatch):
+    response = {
+        "query": {
+            "pages": [{"title": "C"}, {"title": "Plain"}],
+            "normalized": [{"from": "demi-human", "to": "Demi-human"}],
+            "redirects": [
+                {"from": "Demi-human", "to": "Demi-Human"},
+                {"from": "Demi-Human", "to": "C"},
+                {"from": "Loop", "to": "Loop"},
+            ],
+        }
+    }
+    monkeypatch.setattr(lt, "api", lambda *args, **kwargs: response)
+    mapping, unresolved = lt.resolve_links(
+        "[[demi-human#Abilities]] [[Plain]] [[Loop]]"
+    )
+    assert mapping == {"demi-human#Abilities": "C#Abilities", "Plain": "Plain"}
+    assert unresolved == ["Loop"]
+
+
+def test_resolve_links_redirect_cycles_are_unresolved_even_when_pages_returned(
+    monkeypatch,
+):
+    response = {
+        "query": {
+            "pages": [{"title": "A"}, {"title": "B"}, {"title": "Loop"}],
+            "redirects": [
+                {"from": "A", "to": "B"},
+                {"from": "B", "to": "A"},
+                {"from": "Loop", "to": "Loop"},
+            ],
+        }
+    }
+    monkeypatch.setattr(lt, "api", lambda *args, **kwargs: response)
+    mapping, unresolved = lt.resolve_links("[[A]] [[Loop]]")
+    assert mapping == {}
+    assert unresolved == ["A", "Loop"]
+
+
 # ------------------------------------------------------------ 信息框参数解析
 
 ZH_INLINE_BLOCK = """{{Infobox game | name = Re:从零开始的异世界生活 DEATH OR KISS
@@ -163,6 +202,23 @@ def test_split_en_body_strips_navigation():
 
 def test_split_en_body_trailing_navbox_without_heading():
     body = lt.split_en_body("正文。\n\n{{LN Navigation}}\n")
+    assert body == "正文。\n"
+
+
+def test_split_en_body_preserves_content_templates():
+    src = (
+        "{{Quote|A quote}}\n"
+        "{{Infobox character| name = Subaru}}\n"
+        "正文。\n"
+        "{{Quote|Another quote}}\n"
+    )
+    assert lt.split_en_body(src) == src
+
+
+def test_split_en_body_strips_maintenance_templates():
+    body = lt.split_en_body(
+        "{{Construction}}\n{{Parent Tab|tab1 = Information}}\n正文。\n{{References}}\n"
+    )
     assert body == "正文。\n"
 
 

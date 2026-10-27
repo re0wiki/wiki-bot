@@ -211,6 +211,59 @@ CRAM_LINE = re.compile(
 CRAM_SEGMENT = re.compile(r"^(.*?)[ \t]*\(([^()]*)\)$")
 
 
+def existing_cram_params(lines):
+    """模板内已存在的参数名（小写）。"""
+    existing = set()
+    for line in lines:
+        pm = re.match(r"^\|[ \t]*([a-z_]+)[ \t]*=", line, re.IGNORECASE)
+        if pm:
+            existing.add(pm.group(1).lower())
+    return existing
+
+
+def valid_cram_segments(parts, segs) -> bool:
+    """各段均有已知语言、含 Japanese 且归一后语言不重复。"""
+    if not segs or len(segs) != len(parts):
+        return False
+    if any(lang not in CRAM_LANGS for _, lang in segs):
+        return False
+    langs = {CRAM_LANGS[lang] for _, lang in segs}
+    return "ja" in langs and len(langs) == len(segs)
+
+
+def cram_segments(pm):
+    """从 CRAM_LINE 匹配提取可安全拆分的 (值, 语言) 段。"""
+    parts = re.split(r"<br\s*/?>", pm.group(2)) if pm else []
+    segs = [
+        (m2.group(1).strip(), m2.group(2).strip())
+        for s in parts
+        if (m2 := CRAM_SEGMENT.match(s.strip()))
+    ]
+    return segs if valid_cram_segments(parts, segs) else []
+
+
+def split_cram_line(line, existing):
+    """拆单行，返回 (输出行, 是否命中可拆形态)。"""
+    pm = CRAM_LINE.match(line)
+    if pm is None:
+        return [line], False
+    segs = cram_segments(pm)
+    if not segs:
+        return [line], False
+    family = pm.group(1).lower()
+    existing.discard(f"{family}_ja")
+    out = []
+    for value, lang in segs:
+        param = f"{family}_{CRAM_LANGS[lang]}"
+        if param in existing:
+            continue
+        if family == "date":
+            value = normalize_date_value(value)
+        out.append(f"| {param} = {value}")
+        existing.add(param)
+    return out, True
+
+
 def split_crammed_params(m: re.Match) -> str:
     """信息框多语言堆积参数拆分：`值 (语言)<br>值 (语言)…` → per-语言参数行。
 
@@ -228,46 +281,36 @@ def split_crammed_params(m: re.Match) -> str:
     if head[2:].split("|", 1)[0].strip().lower() != "infobox book":
         return m.group(0)
     lines = body.split("\n") if body else []
-    existing = set()
-    for line in lines:
-        pm = re.match(r"^\|[ \t]*([a-z_]+)[ \t]*=", line, re.IGNORECASE)
-        if pm:
-            existing.add(pm.group(1).lower())
+    existing = existing_cram_params(lines)
     out, changed = [], False
     for line in lines:
-        pm = CRAM_LINE.match(line)
-        parts = re.split(r"<br\s*/?>", pm.group(2)) if pm else []
-        segs = [
-            (m2.group(1).strip(), m2.group(2).strip())
-            for s in parts
-            if (m2 := CRAM_SEGMENT.match(s.strip()))
-        ]
-        if (
-            not pm
-            or not segs
-            or len(segs) != len(parts)
-            or any(lang not in CRAM_LANGS for _, lang in segs)
-            # 基底参数的值来源（Japanese 及其别名）
-            or "ja" not in {CRAM_LANGS[lang] for _, lang in segs}
-            # 同语言多段（分册/别名混写）留人工——按归一后的后缀判重
-            or len({CRAM_LANGS[lang] for _, lang in segs}) != len(segs)
-        ):
-            out.append(line)
-            continue
-        changed = True
-        family = pm.group(1).lower()
-        existing.discard(f"{family}_ja")  # 基底行被本拆分替换，不算重复
-        for value, lang in segs:
-            param = f"{family}_{CRAM_LANGS[lang]}"
-            if param in existing:
-                continue
-            if family == "date":
-                value = normalize_date_value(value)
-            out.append(f"| {param} = {value}")
-            existing.add(param)
+        split_lines, line_changed = split_cram_line(line, existing)
+        out.extend(split_lines)
+        changed |= line_changed
     if not changed:
         return m.group(0)
     return head + ("\n" + "\n".join(out) if out else "") + tail_nl + "}}"
+
+
+def _nested_table_depth(text: str) -> int:
+    depth = 0
+    i = 0
+    while i < len(text) - 1:
+        if text.startswith("{|", i):
+            depth += 1
+            i += 2
+        elif text.startswith("|}", i) and depth:
+            depth -= 1
+            i += 2
+        else:
+            i += 1
+    return depth
+
+
+def _outside_nested_tables(m: re.Match, replacement):
+    if _nested_table_depth(m.string[: m.start()]):
+        return m.group(0)
+    return replacement(m) if callable(replacement) else replacement
 
 
 user_fixes["para"] = base | {
@@ -393,6 +436,12 @@ user_fixes["para"] = base | {
         ),
     ],
 }
+
+# 所有 para 替换都按匹配点判断表格深度；textlib 的 table 例外不支持嵌套表格
+user_fixes["para"]["replacements"] = [  # ty: ignore[invalid-assignment]
+    (pattern, partial(_outside_nested_tables, replacement=repl))
+    for pattern, repl in user_fixes["para"]["replacements"]  # ty: ignore[not-iterable]
+]
 # endregion
 
 # region gallery
@@ -515,6 +564,7 @@ user_fixes["heading_term"] = base | {
     "generator": ["-cat:术语"],
     "replacements": [(r"(?<== )History(?= =)", "历史")],
 }
+
 # endregion
 
 # region translation
@@ -703,13 +753,17 @@ user_fixes["translation"] = base | {
             # 。「」等句读/引号不进字符集，否则中日两段会被连成一段。
             # 盲区：纯汉字日文引用无假名可探测，仍靠 as-is 注释。
             r"[㐀-䶿一-鿿豈-﫿぀-ヿｦ-ﾝ々〆〇、]*[぀-ヿｦ-ﾝ][㐀-䶿一-鿿豈-﫿぀-ヿｦ-ﾝ々〆〇、]*",
+            # 文件链接仅保护目标文件名；说明文字照常归一
+            r"\[\[[ \t]*:?[ \t]*(?:File|Image|文件|檔案)[ \t]*:[^|\]\n]+",
+            # gallery 每行仅保护文件名（含常见媒体扩展名）；| 后的说明文字照常归一
+            r"(?m)^[ \t]*[^<>\n|]+?\.(?:png|jpe?g|gif|svg|webp|avif|bmp|tiff?|mp4|webm|ogv|ogg|mp3|wav|flac|pdf)(?=[ \t]*(?:\||$))",
             # 分类名位置整体不归一：[[Category:...]] 分类行（含 [[:Category:
             # 链接形式）归 re0_category 从 en 映射管理，{{Category redirect|...}}
             # 软重定向目标同理；在此改写会与分类同步互相覆盖（模板化目标如
             # {{Seirei or Elf}} 使分类链接/重定向失效，category sync 还原、
             # cosmetic 再删，三任务循环）。
-            r"\[\[:?(?:Category|分类):[^\n]*\]\]",
-            r"\{\{Category redirect\s*\|[^}\n]*\}\}",
+            r"\[\[[ \t]*:?[ \t]*(?:Category|分类|分類)[ \t]*:[^\n]*\]\]",
+            r"\{\{\s*Category redirect\s*\|[^}\n]*\}\}",
         ],
     },
     "replacements": [(_alt_pattern, _alt_sub)] + list(translation_manual),

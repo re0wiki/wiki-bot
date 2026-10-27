@@ -74,14 +74,16 @@ def test_parse_en_link_none():
 # endregion
 # region build_mapping
 def test_build_mapping_basic():
-    mapping, conflicts, hints = rc.build_mapping({"角色": "[[en:Category:Characters]]"})
+    mapping, conflicts, hints, _ = rc.build_mapping(
+        {"角色": "[[en:Category:Characters]]"}
+    )
     assert mapping == {"Characters": "角色"}
     assert conflicts == []
     assert any("Characters 待建" in h for h in hints)
 
 
 def test_build_mapping_redirect_crosscheck_ok():
-    mapping, conflicts, _ = rc.build_mapping(
+    mapping, conflicts, _, _ = rc.build_mapping(
         {
             "角色": "[[en:Category:Characters]]",
             "Characters": "{{Category redirect|角色}}",
@@ -92,7 +94,7 @@ def test_build_mapping_redirect_crosscheck_ok():
 
 
 def test_build_mapping_conflict():
-    _, conflicts, _ = rc.build_mapping(
+    mapping, conflicts, _, conflicted = rc.build_mapping(
         {
             "漫画分类": "[[en:Category:Re:Zero Manga]]",
             "Re:Zero Manga": "{{Category redirect|单行本漫画}}",
@@ -100,25 +102,94 @@ def test_build_mapping_conflict():
     )
     assert len(conflicts) == 1
     assert "Re:Zero Manga" in conflicts[0]
+    assert mapping == {} and conflicted == {"Re:Zero Manga"}
 
 
 def test_build_mapping_duplicate_claim():
-    _, conflicts, _ = rc.build_mapping(
+    mapping, conflicts, _, conflicted = rc.build_mapping(
         {
             "角色": "[[en:Category:Characters]]",
             "角色2": "[[en:Category:Characters]]",
         }
     )
     assert any("多个分类声称" in c for c in conflicts)
+    assert mapping == {} and conflicted == {"Characters"}
+
+
+def test_build_mapping_normalizes_page_and_redirect_names():
+    mapping, conflicts, hints, conflicted = rc.build_mapping(
+        {
+            "角色": "[[en:Category:deceased_characters]]",
+            "Deceased_characters": "{{Category redirect|角色}}",
+        }
+    )
+    assert mapping == {"Deceased characters": "角色"}
+    assert conflicts == []
+    assert hints == []
+    assert conflicted == set()
+
+
+def test_conflicted_mapping_preserves_source_lines():
+    mapping, conflicts, _, conflicted = rc.build_mapping(
+        {
+            "角色": "[[en:Category:Characters]]",
+            "角色2": "[[en:Category:Characters]]",
+        }
+    )
+    assert mapping == {}
+    assert conflicts and conflicted == {"Characters"}
+    managed = set(mapping) | set(mapping.values())
+    new, added, removed, unmapped, _ = rc.compute_sync(
+        "正文\n[[Category:Characters]]\n[[Category:角色2]]\n",
+        set(),
+        ["Characters"],
+        mapping,
+        managed,
+        set(),
+        INIT_CATS,
+        conflicted,
+    )
+    assert new is None
+    assert added == removed == set()
+    assert unmapped == []
+
+
+def test_conflicted_page_is_fully_protected_when_target_has_valid_mapping():
+    mapping, _, _, conflicted = rc.build_mapping(
+        {
+            "甲": "[[en:Category:A]]",
+            "A": "{{Category redirect|乙}}",
+            "乙": "[[en:Category:B]]",
+            "B": "{{Category redirect|乙}}",
+        }
+    )
+    assert mapping == {"B": "乙"} and conflicted == {"A"}
+    managed = set(mapping) | set(mapping.values())
+    new, added, removed, unmapped, init_missing = rc.compute_sync(
+        "正文\n[[Category:乙]]\n",
+        set(),
+        ["A"],
+        mapping,
+        managed,
+        set(),
+        INIT_CATS,
+        conflicted,
+    )
+    assert new is None
+    assert added == removed == set()
+    assert unmapped == [] and init_missing == []
 
 
 def test_build_mapping_multiple_en_links():
-    _, conflicts, _ = rc.build_mapping({"X": "[[en:Category:A]]\n[[en:Category:B]]"})
+    mapping, conflicts, _, conflicted = rc.build_mapping(
+        {"X": "[[en:Category:A]]\n[[en:Category:B]]"}
+    )
     assert any("多个 en 链接" in c for c in conflicts)
+    assert mapping == {} and conflicted == {"A", "B"}
 
 
 def test_build_mapping_redirect_without_interwiki_hint():
-    _, _, hints = rc.build_mapping({"Old Name": "{{Category redirect|新名}}"})
+    _, _, hints, _ = rc.build_mapping({"Old Name": "{{Category redirect|新名}}"})
     assert any("无 interwiki 映射对应" in h for h in hints)
 
 
@@ -127,7 +198,7 @@ def test_build_mapping_hints_nowiki_wrapped():
     （报告页因此误入 已重定向的分类，2026-09-30 实证）。"""
     import re
 
-    _, _, hints = rc.build_mapping({"角色": "[[en:Category:Characters]]"})
+    _, _, hints, _ = rc.build_mapping({"角色": "[[en:Category:Characters]]"})
     assert hints
     for h in hints:
         stripped = re.sub(r"<nowiki>.*?</nowiki>", "", h, flags=re.DOTALL)
@@ -162,6 +233,105 @@ def test_resolve_en_cats_normalized_and_redirect():
 def test_resolve_en_cats_missing():
     data = _resp([{"title": "A", "missing": True}])
     assert rc.resolve_en_cats(data, ["A"]) == {"A": None}
+
+
+def test_parse_page_snapshot_includes_revid():
+    page = {
+        "revisions": [
+            {
+                "revid": 123,
+                "slots": {"main": {"content": "正文"}},
+            }
+        ],
+        "categories": [{"title": "Category:角色"}],
+    }
+    assert rc.parse_page_snapshot(page) == ("正文", {"角色"}, 123)
+
+
+def test_save_category_page_reloads_after_conflict(monkeypatch):
+    calls = []
+
+    class FakePage:
+        def __init__(self, site, title):
+            self.text = None
+
+        def save(self, **kwargs):
+            calls.append((self.text, kwargs))
+            if len(calls) == 1:
+                raise rc.EditConflictError(0)
+
+    monkeypatch.setattr(rc.pwb, "Page", FakePage)
+    monkeypatch.setattr(
+        rc,
+        "load_page_snapshot",
+        lambda site, title: ("新快照", {"模板分类"}, 101),
+        raising=False,
+    )
+
+    def recompute(text, registered):
+        assert text == "新快照" and registered == {"模板分类"}
+        return ("重算文本", {"新增"}, {"删除"}, [], [])
+
+    result = rc.save_category_page(
+        object(), "页面", ("旧计算文本", set(), set(), [], []), 90, recompute
+    )
+    assert result[0] == "重算文本"
+    assert [call[1]["baserevid"] for call in calls] == [90, 101]
+    assert calls[1][0] == "重算文本"
+
+
+def test_save_category_page_conflict_can_become_noop(monkeypatch):
+    calls = []
+
+    class FakePage:
+        def __init__(self, site, title):
+            self.text = None
+
+        def save(self, **kwargs):
+            calls.append((self.text, kwargs))
+            raise rc.EditConflictError(0)
+
+    monkeypatch.setattr(rc.pwb, "Page", FakePage)
+    monkeypatch.setattr(
+        rc,
+        "load_page_snapshot",
+        lambda site, title: ("新快照", set(), 101),
+        raising=False,
+    )
+    result = rc.save_category_page(
+        object(),
+        "页面",
+        ("旧计算文本", set(), set(), [], []),
+        90,
+        lambda text, registered: (None, set(), set(), ["新未映射"], []),
+    )
+    assert result[0] is None
+    assert result[3] == ["新未映射"]
+    assert len(calls) == 1
+
+
+def test_sync_category_pages_passes_snapshot_revid_to_save(monkeypatch):
+    captured = {}
+
+    def fake_save(site, title, result, revid, recompute):
+        captured.update(title=title, revid=revid)
+        return result
+
+    monkeypatch.setattr(rc, "save_category_page", fake_save, raising=False)
+    monkeypatch.setattr(rc.config, "simulate", False)
+    unmapped, init_missing, synced = rc.sync_category_pages(
+        object(),
+        {"页面": ("正文\n[[Category:Deceased]]\n", set(), 123)},
+        {},
+        MAPPING,
+        MANAGED,
+        set(),
+        INIT_CATS,
+        set(),
+    )
+    assert captured == {"title": "页面", "revid": 123}
+    assert synced == 1
+    assert not unmapped and not init_missing
 
 
 # endregion

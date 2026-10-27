@@ -140,40 +140,55 @@ def gallery_value(items):
     return f"<gallery>\n{lines}\n</gallery>"
 
 
-def fill_page(title, dry=False):
-    p = pywikibot.Page(site, title)
-    text = p.text
+def page_targets(title):
     targets = {}  # sec -> items
     for sec, items in LIVE.get(title, {}).items():
         targets.setdefault(sec, []).extend(items)
     for sec, items in SUPPLEMENT.get(title, {}).items():
         targets.setdefault(sec, []).extend(items)
+    return targets
 
+
+def fill_section(text, title, sec, items):
+    param = "image_" + sec
+    m = re.search(
+        r"^\|[ \t]*" + param + r"[ \t]*=[ \t]*(.*?)[ \t]*$", text, re.MULTILINE
+    )
+    if m and m.group(1):
+        print(f"  SKIP {title} {param}: 已有非空显式值（自动图在此段本就不渲染）")
+        return None
+    value = gallery_value(items)
+    if m:  # 空参数行，就地替换整行
+        line_start = text.rfind("\n", 0, m.start()) + 1
+        return text[:line_start] + f"| {param} = {value}" + text[m.end() :]
+
+    # 无此参数行，插到 | image 行前，其次 | name 行后
+    anchor = re.search(r"^\|\s*image\s*=", text, re.MULTILINE) or re.search(
+        r"^\|\s*name\s*=.*$", text, re.MULTILINE
+    )
+    assert anchor, f"{title}: 找不到插入锚点"
+    if anchor.group(0).startswith("| name"):
+        pos = text.find("\n", anchor.end() - 1) + 1
+    else:
+        pos = text.rfind("\n", 0, anchor.start()) + 1
+    return text[:pos] + f"| {param} = {value}\n" + text[pos:]
+
+
+def fill_text(title, text, targets):
     for sec in ["a", "n", "g", "c"]:
         if sec not in targets:
             continue
-        param = "image_" + sec
-        m = re.search(
-            r"^\|[ \t]*" + param + r"[ \t]*=[ \t]*(.*?)[ \t]*$", text, re.MULTILINE
-        )
-        if m and m.group(1):
-            print(f"  SKIP {title} {param}: 已有非空显式值（自动图在此段本就不渲染）")
+        new = fill_section(text, title, sec, targets[sec])
+        if new is None:
             continue
-        value = gallery_value(targets[sec])
-        if m:  # 空参数行，就地替换整行
-            line_start = text.rfind("\n", 0, m.start()) + 1
-            text = text[:line_start] + f"| {param} = {value}" + text[m.end() :]
-        else:  # 无此参数行，插到 | image 行前，其次 | name 行后
-            anchor = re.search(r"^\|\s*image\s*=", text, re.MULTILINE) or re.search(
-                r"^\|\s*name\s*=.*$", text, re.MULTILINE
-            )
-            assert anchor, f"{title}: 找不到插入锚点"
-            if anchor.group(0).startswith("| name"):
-                pos = text.find("\n", anchor.end() - 1) + 1
-            else:
-                pos = text.rfind("\n", 0, anchor.start()) + 1
-            text = text[:pos] + f"| {param} = {value}\n" + text[pos:]
-        print(f"  FILL {title} {param} ({len(targets[sec])} 图)")
+        text = new
+        print(f"  FILL {title} image_{sec} ({len(targets[sec])} 图)")
+    return text
+
+
+def fill_page(title, dry=False):
+    p = pywikibot.Page(site, title)
+    text = fill_text(title, p.text, page_targets(title))
 
     if text != p.text:
         if dry:

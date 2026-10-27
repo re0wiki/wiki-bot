@@ -20,7 +20,9 @@ expand_class_pattern: Any = fx.__dict__["expand_class_pattern"]
 translation_name_rules: list[tuple[str, str]] = fx.__dict__["translation_name_rules"]
 
 # RULES 直接复用 re0_move 的构建结果，不再本地重复构造。
-RULES = load_module("re0_move", "src/scripts/re0_move.py").RULES
+mv = load_module("re0_move", "src/scripts/re0_move.py")
+RULES = mv.RULES
+s2t: Any = fx.__dict__["s2t"]
 
 
 def normalize(title: str) -> str:
@@ -196,6 +198,25 @@ def test_aliases_normalize_to_entry_name():
         if normalize(f) != e.std
     ]
     assert not bad, f"以下别名未归一到条目名: {bad}"
+
+
+def test_aliases_and_traditional_forms_normalize_via_move():
+    """标题归一先 t2s 后，别名原形及其繁体形态也必须落到所属标准名。"""
+    bad = []
+    for e in ENTRIES:
+        if "{{" in e.std:
+            continue
+        for a in e.aliases:
+            for f in expand_class_pattern(a) or {a}:
+                for variant in {f, s2t(f)}:
+                    got = mv.resolve_move(variant)
+                    if variant == e.std:
+                        ok = got in [(None, None), (e.std, None)]
+                    else:
+                        ok = got == (e.std, None)
+                    if not ok:
+                        bad.append((variant, e.std, got))
+    assert not bad, f"以下标题形态未归一到条目名: {bad}"
 
 
 def test_all_entry_names_stable_under_full_rule_chain():

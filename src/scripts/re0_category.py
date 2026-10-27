@@ -6,7 +6,7 @@
   与主映射不一致即冲突——进报告，不猜测。
 
 同步（zh 侧驱动，与 audit_langlinks 同向；每轮全量 diff、幂等、无本地状态）：
-1. zh 主空间非重定向页两阶段取源码 + prop=categories（50/批同一请求）；
+1. zh 主空间非重定向页两阶段取源码 + revid + prop=categories（50/批同一请求）；
 2. 无 [[en:X]] 链接的页不同步（zh 原创页等，见 docs/wiki-structure.md）；
 3. desired = 映射(en 页 prop=categories&redirects=1 的分类) − 不同步集合 −
    Init 覆盖集（INIT_CATS：映射目标属 Init 前缀×后缀矩阵的不写入，逐页检查
@@ -18,7 +18,8 @@
    的内容分类）；
 4. 受管集合 = 映射键 ∪ 映射值：源码中受管分类行整体按 desired 重写
    （en 名残留行随之归一，重复受管行随之去重），不受管的源码分类行（人工添加、
-   新搬运待整理/机翻待校对等）不碰；
+   新搬运待整理/机翻待校对等）不碰；保存绑定快照 revid（baserevid），
+   编辑冲突时重读源码与 registered 分类重算一次，仍冲突则响亮失败；
 5. 不同步集合 = Category:自动清空分类 成员 ∪ TRACKING_CATEGORIES：
    en 名分类页挂 [[Category:自动清空分类]] 即声明不同步（优先于 interwiki
    映射——分类页的 en 链接同时是读者导航，语义 1:N 的如 图库↔Image Gallery
@@ -26,7 +27,8 @@
    cat-image-gallery/cat-relationships 两专职任务的清空职能）；
    TRACKING_CATEGORIES 是 en 站 MW 追踪分类（解析器带入、非内容），
    完整清单再生成规程见常量注释；
-6. 未映射 en 分类与映射冲突写报告页 REPORT_PAGE（有变更才编辑）。
+6. 未映射 en 分类与映射冲突写报告页 REPORT_PAGE（有变更才编辑）；含冲突 en 的
+   页面整轮保持现状，不按未映射或待删除项处理，冲突解除后下轮自动追平。
 
 人工不要手动增删页面底部的受管分类行（下轮会被改回）——与译名工作流同型，
 改分类 = 改 wiki 上的映射页。zh 侧分类改名 = 移动中文分类页 + 改 en 名页的
@@ -40,9 +42,11 @@ LLM 翻译管线不处理分类（搬运/翻译时剥除，由本任务下轮补
 
 import re
 from collections import Counter
+from functools import partial
 
 import pywikibot as pwb
 from pywikibot import config
+from pywikibot.exceptions import EditConflictError
 from pywikibot.tools import first_upper
 
 SUMMARY = "机器人：自英文站同步分类"
@@ -163,40 +167,37 @@ def find_autoempty(cat_pages: dict[str, str]) -> set[str]:
     }
 
 
-def build_mapping(
-    cat_pages: dict[str, str],
-) -> tuple[dict[str, str], list[str], list[str]]:
-    """从分类页源码建映射。返回 (映射, 冲突清单, 提示清单)。
-
-    cat_pages: {分类名（不含 Category: 前缀）: 源码}。
-    冲突：interwiki 与 category redirect 不一致、同一 en 名被多个中文页声称、
-    单页多个不同 en 链接。提示：redirect 缺页/缺 redirect/redirect 无 interwiki
-    对应——均是映射维护的待办信号。
-    """
-    mapping: dict[str, str] = {}
-    redirects: dict[str, str] = {}
-    conflicts: list[str] = []
+def claim_category_mappings(cat_pages):
+    """收集 interwiki 声称、redirect 与直接冲突。"""
+    cat_pages = {normalize(name): text for name, text in cat_pages.items()}
+    mapping = {}
+    redirects = {}
+    conflicts = []
+    conflicted = set()
     for name, text in cat_pages.items():
         en_links = {normalize(x) for x in EN_CAT_LINK_RE.findall(text)}
         if len(en_links) > 1:
             conflicts.append(f"Category:{name} 有多个 en 链接: {sorted(en_links)}")
+            conflicted.update(en_links)
         for en_name in en_links:
             if en_name in mapping and mapping[en_name] != name:
                 conflicts.append(
                     f"{en_name} 被多个分类声称: {mapping[en_name]} 与 {name}"
                 )
+                conflicted.add(en_name)
             mapping.setdefault(en_name, name)
         if m := CAT_RD_RE.search(text):
             redirects[name] = normalize(m.group(1))
+    return mapping, redirects, conflicts, conflicted
+
+
+def build_mapping_hints(mapping, redirects, cat_pages, claimed):
+    """生成 redirect 缺失、待建与孤立提示。"""
     hints = []
     for en_name, zh_name in sorted(mapping.items()):
         if en_name in redirects:
-            if redirects[en_name] != zh_name:
-                conflicts.append(
-                    f"{en_name}: interwiki 映射到 {zh_name}，"
-                    f"redirect 指 {redirects[en_name]}"
-                )
-        elif en_name in cat_pages:
+            continue
+        if en_name in cat_pages:
             hints.append(
                 f"Category:{en_name} 存在但缺 <nowiki>{{Category redirect}}</nowiki>"
             )
@@ -206,9 +207,33 @@ def build_mapping(
                 f"（挂 <nowiki>{{{{Category redirect|{zh_name}}}}}</nowiki>）"
             )
     for name in sorted(redirects):
-        if name not in mapping:
+        if name not in claimed:
             hints.append(f"Category redirect {name} 无 interwiki 映射对应")
-    return mapping, conflicts, hints
+    return hints
+
+
+def build_mapping(
+    cat_pages: dict[str, str],
+) -> tuple[dict[str, str], list[str], list[str], set[str]]:
+    """从分类页源码建映射。返回 (有效映射, 冲突清单, 提示清单, 冲突 en 集)。
+
+    cat_pages: {分类名（不含 Category: 前缀）: 源码}。
+    冲突：interwiki 与 category redirect 不一致、同一 en 名被多个中文页声称、
+    单页多个不同 en 链接。提示：redirect 缺页/缺 redirect/redirect 无 interwiki
+    对应——均是映射维护的待办信号。
+    """
+    mapping, redirects, conflicts, conflicted = claim_category_mappings(cat_pages)
+    for en_name, zh_name in sorted(mapping.items()):
+        if en_name in redirects and redirects[en_name] != zh_name:
+            conflicts.append(
+                f"{en_name}: interwiki 映射到 {zh_name}，"
+                f"redirect 指 {redirects[en_name]}"
+            )
+            conflicted.add(en_name)
+    claimed = set(mapping)
+    mapping = {en: zh for en, zh in mapping.items() if en not in conflicted}
+    hints = build_mapping_hints(mapping, redirects, cat_pages, claimed)
+    return mapping, conflicts, hints, conflicted
 
 
 def resolve_en_cats(data: dict, requested: list[str]) -> dict[str, list[str] | None]:
@@ -233,26 +258,30 @@ def resolve_en_cats(data: dict, requested: list[str]) -> dict[str, list[str] | N
     return out
 
 
-def compute_sync(
-    text: str,
-    registered: set[str],
-    en_cats: list[str],
-    mapping: dict[str, str],
-    managed: set[str] | frozenset[str],
-    excluded: set[str] | frozenset[str],
-    init_cats: set[str] | frozenset[str],
-) -> tuple[str | None, set[str], set[str], list[str], list[str]]:
-    """计算同步后的新源码。返回 (new_text|None, added, removed, unmapped, init_missing)。
+def unmapped_categories(en_cats, mapping, excluded, conflicted):
+    """缺映射且未豁免的 en 分类。"""
+    return [
+        c
+        for c in en_cats
+        if c not in mapping and c not in excluded and c not in conflicted
+    ]
 
-    new_text 为 None 表示无需改动。unmapped 是缺映射且未豁免的 en 分类。
-    excluded（自动清空分类成员 ∪ MW 追踪分类）优先于 mapping，其源码行
-    一律清除（残留清空职能）。映射目标属 init_cats 的不写入，仅当
-    registered 缺失时记入 init_missing 报告。受管源码行重复（集合比对
-    不可见）同样视为需改动——重写删全部受管行、按 desired 去重插入。
-    """
+
+def source_category_state(text, managed, excluded):
+    """收集源码分类、待清空分类及受管行出现次数。"""
     source_lines = [m.group(1).strip() for m in CAT_LINE_RE.finditer(text)]
     source_names = set(source_lines)
-    non_source = set(registered) - source_names  # Init/模板带入，不写源码行
+    current = {n for n in source_names if normalize(n) in managed}
+    purged = {n for n in source_names if normalize(n) in excluded}
+    managed_counts = Counter(
+        normalize(raw) for raw in source_lines if normalize(raw) in managed
+    )
+    return source_names, current, purged, managed_counts
+
+
+def desired_categories(source_names, registered, en_cats, mapping, excluded, init_cats):
+    """计算应写源码的分类与 Init 带入缺失报告。"""
+    non_source = set(registered) - source_names
     desired = {
         mapping[c]
         for c in en_cats
@@ -266,24 +295,20 @@ def compute_sync(
         and mapping[c] in init_cats
         and mapping[c] not in registered
     ]
-    unmapped = [c for c in en_cats if c not in mapping and c not in excluded]
-    current = {n for n in source_names if normalize(n) in managed}
-    purged = {n for n in source_names if normalize(n) in excluded}
-    # 集合比对对重复行不可见：受管行出现次数 != 1 同样视为未同步，
-    # 走重写路径（重写删全部受管行、按 desired 去重插入，重复行随之收敛）。
-    managed_counts = Counter(
-        normalize(raw) for raw in source_lines if normalize(raw) in managed
-    )
-    if (
+    return desired, init_missing
+
+
+def is_synchronized(current, desired, purged, managed_counts) -> bool:
+    """分类集合、待清空项与重复行均已收敛。"""
+    return (
         current == desired
         and not purged
         and all(c == 1 for c in managed_counts.values())
-    ):
-        return None, set(), set(), unmapped, init_missing
-    removed = (current - desired) | purged
-    added = desired - current
-    insert_text = "".join(f"[[Category:{n}]]\n" for n in sorted(desired))
-    # 删受管行与待清空行；在首个删除位插入 desired（保持块位置稳定）
+    )
+
+
+def insert_category_text(text, insert_text, managed, excluded):
+    """删受管/待清空行，在首个删除位或页尾插入目标分类。"""
     parts, cur, placed = [], 0, False
     for m in CAT_LINE_RE.finditer(text):
         name = normalize(m.group(1).strip())
@@ -296,14 +321,50 @@ def compute_sync(
         cur = m.end()
     parts.append(text[cur:])
     new_text = "".join(parts)
-    if not placed:
-        if lm := LANGLINK_LINE_RE.search(new_text):
-            # 插在语言链接块前（en 站惯例：分类行在语言链接前）
-            new_text = new_text[: lm.start()] + insert_text + new_text[lm.start() :]
-        else:
-            if not new_text.endswith("\n"):
-                new_text += "\n"
-            new_text += insert_text
+    if placed:
+        return new_text
+    if lm := LANGLINK_LINE_RE.search(new_text):
+        return new_text[: lm.start()] + insert_text + new_text[lm.start() :]
+    if not new_text.endswith("\n"):
+        new_text += "\n"
+    return new_text + insert_text
+
+
+def compute_sync(
+    text: str,
+    registered: set[str],
+    en_cats: list[str],
+    mapping: dict[str, str],
+    managed: set[str] | frozenset[str],
+    excluded: set[str] | frozenset[str],
+    init_cats: set[str] | frozenset[str],
+    conflicted: set[str] | frozenset[str] = frozenset(),
+) -> tuple[str | None, set[str], set[str], list[str], list[str]]:
+    """计算同步后的新源码。返回 (new_text|None, added, removed, unmapped, init_missing)。
+
+    new_text 为 None 表示无需改动。unmapped 是缺映射且未豁免的 en 分类。
+    excluded（自动清空分类成员 ∪ MW 追踪分类）优先于 mapping，其源码行
+    一律清除（残留清空职能）。映射目标属 init_cats 的不写入，仅当
+    registered 缺失时记入 init_missing 报告。受管源码行重复（集合比对
+    不可见）同样视为需改动——重写删全部受管行、按 desired 去重插入。
+    含任一冲突 en 的页面整轮保持现状，避免冲突目标与有效 managed 重叠时
+    既有的相关分类行被 desired/删除/去重路径误伤；冲突解除后下轮自动追平。
+    """
+    unmapped = unmapped_categories(en_cats, mapping, excluded, conflicted)
+    if set(en_cats) & set(conflicted):
+        return None, set(), set(), unmapped, []
+    source_names, current, purged, managed_counts = source_category_state(
+        text, managed, excluded
+    )
+    desired, init_missing = desired_categories(
+        source_names, registered, en_cats, mapping, excluded, init_cats
+    )
+    if is_synchronized(current, desired, purged, managed_counts):
+        return None, set(), set(), unmapped, init_missing
+    removed = (current - desired) | purged
+    added = desired - current
+    insert_text = "".join(f"[[Category:{n}]]\n" for n in sorted(desired))
+    new_text = insert_category_text(text, insert_text, managed, excluded)
     return new_text, added, removed, unmapped, init_missing
 
 
@@ -361,6 +422,52 @@ def build_report(
     return "\n".join(lines) + "\n"
 
 
+def parse_page_snapshot(page: dict) -> tuple[str, set[str], int]:
+    """API 页面响应 → (源码, registered 分类, revid)。"""
+    rev = page["revisions"][0]
+    return (
+        rev["slots"]["main"]["content"],
+        {c["title"].removeprefix("Category:") for c in page.get("categories", [])},
+        rev["revid"],
+    )
+
+
+def load_page_snapshot(site, title: str) -> tuple[str, set[str], int]:
+    """冲突后重读单页的最新源码、registered 分类与 revid。"""
+    data = site.simple_request(
+        action="query",
+        prop="revisions|categories",
+        titles=title,
+        rvprop="ids|content",
+        rvslots="main",
+        cllimit="500",
+        formatversion="2",
+        format="json",
+    ).submit()
+    return parse_page_snapshot(data["query"]["pages"][0])
+
+
+def save_category_page(site, title, result, revid, recompute):
+    """绑定快照 revid 保存；冲突时按最新快照重算一次，仍冲突则抛出。"""
+    for attempt in range(2):
+        page = pwb.Page(site, title)
+        page.text = result[0]
+        try:
+            page.save(summary=SUMMARY, bot=True, baserevid=revid)
+            return result
+        except EditConflictError:
+            if attempt:
+                raise
+            text, registered, revid = load_page_snapshot(site, title)
+            result = recompute(text, registered)
+            if result[0] is None:
+                return result
+            pwb.info(
+                f"{title}: 编辑冲突，按最新修订重算 +{sorted(result[1])} -{sorted(result[2])}"
+            )
+    raise AssertionError("unreachable")
+
+
 def batched(site, titles: list[str], **params) -> list[tuple[list[str], dict]]:
     """titles= 50/批查询（wiki-access 两阶段配方的批内部分）。
 
@@ -380,6 +487,68 @@ def batched(site, titles: list[str], **params) -> list[tuple[list[str], dict]]:
     return out
 
 
+def recompute_category_snapshot(
+    text,
+    registered,
+    *,
+    en_cats,
+    mapping,
+    managed,
+    excluded,
+    init_cats,
+    conflicted,
+):
+    """编辑冲突后的 zh 新快照重算；新 en 链接没有可靠分类快照时拒绝写入。"""
+    cats = []
+    if (link := parse_en_link(text)) is not None:
+        cats = en_cats.get(link)
+        if cats is None:
+            raise RuntimeError(f"冲突后 en 页 {link} 无可用分类快照，停止写入")
+    return compute_sync(
+        text, registered, cats, mapping, managed, excluded, init_cats, conflicted
+    )
+
+
+def sync_category_pages(
+    site, zh_pages, en_cats, mapping, managed, excluded, init_cats, conflicted
+):
+    """逐页计算并保存分类同步，返回报告数据与实际写入页数。"""
+    unmapped: Counter = Counter()
+    init_missing: dict[str, list[str]] = {}
+    synced = 0
+    for title, (text, registered, revid) in zh_pages.items():
+        link = parse_en_link(text)
+        cats: list[str] = []
+        if link is not None:
+            got = en_cats.get(link)
+            if got is None:
+                pwb.warning(f"en 页 {link} 取数失败或已删除，{title} 保持现状")
+                continue
+            cats = got
+        result = compute_sync(
+            text, registered, cats, mapping, managed, excluded, init_cats, conflicted
+        )
+        if result[0] is not None:
+            pwb.info(f"{title}: +{sorted(result[1])} -{sorted(result[2])}")
+            if not config.simulate:
+                recompute = partial(
+                    recompute_category_snapshot,
+                    en_cats=en_cats,
+                    mapping=mapping,
+                    managed=managed,
+                    excluded=excluded,
+                    init_cats=init_cats,
+                    conflicted=conflicted,
+                )
+                result = save_category_page(site, title, result, revid, recompute)
+            if result[0] is not None:
+                synced += 1
+        unmapped.update(result[3])
+        if result[4]:
+            init_missing[title] = result[4]
+    return unmapped, init_missing, synced
+
+
 if __name__ == "__main__":
     pwb.handle_args()  # -always 等忽略：不询问；-s 走 config.simulate 分支
     zh = pwb.Site()
@@ -396,7 +565,7 @@ if __name__ == "__main__":
                 cat_pages[p["title"].removeprefix("Category:")] = p["revisions"][0][
                     "slots"
                 ]["main"]["content"]
-    mapping, conflicts, hints = build_mapping(cat_pages)
+    mapping, conflicts, hints, conflicted = build_mapping(cat_pages)
     managed = set(mapping) | set(mapping.values())
     excluded = find_autoempty(cat_pages) | TRACKING_CATEGORIES
     # Init 覆盖集：wiki 侧 Module 源码运行时解析（仓库零副本）
@@ -421,27 +590,24 @@ if __name__ == "__main__":
 
     # 2. zh 主空间非重定向页：两阶段取源码 + 已登记分类（同一批请求）
     zh_titles = [p.title() for p in zh.allpages(namespace=0, filterredir=False)]
-    zh_pages: dict[str, tuple[str, set[str]]] = {}
+    zh_pages: dict[str, tuple[str, set[str], int]] = {}
     for _batch, data in batched(
         zh,
         zh_titles,
         prop="revisions|categories",
-        rvprop="content",
+        rvprop="ids|content",
         rvslots="main",
         cllimit="500",
     ):
         for p in data["query"]["pages"]:
             if "revisions" not in p:
                 continue
-            zh_pages[p["title"]] = (
-                p["revisions"][0]["slots"]["main"]["content"],
-                {c["title"].removeprefix("Category:") for c in p.get("categories", [])},
-            )
+            zh_pages[p["title"]] = parse_page_snapshot(p)
     pwb.info(f"zh 主空间 {len(zh_pages)} 页")
 
     # 3. en 对应页分类（redirects=1 取最终目标）
     en_titles = sorted(
-        {link for text, _ in zh_pages.values() if (link := parse_en_link(text))}
+        {link for text, _, _ in zh_pages.values() if (link := parse_en_link(text))}
     )
     en_cats: dict[str, list[str] | None] = {}
     for batch, data in batched(
@@ -450,34 +616,10 @@ if __name__ == "__main__":
         en_cats.update(resolve_en_cats(data, batch))
     pwb.info(f"en 对应页 {len(en_cats)} 页")
 
-    # 4. 逐页 diff + 写入（无 en 链接的页只做残留清空）
-    unmapped: Counter = Counter()
-    init_missing: dict[str, list[str]] = {}
-    synced = 0
-    for title, (text, registered) in zh_pages.items():
-        link = parse_en_link(text)
-        cats: list[str] = []
-        if link is not None:
-            got = en_cats.get(link)
-            if got is None:
-                pwb.warning(f"en 页 {link} 取数失败或已删除，{title} 保持现状")
-                continue
-            cats = got
-        new_text, added, removed, page_unmapped, page_init_missing = compute_sync(
-            text, registered, cats, mapping, managed, excluded, init_cats
-        )
-        unmapped.update(page_unmapped)
-        if page_init_missing:
-            init_missing[title] = page_init_missing
-        if new_text is None:
-            continue
-        pwb.info(f"{title}: +{sorted(added)} -{sorted(removed)}")
-        synced += 1
-        if config.simulate:
-            continue  # -s 干跑：改动已逐条打印
-        page = pwb.Page(zh, title)
-        page.text = new_text
-        page.save(summary=SUMMARY, bot=True)
+    # 4. 逐页 diff + 写入（无 en 链接的页只做残留清空；保存绑定快照 revid）
+    unmapped, init_missing, synced = sync_category_pages(
+        zh, zh_pages, en_cats, mapping, managed, excluded, init_cats, conflicted
+    )
     pwb.info(f"同步 {synced} 页；未映射分类 {len(unmapped)} 类")
 
     # 5. 报告页（有变更才编辑）

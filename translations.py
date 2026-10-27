@@ -619,7 +619,7 @@ ENTRIES: list[Entry] = [
         std="西里乌斯",
         ja="シリウス·ロマネコンティ",
         en="Sirius",
-        aliases=("[席敘西][呂莉里][乌厄]斯",),
+        aliases=("[席叙西][吕莉里][乌厄]斯",),
     ),
     Entry(
         std="罗曼尼康帝",
@@ -1219,7 +1219,7 @@ ENTRIES: list[Entry] = [
         std="伊戈尔",
         ja="イゴール·ケナシュ",
         en="Igor",
-        aliases=("伊格爾",),
+        aliases=("伊格尔",),
         note="角色；全名 伊戈尔·肯纳修",
     ),
     Entry(
@@ -1321,7 +1321,7 @@ ENTRIES: list[Entry] = [
         std="吉奥尼斯",
         ja="ジオニス·ルグニカ",
         en="Gionis",
-        aliases=("吉歐尼斯",),
+        aliases=("吉欧尼斯",),
         note="角色；全名 吉奥尼斯·卢克尼卡",
     ),
     Entry(
@@ -1570,7 +1570,7 @@ ENTRIES: list[Entry] = [
         std="拉塞尔",
         ja="ラッセル·フェロー",
         en="Russell",
-        aliases=("拉賽爾",),
+        aliases=("拉赛尔",),
         note="全名 拉塞尔·菲洛",
     ),
     Entry(

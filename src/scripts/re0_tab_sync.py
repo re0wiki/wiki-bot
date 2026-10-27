@@ -172,28 +172,42 @@ def _check_serials(
     return astem, tnum, ttail
 
 
+def _unique_anchor(vlines: list[str], anchor: str) -> int | None:
+    anchors = [
+        i
+        for i, line in enumerate(vlines)
+        if (m := RE_ENTRY_LINE.match(line.rstrip("\x0d\x0a"))) and m["link"] == anchor
+    ]
+    return anchors[0] if len(anchors) == 1 else None
+
+
+def _find_tab_start(vlines: list[str], anchor_pos: int) -> int | None:
+    lo = anchor_pos
+    while lo > 0 and not RE_TAB_OPEN.match(vlines[lo]):
+        lo -= 1
+    return lo if RE_TAB_OPEN.match(vlines[lo]) else None
+
+
+def _find_tab_end(vlines: list[str], anchor_pos: int) -> int | None:
+    hi = anchor_pos
+    while hi < len(vlines) and not RE_TAB_CLOSE.match(vlines[hi]):
+        hi += 1
+    return hi if hi < len(vlines) else None
+
+
 def _locate_block(vlines: list[str], anchor: str) -> tuple[int, int, int] | None:
     """唯一锚行所在 {{Tab}} 块，返回 (锚行号, 块首行号, 块尾行号)。
 
     锚不唯一、不在块内、块未闭合、块含注释均返回 None。
     """
-    anchors = [
-        i
-        for i, line in enumerate(vlines)
-        if (m := RE_ENTRY_LINE.match(line.rstrip("\r\n"))) and m["link"] == anchor
-    ]
-    if len(anchors) != 1:
+    a = _unique_anchor(vlines, anchor)
+    if a is None:
         return None
-    a = anchors[0]
-    lo = a
-    while lo > 0 and not RE_TAB_OPEN.match(vlines[lo]):
-        lo -= 1
-    if not RE_TAB_OPEN.match(vlines[lo]):
+    lo = _find_tab_start(vlines, a)
+    if lo is None:
         return None  # 锚不在任何 {{Tab}} 块内
-    hi = a
-    while hi < len(vlines) and not RE_TAB_CLOSE.match(vlines[hi]):
-        hi += 1
-    if hi >= len(vlines):
+    hi = _find_tab_end(vlines, a)
+    if hi is None:
         return None  # 块未闭合，模板形态异常
     if any("<!--" in line for line in vlines[lo : hi + 1]):
         return None  # 含注释块放弃机械处理
@@ -245,11 +259,10 @@ def insert_entry(source: str, anchor: str, target: str, direction: str) -> str |
     return _insert_line(source, vmap, pos, f"|[[{target}|{tnum}]]\n")
 
 
-def mount_candidates(
-    zh_page: str, checks: list[dict], pages: dict, tab_links: dict
-) -> tuple[list[str] | None, str | None]:
-    """挂载候选：同系列键邻居 Tab 全票一致且链接集含邻居页，返回 (tab 列表, 原因)。"""
-    own_skel = _series_key(pages[zh_page]["en"])
+def _neighbor_tabsets(
+    own_skel: str, checks: list[dict], pages: dict
+) -> dict[str, frozenset]:
+    """同系列键且有 Tab 的链上邻居及其 Tab 集合。"""
     tabsets = {}
     for c in checks:
         t = c["zh_target"]
@@ -258,6 +271,15 @@ def mount_candidates(
         if _series_key(pages[t]["en"]) != own_skel:
             continue  # 跨季/跨章边界的邻居不投票
         tabsets[t] = frozenset(pages[t]["tabs"])
+    return tabsets
+
+
+def mount_candidates(
+    zh_page: str, checks: list[dict], pages: dict, tab_links: dict
+) -> tuple[list[str] | None, str | None]:
+    """挂载候选：同系列键邻居 Tab 全票一致且链接集含邻居页，返回 (tab 列表, 原因)。"""
+    own_skel = _series_key(pages[zh_page]["en"])
+    tabsets = _neighbor_tabsets(own_skel, checks, pages)
     if not tabsets:
         return None, "en 链上无同系列键的有 Tab zh 邻居"
     distinct = set(tabsets.values())

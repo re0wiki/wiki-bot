@@ -6,6 +6,7 @@
 import datetime
 import json
 import re
+from pathlib import Path
 
 import pywikibot
 from pywikibot.data import api
@@ -77,6 +78,7 @@ for t in sorted(low):
 
 today = datetime.datetime.now(tz=datetime.UTC).date()
 out = f"logs/template_usage_recheck_{today:%Y-%m-%d}.json"
+Path(out).parent.mkdir(parents=True, exist_ok=True)
 with open(out, "w", encoding="utf-8") as f:
     json.dump(
         {t: u for t, u in sorted(result.items())}, f, ensure_ascii=False, indent=1

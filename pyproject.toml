@@ -5,6 +5,7 @@ description = "用于 Re:从零开始的异世界生活 Wiki 的一些脚本"
 readme = "README.md"
 requires-python = ">=3.14"
 dependencies = [
+    "filelock>=4.2.4",
     "opencc>=1.2.0",
     "regex>=2026.7.19",
     "tqdm>=4.67.3",
@@ -17,7 +18,7 @@ extend-exclude = ['pwb', 'logs', '*.md']
 # 改名前靠的是根目录 pywikibot/ 被探测到）。
 src = [".", "pwb"]
 # watchdog 由 Hermes cron 用 runpy 跑在 Hermes 自带的 Python 3.11 下（不走本
-# 项目 3.14 venv），不能让它用上 PEP 758 的无括号 except（ruff 0.16+ 按
+# 项目 venv，requires-python >=3.14），不能让它用上 PEP 758 的无括号 except（ruff 0.16+ 按
 # requires-python 3.14 会把括号脱掉，脚本在 3.11 下直接起不来）。
 per-file-target-version = { "src/tools/recent_changes_watchdog.py" = "py311" }
 

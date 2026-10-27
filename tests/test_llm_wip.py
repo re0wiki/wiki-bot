@@ -99,7 +99,7 @@ def test_resolve_wip_bad_marker_refuses(tmp_path, monkeypatch):
             101,
             lt.BOT,
             "编辑了但没标记。",
-            comment="LLM(K3): revid 100（5.0 年无人类编辑）",
+            comment="LLM(K3.1 Pro): revid 100（5.0 年无人类编辑）",
         ),
     )
     with pytest.raises(SystemExit, match="wip 异常"):
@@ -147,7 +147,7 @@ def test_std_summary(monkeypatch):
 
     monkeypatch.setattr(lt, "api", fake_api)
     s = lt.std_summary(META, tagged=False)
-    assert s.startswith("LLM(K3): revid 100（")
+    assert s.startswith("LLM(K3.1 Pro): revid 100（")
     assert "无人类编辑，据 [[en:Test]] 自动更新；" in s
     assert "待修撰 100 条占全站 50.0%，机翻待校对 41 条占待修撰 41.0%）" in s
     s = lt.std_summary(META, tagged=True)
@@ -190,6 +190,43 @@ def test_verify_edit_head_change_fails(tmp_path, monkeypatch):
     stub_api(monkeypatch, make_rev(101, lt.BOT, bad))
     with pytest.raises(SystemExit, match="页首"):
         lt.verify_edit("角色_测试", META)
+
+
+@pytest.mark.parametrize(
+    ("conv_template", "new_template"),
+    [
+        ("{{Quote|A quote}}", "{{Quote|一句引语}}"),
+        (
+            "{{Infobox character| name = Subaru}}",
+            "{{Infobox character| name = 菜月·昴}}",
+        ),
+    ],
+)
+def test_verify_edit_allows_leading_content_templates(
+    tmp_path, monkeypatch, conv_template, new_template
+):
+    """Quote/Infobox 位于页首也属正文，字段可翻译，不按框架改动拒绝。"""
+    work = make_work(tmp_path, monkeypatch)
+    slug = "角色_测试"
+    (work / f"{slug}.conv.txt").write_text(
+        f"{conv_template}\n新文。\n", encoding="utf-8"
+    )
+    new_text = GOOD_NEW.replace("新文。", f"{new_template}\n新文。")
+    stub_api(monkeypatch, make_rev(101, lt.BOT, new_text))
+    lt.verify_edit(slug, META)
+
+
+def test_verify_edit_language_tail_change_fails(tmp_path, monkeypatch):
+    """语言链接尾块独立于正文白名单逐字核验，删一条也不能通过。"""
+    work = make_work(tmp_path, monkeypatch)
+    slug = "角色_测试"
+    (work / f"{slug}.zh.txt").write_text(
+        "{{Init}}\n\n旧文。\n\n[[de:Test]]\n[[en:Test]]\n", encoding="utf-8"
+    )
+    new_text = GOOD_NEW + "\n[[en:Test]]\n"  # 删除 [[de:Test]]
+    stub_api(monkeypatch, make_rev(101, lt.BOT, new_text))
+    with pytest.raises(SystemExit, match="语言链接"):
+        lt.verify_edit(slug, META)
 
 
 def test_agent_rules_injectable():

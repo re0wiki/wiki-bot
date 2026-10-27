@@ -152,6 +152,18 @@ def subpage_root(en_link: str) -> tuple[str, str]:
     return root.strip(), en_link[len(root) :]
 
 
+def _page_prevnext(zh_title, info, subpages, en_content, resolve):
+    """取单页自身 prev/next；为空时按规则回退到 en 根页。"""
+    content = en_content.get(resolve(info["en"]))
+    pairs = _prevnext_pairs(content) if content is not None else []
+    if pairs or zh_title not in subpages:
+        return pairs, ""
+    root, suffix = subpages[zh_title]
+    content = en_content.get(resolve(root))
+    pairs = _prevnext_pairs(content) if content is not None else []
+    return pairs, suffix
+
+
 def iter_prevnext(pages, en_content, resolve):
     """逐页 yield (zh_title, direction, en_target)。子页派生规则见模块 docstring。"""
     subpages = {
@@ -162,15 +174,34 @@ def iter_prevnext(pages, en_content, resolve):
     for zh_title, info in pages.items():
         if not info["en"]:
             continue
-        content = en_content.get(resolve(info["en"]))
-        pairs = _prevnext_pairs(content) if content is not None else []
-        suffix = ""
-        if not pairs and zh_title in subpages:
-            root, suffix = subpages[zh_title]
-            content = en_content.get(resolve(root))
-            pairs = _prevnext_pairs(content) if content is not None else []
+        pairs, suffix = _page_prevnext(zh_title, info, subpages, en_content, resolve)
         for direction, target in pairs:
             yield zh_title, direction, target + suffix
+
+
+def _make_check(zh_title, direction, en_target, en2zh_r, resolve, en_missing):
+    return {
+        "zh_page": zh_title,
+        "direction": direction,
+        "en_target": en_target,
+        "zh_target": en2zh_r.get(resolve(en_target)) or en2zh_r.get(en_target),
+        "en_redlink": en_target in en_missing or resolve(en_target) in en_missing,
+    }
+
+
+def _resolve_extra_targets(en_site, checks, en2zh_r, en_missing) -> None:
+    """对首批查询集外的 en 目标补一轮重定向归一并回写检查项。"""
+    unresolved = {
+        c["en_target"] for c in checks if c["zh_target"] is None and not c["en_redlink"]
+    }
+    if not unresolved:
+        return
+    _, redir2, missing2 = batch_query(en_site, unresolved)
+    en_missing |= missing2
+    for c in checks:
+        if c["zh_target"] is None and c["en_target"] in redir2:
+            c["zh_target"] = en2zh_r.get(redir2[c["en_target"]])
+            c["en_redlink"] = redir2[c["en_target"]] in en_missing
 
 
 def collect_checks(en_site, pages, en2zh):
@@ -182,31 +213,11 @@ def collect_checks(en_site, pages, en2zh):
         return en_redir.get(t, t)
 
     en2zh_r = {resolve(k): v for k, v in en2zh.items()}
-
-    checks = []
-    for zh_title, direction, en_target in iter_prevnext(pages, en_content, resolve):
-        checks.append(
-            {
-                "zh_page": zh_title,
-                "direction": direction,
-                "en_target": en_target,
-                "zh_target": en2zh_r.get(resolve(en_target)) or en2zh_r.get(en_target),
-                "en_redlink": en_target in en_missing
-                or resolve(en_target) in en_missing,
-            }
-        )
-    # 不在首批查询集内的 en 目标补一轮重定向归一后重查
-    unresolved = {
-        c["en_target"] for c in checks if c["zh_target"] is None and not c["en_redlink"]
-    }
-    if not unresolved:
-        return checks
-    _, redir2, missing2 = batch_query(en_site, unresolved)
-    en_missing |= missing2
-    for c in checks:
-        if c["zh_target"] is None and c["en_target"] in redir2:
-            c["zh_target"] = en2zh_r.get(redir2[c["en_target"]])
-            c["en_redlink"] = redir2[c["en_target"]] in en_missing
+    checks = [
+        _make_check(zh_title, direction, en_target, en2zh_r, resolve, en_missing)
+        for zh_title, direction, en_target in iter_prevnext(pages, en_content, resolve)
+    ]
+    _resolve_extra_targets(en_site, checks, en2zh_r, en_missing)
     return checks
 
 
@@ -265,40 +276,51 @@ def self_entry_missing(pages, tab_links_live, skip=frozenset()):
     return sorted(out)
 
 
+def _direct_links(page, pages, tab_links) -> set:
+    tabs = pages[page]["tabs"]
+    return set().union(*(tab_links.get(t, set()) for t in tabs)) if tabs else set()
+
+
+def _layered_via(page, target, pages, tab_links):
+    """两跳分层：本页 Tab 链接的季/章总页，其 Tab 链接集包含 target。"""
+    for link in _direct_links(page, pages, tab_links):
+        info = pages.get(link)
+        if (
+            info
+            and info["tabs"]
+            and target in set().union(*(tab_links.get(t, set()) for t in info["tabs"]))
+        ):
+            return link
+    return None
+
+
+def _classify_check(c, pages, tab_links):
+    if c["en_redlink"]:
+        return "na", (c, "en 红链")
+    if c["zh_target"] is None:
+        return "na", (c, "zh 无对应页")
+    if not pages[c["zh_page"]]["tabs"]:
+        return "uncovered", (c, "页面无 Tab")
+    if c["zh_target"] in _direct_links(c["zh_page"], pages, tab_links):
+        return "covered", c
+    via = _layered_via(c["zh_page"], c["zh_target"], pages, tab_links)
+    if via:
+        return "layered", (c, via)
+    return "uncovered", (c, "目标不在 Tab 链接集（含两跳）")
+
+
 def classify_checks(pages, checks, tab_links):
     """逐条判定：直接覆盖 / 分层覆盖（两跳）/ N/A / 未覆盖。"""
-
-    def direct(page):
-        tabs = pages[page]["tabs"]
-        return set().union(*(tab_links.get(t, set()) for t in tabs)) if tabs else set()
-
-    def layered_via(page, target):
-        """两跳分层：本页 Tab 链接的季/章总页，其 Tab 链接集包含 target。"""
-        for link in direct(page):
-            info = pages.get(link)
-            if (
-                info
-                and info["tabs"]
-                and target
-                in set().union(*(tab_links.get(t, set()) for t in info["tabs"]))
-            ):
-                return link
-        return None
-
     covered, layered, na, uncovered = [], [], [], []
+    buckets = {
+        "covered": covered,
+        "layered": layered,
+        "na": na,
+        "uncovered": uncovered,
+    }
     for c in checks:
-        if c["en_redlink"]:
-            na.append((c, "en 红链"))
-        elif c["zh_target"] is None:
-            na.append((c, "zh 无对应页"))
-        elif not pages[c["zh_page"]]["tabs"]:
-            uncovered.append((c, "页面无 Tab"))
-        elif c["zh_target"] in direct(c["zh_page"]):
-            covered.append(c)
-        elif via := layered_via(c["zh_page"], c["zh_target"]):
-            layered.append((c, via))
-        else:
-            uncovered.append((c, "目标不在 Tab 链接集（含两跳）"))
+        kind, item = _classify_check(c, pages, tab_links)
+        buckets[kind].append(item)
     return covered, layered, na, uncovered
 
 

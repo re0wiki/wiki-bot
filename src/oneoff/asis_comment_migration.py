@@ -147,27 +147,19 @@ def verify_conversiontable(new: str) -> None:
     assert check_balance(new), "转换表标记不配平"
 
 
-def main() -> None:
-    parser = argparse.ArgumentParser()
-    parser.add_argument("--apply", action="store_true", help="实际写入（默认干跑）")
-    args = parser.parse_args()
+def candidates(site):
+    for ns_id in SCAN_NS:
+        pages = list(site.allpages(namespace=ns_id))
+        for p in site.preloadpages(iter(pages), content=True, groupsize=50):
+            if p.isRedirectPage():
+                continue
+            if "as-is" in p.text or "nobot" in p.text:
+                yield p
 
-    site = pywikibot.Site("zh", "re0")
-    if args.apply:
-        site.login()
-        assert site.user() == "IchiSanNi"
 
-    def candidates():
-        for ns_id in SCAN_NS:
-            pages = list(site.allpages(namespace=ns_id))
-            for p in site.preloadpages(iter(pages), content=True, groupsize=50):
-                if p.isRedirectPage():
-                    continue
-                if "as-is" in p.text or "nobot" in p.text:
-                    yield p
-
+def collect_changes(pages):
     changed, skipped = [], []
-    for p in candidates():
+    for p in pages:
         title = p.title()
         try:
             new = transform(title, p.text)
@@ -180,21 +172,37 @@ def main() -> None:
             skipped.append(f"{title}: 变换后无变化（预期外）")
             continue
         changed.append((p, new))
+    return changed, skipped
 
-    print(
-        f"\n=== {'APPLY' if args.apply else 'DRY RUN'}: {len(changed)} to change, {len(skipped)} skipped ==="
-    )
-    for s in skipped:
-        print(f"SKIP {s}")
 
+def apply_changes(changed, should_apply):
     for p, new in changed:
-        if not args.apply:
+        if not should_apply:
             print(f"WOULD EDIT {p.title()} ({len(p.text)} -> {len(new)})")
             continue
         print(f"EDIT {p.title()}")
         p.text = new
         p.save(summary=SUMMARY, bot=True, minor=False)
 
+
+def main() -> None:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--apply", action="store_true", help="实际写入（默认干跑）")
+    args = parser.parse_args()
+
+    site = pywikibot.Site("zh", "re0")
+    if args.apply:
+        site.login()
+        assert site.user() == "IchiSanNi"
+
+    changed, skipped = collect_changes(candidates(site))
+    print(
+        f"\n=== {'APPLY' if args.apply else 'DRY RUN'}: {len(changed)} to change, {len(skipped)} skipped ==="
+    )
+    for s in skipped:
+        print(f"SKIP {s}")
+
+    apply_changes(changed, args.apply)
     if skipped:
         sys.exit(1)
 

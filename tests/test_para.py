@@ -1,8 +1,11 @@
 """para fix 的 previous/next 参数删除规则测试（离线，不触 wiki）。"""
 
 import importlib
-import re
 from typing import Any
+
+import regex as re
+
+from pywikibot import textlib
 
 fx = importlib.import_module("pywikibot.fixes")
 
@@ -58,6 +61,36 @@ def test_tabber_separator_untouched():
     # （误伤实证：|-| Light Novel = 曾被打成 |-| novel = 并残留至今）
     src = "<tabber>\n|-| Light Novel =\nfoo.png\n|-| Manga =\nbar.png\n</tabber>\n"
     assert apply_para(src) == src
+
+
+def apply_para_exceptions(text: str) -> str:
+    fix = user_fixes["para"]
+    exceptions = [tag for tag in fix["exceptions"]["inside-tags"] if tag != "interwiki"]
+    out = text
+    for pat, repl in fix["replacements"]:
+        out = textlib.replaceExcept(
+            out, re.compile(pat, re.IGNORECASE), repl, exceptions
+        )
+    return out
+
+
+def test_wikitable_cells_untouched():
+    src = '{| class="wikitable"\n| Light Novel = 第一卷\n| Manga = 漫画\n|}\n'
+    assert apply_para_exceptions(src) == src
+
+
+def test_nested_wikitable_cells_untouched():
+    src = (
+        '{| class="outer"\n'
+        "| 外层文字\n"
+        '{| class="inner"\n'
+        "| Light Novel = 内层\n"
+        "|}\n"
+        "| Light Novel = 外层\n"
+        "| Manga = 外层漫画\n"
+        "|}\n"
+    )
+    assert apply_para_exceptions(src) == src
 
 
 def test_param_names_still_normalized():

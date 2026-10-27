@@ -1,7 +1,7 @@
 """任务列表。
 
 每个任务有稳定名字：main.py 可按名字或编号调用（编号随插入平移，名字不变）。
-fix 类任务的名字与 -fix: 参数一致，方便对照（如 `python main.py fix:translation -s`）。
+fix 类任务的名字与 -fix: 参数一致，方便对照（如 `uv run python main.py fix:translation -s`）。
 wiki 上的状态页 User:IchiSanNi/jobs 与本表对应。
 """
 

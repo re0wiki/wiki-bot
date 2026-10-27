@@ -51,16 +51,7 @@ def expand_line(line: str) -> tuple[str, int]:
     return LINK_RE.sub(repl, line), hits
 
 
-def main() -> None:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--apply", action="store_true", help="实际写入（默认干跑）")
-    args = ap.parse_args()
-
-    site = pywikibot.Site("zh", "re0")
-    if args.apply:
-        site.login()
-        assert site.user() == "IchiSanNi"
-
+def fetch_pages(site):
     # 全量取主空间源码（两阶段配方的库内封装，见 .agents/skills/wiki-access/SKILL.md）
     gen = api.QueryGenerator(
         site=site,
@@ -95,28 +86,50 @@ def main() -> None:
     assert len(pages) >= articles, (
         f"只抓到 {len(pages)} 页，少于 articles={articles}，分页被截断"
     )
+    return pages
 
+
+def expand_text(title, text):
+    new_lines = []
+    page_hits = 0
+    for line in text.split("\n"):
+        new_line, n = expand_line(line)
+        if n:
+            page_hits += n
+            print(f"  {title}:\n    - {line.strip()}\n    + {new_line.strip()}")
+        new_lines.append(new_line)
+    return "\n".join(new_lines), page_hits
+
+
+def process_pages(site, pages, should_apply):
     changed_pages = 0
     changed_links = 0
     for title in sorted(pages):
-        text = pages[title]
-        new_lines = []
-        page_hits = 0
-        for line in text.split("\n"):
-            new_line, n = expand_line(line)
-            if n:
-                page_hits += n
-                print(f"  {title}:\n    - {line.strip()}\n    + {new_line.strip()}")
-            new_lines.append(new_line)
+        new, page_hits = expand_text(title, pages[title])
         if not page_hits:
             continue
         changed_pages += 1
         changed_links += page_hits
-        if args.apply:
+        if should_apply:
             page = pywikibot.Page(site, title)
-            page.text = "\n".join(new_lines)
+            page.text = new
             page.save(summary=SUMMARY, bot=True)
             print(f"  已保存 {title}")
+    return changed_pages, changed_links
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--apply", action="store_true", help="实际写入（默认干跑）")
+    args = ap.parse_args()
+
+    site = pywikibot.Site("zh", "re0")
+    if args.apply:
+        site.login()
+        assert site.user() == "IchiSanNi"
+
+    pages = fetch_pages(site)
+    changed_pages, changed_links = process_pages(site, pages, args.apply)
     print(
         f"{'已修改' if args.apply else '干跑，将修改'} "
         f"{changed_pages} 页 / {changed_links} 处链接"

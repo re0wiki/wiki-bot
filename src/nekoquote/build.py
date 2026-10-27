@@ -37,6 +37,12 @@ def snowflake_jst(tid):
     return datetime.fromtimestamp(ms / 1000, JST)
 
 
+def is_valid_tweet_month(month: str, now: datetime | None = None) -> bool:
+    """只拒绝早于收录起点或晚于当前月的异常 ID，允许自然跨年。"""
+    current = (now or datetime.now(JST)).strftime("%Y-%m")
+    return "2010-01" <= month <= current
+
+
 def parse_table(lua):
     """返回 [(fields=[(name,quote,raw)], block_text)]。"""
     out = []
@@ -53,9 +59,7 @@ def fget(fields, name):
     return None
 
 
-def derive_date(fields, src_table):
-    """返回 (yyyy-mm, sort_key, note)。note 非空 = 特殊处置说明。"""
-    src = fget(fields, "src") or ""
+def _date_from_status(fields, src):
     m = STATUS_RE.search(src)
     if not m:
         # 推链接可能在内容字段的 ref 里（罗兹瓦尔 FreeTalk 8 条）
@@ -65,16 +69,24 @@ def derive_date(fields, src_table):
             m = STATUS_RE.search(r)
             if m:
                 break
-    if m:
-        dt = snowflake_jst(m.group(1))
-        return dt.strftime("%Y-%m"), dt, ""
+    if not m:
+        return None
+    dt = snowflake_jst(m.group(1))
+    return dt.strftime("%Y-%m"), dt, ""
+
+
+def _date_from_iso(src):
     m = DATE_ISO.search(src)
-    if m:
-        return (
-            f"{m.group(1)}-{m.group(2)}",
-            datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), tzinfo=JST),
-            "",
-        )
+    if not m:
+        return None
+    return (
+        f"{m.group(1)}-{m.group(2)}",
+        datetime(int(m.group(1)), int(m.group(2)), int(m.group(3)), tzinfo=JST),
+        "",
+    )
+
+
+def _date_from_special_case(src):
     m = DATE_CN.search(src)
     if m and "～" not in src:
         return f"{m.group(1)}-{int(m.group(2)):02d}", None, ""
@@ -87,6 +99,16 @@ def derive_date(fields, src_table):
             "ask 孤儿/抄录→2014-09 兜底",
         )  # 抄录的精确继承在合并阶段做
     return None, None, "!!无日期"
+
+
+def derive_date(fields, src_table):
+    """返回 (yyyy-mm, sort_key, note)。note 非空 = 特殊处置说明。"""
+    src = fget(fields, "src") or ""
+    return (
+        _date_from_status(fields, src)
+        or _date_from_iso(src)
+        or _date_from_special_case(src)
+    )
 
 
 def esc(s):
@@ -266,9 +288,50 @@ def raw_tweet_entry(tid, rec, q_text):
         q_clean = re.sub(r"^(@\w+\s*)+", "", q_text).strip()
         q_clean = re.sub(r"\s*\r?\n\s*", "<br/>", q_clean)
         fields.append(("jq", '"', esc(strip_tco(q_clean))))
-    ja = re.sub(r"\s*\r?\n\s*", "<br/>", strip_tco(rec["text"].strip()))
-    fields.append(("jt", '"', esc(ja)))
+    ja = re.sub(r"\s*\r?\n\s*", "<br/>", strip_tco(rec.get("text", "").strip()))
+    if ja:
+        fields.append(("jt", '"', esc(ja)))
     return {"fields": fields, "key": dt, "from": "raw", "note": ""}
+
+
+def _question_fields(rec, tw, zh_map):
+    """提问推正文（若已抓到）及其中文（若已译），按条目内顺序返回。"""
+    fields = []
+    qid = rec.get("reply_to")
+    if qid and qid in tw and tw[qid].get("author") != "nezumiironyanko":
+        q_clean = re.sub(r"^(@\w+\s*)+", "", tw[qid].get("text", "")).strip()
+        q_clean = re.sub(r"\s*\r?\n\s*", "<br/>", q_clean)
+        if q_clean:
+            fields.append(("jq", '"', esc(strip_tco(q_clean))))
+        qzh = zh_map.get(qid, {}).get("qzh")
+        if qzh:
+            fields.insert(0, ("q", '"', esc(qzh)))
+    return fields
+
+
+def _add_translation(entry, zh_record):
+    zh = zh_record.get("zh")
+    if not zh:
+        return
+    entry["fields"].append(("t", '"', esc(zh)))
+    # 机翻署名按生成时记录；缺失元数据时中止，避免错误归因
+    translator = f"{zh_record['provider'].capitalize()} {zh_record['model']}"
+    entry["fields"][0] = (
+        "src",
+        '"',
+        esc(entry["fields"][0][2] + f" · 译：{translator}"),
+    )
+
+
+def _prepare_raw_entry(tid, rec, tw, zh_map):
+    entry = raw_tweet_entry(tid, rec, None)
+    month = entry["key"].strftime("%Y-%m")
+    if not is_valid_tweet_month(month):
+        print(f"  !! 越界月份 {month}（脏 id {tid}），跳过")
+        return None
+    entry["fields"][1:1] = _question_fields(rec, tw, zh_map)
+    _add_translation(entry, zh_map.get(tid, {}))
+    return month, entry
 
 
 def merge_raw(buckets, existing_ids):
@@ -283,34 +346,28 @@ def merge_raw(buckets, existing_ids):
     for tid, rec in tw.items():
         if rec.get("author") != "nezumiironyanko" or tid in existing_ids:
             continue
-        e = raw_tweet_entry(tid, rec, None)
-        month = e["key"].strftime("%Y-%m")
-        if not ("2010-01" <= month <= "2026-12"):
-            print(f"  !! 越界月份 {month}（脏 id {tid}），跳过")
+        prepared = _prepare_raw_entry(tid, rec, tw, zh_map)
+        if prepared is None:
             continue
-        # jq：提问推正文（若已抓到）+ 其中文（若已译）
-        qid = rec.get("reply_to")
-        if qid and qid in tw and tw[qid].get("author") != "nezumiironyanko":
-            q_clean = re.sub(r"^(@\w+\s*)+", "", tw[qid]["text"]).strip()
-            q_clean = re.sub(r"\s*\r?\n\s*", "<br/>", q_clean)
-            e["fields"].insert(1, ("jq", '"', esc(strip_tco(q_clean))))
-            qzh = zh_map.get(qid, {}).get("qzh")
-            if qzh:
-                e["fields"].insert(1, ("q", '"', esc(qzh)))
-        zh = zh_map.get(tid, {}).get("zh")
-        if zh:
-            e["fields"].append(("t", '"', esc(zh)))
-            # 机翻署名
-            e["fields"][0] = ("src", '"', esc(e["fields"][0][2] + " · 译：Kimi K3"))
-        buckets.setdefault(month, []).append(e)
+        month, entry = prepared
+        buckets.setdefault(month, []).append(entry)
         n += 1
     return n
 
 
-def main():
-    # 数据源：本地基线 lua_base（旧主题表已在切流中删除，wiki 上的唯一副本就是月表）
+def _base_month(fields, source_month, src):
+    month, key, note = derive_date(fields, source_month)
+    if month is None and "第12集" in src:
+        # 由里乌斯表实况抄录：同一推文不同措辞（实况表对应条目 2016-06-26，人工核定）
+        month, note = "2016-06", "实况抄录语义归月"
+    if month is None:
+        # lua_base 条目：文件名即正确月份（首建已验证放置），编者注等无日期条目直接继承
+        month, note = source_month, "基线月继承"
+    return month, key, note
+
+
+def _load_base_buckets():
     buckets = {}
-    problems = []
     existing_ids = set()
     total = 0
     for f in sorted((DATA / "lua_base").glob("*.lua")):
@@ -318,24 +375,14 @@ def main():
             total += 1
             src = fget(fields, "src") or ""
             existing_ids.update(STATUS_RE.findall(src))
-            month, key, note = derive_date(fields, f.stem)
-            if month is None and "第12集" in src:
-                # 由里乌斯表实况抄录：同一推文不同措辞（实况表对应条目 2016-06-26，人工核定）
-                month, note = "2016-06", "实况抄录语义归月"
-            if month is None:
-                # lua_base 条目：文件名即正确月份（首建已验证放置），编者注等无日期条目直接继承
-                month, note = f.stem, "基线月继承"
+            month, key, note = _base_month(fields, f.stem, src)
             buckets.setdefault(month, []).append(
                 {"fields": fields, "key": key, "from": f.stem, "note": note}
             )
+    return buckets, existing_ids, total
 
-    print(
-        f"解析 {total} 条，入桶 {sum(len(v) for v in buckets.values())}，问题 {len(problems)}，既有推 id {len(existing_ids)}"
-    )
 
-    n_raw = merge_raw(buckets, existing_ids)
-    print(f"合流新推 {n_raw} 条")
-
+def _write_buckets(buckets):
     outdir = DATA / "lua"
     outdir.mkdir(parents=True, exist_ok=True)
     for month, entries in sorted(buckets.items()):
@@ -349,6 +396,21 @@ def main():
         )
         (outdir / f"{month}.lua").write_text(emit_table(entries), encoding="utf-8")
     emit_main(buckets.keys())
+    return outdir
+
+
+def main():
+    # 数据源：本地基线 lua_base（旧主题表已在切流中删除，wiki 上的唯一副本就是月表）
+    buckets, existing_ids, total = _load_base_buckets()
+    problems = []
+    print(
+        f"解析 {total} 条，入桶 {sum(len(v) for v in buckets.values())}，问题 {len(problems)}，既有推 id {len(existing_ids)}"
+    )
+
+    n_raw = merge_raw(buckets, existing_ids)
+    print(f"合流新推 {n_raw} 条")
+
+    outdir = _write_buckets(buckets)
     print(f"emit {len(buckets)} 张月表 → {outdir}，主模块 → {DATA / 'main.lua'}")
 
 

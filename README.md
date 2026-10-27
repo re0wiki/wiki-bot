@@ -15,19 +15,19 @@
 
 ## Deployment
 
-- **本项目**：`git clone --recurse-submodules https://github.com/re0wiki/wiki-bot.git`（`pywikibot/` 是 submodule，指向 re0wiki 的定制 fork，必须拉下来）
-- **Python**：3.14，用 [uv](https://docs.astral.sh/uv/) 安装依赖：`uv sync`
+- **本项目**：`git clone --recurse-submodules https://github.com/re0wiki/wiki-bot.git`（`pwb/` 是 submodule，指向 re0wiki 的定制 fork，必须拉下来）
+- **Python**：最低 3.14；解释器版本由 `.python-version` 选定，用 [uv](https://docs.astral.sh/uv/) 安装依赖：`uv sync`
 - [机器人密码 | Re:从零开始的异世界生活 Wiki | Fandom](https://rezero.fandom.com/zh/wiki/Special:BotPasswords)
 - **用户配置文件**
     1. [user-config.py#L17](./user-config.py#L17)（账号名，默认 IchiSanNi）
     2. 同目录下创建 `user-password.py` 并填写，格式为 `('<UserName>', BotPassword('<BotName>', '<BotPassword>'))`
-- **语录同步**（可选，循环任务 `nekoquote` 用）：根目录创建 `secrets.json`，格式 `{"discord_bot_token": "...", "llm": {"kimi": {"base_url": ..., "api_key": ..., "model": ...}}}`（前者读转发频道，后者新推自动翻译）。缺失时任务自动跳过 / 新推先以日文上线、配置后自动补译，不影响其他任务。
+- **语录同步**（可选，循环任务 `nekoquote` 用）：FxTwitter v2 采集无需密钥；自动翻译需根目录创建 `secrets.json`，格式 `{"llm": {"kimi": {"base_url": ..., "api_key": ..., "model": "k3.1-pro"}}}`。未配置时新推先以日文上线、配置后自动补译，不影响其他任务。
 - **Hermes agent 使用本仓库时**：在仓库目录跑一次 `hermes skills trust`，启用 `.agents/skills/` 下的 project-local skills（读写配方、审计 SOP 等流程知识）。
 
 ## Usage
 
-- 循环执行全部维护任务（常驻）：`python main.py`（加 `-s` 为模拟运行，不写 wiki）；执行任务：`python main.py <任务名或编号>...`（可传多个依次执行，`-h` 查看完整列表，任务名稳定、编号随插入平移）
-- 所有 pywikibot 自带脚本也可直接用：`python pwb/pwb.py <script> ...`，参见 [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
+- 循环执行全部维护任务（常驻）：`uv run python main.py`（加 `-s` 为模拟运行，不写 wiki）；执行任务：`uv run python main.py <任务名或编号>...`（可传多个依次执行，`-h` 查看完整列表，任务名稳定、编号随插入平移）
+- 所有 pywikibot 自带脚本也可直接用：`uv run python pwb/pwb.py <script> ...`，参见 [pywikibot/scripts at master · wikimedia/pywikibot](https://github.com/wikimedia/pywikibot/tree/master/scripts#readme)
 
 ## Status
 

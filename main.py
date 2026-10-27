@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 # region parser
 def gen_help(cmd: list[str]) -> str:
-    return f"python pwb/pwb.py {' '.join(f'"{s}"' for s in cmd)}"
+    return f"uv run python pwb/pwb.py {' '.join(f'"{s}"' for s in cmd)}"
 
 
 parser = argparse.ArgumentParser(

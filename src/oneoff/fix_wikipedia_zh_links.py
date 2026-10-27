@@ -66,6 +66,42 @@ def replacer(lang: str, orig: str, zh: str, text: str) -> tuple[str, int]:
     return pat.subn(r"[[wikipedia:zh:" + zh.replace("\\", r"\\") + r"\1]]", text)
 
 
+def build_todo(hits):
+    # 只保留映射表覆盖的目标：页面 -> [((lang, orig), zh)]
+    todo: dict[str, list[tuple[tuple[str, str], str]]] = {}
+    for (lang, orig), zh in ZH_MAP.items():
+        for title in sorted(hits.get(lang, {}).get(orig, ())):
+            todo.setdefault(title, []).append(((lang, orig), zh))
+    return todo
+
+
+def apply_items(title, items, text):
+    new = text
+    for (lang, orig), zh in items:
+        new, n = replacer(lang, orig, zh, new)
+        status = f"x{n}" if n else "未命中！"
+        print(
+            f"  {title}: [[wikipedia:{lang}:{orig}]] -> [[wikipedia:zh:{zh}]] {status}"
+        )
+    return new
+
+
+def process_todo(todo, should_apply):
+    changed = 0
+    for title, items in sorted(todo.items()):
+        page = pywikibot.Page(pywikibot.Site("zh", "re0"), title)
+        text = page.text
+        new = apply_items(title, items, text)
+        if new == text:
+            continue
+        changed += 1
+        if should_apply:
+            page.text = new
+            page.save(summary=SUMMARY, bot=True)
+            print(f"  已保存 {title}")
+    return changed
+
+
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--apply", action="store_true", help="实际写入（默认干跑）")
@@ -73,35 +109,14 @@ def main() -> None:
 
     hits, total = audit.scan()
     print(f"pages fetched: {total}")
-    # 只保留映射表覆盖的目标：页面 -> [((lang, orig), zh)]
-    todo: dict[str, list[tuple[tuple[str, str], str]]] = {}
-    for (lang, orig), zh in ZH_MAP.items():
-        for title in sorted(hits.get(lang, {}).get(orig, ())):
-            todo.setdefault(title, []).append(((lang, orig), zh))
+    todo = build_todo(hits)
 
     if args.apply:
         site = pywikibot.Site("zh", "re0")
         site.login()
         assert site.user() == "IchiSanNi"
 
-    changed = 0
-    for title, items in sorted(todo.items()):
-        page = pywikibot.Page(pywikibot.Site("zh", "re0"), title)
-        text = page.text
-        new = text
-        for (lang, orig), zh in items:
-            new, n = replacer(lang, orig, zh, new)
-            status = f"x{n}" if n else "未命中！"
-            print(
-                f"  {title}: [[wikipedia:{lang}:{orig}]] -> [[wikipedia:zh:{zh}]] {status}"
-            )
-        if new == text:
-            continue
-        changed += 1
-        if args.apply:
-            page.text = new
-            page.save(summary=SUMMARY, bot=True)
-            print(f"  已保存 {title}")
+    changed = process_todo(todo, args.apply)
     print(f"{'已修改' if args.apply else '干跑，将修改'} {changed} 页")
 
 

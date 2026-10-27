@@ -7,7 +7,8 @@
   水位线按「拉取到的全部改动（含被过滤的 bot 编辑）」的最大 rcid 推进，
   否则 bot 自己的编辑会永远卡住水位线。
 - 审查区间与触发时间解耦：拉取不设时间窗口，从最新向水位线翻页、碰到
-  rcid <= 水位线即停。因此漏触发（停机任意时长）、手动触发、改触发间隔
+  rcid <= 水位线即停；只有实际抵达旧水位线才允许推进，数据耗尽仍未抵达
+  则保持状态并非零退出。因此漏触发（停机任意时长）、手动触发、改触发间隔
   都不影响正确性；翻页也保证两次运行之间改动超过单页 500 条（如 bot 全站
   任务）时不漏掉中间的人类编辑。
 - 排除 bot：EXCLUDE_USERS 里的账号（IchiSanNi）**全部**编辑都排除——无论是否带
@@ -100,6 +101,7 @@ def fetch_new_changes(last_rcid: int) -> list[dict]:
     """
     out: list[dict] = []
     cont: dict = {}
+    reached = False
     while True:
         data = _get(
             {
@@ -118,23 +120,36 @@ def fetch_new_changes(last_rcid: int) -> list[dict]:
             break
         out.extend(rc)
         if min(c["rcid"] for c in rc) <= last_rcid:
+            reached = True
             break  # 已到水位线，更旧的无需再看
         if "continue" not in data:
             break
         cont = data["continue"]
+    if not reached:
+        oldest = min((c["rcid"] for c in out), default=None)
+        raise RuntimeError(
+            f"recentchanges 数据耗尽但未抵达旧水位线 {last_rcid}"
+            f"（最旧取得 rcid={oldest}）；保持原状态，拒绝推进"
+        )
     return out
 
 
 def group_consecutive(pending: list[dict]) -> list[dict]:
-    """同用户同页的**相邻**连续编辑合并为一组（最早 old_revid→最晚 revid）。
+    """同用户同页且 revid 连续的相邻编辑合并为一组（最早 old_revid→最晚 revid）。
 
     必须按相邻合并而不能按 (user,title) 全局合并：中间隔着他人编辑时
     （如 A 编辑 → B 编辑 → A 回退 B），全局合并会把他人改动藏进合并区间。
+    下一条 old_revid 不等于当前 to_rev 时同样拆组，防止被过滤编辑夹在区间内。
     """
     groups: list[dict] = []
     for c in sorted(pending, key=lambda c: c["rcid"]):
         user = c.get("user", "?")
-        if groups and groups[-1]["user"] == user and groups[-1]["title"] == c["title"]:
+        if (
+            groups
+            and groups[-1]["user"] == user
+            and groups[-1]["title"] == c["title"]
+            and groups[-1]["to_rev"] == c["old_revid"]
+        ):
             g = groups[-1]
             g["to_rev"] = c["revid"]
             g["rcids"].append(c["rcid"])
@@ -206,38 +221,37 @@ def fetch_group_lines(g: dict) -> list[str]:
     return [f"{k} {v}" for k, v in pairs]
 
 
-def main() -> int:
-    state = {}
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE, encoding="utf-8") as f:
-            state = json.load(f)
+def _load_state() -> dict:
+    if not os.path.exists(STATE_FILE):
+        return {}
+    with open(STATE_FILE, encoding="utf-8") as f:
+        return json.load(f)
 
-    now = time.time()
-    last_rcid = int(state.get("last_rcid", 0))
 
-    if last_rcid == 0:
-        # 首次运行：取当前最大 rcid 播种水位线，不输出（基线）
-        latest = _get(
-            {
-                "action": "query",
-                "list": "recentchanges",
-                "rcprop": "ids",
-                "rctype": "edit|new",
-                "rclimit": "1",
-                "format": "json",
-                "formatversion": "2",
-            }
-        )["query"]["recentchanges"]
-        last_rcid = max((c["rcid"] for c in latest), default=0)
-        os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-        with open(STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump({"last_rcid": last_rcid, "last_run": now}, f)
-        return 0
+def _save_state(last_rcid: int, now: float) -> None:
+    os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
+    with open(STATE_FILE, "w", encoding="utf-8") as f:
+        json.dump({"last_rcid": last_rcid, "last_run": now}, f)
 
-    changes = fetch_new_changes(last_rcid)
-    max_rcid = max((c["rcid"] for c in changes), default=last_rcid)
 
-    pending = [
+def _seed_waterline(now: float) -> None:
+    """首次运行只取当前最大 rcid 播种水位线，不输出历史改动。"""
+    latest = _get(
+        {
+            "action": "query",
+            "list": "recentchanges",
+            "rcprop": "ids",
+            "rctype": "edit|new",
+            "rclimit": "1",
+            "format": "json",
+            "formatversion": "2",
+        }
+    )["query"]["recentchanges"]
+    _save_state(max((c["rcid"] for c in latest), default=0), now)
+
+
+def _pending_changes(changes: list[dict], last_rcid: int) -> list[dict]:
+    return [
         c
         for c in changes
         if c["rcid"] > last_rcid
@@ -246,77 +260,94 @@ def main() -> int:
         and c.get("ns") != 2  # User 空间（用户页/沙盒）不巡查
     ]
 
-    def advance_waterline() -> None:
-        os.makedirs(os.path.dirname(STATE_FILE), exist_ok=True)
-        with open(STATE_FILE, "w", encoding="utf-8") as f:
-            json.dump({"last_rcid": max_rcid, "last_run": now}, f)
 
-    if not pending:
-        advance_waterline()
-        print("NO_NEW_CHANGES")
-        # 唤醒门：末行 JSON 让 cron 跳过本次 agent 运行，无改动时不调 LLM
-        print(json.dumps({"wakeAgent": False}))
-        return 0
+def _format_change(c: dict) -> str:
+    delta = c.get("newlen", 0) - c.get("oldlen", 0)
+    return "| ".join(
+        [
+            f"rcid={c['rcid']}",
+            f"revid={c['revid']}",
+            f"old_revid={c['old_revid']}",
+            f"title={c['title']}",
+            f"user={c.get('user', '?')}",
+            f"time={c['timestamp']}",
+            f"type={c['type']}",
+            f"bytes={delta:+d}",
+            f"comment={c.get('comment', '')!r}",
+        ]
+    )
 
-    out: list[str] = [
-        f"NEW_CHANGES count={len(pending)} (since rcid>{last_rcid}, UTC 时间)"
-    ]
-    for c in sorted(pending, key=lambda c: c["rcid"]):
-        delta = c.get("newlen", 0) - c.get("oldlen", 0)
-        out.append(
-            "| ".join(
-                [
-                    f"rcid={c['rcid']}",
-                    f"revid={c['revid']}",
-                    f"old_revid={c['old_revid']}",
-                    f"title={c['title']}",
-                    f"user={c.get('user', '?')}",
-                    f"time={c['timestamp']}",
-                    f"type={c['type']}",
-                    f"bytes={delta:+d}",
-                    f"comment={c.get('comment', '')!r}",
-                ]
-            )
-        )
 
-    # 第二段：合并 diff。任何一组拉取失败都抛异常 → 非零退出且水位线不推进，
-    # 下次运行重试，不静默漏审。
+def _new_changes_output(pending: list[dict], last_rcid: int) -> list[str]:
+    out = [f"NEW_CHANGES count={len(pending)} (since rcid>{last_rcid}, UTC 时间)"]
+    out.extend(_format_change(c) for c in sorted(pending, key=lambda c: c["rcid"]))
+    return out
+
+
+def _group_header(idx: int, g: dict) -> str:
+    header = (
+        f"### [{idx}] {g['title']} | {g['user']} | "
+        f"rev {g['from_rev']}→{g['to_rev']} (rcid {','.join(map(str, g['rcids']))})"
+    )
+    if g["is_new"]:
+        header += " [新页面，以下为全文]"
+    return header
+
+
+def _truncate_group_lines(lines: list[str]) -> list[str]:
+    if len(lines) <= MAX_GROUP_LINES:
+        return lines
+    omitted = len(lines) - GROUP_HEAD - GROUP_TAIL
+    return (
+        lines[:GROUP_HEAD]
+        + [f"… [TRUNCATED 省略 {omitted} 行；如需审查请用 compare API 拉全量] …"]
+        + lines[-GROUP_TAIL:]
+    )
+
+
+def _merged_diffs_output(pending: list[dict]) -> list[str]:
+    """合并 diff 段；任何拉取失败都抛出，阻止调用方推进水位线。"""
     groups = group_consecutive(pending)
-    sections: list[str] = [
-        f"\nMERGED_DIFFS count={len(groups)} (同用户同页相邻连续编辑已合并)"
-    ]
+    sections = [f"\nMERGED_DIFFS count={len(groups)} (同用户同页相邻连续编辑已合并)"]
     total = 0
     budget_exceeded = False
     for idx, g in enumerate(groups, 1):
-        header = (
-            f"### [{idx}] {g['title']} | {g['user']} | "
-            f"rev {g['from_rev']}→{g['to_rev']} (rcid {','.join(map(str, g['rcids']))})"
-        )
-        if g["is_new"]:
-            header += " [新页面，以下为全文]"
+        header = _group_header(idx, g)
         if budget_exceeded:
             sections.append(header)
             sections.append("[超出输出预算，未拉取；请用 compare API 自行补拉本组]")
             continue
-        lines = fetch_group_lines(g)
-        omitted = 0
-        if len(lines) > MAX_GROUP_LINES:
-            omitted = len(lines) - GROUP_HEAD - GROUP_TAIL
-            lines = (
-                lines[:GROUP_HEAD]
-                + [
-                    f"… [TRUNCATED 省略 {omitted} 行；如需审查请用 compare API 拉全量] …"
-                ]
-                + lines[-GROUP_TAIL:]
-            )
+        lines = _truncate_group_lines(fetch_group_lines(g))
         total += len(lines)
         if total > MAX_TOTAL_LINES:
             budget_exceeded = True
         sections.append(header)
         sections.extend(lines if lines else ["(无文本差异)"])
+    return sections
 
+
+def main() -> int:
+    state = _load_state()
+    now = time.time()
+    last_rcid = int(state.get("last_rcid", 0))
+    if last_rcid == 0:
+        _seed_waterline(now)
+        return 0
+
+    changes = fetch_new_changes(last_rcid)
+    max_rcid = max((c["rcid"] for c in changes), default=last_rcid)
+    pending = _pending_changes(changes, last_rcid)
+    if not pending:
+        _save_state(max_rcid, now)
+        print("NO_NEW_CHANGES")
+        # 唤醒门：末行 JSON 让 cron 跳过本次 agent 运行，无改动时不调 LLM
+        print(json.dumps({"wakeAgent": False}))
+        return 0
+
+    out = _new_changes_output(pending, last_rcid)
+    sections = _merged_diffs_output(pending)
     # 全部成功后才推进水位线
-    advance_waterline()
+    _save_state(max_rcid, now)
     print("\n".join(out + sections))
     return 0
 

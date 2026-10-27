@@ -49,10 +49,10 @@ grep 命中的也只是语法不是调用。同理 `{{=}}`（1.39 起）。判�
 
 ```python
 from pywikibot.data.api import QueryGenerator
-for nsid in [i for i in site.namespaces if i >= 0 and i not in (6, 7)]:
+for nsid in (0, 2, 4, 6, 8, 10, 14, 828):
     for pg in QueryGenerator(site=site, generator="allpages",
-                             gapnamespace=str(nsid), gaplimit="max",
-                             prop="revisions", rvprop="content"):
+                             gapnamespace=str(nsid), gaplimit="50",
+                             prop="revisions", rvprop="content", rvslots="main"):
         text = pg["revisions"][0].get("slots", {}).get("main", {}).get("*", "")
 ```
 
@@ -65,9 +65,10 @@ for nsid in [i for i in site.namespaces if i >= 0 and i not in (6, 7)]:
 
 ## 分类法（32 候选 → 三层）
 
-- **Tier A — 必须保留，embeddedin 错了**：有 grep 命中的元模板（`!`）。平凡兄弟（`!!`、`=`）
-  也保留——同类，保留成本≈0，误删代价是静默破坏。Ruby 族成员（`Ruby-zh-b/p`）即使 0 引用
-  也按族保留：族分工（注音符号竖排 / 拼音 / 日语）是 documented design，且族在持续扩展。
+- **Tier A — 真实使用或明确结构依赖**：grep / `action=parse` 证实真实调用，或存在
+  `<includeonly>` 死依赖链需要保留依赖方。magic word 的同名模板不属于此类：
+  `!`、`=`、`!!` 已按实测删除。Ruby 族也逐名按当前设计与实际引用判断，
+  不以「同族、保留成本低」为由保留零引用成员（`Ruby-zh-b/p`、`R/ja` 已删）。
 - **Tier B — 死依赖链**：未使用模板，grep 命中只来自**其他未使用模板**
   （如 `Navbar` ← `Navbox Advanced`；`Transclude` ← `Navbar`；`Assert eq` ← `Assert empty`；
   `Auto link` ← `角色分类`）。整链一起删，并检查链删除后的二级孤儿（Lua 模块、Tab 子页、
