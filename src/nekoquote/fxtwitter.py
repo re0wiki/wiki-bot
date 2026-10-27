@@ -40,6 +40,47 @@ def _pages(session):
         seen_cursors.add(cursor)
 
 
+def _reached_boundary(item: dict, stop_id: str | None, stop_before: int | None) -> bool:
+    return item["id"] == stop_id or (
+        stop_before is not None and int(item["created_timestamp"]) < stop_before
+    )
+
+
+def _at_or_before_boundary(
+    item: dict, stop_id: str | None, stop_before: int | None
+) -> bool:
+    return (
+        stop_id is not None
+        and int(item["id"]) <= int(stop_id)
+        or stop_before is not None
+        and int(item["created_timestamp"]) < stop_before
+    )
+
+
+def _collect_page(
+    results: list[dict],
+    quotes: dict[str, str],
+    newest: str | None,
+    stop_id: str | None,
+    stop_before: int | None,
+) -> tuple[str | None, bool]:
+    stopped = False
+    for item in results:
+        if not _is_original(item):
+            continue
+        tid = item["id"]
+        if newest is None or int(tid) > int(newest):
+            newest = tid
+        if _reached_boundary(item, stop_id, stop_before):
+            stopped = True
+        if _at_or_before_boundary(item, stop_id, stop_before):
+            continue
+        text = (item.get("text") or "").strip()
+        if text:
+            quotes.setdefault(tid, text)
+    return newest, stopped
+
+
 def fetch_quotes(
     session, *, stop_id: str | None = None, stop_before: int | None = None
 ) -> tuple[dict[str, str], str | None]:
@@ -51,26 +92,7 @@ def fetch_quotes(
     newest: str | None = None
     stopped = False
     for results in _pages(session):
-        for item in results:
-            if not _is_original(item):
-                continue
-            tid = item["id"]
-            if newest is None or int(tid) > int(newest):
-                newest = tid
-            if tid == stop_id or (
-                stop_before is not None and int(item["created_timestamp"]) < stop_before
-            ):
-                stopped = True
-            if (
-                stop_id is not None
-                and int(tid) <= int(stop_id)
-                or stop_before is not None
-                and int(item["created_timestamp"]) < stop_before
-            ):
-                continue
-            text = (item.get("text") or "").strip()
-            if text:
-                quotes.setdefault(tid, text)
+        newest, stopped = _collect_page(results, quotes, newest, stop_id, stop_before)
         if stopped:
             break
     if (stop_id is not None or stop_before is not None) and not stopped:
