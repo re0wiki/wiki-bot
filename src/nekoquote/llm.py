@@ -60,8 +60,8 @@ def _add_segment_surfaces(surf, exact, entries):
 def _build_glossary() -> dict[str, str]:
     """ja 面形态 -> 标准中文名。面形态 = ja 全文 + 各段。
 
-    冲突裁决：ja 全文精确相等者优先于「别的条目 ja 的段」（ラチンス → 拉珍斯
-    精确命中，压过 阿珍 ja=ラチンス·ホフマン 的段）；仍歧义（多名共用）的不注入。
+    冲突裁决：ja 全文精确相等者优先于「别的条目 ja 的段」（ロズワール → 罗兹瓦尔
+    精确命中，压过 罗兹瓦尔·K.梅札斯 ja=ロズワール·K·メイザース 的段）；仍歧义（多名共用）的不注入。
     """
     import translations  # 仓库根（调用方已把根目录入 sys.path）
 

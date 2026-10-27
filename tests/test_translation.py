@@ -156,6 +156,28 @@ def test_entries_no_duplicate_names():
     assert not dup, f"ENTRIES 存在重名条目: {dup}"
 
 
+def test_entries_no_duplicate_english_names():
+    """同一英文原名只能对应一个标准译名条目。"""
+    dup = [k for k, v in Counter(e.en for e in ENTRIES if e.en).items() if v > 1]
+    assert not dup, f"ENTRIES 存在重复英文原名: {dup}"
+
+
+def test_entries_no_duplicate_japanese_names():
+    """同一日文原名只能对应一个标准译名条目。"""
+    dup = [k for k, v in Counter(e.ja for e in ENTRIES if e.ja).items() if v > 1]
+    assert not dup, f"ENTRIES 存在重复日文原名: {dup}"
+
+
+def test_ja_en_name_granularity_matches():
+    """日文与英文须同为短名或全名，不得用全名原文给短名条目作注解。"""
+    bad = [
+        (e.std, e.ja, e.en)
+        for e in ENTRIES
+        if e.en and "·" in e.ja and len(e.ja.split("·")) != len(e.en.split())
+    ]
+    assert not bad, f"以下条目的日英姓名段数不一致: {bad}"
+
+
 def test_aliases_no_collision():
     """别名：不重复登记、不撞任何标准名。
 
