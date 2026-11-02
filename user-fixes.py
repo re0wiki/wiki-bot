@@ -310,7 +310,10 @@ def _nested_table_depth(text: str) -> int:
 def _outside_nested_tables(m: re.Match, replacement):
     if _nested_table_depth(m.string[: m.start()]):
         return m.group(0)
-    return replacement(m) if callable(replacement) else replacement
+    if callable(replacement):
+        return replacement(m)
+    # callable 的返回值是最终文本；字符串替换仍须按当前 match 展开捕获组。
+    return m.expand(replacement)
 
 
 user_fixes["para"] = base | {

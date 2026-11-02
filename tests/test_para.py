@@ -56,6 +56,20 @@ def test_similar_param_names_untouched():
     assert apply_para(src) == src
 
 
+def test_para_removes_romaji_without_literal_backreference():
+    src = (
+        "{{Infobox character\n"
+        "| name = Pooka\n"
+        "| name_ja = プーカ\n"
+        "| name_ja_romaji = Pūka\n"
+        "| alias =\n"
+        "}}\n"
+    )
+    assert apply_para(src) == (
+        "{{Infobox character\n| name = Pooka\n| name_ja = プーカ\n| alias =\n}}\n"
+    )
+
+
 def test_tabber_separator_untouched():
     # tabber 分隔行 `|-| X =` 形似参数行但非信息框参数，不得归一
     # （误伤实证：|-| Light Novel = 曾被打成 |-| novel = 并残留至今）
