@@ -18,6 +18,7 @@ api.php 上传）。创建的文件页标题与正文自动取自 YouTube 当前
 """
 
 import time
+from http import HTTPStatus
 from os import path
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -28,6 +29,7 @@ from tqdm import tqdm
 import pywikibot as pwb
 import pywikibot.config
 from pywikibot.comms import http
+from pywikibot.tools import compute_file_hash
 
 YOUTUBE_MIME = "video/youtube"
 
@@ -154,11 +156,40 @@ def import_videos(site, videos: dict[str, str]) -> None:
     pwb.logging.info("Imported %d/%d videos.", ok, len(videos))
 
 
+def download_original(image: pwb.FilePage, filename: str) -> bool:
+    """经 images.wikia.com 下载原图并校验 SHA-1。
+
+    static.wikia.nocookie.net 会对脚本客户端间歇返回 Cloudflare 403 challenge；
+    images.wikia.com 提供相同内容，且接受 pywikibot 的默认 HTTP 客户端。
+    """
+    revision = image.latest_file_info
+    url = revision.url.replace(
+        "https://static.wikia.nocookie.net", "https://images.wikia.com", 1
+    )
+    url += ("&" if "?" in url else "?") + "format=original"
+    throttle = image.site.throttle
+    throttle.set_delays(delay=25 * throttle.delay)
+    throttle()
+    throttle.set_delays()
+    response = http.fetch(url, stream=True)
+    if isinstance(response, Exception):
+        raise response
+    with response:
+        if response.status_code != HTTPStatus.OK:
+            pwb.logging.warning(
+                "Unsuccessful request (%s): %s", response.status_code, url
+            )
+            return False
+        with Path(filename).open("wb") as f:
+            f.writelines(response.iter_content(chunk_size=100 * 1024))
+    return compute_file_hash(filename) == revision.sha1
+
+
 def download_one(image: pwb.FilePage, tmp_dir: str) -> bool:
     """下载一张图片；失败时删除残留文件并返回 False。"""
     filename = path.join(tmp_dir, image.title(with_ns=False, as_filename=True))
     try:
-        if image.download(filename):
+        if download_original(image, filename):
             return True
         pwb.logging.error("FAILED to download %s", image.title())
     except Exception as e:  # noqa: BLE001 - 整批完成后统一非零报告

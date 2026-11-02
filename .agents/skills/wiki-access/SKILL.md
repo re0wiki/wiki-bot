@@ -173,6 +173,14 @@ r = http.request(site, uri, method="POST",  # 复用 pywikibot 已登录会话
   则先经 userinfo 比对触发自愈重登、返回新会话 token（re0_image 的
   `fresh_csrf()`）。token 类失败重取后重试一次即可恢复。
 
+## 图片原图下载（static CDN）
+
+- `static.wikia.nocookie.net` 会对脚本客户端间歇返回 Cloudflare 403 challenge。原图下载把
+  URL 主机改为 **`images.wikia.com`**，路径与 `format=original` 不变，直接复用
+  pywikibot 并保留 SHA-1 校验；实现见 `re0_image.download_original()`。URL 服务端上传
+  仍返回 `copyuploaddisabled`，不可用。稳定性对照与异常样本见
+  [references/image-download.md](references/image-download.md)。
+
 ## 实测结论与坑
 
 - 搜索"菜月昴"能命中 `角色:菜月·昴` 等页（Fandom 搜索对别名友好），但 `intitle:` 语法无效；`insource:` 也不支持（`site.search('insource:"Init"')` 返回 0 但字符串其实遍地都是）。信任任何搜索语法前先用已知真/已知假查询 sanity check。2026-08-19 再踩：`insource:/\{\{To do\|/` 返回 0 而源码扫描实测 107 页带参数——且当时手里就有已知真样本（13 卷刚写入的 `{{To do|由 K3 翻译…}}`）却没拿它验证查询。**查模板/文本用法的权威方式只有扫源码**（categorymembers/allpages 枚举 + `rvprop=content` ≤50/批），搜索语法返回 0 一律视为「查询不可信」而非「不存在」。
