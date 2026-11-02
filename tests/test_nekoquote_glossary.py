@@ -14,17 +14,18 @@ def test_glossary_hit_and_format():
     assert "必须使用" in out
 
 
-def test_glossary_ambiguous_surface_dropped():
-    """エキドナ 是两个不同角色的 ja 原名（强欲魔女 艾姬多娜 / 人工精灵 围巾多娜），不得注入。"""
-    out = glossary_lines(["エキドナとの会話"])
-    assert "\nエキドナ =" not in out
+def test_glossary_echidna_forms_disambiguated():
+    """强欲魔女与人工精灵的不同日文原名分别注入各自译名。"""
+    out = glossary_lines(["エキドナと襟ドナの会話"])
+    assert "\nエキドナ = 艾姬多娜\n" in out
+    assert "\n襟ドナ = 围巾多娜\n" in out
 
 
-def test_glossary_surname_injected():
-    """姓氏面注入（ナツキ=菜月），与 修德拉格/阿斯特雷亚 等姓氏条目一致。"""
+def test_glossary_name_segments_injected():
+    """全名原文中的姓与名分别注入（ナツキ=菜月、リゲル=雷吉尔）。"""
     out = glossary_lines(["ナツキ·リゲルの誕生日"])
     assert "\nナツキ = 菜月\n" in out
-    assert "ナツキ·リゲル = 雷吉尔" in out
+    assert "リゲル = 雷吉尔" in out
 
 
 def test_glossary_no_hit():
