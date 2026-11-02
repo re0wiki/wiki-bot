@@ -2075,6 +2075,7 @@ ENTRIES: list[Entry] = [
     Entry(
         std="六条舌",
         ja="六条舌",
+        en="Six Tongues",
         aliases=("六枚舌",),
         note="奥尔菲外号及其情报组织",
     ),
@@ -4086,5 +4087,33 @@ ENTRIES: list[Entry] = [
         ja="天地赤日",
         en="Day of Red Earth and Sky",
         note="术语；帕克与梅拉奎拉之战（前日谭 冰结之绊）。语料无据（前日谭未入语料），取日文原名（汉字同形）",
+    ),
+    Entry(
+        std="贝拉丽丝",
+        ja="ベラリス",
+        en="Bellaris",
+        note="角色。民间译名。",
+    ),
+    Entry(
+        std="库格尔施赖伯城",
+        en="Kugelschreiber Castle",
+        note="术语。LLM 自拟，语料无据（候选 库格尔施赖伯/库格尔施赖布/库格尔施雷伯/库格尔施莱伯/库格施赖伯/库格施雷伯/库格施莱伯/库格鲁施赖伯/库格鲁施雷伯/库格鲁施莱伯/库盖尔施赖伯/库盖尔施雷伯/库盖尔施莱伯/圆珠笔城/圆珠笔城堡 均 0）",
+    ),
+    Entry(
+        std="翠绿美人",
+        en="Green Beauty",
+        note="库珥修别名。LLM 自拟，语料无据（候选 绿色美人/绿色美女/绿美人/绿美女/翠绿美人/翠绿美女/碧绿美人/碧绿美女/绿色丽人/翠绿丽人/碧绿丽人 均 0）",
+    ),
+    Entry(
+        std="死亡回归",
+        ja="死に戻り",
+        en="Return by Death",
+        note="术语；昴的能力。官方：447 处",
+    ),
+    Entry(
+        std="狮子王",
+        ja="獅子王",
+        en="Lion King",
+        note="术语；傅里叶立志成为的称号。官方：51 处",
     ),
 ]
