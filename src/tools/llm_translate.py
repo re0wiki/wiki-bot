@@ -847,7 +847,7 @@ def _known_noun_hits(body):
         if not re.search(rf"\b{re.escape(e.en)}\b", body, flags):
             continue
         hits.append((e.en, e.std))
-    hits.sort(key=lambda h: -len(h[0]))  # 稳定排序：等长保持表中先后顺序
+    hits.sort(key=lambda h: (-len(h[0]), h[0].casefold(), h[0], h[1]))
     return hits
 
 
@@ -855,10 +855,7 @@ def _filter_known_noun_hits(hits, conv):
     kept = []
     surfaces = []  # 全部胜出面（含被内链跳过的），用于子面抑制
     displays = re.findall(r"\[\[[^]|]*\|([^]]*)\]\]", conv)  # 骨架内链的显示文字
-    for (
-        en,
-        name,
-    ) in hits:  # 长面优先：Rachins Hoffman 命中后跳过其子面 Rachins；同面取表中先者
+    for en, name in hits:  # 长面优先：Rachins Hoffman 命中后跳过其子面 Rachins
         if any(en in s for s in surfaces):
             continue
         surfaces.append(en)

@@ -611,18 +611,6 @@ def p2st(pattern: str):
     return "".join(out)
 
 
-# (标准名, 目标名) 生成名字规则，数据在 translations.py；模板条目不生成名字规则
-translation_name_rules = [
-    # std 需转义后才可作 pattern（罗兹瓦尔·L.梅札斯 的句点不能退化成通配符）；
-    # p2st 对 \X 原样透传，简繁展开不受影响
-    (re.escape(e.std), e.std)
-    for e in translations.ENTRIES
-    if "{{" not in e.std
-]
-# 长匹配优先：短名规则排在长名规则后，防止短名吃掉长名内部（菈姆 命中 [[普菈姆|..]] 类）
-translation_name_rules.sort(key=lambda r: -len(r[1]))
-
-
 def _noncap(pattern):
     """内层捕获组转非捕获：合成 alternation 后用 lastindex 定位是哪条规则命中。"""
     return re.sub(r"\((?!\?)", "(?:", pattern)
@@ -672,25 +660,41 @@ def _match_len(s):
     return len(s)
 
 
-# 全部替换规则合成单趟 alternation：名字规则（p2st 简繁展开）与别名精确对/guard 对
-# 统一按目标/别名原文长度降序，同一位置只提交一次 = 真长匹配优先（短规则无法再命中
-# 长名/长别名内部）；单趟语义下恒等转换也消耗文本。
-# 大 alternation 靠 regex 模块的 trie 优化（pwb 全库 import regex as re；stdlib re 逐位置
-# 顺序试探会慢三个数量级）。
-_name_items = [(len(n), p2st(pat), n) for pat, n in translation_name_rules]
-_pair_items = [
-    (len(a2), re.escape(a2), e.std)
-    for e in translations.ENTRIES
-    for a in e.aliases
-    if not _regex_form(a)
-    for a2 in dict.fromkeys((a, s2t(a)))
-] + [
-    (_match_len(a), p2st(a), e.std)
-    for e in translations.ENTRIES
-    for a in e.aliases
-    if _regex_form(a)
-]
-_alt_items = sorted(_name_items + _pair_items, key=lambda x: -x[0])
+def _build_translation_rules(entries):
+    """构建名字规则、单趟替换项与标题别名对；结果与条目顺序无关。"""
+    # std 需转义后才可作 pattern（罗兹瓦尔·L.梅札斯 的句点不能退化成通配符）；
+    # p2st 对 \X 原样透传，简繁展开不受影响。模板条目不生成名字规则。
+    name_rules = [(re.escape(e.std), e.std) for e in entries if "{{" not in e.std]
+    # 长匹配优先；等长按规则与目标排序，不让数据顺序成为隐式优先级。
+    name_rules.sort(key=lambda r: (-len(r[1]), r[0], r[1]))
+    name_items = [(len(n), p2st(pat), n) for pat, n in name_rules]
+    pair_items = [
+        (len(a2), re.escape(a2), e.std)
+        for e in entries
+        for a in e.aliases
+        if not _regex_form(a)
+        for a2 in dict.fromkeys((a, s2t(a)))
+    ] + [
+        (_match_len(a), p2st(a), e.std)
+        for e in entries
+        for a in e.aliases
+        if _regex_form(a)
+    ]
+
+    # 全部替换规则合成单趟 alternation：同一位置只提交一次 = 真长匹配优先
+    # （短规则无法再命中长名/长别名内部）；单趟语义下恒等转换也消耗文本。
+    # 大 alternation 靠 regex 模块的 trie 优化（stdlib re 逐位置顺序试探会慢三个数量级）。
+    alt_items = sorted(name_items + pair_items, key=lambda x: (-x[0], x[1], x[2]))
+    # re0_move 消费的别名对：与 alternation 同数据（别名子集、同排序键）。
+    pairs = [
+        (p, n) for _, p, n in sorted(pair_items, key=lambda x: (-x[0], x[1], x[2]))
+    ]
+    return name_rules, alt_items, pairs
+
+
+translation_name_rules, _alt_items, translation_pairs = _build_translation_rules(
+    translations.ENTRIES
+)
 _alt_targets = [n for _, _, n in _alt_items]
 _alt_pattern = "|".join(f"({_noncap(p)})" for _, p, _ in _alt_items)
 
@@ -719,10 +723,6 @@ class _AltSub:
 
 
 _alt_sub = _AltSub(_alt_targets)
-
-
-# re0_move（标题归一）消费的别名对：与 alternation 同数据（别名子集、同排序键）。
-translation_pairs = [(p, n) for _, p, n in sorted(_pair_items, key=lambda x: -x[0])]
 
 
 translation_manual = [  # 手动添加的替换组（模板替换；译名规则全部在 translations.py）

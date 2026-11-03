@@ -69,7 +69,7 @@ def _build_glossary() -> dict[str, str]:
     surf = _exact_surfaces(entries)
     exact = {k: v for k, v in surf.items() if v}
     _add_segment_surfaces(surf, exact, entries)
-    return {k: v for k, v in surf.items() if v}
+    return dict(sorted((k, v) for k, v in surf.items() if v))
 
 
 def glossary_lines(texts: list[str]) -> str:

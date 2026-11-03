@@ -1,9 +1,12 @@
 """llm_translate 的 wip 自动收尾与 done 核验测试（离线，api/工作目录打桩）。"""
 
 import json
+from random import Random
 
 import pytest
 from repo_loader import load_module
+
+import translations
 
 lt = load_module("llm_translate", "src/tools/llm_translate.py")
 
@@ -32,6 +35,22 @@ def test_known_nouns():
     assert "Zergev Squadron = 切格夫队" in hits  # 无链接的表外词注入
     assert not any("Rachins" in h for h in hits)  # 已被链接覆盖，不重复注入
     assert lt.known_nouns("Remastered footage, nothing else.", "") == []  # 词边界
+
+
+def test_known_noun_hits_order_independent(monkeypatch):
+    """全量英文面命中清单及其相对顺序不随条目排列变化。"""
+    entries = list(translations.ENTRIES)
+    body = "\n".join(e.en for e in entries if e.en and len(e.en) >= 3)
+    expected = lt._known_noun_hits(body)
+    shuffled = entries.copy()
+    Random(0).shuffle(shuffled)
+    for permuted in [
+        list(reversed(entries)),
+        sorted(entries, key=lambda e: e.std),
+        shuffled,
+    ]:
+        monkeypatch.setattr(translations, "ENTRIES", permuted)
+        assert lt._known_noun_hits(body) == expected
 
 
 def make_work(tmp_path, monkeypatch):

@@ -6,6 +6,8 @@ globals，因此 translation_name_rules 等名字直接从 pywikibot.fixes 取�
 
 import importlib
 from collections import Counter
+from itertools import pairwise
+from random import Random
 from typing import Any
 
 import regex as re
@@ -149,6 +151,39 @@ def test_nekoquote_aliases_normalize():
 
 translations = load_module("translations", "translations.py")
 ENTRIES = list(translations.ENTRIES)
+
+
+def entry_order_key(e):
+    """人工维护顺序：英文原名（忽略大小写）字典序，空英文名按标准名收尾。"""
+    return (not e.en, e.en.casefold(), e.std)
+
+
+def test_entries_sorted_by_english_name():
+    bad = next(
+        (
+            (i, a.std, b.std)
+            for i, (a, b) in enumerate(pairwise(ENTRIES))
+            if entry_order_key(a) > entry_order_key(b)
+        ),
+        None,
+    )
+    assert bad is None, f"ENTRIES 在索引 {bad[0]} 处逆序: {bad[1]} -> {bad[2]}"
+
+
+def test_translation_rules_order_independent():
+    """重排数据不得改变正文替换与标题归一消费的派生规则。"""
+    build = fx.__dict__.get("_build_translation_rules")
+    assert build is not None, "译名规则装配应提供可独立测试的纯函数"
+    expected = build(ENTRIES)
+    shuffled = ENTRIES.copy()
+    Random(0).shuffle(shuffled)
+    permutations = [
+        list(reversed(ENTRIES)),
+        sorted(ENTRIES, key=lambda e: e.std),
+        shuffled,
+    ]
+    for entries in permutations:
+        assert build(entries) == expected
 
 
 def test_entries_no_duplicate_names():
